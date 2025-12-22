@@ -1,0 +1,560 @@
+import 'package:flutter/material.dart';
+import 'dart:ui';
+import '../../core/theme/app_colors.dart';
+import '../../core/services/database_service.dart';
+import 'create_exam_screen.dart';
+import 'manage_questions_screen.dart';
+
+class ManageExamsScreen extends StatefulWidget {
+  const ManageExamsScreen({super.key});
+
+  @override
+  State<ManageExamsScreen> createState() => _ManageExamsScreenState();
+}
+
+class _ManageExamsScreenState extends State<ManageExamsScreen> {
+  final DatabaseService _db = DatabaseService();
+
+  List<Map<String, dynamic>> _exams = [];
+  bool _isLoading = true;
+  String _filter = 'all'; // all, published, draft
+
+  @override
+  void initState() {
+    super.initState();
+    _loadExams();
+  }
+
+  Future<void> _loadExams() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final exams = await _db.getTeacherExams();
+      setState(() {
+        _exams = exams;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  List<Map<String, dynamic>> get _filteredExams {
+    if (_filter == 'published') {
+      return _exams.where((e) => e['is_published'] == true).toList();
+    } else if (_filter == 'draft') {
+      return _exams.where((e) => e['is_published'] == false).toList();
+    }
+    return _exams;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              _buildFilterTabs(),
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _loadExams,
+                        child: _filteredExams.isEmpty
+                            ? _buildEmptyState()
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(20),
+                                itemCount: _filteredExams.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child:
+                                        _buildExamCard(_filteredExams[index]),
+                                  );
+                                },
+                              ),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          final result = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CreateExamScreen(),
+            ),
+          );
+          if (result == true) _loadExams();
+        },
+        backgroundColor: AppColors.primaryPurple,
+        icon: const Icon(Icons.add),
+        label: const Text('إنشاء اختبار'),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          const Expanded(
+            child: Text(
+              'إدارة الاختبارات',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterTabs() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          _buildFilterTab('الكل', 'all'),
+          const SizedBox(width: 8),
+          _buildFilterTab('منشور', 'published'),
+          const SizedBox(width: 8),
+          _buildFilterTab('مسودة', 'draft'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterTab(String label, String value) {
+    final isSelected = _filter == value;
+
+    return Expanded(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: isSelected ? AppColors.primaryGradient : null,
+              color: isSelected ? null : Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => setState(() => _filter = value),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Text(
+                    label,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExamCard(Map<String, dynamic> exam) {
+    final isPublished = exam['is_published'] as bool? ?? false;
+    final courseName = exam['courses']?['title'] ?? 'دورة';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withOpacity(0.25),
+                Colors.white.withOpacity(0.15),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1.5,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ManageQuestionsScreen(
+                      examId: exam['id'],
+                      examTitle: exam['title'] ?? 'اختبار',
+                    ),
+                  ),
+                );
+                if (result == true) _loadExams();
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                exam['title'] ?? 'اختبار',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                courseName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.8),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: (isPublished ? Colors.green : Colors.orange)
+                                .withOpacity(0.3),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isPublished ? Colors.green : Colors.orange,
+                              width: 1,
+                            ),
+                          ),
+                          child: Text(
+                            isPublished ? 'منشور' : 'مسودة',
+                            style: TextStyle(
+                              color: isPublished ? Colors.green : Colors.orange,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        _buildInfoChip(
+                          Icons.access_time,
+                          '${exam['duration']} دقيقة',
+                        ),
+                        const SizedBox(width: 12),
+                        _buildInfoChip(
+                          Icons.assignment,
+                          '${exam['total_points']} نقطة',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildActionButton(
+                            icon: Icons.edit,
+                            label: 'تعديل',
+                            onTap: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CreateExamScreen(
+                                    examId: exam['id'],
+                                    examData: exam,
+                                  ),
+                                ),
+                              );
+                              if (result == true) _loadExams();
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: _buildActionButton(
+                            icon: isPublished
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            label: isPublished ? 'إلغاء النشر' : 'نشر',
+                            color: isPublished ? Colors.orange : Colors.green,
+                            onTap: () => _togglePublish(exam),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildActionButton(
+                          icon: Icons.delete,
+                          label: '',
+                          color: Colors.red,
+                          onTap: () => _deleteExam(exam),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: (color ?? Colors.white).withOpacity(0.2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: (color ?? Colors.white).withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: onTap,
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, color: color ?? Colors.white, size: 18),
+                    if (label.isNotEmpty) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        label,
+                        style: TextStyle(
+                          color: color ?? Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.assignment, color: Colors.white, size: 64),
+                  const SizedBox(height: 16),
+                  Text(
+                    'لا توجد اختبارات',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Colors.white.withOpacity(0.8),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _togglePublish(Map<String, dynamic> exam) async {
+    try {
+      final isPublished = exam['is_published'] as bool? ?? false;
+      await _db.toggleExamPublish(exam['id'], !isPublished);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isPublished ? 'تم إلغاء النشر' : 'تم النشر'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      _loadExams();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteExam(Map<String, dynamic> exam) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.primaryPurple,
+        title:
+            const Text('حذف الاختبار', style: TextStyle(color: Colors.white)),
+        content: const Text(
+          'هل أنت متأكد من حذف هذا الاختبار؟',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.white)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await _db.deleteExam(exam['id']);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تم حذف الاختبار'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+
+      _loadExams();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+}
