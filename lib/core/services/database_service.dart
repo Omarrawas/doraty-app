@@ -10,6 +10,73 @@ class DatabaseService {
   // Getter for accessing the client from other classes
   SupabaseClient get supabaseClient => _client;
 
+  // ==================== SEARCH ====================
+
+  /// Search courses with filters
+  Future<List<Map<String, dynamic>>> searchCourses({
+    String? query,
+    String? category,
+    String? subject,
+    double? minPrice,
+    double? maxPrice,
+    double? minRating,
+  }) async {
+    try {
+      // Build query
+      var dbQuery = _client.from('courses').select('*, users!instructor_id(full_name, avatar_url)');
+
+      // Text Search
+      if (query != null && query.isNotEmpty) {
+        // Search in title and description using ilike (case-insensitive)
+        dbQuery = dbQuery.or('title.ilike.%$query%,description.ilike.%$query%');
+      }
+
+      // Category Filter
+      if (category != null && category != 'الكل') {
+        dbQuery = dbQuery.eq('category', category);
+      }
+
+      // Subject Filter
+      if (subject != null && subject != 'الكل') {
+        dbQuery = dbQuery.eq('subject', subject);
+      }
+
+      // Price Range
+      if (minPrice != null) {
+        dbQuery = dbQuery.gte('price', minPrice);
+      }
+      if (maxPrice != null) {
+        dbQuery = dbQuery.lte('price', maxPrice);
+      }
+
+      // Rating Filter
+      if (minRating != null) {
+        dbQuery = dbQuery.gte('rating', minRating);
+      }
+
+      // Ensure published only
+      dbQuery = dbQuery.eq('is_published', true);
+
+      final response = await dbQuery;
+      final data = List<Map<String, dynamic>>.from(response);
+
+      // Map joined data to flat structure expected by UI
+      return data.map((course) {
+        final user = course['users'];
+        if (user != null) {
+          course['instructor_name'] =
+              user['full_name'] ?? course['instructor_name'];
+          course['instructor_photo'] =
+              user['avatar_url'] ?? course['instructor_photo'];
+        }
+        return course;
+      }).toList();
+    } catch (e) {
+      debugPrint('Error searching courses: $e');
+      rethrow;
+    }
+  }
+
   // ==================== COURSES ====================
 
   /// Get courses by teacher ID (Internal helper or use directly)

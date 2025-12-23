@@ -5,7 +5,9 @@ import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
 import '../../models/lesson.dart';
 import '../../core/services/database_service.dart';
-import '../lesson/lesson_screen.dart';
+import '../../core/services/supabase_service.dart';
+import '../../core/services/certificate_service.dart';
+import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../teacher/teacher_profile_screen.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
@@ -42,7 +44,12 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   late double _currentRating;
   late int _reviewsCount;
   late int _studentsCount;
+  late int _reviewsCount;
+  late int _studentsCount;
   final DatabaseService _databaseService = DatabaseService();
+  String? _currentUserName;
+  bool _isCertificateLoading = false;
+  bool _isCourseCompleted = false;
 
   @override
   void initState() {
@@ -61,9 +68,12 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     _loadReviews();
     _checkEnrollment();
     _refreshInstructorInfo();
+    _refreshInstructorInfo();
     _refreshCourseData();
     _studentsCount = widget.course.studentsCount; // Initialize students count
     _checkUserReview();
+    _fetchUserName();
+
 
     debugPrint(
         '🏁 CourseDetailsScreen initialized for Course ID: ${widget.course.id}');
@@ -97,6 +107,22 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       }
     } catch (e) {
       debugPrint('Error refreshing course data: $e');
+    }
+  }
+
+  Future<void> _fetchUserName() async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId != null) {
+        final profile = await _databaseService.getUserProfile(userId);
+        if (mounted) {
+          setState(() {
+            _currentUserName = profile['full_name'];
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching user name: $e');
     }
   }
 
@@ -143,6 +169,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         setState(() {
           _lessons = lessons;
           _isLoadingLessons = false;
+          // Check completion
+          if (lessons.isNotEmpty) {
+            _isCourseCompleted = lessons.every((l) => l['is_completed'] == true);
+          }
         });
       }
     } catch (e) {
@@ -529,6 +559,52 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       );
     }
 
+    if (_isCourseCompleted && _isEnrolled) {
+      return Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFD700), Color(0xFFFFA500)], // Gold for certificate
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.amber.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: _downloadCertificate,
+            child: Center(
+              child: _isCertificateLoading
+                  ? const CircularProgressIndicator(color: Colors.black)
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.workspace_premium, color: Colors.black),
+                        SizedBox(width: 8),
+                        Text(
+                          'تحميل الشهادة',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       height: 56,
@@ -578,6 +654,41 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _downloadCertificate() async {
+    if (_currentUserName == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يرجى تحديث الملف الشخصي أولاً')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isCertificateLoading = true;
+    });
+
+    try {
+      await CertificateService().downloadCertificate(
+        studentName: _currentUserName!,
+        courseName: widget.course.title,
+        instructorName: _instructorName,
+        date: DateTime.now(),
+      );
+    } catch (e) {
+      debugPrint('Error downloading certificate: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('حدث خطأ أثناء تحميل الشهادة: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCertificateLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _handleEnrollment() async {
@@ -1183,7 +1294,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => LessonScreen(
+                    builder: (context) => lesson_ui.LessonScreen(
                       lesson: lessonObj,
                       allLessons: allLessons,
                       courseTitle: widget.course.title,

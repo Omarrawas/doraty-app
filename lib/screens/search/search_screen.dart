@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'dart:async'; // Added for Timer
 import '../../core/theme/app_colors.dart';
+import '../../core/services/database_service.dart';
 import '../../models/course.dart';
 import '../../widgets/course_card.dart';
 
@@ -35,62 +37,69 @@ class _SearchScreenState extends State<SearchScreen> {
 
   List<Course> _searchResults = [];
 
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
   @override
   void dispose() {
+    _debounce?.cancel();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
-  void _performSearch() {
-    // Basic local search implementation (replace with backend call later)
-    final query = _searchController.text.trim().toLowerCase();
-    final all = _getMockResults();
-    setState(() {
-      _searchResults = all.where((c) {
-        final matchesQuery = query.isEmpty ||
-            c.title.toLowerCase().contains(query) ||
-            (c.description ?? '').toLowerCase().contains(query) ||
-            c.subject.toLowerCase().contains(query) ||
-            c.instructorName.toLowerCase().contains(query);
-
-        final matchesBranch =
-            _selectedBranch == 'الكل' || c.category == _selectedBranch;
-        final matchesSubject =
-            _selectedSubject == 'الكل' || c.subject == _selectedSubject;
-        final matchesPrice = c.price >= _minPrice && c.price <= _maxPrice;
-        final matchesRating = c.rating >= _minRating;
-
-        return matchesQuery &&
-            matchesBranch &&
-            matchesSubject &&
-            matchesPrice &&
-            matchesRating;
-      }).toList();
+  void _onSearchChanged() {
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (_searchController.text.isNotEmpty) {
+        _performSearch();
+      }
     });
   }
 
-  List<Course> _getMockResults() {
-    return [
-      Course(
-        id: '1',
-        title: 'رياضيات متقدمة',
-        description: 'دورة شاملة في الرياضيات المتقدمة',
-        instructorName: 'د. أحمد سعيد',
-        instructorPhoto:
-            'https://ui-avatars.com/api/?name=Ahmed+Said&background=7B2CBF&color=fff',
-        imageUrl:
-            'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=400',
-        price: 50000,
-        rating: 4.8,
-        studentsCount: 250,
-        lessonsCount: 24,
-        durationHours: '24 ساعة',
-        category: 'علمي',
-        subject: 'رياضيات',
-        curriculum: [],
-        isEnrolled: false,
-      ),
-    ];
+  final DatabaseService _databaseService = DatabaseService();
+  bool _isLoading = false;
+
+  void _performSearch() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final query = _searchController.text.trim();
+      final results = await _databaseService.searchCourses(
+        query: query,
+        category: _selectedBranch == 'الكل' ? null : _selectedBranch,
+        subject: _selectedSubject == 'الكل' ? null : _selectedSubject,
+        minPrice: _minPrice > 0 ? _minPrice : null,
+        maxPrice: _maxPrice < 1000000 ? _maxPrice : null,
+        minRating: _minRating > 0 ? _minRating : null,
+      );
+
+      if (mounted) {
+        setState(() {
+          _searchResults =
+              results.map((data) => Course.fromJson(data)).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error searching courses: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          // You could show a snackbar error here
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('حدث خطأ أثناء البحث: $e')),
+          );
+        });
+      }
+    }
   }
 
   @override
@@ -137,18 +146,22 @@ class _SearchScreenState extends State<SearchScreen> {
 
               // Search Results
               Expanded(
-                child: _searchResults.isEmpty
-                    ? _buildEmptyState()
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        itemCount: _searchResults.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: CourseCard(course: _searchResults[index]),
-                          );
-                        },
-                      ),
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white))
+                    : _searchResults.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            itemCount: _searchResults.length,
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16),
+                                child:
+                                    CourseCard(course: _searchResults[index]),
+                              );
+                            },
+                          ),
               ),
             ],
           ),

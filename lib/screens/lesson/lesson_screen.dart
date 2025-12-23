@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:video_player/video_player.dart';
@@ -55,6 +56,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   List<Map<String, dynamic>> _lessonExams = [];
   bool _isLoadingExams = true;
 
+  // Progress tracking
+  int _videoWatchTime = 0;
+  Timer? _watchTimeTimer;
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +70,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     _initTts();
     _initVideoPlayer();
     _fetchLessonExams();
+    _startWatchTimeTracking();
   }
 
   Future<void> _fetchLessonExams() async {
@@ -156,6 +162,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
+    _watchTimeTimer?.cancel();
+    _saveProgressBeforeExit();
     _tabController.dispose();
     _flutterTts.stop();
     _videoPlayerController?.dispose();
@@ -178,6 +186,58 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       textToSpeak = textToSpeak.replaceAll(RegExp(r'<[^>]*>'), '');
       await _flutterTts.speak(textToSpeak);
     }
+  }
+
+  void _startWatchTimeTracking() {
+    _watchTimeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      bool isPlaying = false;
+      
+      if (_isYoutube) {
+        isPlaying = _youtubePlayerController?.value.isPlaying ?? false;
+      } else {
+        isPlaying = _videoPlayerController?.value.isPlaying ?? false;
+      }
+      
+      if (isPlaying) {
+        _videoWatchTime++;
+      }
+    });
+  }
+
+  Future<void> _saveProgressBeforeExit() async {
+    try {
+      await DatabaseService().updateLessonProgress(
+        lessonId: widget.lesson.id,
+        watchTime: _videoWatchTime,
+        lastPosition: _getCurrentVideoPosition(),
+        isCompleted: _isLessonCompleted(),
+      );
+    } catch (e) {
+      debugPrint('Error saving lesson progress: $e');
+    }
+  }
+
+  int? _getCurrentVideoPosition() {
+    if (_isYoutube) {
+      return _youtubePlayerController?.value.position.inSeconds;
+    } else {
+      return _videoPlayerController?.value.position.inSeconds;
+    }
+  }
+
+  int? _getVideoDuration() {
+    if (_isYoutube) {
+      return _youtubePlayerController?.metadata.duration.inSeconds;
+    } else {
+      return _videoPlayerController?.value.duration.inSeconds;
+    }
+  }
+
+  bool _isLessonCompleted() {
+    final position = _getCurrentVideoPosition() ?? 0;
+    final duration = _getVideoDuration() ?? 1;
+    // Mark as completed if watched > 80% of video
+    return duration > 0 && (position / duration) > 0.8;
   }
 
   Future<void> _sendQuestion() async {
@@ -1018,17 +1078,22 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: hasPrev 
-                          ? () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => LessonScreen(
-                                    lesson: widget.allLessons[currentIndex - 1],
-                                    allLessons: widget.allLessons,
-                                    courseTitle: widget.courseTitle,
+                          ? () async {
+                              // Save progress before navigating
+                              await _saveProgressBeforeExit();
+                              
+                              if (mounted) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LessonScreen(
+                                      lesson: widget.allLessons[currentIndex - 1],
+                                      allLessons: widget.allLessons,
+                                      courseTitle: widget.courseTitle,
+                                    ),
                                   ),
-                                ),
-                              );
+                                );
+                              }
                             }
                           : null,
                         child: const Row(
@@ -1092,17 +1157,22 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: hasNext
-                          ? () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => LessonScreen(
-                                    lesson: widget.allLessons[currentIndex + 1],
-                                    allLessons: widget.allLessons,
-                                    courseTitle: widget.courseTitle,
+                          ? () async {
+                              // Save progress before navigating
+                              await _saveProgressBeforeExit();
+                              
+                              if (mounted) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LessonScreen(
+                                      lesson: widget.allLessons[currentIndex + 1],
+                                      allLessons: widget.allLessons,
+                                      courseTitle: widget.courseTitle,
+                                    ),
                                   ),
-                                ),
-                              );
+                                );
+                              }
                             }
                           : null,
                         child: const Row(
