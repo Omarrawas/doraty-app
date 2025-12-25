@@ -17,6 +17,7 @@ class Course {
   final bool isEnrolled;
   final int completedLessons;
   final String? level; // Added level
+  final bool isPublished;
 
   Course({
     required this.id,
@@ -37,6 +38,7 @@ class Course {
     this.isEnrolled = false,
     this.completedLessons = 0,
     this.level,
+    this.isPublished = true,
   });
 
   factory Course.fromJson(Map<String, dynamic> json) {
@@ -60,6 +62,7 @@ class Course {
       isEnrolled: json['is_enrolled'] ?? false,
       completedLessons: json['completed_lessons'] ?? 0,
       level: json['level'],
+      isPublished: json['is_published'] ?? true,
     );
   }
 
@@ -83,6 +86,7 @@ class Course {
       'is_enrolled': isEnrolled,
       'completed_lessons': completedLessons,
       'level': level,
+      'is_published': isPublished,
     };
   }
 

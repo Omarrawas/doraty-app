@@ -4,6 +4,9 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/file_upload_service.dart';
+import '../../core/services/github_storage_service.dart';
+import '../../core/services/github_api_service.dart';
+import '../../core/config/github_config.dart';
 import '../../widgets/video_preview_widget.dart';
 
 class CreateLessonScreen extends StatefulWidget {
@@ -34,7 +37,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
 
   bool _isFree = false;
   bool _isSaving = false;
-  bool _isUploading = false;
+  bool _isUploadingToGitHub = false;
   final List<Map<String, String>> _attachments = [];
 
   @override
@@ -210,15 +213,15 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Row(
+                Row(
                   children: [
                     Icon(Icons.attach_file, color: AppColors.textSecondary),
                     SizedBox(width: 8),
                     Text(
-                      'المرفقات',
+                      'المرفقات (GitHub)',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -226,18 +229,83 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                     ),
                   ],
                 ),
-                TextButton.icon(
-                  onPressed: _isUploading ? null : _uploadFiles,
-                  icon: _isUploading
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.add),
-                  label: const Text('إضافة'),
-                ),
               ],
+            ),
+            const SizedBox(height: 16),
+            // GitHub automatic upload
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.cloud_upload, color: Colors.grey.shade700),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'رفع تلقائي إلى GitHub',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (!GitHubConfig.isConfigured)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade50,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: Colors.orange.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning, color: Colors.orange.shade700, size: 20),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'يجب تعيين GITHUB_TOKEN في ملف .env',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _isUploadingToGitHub ? null : _uploadToGitHub,
+                        icon: _isUploadingToGitHub
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.upload_file),
+                        label: Text(
+                          _isUploadingToGitHub ? 'جاري الرفع...' : 'اختر ملفات للرفع',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black87,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             if (_attachments.isNotEmpty) ...[
               const SizedBox(height: 12),
@@ -281,56 +349,87 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     );
   }
 
-  Future<void> _uploadFiles() async {
-    setState(() => _isUploading = true);
+  Future<void> _uploadToGitHub() async {
+    setState(() => _isUploadingToGitHub = true);
 
     try {
       final fileService = FileUploadService();
       final files = await fileService.pickFiles(
-        allowedExtensions: ['pdf', 'ppt', 'pptx', 'doc', 'docx'],
+        allowedExtensions: ['pdf', 'mp3', 'wav', 'ogg', 'm4a', 'html', 'htm'],
       );
 
-      if (files.isNotEmpty) {
-        for (var file in files) {
-          try {
-            // Check file size (e.g. max 50MB)
-            if (file.lengthSync() > 50 * 1024 * 1024) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(
-                          'الملف ${path.basename(file.path)} كبير جداً (اكبر من 50 ميجابايت)')),
-                );
-              }
-              continue;
+      if (files.isEmpty) {
+        setState(() => _isUploadingToGitHub = false);
+        return;
+      }
+
+      final githubService = GitHubApiService(token: GitHubConfig.token);
+      int successCount = 0;
+      int failCount = 0;
+
+      for (var file in files) {
+        try {
+          // Check file size (GitHub has 100MB limit)
+          if (file.lengthSync() > 100 * 1024 * 1024) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'الملف ${path.basename(file.path)} أكبر من 100 ميجابايت',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
             }
-
-            final fileData = await fileService.uploadFile(
-              file,
-              'lesson-attachments',
-              folder: 'lessons',
-            );
-            _attachments.add(fileData);
-          } catch (e) {
-            debugPrint('Error uploading file ${path.basename(file.path)}: $e');
+            failCount++;
+            continue;
           }
+
+          // Generate path and upload
+          final remotePath = GitHubApiService.generatePath(file);
+          final rawUrl = await githubService.uploadFile(
+            file: file,
+            remotePath: remotePath,
+          );
+
+          // Add to attachments
+          final resourceMap = {
+            'name': path.basename(file.path),
+            'url': rawUrl,
+            'type': GitHubStorageService.getFileType(rawUrl).name,
+          };
+
+          _attachments.add(resourceMap);
+          successCount++;
+        } catch (e) {
+          debugPrint('Error uploading file ${path.basename(file.path)}: $e');
+          failCount++;
         }
+      }
 
-        setState(() => _isUploading = false);
+      setState(() => _isUploadingToGitHub = false);
 
-        if (mounted) {
+      if (mounted) {
+        if (successCount > 0) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('تم رفع المرفقات بنجاح'),
+            SnackBar(
+              content: Text(
+                'تم رفع $successCount ملف(ات) إلى GitHub بنجاح${failCount > 0 ? ' (فشل $failCount)' : ''}',
+              ),
               backgroundColor: Colors.green,
             ),
           );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('فشل رفع الملفات'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
-      } else {
-        setState(() => _isUploading = false);
       }
     } catch (e) {
-      setState(() => _isUploading = false);
+      setState(() => _isUploadingToGitHub = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

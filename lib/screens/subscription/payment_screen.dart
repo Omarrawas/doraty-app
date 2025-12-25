@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
-import '../../models/subscription.dart';
+import '../../models/subscription.dart' as sub_models;
+import '../../services/payment_service.dart' as service;
 
 class PaymentScreen extends StatefulWidget {
-  final SubscriptionPlan plan;
+  final sub_models.SubscriptionPlan plan;
 
   const PaymentScreen({
     super.key,
@@ -16,7 +17,7 @@ class PaymentScreen extends StatefulWidget {
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
-  PaymentMethod? _selectedMethod;
+  service.PaymentMethod? _selectedMethod;
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _transactionIdController =
       TextEditingController();
@@ -40,24 +41,60 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
 
+    if (_phoneController.text.trim().isEmpty && 
+        (_selectedMethod == service.PaymentMethod.syriatelCash || 
+         _selectedMethod == service.PaymentMethod.mtnCash)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الرجاء إدخال رقم الهاتف'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isProcessing = true;
     });
 
-    // TODO: Process payment with backend
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (mounted) {
-      setState(() {
-        _isProcessing = false;
-      });
-
-      // Show success dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => _buildSuccessDialog(),
+    try {
+      final paymentService = service.PaymentService();
+      final success = await paymentService.processPayment(
+        plan: widget.plan,
+        method: _selectedMethod!,
+        phoneNumber: _phoneController.text.trim(),
+        transactionId: _transactionIdController.text.trim(),
       );
+
+      if (success && mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => _buildSuccessDialog(),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('فشل في معالجة عملية الدفع. يرجى المحاولة مرة أخرى.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
 
@@ -101,7 +138,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       const SizedBox(height: 16),
 
                       _buildPaymentMethod(
-                        method: PaymentMethod.syriatel,
+                        method: service.PaymentMethod.syriatelCash,
                         title: 'سيرياتيل كاش',
                         icon: Icons.phone_android,
                         color: const Color(0xFF00A651),
@@ -110,7 +147,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       const SizedBox(height: 12),
 
                       _buildPaymentMethod(
-                        method: PaymentMethod.mtn,
+                        method: service.PaymentMethod.mtnCash,
                         title: 'MTN كاش',
                         icon: Icons.phone_android,
                         color: const Color(0xFFFFCC00),
@@ -119,19 +156,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       const SizedBox(height: 12),
 
                       _buildPaymentMethod(
-                        method: PaymentMethod.bankTransfer,
-                        title: 'تحويل بنكي',
-                        icon: Icons.account_balance,
+                        method: service.PaymentMethod.shamCash,
+                        title: 'شام كاش',
+                        icon: Icons.account_balance_wallet,
                         color: const Color(0xFF2196F3),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      _buildPaymentMethod(
-                        method: PaymentMethod.creditCard,
-                        title: 'بطاقة ائتمان',
-                        icon: Icons.credit_card,
-                        color: const Color(0xFF9C27B0),
                       ),
 
                       // Payment Details
@@ -289,7 +317,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildPaymentMethod({
-    required PaymentMethod method,
+    required service.PaymentMethod method,
     required String title,
     required IconData icon,
     required Color color,
@@ -401,8 +429,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              if (_selectedMethod == PaymentMethod.syriatel ||
-                  _selectedMethod == PaymentMethod.mtn) ...[
+              if (_selectedMethod == service.PaymentMethod.syriatelCash ||
+                  _selectedMethod == service.PaymentMethod.mtnCash) ...[
                 TextField(
                   controller: _phoneController,
                   keyboardType: TextInputType.phone,
@@ -439,7 +467,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                 ),
               ],
-              if (_selectedMethod == PaymentMethod.bankTransfer) ...[
+              if (_selectedMethod == service.PaymentMethod.shamCash) ...[
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(

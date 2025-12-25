@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_provider.dart' as theme_provider;
 import '../../core/services/auth_service.dart';
 import '../../core/services/storage_service.dart';
+import '../../core/services/settings_service.dart';
 import '../../models/category.dart';
 import '../auth/login_screen.dart';
 import '../categories/branch_selection_screen.dart';
@@ -32,8 +33,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSettings();
     _loadUserProfile();
   }
+
+  void _loadSettings() {
+    final settings = SettingsService();
+    setState(() {
+      _notificationsEnabled = settings.getNotificationsEnabled();
+      _autoDownload = settings.getAutoDownload();
+      _videoQuality = settings.getVideoQuality();
+      _selectedLanguage = settings.getLanguage();
+    });
+  }
+
+  String _selectedLanguage = 'ar';
 
   Future<void> _loadUserProfile() async {
     try {
@@ -138,10 +152,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: 'استقبال إشعارات الدروس والاختبارات',
                       trailing: Switch(
                         value: _notificationsEnabled,
-                        onChanged: (value) {
+                        onChanged: (value) async {
                           setState(() {
                             _notificationsEnabled = value;
                           });
+                          await SettingsService().setNotificationsEnabled(value);
                         },
                         activeColor: AppColors.primaryPurple,
                       ),
@@ -158,10 +173,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       subtitle: 'تحميل الدروس تلقائياً عند الاتصال بالواي فاي',
                       trailing: Switch(
                         value: _autoDownload,
-                        onChanged: (value) {
+                        onChanged: (value) async {
                           setState(() {
                             _autoDownload = value;
                           });
+                          await SettingsService().setAutoDownload(value);
                         },
                         activeColor: AppColors.primaryPurple,
                       ),
@@ -209,6 +225,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Colors.white,
                       ),
                       onTap: () {},
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Language Section
+                    _buildSectionTitle('اللغة'),
+                    const SizedBox(height: 12),
+                    _buildSettingCard(
+                      icon: Icons.language,
+                      title: 'لغة التطبيق',
+                      subtitle: _selectedLanguage == 'ar' ? 'العربية' : 'English',
+                      trailing: const Icon(
+                        Icons.chevron_left,
+                        color: Colors.white,
+                      ),
+                      onTap: _showLanguageDialog,
                     ),
 
                     const SizedBox(height: 24),
@@ -1080,11 +1112,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          onTap: () {
-                            setState(() {
-                              _videoQuality = quality;
-                            });
-                            Navigator.pop(context);
+                          onTap: () async {
+                            final navigator = Navigator.of(context);
+                            await _updateVideoQuality(quality);
+                            if (mounted) navigator.pop();
                           },
                           child: Container(
                             padding: const EdgeInsets.all(16),
@@ -1129,5 +1160,103 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  void _showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.3),
+                    Colors.white.withOpacity(0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'اختر اللغة',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildLanguageOption('ar', 'العربية'),
+                  const SizedBox(height: 12),
+                  _buildLanguageOption('en', 'English'),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption(String code, String label) {
+    bool isSelected = _selectedLanguage == code;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () async {
+          setState(() {
+            _selectedLanguage = code;
+          });
+          await SettingsService().setLanguage(code);
+          if (mounted) Navigator.pop(context);
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primaryPurple.withOpacity(0.3)
+                : Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppColors.primaryPurple : Colors.white.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 16, color: Colors.white),
+                ),
+              ),
+              if (isSelected)
+                const Icon(Icons.check_circle, color: AppColors.primaryPurple),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateVideoQuality(String quality) async {
+    setState(() {
+      _videoQuality = quality;
+    });
+    await SettingsService().setVideoQuality(quality);
   }
 }

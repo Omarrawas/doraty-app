@@ -14,11 +14,16 @@ import 'core/services/supabase_service.dart';
 import 'core/env/multi_env.dart';
 import 'models/download.dart';
 import 'core/services/offline_cache_service.dart';
+import 'core/services/settings_service.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables from .env file
+  await dotenv.load(fileName: ".env");
 
   // Initialize Hive
   await Hive.initFlutter();
@@ -32,6 +37,9 @@ void main() async {
 
   // Initialize OfflineCacheService
   await OfflineCacheService().init();
+
+  // Initialize SettingsService
+  await SettingsService().init();
 
   // Initialize Supabase
   // Use environment variables from Env class
@@ -120,7 +128,7 @@ class MyApp extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, child) {
         return MaterialApp(
-          title: 'منصة التعليم - سوريا',
+          title: 'منصة دوراتي',
           debugShowCheckedModeBanner: false,
 
           // RTL Support

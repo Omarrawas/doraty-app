@@ -90,7 +90,6 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         courseId: widget.courseId!,
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),
-        // TODO: Pass video timestamp if available
       );
 
       if (mounted) {

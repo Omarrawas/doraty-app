@@ -589,41 +589,8 @@ class DatabaseService {
     }
   }
 
-  /// Get questions for a lesson
-  Future<List<Map<String, dynamic>>> getLessonQuestions(String lessonId) async {
-    try {
-      final response = await _client
-          .from('lesson_questions')
-          .select('*, users(full_name, avatar_url)')
-          .eq('lesson_id', lessonId)
-          .order('created_at', ascending: false);
-
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Ask a question for a lesson
-  Future<void> askLessonQuestion({
-    required String lessonId,
-    required String content,
-  }) async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) throw Exception('User not authenticated');
-
-      await _client.from('lesson_questions').insert({
-        'lesson_id': lessonId,
-        'user_id': userId,
-        'content': content,
-      });
-    } catch (e) {
-      rethrow;
-    }
-  }
-
   // ==================== CALENDAR ====================
+
 
   /// Create calendar event
   Future<void> createCalendarEvent({
@@ -743,6 +710,20 @@ class DatabaseService {
       await _client
           .from('notifications')
           .update({'is_read': true}).eq('id', notificationId);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Mark all notifications as read
+  Future<void> markAllNotificationsAsRead() async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      await _client
+          .from('notifications')
+          .update({'is_read': true}).eq('user_id', userId);
     } catch (e) {
       rethrow;
     }
@@ -2349,6 +2330,168 @@ class DatabaseService {
         'completed_views': 0,
         'completion_rate': 0,
       };
+    }
+  }
+
+  // ==================== PAYMENTS & SUBSCRIPTIONS ====================
+
+  /// Create a new order
+  Future<Map<String, dynamic>> createOrder({
+    required String planId,
+    required double amount,
+    required String paymentMethod,
+    String? transactionId,
+  }) async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not logged in');
+
+      final orderData = {
+        'user_id': userId,
+        'plan_id': planId,
+        'amount': amount,
+        'payment_method': paymentMethod,
+        'transaction_id': transactionId,
+        'status': 'pending',
+        'created_at': DateTime.now().toIso8601String(),
+      };
+
+      final response =
+          await _client.from('orders').insert(orderData).select().single();
+      return Map<String, dynamic>.from(response);
+    } catch (e) {
+      debugPrint('Error creating order: $e');
+      rethrow;
+    }
+  }
+
+  /// Update order status
+  Future<void> updateOrderStatus(String orderId, String status) async {
+    try {
+      await _client.from('orders').update({
+        'status': status,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', orderId);
+    } catch (e) {
+      debugPrint('Error updating order status: $e');
+      rethrow;
+    }
+  }
+
+  /// Activate user subscription
+  Future<void> activateSubscription({
+    required String userId,
+    required String planId,
+    required int durationMonths,
+  }) async {
+    try {
+      final startDate = DateTime.now();
+      final endDate = DateTime(
+          startDate.year, startDate.month + durationMonths, startDate.day);
+
+      await _client.from('user_subscriptions').upsert({
+        'user_id': userId,
+        'plan_id': planId,
+        'start_date': startDate.toIso8601String(),
+        'end_date': endDate.toIso8601String(),
+        'is_active': true,
+      }, onConflict: 'user_id,plan_id');
+
+      debugPrint('Subscription activated for user $userId, plan $planId');
+    } catch (e) {
+      debugPrint('Error activating subscription: $e');
+      rethrow;
+    }
+  }
+
+  /// Get user orders
+  Future<List<Map<String, dynamic>>> getUserOrders() async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return [];
+
+      final response = await _client
+          .from('orders')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting user orders: $e');
+      return [];
+    }
+  }
+
+  // ==================== Q&A / COMMUNITY ====================
+
+  /// Get questions for a lesson
+  Future<List<Map<String, dynamic>>> getLessonQuestions(String lessonId) async {
+    try {
+      final response = await _client
+          .from('lesson_questions')
+          .select(
+              '*, users!user_id(full_name, avatar_url), question_replies(*, users!user_id(full_name, avatar_url))')
+          .eq('lesson_id', lessonId)
+          .order('created_at', ascending: false);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting lesson questions: $e');
+      return [];
+    }
+  }
+
+  /// Ask a question about a lesson
+  Future<void> askLessonQuestion(String lessonId, String content) async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not logged in');
+
+      await _client.from('lesson_questions').insert({
+        'lesson_id': lessonId,
+        'user_id': userId,
+        'content': content,
+        'is_resolved': false,
+      });
+    } catch (e) {
+      debugPrint('Error adding question: $e');
+      rethrow;
+    }
+  }
+
+  /// Get replies for a question
+  Future<List<Map<String, dynamic>>> getQuestionReplies(
+      String questionId) async {
+    try {
+      final response = await _client
+          .from('question_replies')
+          .select('*, users!user_id(full_name, avatar_url)')
+          .eq('question_id', questionId)
+          .order('created_at', ascending: true);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting question replies: $e');
+      return [];
+    }
+  }
+
+  /// Add a reply to a question
+  Future<void> addReply(String questionId, String content) async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not logged in');
+
+      await _client.from('question_replies').insert({
+        'question_id': questionId,
+        'user_id': userId,
+        'content': content,
+        'is_instructor_reply': false,
+      });
+    } catch (e) {
+      debugPrint('Error adding reply: $e');
+      rethrow;
     }
   }
 }

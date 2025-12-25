@@ -9,6 +9,7 @@ import '../../core/services/supabase_service.dart';
 import '../../core/services/certificate_service.dart';
 import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../teacher/teacher_profile_screen.dart';
+import '../subscription/subscription_plans_screen.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
   final Course course;
@@ -44,8 +45,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   late double _currentRating;
   late int _reviewsCount;
   late int _studentsCount;
-  late int _reviewsCount;
-  late int _studentsCount;
   final DatabaseService _databaseService = DatabaseService();
   String? _currentUserName;
   bool _isCertificateLoading = false;
@@ -67,7 +66,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     _loadLessons();
     _loadReviews();
     _checkEnrollment();
-    _refreshInstructorInfo();
     _refreshInstructorInfo();
     _refreshCourseData();
     _studentsCount = widget.course.studentsCount; // Initialize students count
@@ -693,54 +691,20 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
   Future<void> _handleEnrollment() async {
     if (_isEnrolled) {
-      // If already enrolled, maybe scroll to content or just show a message
       _tabController.animateTo(1); // Switch to content tab
       return;
     }
 
-    try {
-      // Show loading indicator if needed
-      setState(() {
-        _isCheckingEnrollment = true;
-      });
-
-      await _databaseService.enrollInCourse(widget.course.id);
-
-      if (mounted) {
-        setState(() {
-          _isEnrolled = true;
-          _isCheckingEnrollment = false;
-          _studentsCount++; // Increment students count locally
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'تم الاشتراك في الدورة بنجاح! تمت إضافتها إلى دوراتي',
-              textAlign: TextAlign.right,
-              style: TextStyle(fontFamily: 'Cairo'),
-            ),
-            backgroundColor: Colors.green.shade400,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isCheckingEnrollment = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطأ في الاشتراك: $e'),
-            backgroundColor: Colors.red.shade400,
-          ),
-        );
-      }
-    }
+    // Navigate to subscription plans instead of direct enrollment
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const SubscriptionPlansScreen(),
+      ),
+    ).then((_) {
+      // Re-check enrollment after returning
+      _checkEnrollment();
+    });
   }
 
   Widget _buildTabs() {

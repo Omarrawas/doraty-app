@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
+import '../core/services/database_service.dart';
+import '../models/subscription.dart';
 
 enum PaymentMethod {
   shamCash,
@@ -13,21 +15,43 @@ class PaymentService {
   PaymentService._internal();
 
   Future<bool> processPayment({
-    required String courseId,
-    required double amount,
+    required SubscriptionPlan plan,
     required PaymentMethod method,
     required String phoneNumber,
+    String? transactionId,
   }) async {
-    // Simulate network delay
-    await Future.delayed(const Duration(seconds: 3));
-    
-    // In a real app, this would call the payment gateway API
-    // For Syrian local payments, this might involve:
-    // 1. Generating a payment request
-    // 2. Waiting for user confirmation via USSD or SMS
-    // 3. Verifying the transaction status
-    
-    return true; // Mock success
+    try {
+      final dbService = DatabaseService();
+
+      // 1. Create a "Pending" order in Supabase
+      final order = await dbService.createOrder(
+        planId: plan.id,
+        amount: plan.price,
+        paymentMethod: getMethodName(method),
+        transactionId: transactionId,
+      );
+
+      final orderId = order['id'];
+
+      // 2. Simulate network delay / verification step
+      await Future.delayed(const Duration(seconds: 3));
+
+      // 3. Update order to "Completed"
+      await dbService.updateOrderStatus(orderId, 'completed');
+
+      // 4. Activate subscription
+      final userId = order['user_id'];
+      await dbService.activateSubscription(
+        userId: userId,
+        planId: plan.id,
+        durationMonths: plan.durationMonths,
+      );
+
+      return true;
+    } catch (e) {
+      debugPrint('Error processing payment: $e');
+      return false;
+    }
   }
 
   Color getMethodColor(PaymentMethod method) {

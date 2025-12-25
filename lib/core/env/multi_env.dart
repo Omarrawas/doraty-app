@@ -19,4 +19,21 @@ abstract class Env {
       varName: 'ENCRYPTION_KEY',
       defaultValue: 'default_encryption_key_32_chars_long!')
   static const String encryptionKey = _Env.encryptionKey;
+  
+  @EnviedField(
+      varName: 'GOOGLE_WEB_CLIENT_ID',
+      defaultValue:
+          '535436798827-0rogt5b5beuq7lgsrl5ommvpa49q62bh.apps.googleusercontent.com')
+  static const String googleWebClientId = _Env.googleWebClientId;
+
+  @EnviedField(
+      varName: 'GOOGLE_IOS_CLIENT_ID',
+      defaultValue: 'YOUR_GOOGLE_IOS_CLIENT_ID')
+  static const String googleIosClientId = _Env.googleIosClientId;
+
+  @EnviedField(
+      varName: 'GOOGLE_ANDROID_CLIENT_ID',
+      defaultValue:
+          '535436798827-23an8ocpmvq3aj0ad8v426nqqid0vf14.apps.googleusercontent.com')
+  static const String googleAndroidClientId = _Env.googleAndroidClientId;
 }

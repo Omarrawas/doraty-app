@@ -96,7 +96,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     const quizContent = BiologyDemoData.biologyQuiz;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => InteractiveQuizScreen(
+        builder: (context) => const InteractiveQuizScreen(
           content: quizContent,
           title: 'اختبار تجريبي: الأحياء',
         ),
@@ -240,30 +240,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return duration > 0 && (position / duration) > 0.8;
   }
 
-  Future<void> _sendQuestion() async {
-    final content = _questionController.text.trim();
-    if (content.isEmpty) return;
 
-    try {
-      await DatabaseService().askLessonQuestion(
-        lessonId: widget.lesson.id,
-        content: content,
-      );
-      _questionController.clear();
-      setState(() {}); // Refresh list
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إرسال سؤالك بنجاح')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ: $e')),
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -285,7 +262,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           actions: [
             IconButton(
               icon: const Icon(Icons.science_outlined, color: Colors.white),
-              tooltip: 'تجربة اختبار تفاعلي',
+              tooltip: 'اختبار تفاعلي',
               onPressed: _loadDemoQuiz,
             ),
           ],
@@ -898,6 +875,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 child: TextField(
                   controller: _questionController,
                   textAlign: TextAlign.right,
+                  onSubmitted: (_) => _sendQuestion(),
                   decoration: const InputDecoration(
                     hintText: 'اسأل سؤالاً عن هذا الدرس...',
                     border: InputBorder.none,
@@ -991,47 +969,161 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             textAlign: TextAlign.right,
             style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
           ),
-          if (question.answer != null) ...[
+          if (question.replies.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Container(
+            ...question.replies.map((reply) => Container(
+                  margin: const EdgeInsets.only(top: 8),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.primaryPurple.withOpacity(0.05),
+                    color: reply.isInstructorReply
+                        ? AppColors.primaryPurple.withOpacity(0.05)
+                        : Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primaryPurple.withOpacity(0.1)),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'رد المدرس',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                            color: AppColors.primaryPurple,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          question.answer!,
-                          textAlign: TextAlign.right,
-                          style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
-                        ),
-                      ],
+                    border: Border.all(
+                      color: reply.isInstructorReply
+                          ? AppColors.primaryPurple.withOpacity(0.1)
+                          : Colors.grey[200]!,
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.reply_all_rounded, color: AppColors.primaryPurple, size: 20),
-                ],
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  reply.userName,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: reply.isInstructorReply
+                                        ? AppColors.primaryPurple
+                                        : AppColors.textPrimary,
+                                  ),
+                                ),
+                                Text(
+                                  _formatDate(reply.createdAt),
+                                  style: const TextStyle(
+                                      fontSize: 10, color: AppColors.textLight),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          CircleAvatar(
+                            radius: 12,
+                            backgroundImage: reply.userPhoto != null
+                                ? NetworkImage(reply.userPhoto!)
+                                : null,
+                            child: reply.userPhoto == null
+                                ? const Icon(Icons.person, size: 14)
+                                : null,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        reply.content,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.textPrimary),
+                      ),
+                    ],
+                  ),
+                )),
+          ],
+
+          const SizedBox(height: 12),
+          // Reply Button
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => _showReplyDialog(question),
+              icon: const Icon(Icons.reply, size: 16),
+              label: const Text('رد', style: TextStyle(fontSize: 12)),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primaryPurple,
+                padding: EdgeInsets.zero,
+                minimumSize: const Size(50, 30),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
-          ],
+          ),
         ],
       ),
     );
+  }
+
+  void _showReplyDialog(LessonQuestion question) {
+    final replyController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('إضافة رد', textAlign: TextAlign.right),
+        content: TextField(
+          controller: replyController,
+          textAlign: TextAlign.right,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            hintText: 'اكتب ردك هنا...',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (replyController.text.trim().isEmpty) return;
+              final content = replyController.text.trim();
+              Navigator.pop(context);
+
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await DatabaseService().addReply(question.id, content);
+                setState(() {}); // Refresh
+              } catch (e) {
+                if (mounted) {
+                  messenger.showSnackBar(
+                    SnackBar(content: Text('خطأ: $e')),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple),
+            child: const Text('إرسال', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _sendQuestion() async {
+    if (_questionController.text.trim().isEmpty) return;
+
+    final content = _questionController.text.trim();
+    _questionController.clear();
+
+    try {
+      await DatabaseService().askLessonQuestion(widget.lesson.id, content);
+      setState(() {}); // Refresh questions list
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم إرسال سؤالك بنجاح')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('حدث خطأ أثناء إرسال السؤال: $e')),
+        );
+      }
+    }
   }
 
   Widget _buildNavigationButtons() {

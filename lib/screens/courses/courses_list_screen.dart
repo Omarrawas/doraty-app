@@ -63,24 +63,56 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     }
   }
 
-  Future<void> _unenrollCourse(String courseId, int index) async {
+  Future<bool> _unenrollCourse(String courseId, int index) async {
     try {
       await _databaseService.unenrollFromCourse(courseId);
-      setState(() {
-        _enrolledCourses.removeAt(index);
-      });
       if (mounted) {
+        setState(() {
+          _enrolledCourses.removeAt(index);
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم إزالة الدورة من قائمتك')),
         );
       }
+      return true;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('خطأ: $e')),
         );
       }
+      return false;
     }
+  }
+
+  Future<bool?> _showDeleteConfirmation() async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        title: const Text(
+          'تأكيد الحذف',
+          style: TextStyle(color: Colors.white),
+          textAlign: TextAlign.right,
+        ),
+        content: const Text(
+          'هل تريد إزالة هذه الدورة من قائمتك؟',
+          style: TextStyle(color: Colors.white70),
+          textAlign: TextAlign.right,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('حذف'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -212,6 +244,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                   subject: courseData['subject'] ?? '',
                                   curriculum: [],
                                   isEnrolled: true,
+                                  isPublished: courseData['is_published'] ?? true,
                                 );
 
                                 final progress =
@@ -334,33 +367,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
         ),
       ),
       confirmDismiss: (direction) async {
-        return await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            backgroundColor: const Color(0xFF1A1A2E),
-            title: const Text(
-              'تأكيد الحذف',
-              style: TextStyle(color: Colors.white),
-              textAlign: TextAlign.right,
-            ),
-            content: const Text(
-              'هل تريد إزالة هذه الدورة من قائمتك؟',
-              style: TextStyle(color: Colors.white70),
-              textAlign: TextAlign.right,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('إلغاء'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('حذف'),
-              ),
-            ],
-          ),
-        );
+        return await _showDeleteConfirmation();
       },
       onDismissed: (direction) {
         _unenrollCourse(course.id, index);
@@ -389,14 +396,17 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(20),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CourseDetailsScreen(course: course),
-                    ),
-                  );
-                },
+                onTap: course.isPublished
+                    ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                CourseDetailsScreen(course: course),
+                          ),
+                        );
+                      }
+                    : null,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -428,7 +438,6 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Course Title
                           Text(
                             course.title,
                             textAlign: TextAlign.right,
@@ -438,6 +447,64 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                               color: Colors.white,
                             ),
                           ),
+
+                          if (!course.isPublished)
+                            Container(
+                              margin: const EdgeInsets.only(top: 10),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.red.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color: Colors.red.withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  // Delete Button
+                                  TextButton.icon(
+                                    onPressed: () async {
+                                      final confirmed =
+                                          await _showDeleteConfirmation();
+                                      if (confirmed == true) {
+                                        _unenrollCourse(course.id, index);
+                                      }
+                                    },
+                                    icon: const Icon(Icons.delete_outline,
+                                        color: Colors.redAccent, size: 18),
+                                    label: const Text(
+                                      'حذف من قائمتي',
+                                      style: TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    style: TextButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                      backgroundColor:
+                                          Colors.red.withOpacity(0.1),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  const Text(
+                                    'هذه الدورة غير متاحة حالياً',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.info_outline,
+                                      color: Colors.white70, size: 16),
+                                ],
+                              ),
+                            ),
 
                           const SizedBox(height: 8),
 

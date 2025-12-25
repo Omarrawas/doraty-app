@@ -20,6 +20,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? _userProfile;
   Map<String, dynamic> _stats = {};
   List<Map<String, dynamic>> _enrolledCourses = [];
+  List<Map<String, dynamic>> _orders = [];
   int _selectedCoursesTab = 0; // 0: Current, 1: Completed
   String _userRole = 'student';
 
@@ -53,12 +54,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final stats = await _databaseService.getUserStats();
       final enrollments =
           await _databaseService.getEnrolledCoursesWithProgress();
+      final orders = await _databaseService.getUserOrders();
       final role = await _databaseService.getUserRole();
 
       setState(() {
         _userProfile = userData ?? {};
         _stats = stats;
         _enrolledCourses = enrollments;
+        _orders = orders;
         _userRole = role;
       });
     } catch (e) {
@@ -219,12 +222,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             teacher: courseData['instructor_name'] ?? '',
                             progress: progress / 100,
                             image: courseData['image_url'] ?? '',
+                            isPublished: courseData['is_published'] ?? true,
                           ),
                         );
                       }).toList(),
                     );
                   },
                 ),
+
+                const SizedBox(height: 30),
+
+                // Orders Section
+                _buildSectionTitle('طلباتي'),
+
+                const SizedBox(height: 16),
+
+                if (_orders.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Text(
+                      'لا توجد طلبات سابقة',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.6),
+                        fontSize: 14,
+                      ),
+                    ),
+                  )
+                else
+                  Column(
+                    children:
+                        _orders.map((order) => _buildOrderCard(order)).toList(),
+                  ),
 
                 const SizedBox(height: 30),
 
@@ -505,6 +533,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required String teacher,
     required double progress,
     required String image,
+    bool isPublished = true,
   }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -569,6 +598,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           minHeight: 6,
                         ),
                       ),
+                      if (!isPublished)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            'هذه الدورة غير متاحة حاليا',
+                            textAlign: TextAlign.right,
+                            style: TextStyle(
+                              color: Colors.redAccent.withOpacity(0.9),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -650,6 +692,98 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontSize: 14,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(Map<String, dynamic> order) {
+    final status = order['status'] ?? 'pending';
+    final amount = order['amount'] ?? 0;
+    final createdAt = DateTime.parse(order['created_at']);
+    final dateStr = '${createdAt.year}/${createdAt.month}/${createdAt.day}';
+
+    Color statusColor;
+    String statusText;
+
+    switch (status) {
+      case 'completed':
+        statusColor = Colors.green;
+        statusText = 'مكتمل';
+        break;
+      case 'failed':
+        statusColor = Colors.red;
+        statusText = 'فاشل';
+        break;
+      default:
+        statusColor = Colors.orange;
+        statusText = 'قيد المعالجة';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'طلب #${order['id'].toString().substring(0, 8)}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                dateStr,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                '$amount ل.س',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: statusColor.withOpacity(0.5)),
+                ),
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

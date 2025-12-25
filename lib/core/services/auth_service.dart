@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import '../env/multi_env.dart';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _client = SupabaseService.instance.client;
@@ -124,6 +126,55 @@ class AuthService extends ChangeNotifier {
       if (currentUser == null) return;
 
       await _client.from('users').update(data).eq('id', currentUser!.id);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Sign in with Google
+  Future<AuthResponse> signInWithGoogle() async {
+    try {
+      // On web, serverClientId is not supported and should not be set
+      final googleSignIn = kIsWeb
+          ? GoogleSignIn(
+              clientId: Env.googleWebClientId,
+            )
+          : GoogleSignIn(
+              clientId: Env.googleIosClientId, // Required for iOS
+              serverClientId: Env.googleWebClientId, // Required to get idToken for Supabase
+            );
+      
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        throw 'تم إلغاء تسجيل الدخول عبر جوجل';
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw 'فشل الحصول على رمز الهوية من جوجل';
+      }
+
+      final response = await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
+      );
+
+      // Create or update user profile after social login
+      if (response.user != null) {
+        await _client.from('users').upsert({
+          'id': response.user!.id,
+          'email': response.user!.email,
+          'full_name': response.user!.userMetadata?['full_name'] ?? googleUser.displayName,
+          'avatar_url': response.user!.userMetadata?['avatar_url'] ?? googleUser.photoUrl,
+          'updated_at': DateTime.now().toIso8601String(),
+        });
+      }
+
+      return response;
     } catch (e) {
       rethrow;
     }

@@ -73,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 const Text(
-                                  'منصة التعليم',
+                                  'منصة دوراتي',
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -191,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 _buildSocialButton(
                                   icon: Icons.g_mobiledata,
-                                  onTap: () {},
+                                  onTap: _handleGoogleLogin,
                                 ),
                                 const SizedBox(width: 20),
                                 _buildSocialButton(
@@ -404,6 +404,35 @@ class _LoginScreenState extends State<LoginScreen> {
           _isLoading = false;
         });
         _showErrorSnackBar(_getErrorMessage(e));
+      }
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final authService = AuthService();
+      await authService.signInWithGoogle();
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MainScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (e.toString() != 'تم إلغاء تسجيل الدخول عبر جوجل') {
+          _showErrorSnackBar(_getErrorMessage(e));
+        }
       }
     }
   }

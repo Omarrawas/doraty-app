@@ -55,6 +55,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  Future<void> _markAllAsRead() async {
+    try {
+      await _databaseService.markAllNotificationsAsRead();
+      setState(() {
+        for (var n in _notifications) {
+          n.isRead = true;
+        }
+      });
+    } catch (e) {
+      debugPrint('Error marking all notifications as read: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final unreadCount = _notifications.where((n) => !n.isRead).length;
@@ -143,17 +156,46 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                 ),
                 if (unreadCount > 0)
-                  Text(
-                    '$unreadCount غير مقروء',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.white.withOpacity(0.8),
+                    Text(
+                      '$unreadCount غير مقروء',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (unreadCount > 0)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: TextButton(
+                      onPressed: _markAllAsRead,
+                      child: const Text(
+                        'قراءة الكل',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 48),
+                ),
+              )
+            else
+              const SizedBox(width: 48),
         ],
       ),
     );

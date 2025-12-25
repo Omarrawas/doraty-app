@@ -257,6 +257,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                 ),
 
+                const SizedBox(height: 30),
+
+                // Alternative Login Header
+                Row(
+                  children: [
+                    Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Text(
+                        'أو عبر',
+                        style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // Google Login Button
+                Center(
+                  child: _buildSocialButton(
+                    icon: Icons.g_mobiledata,
+                    onTap: _handleGoogleLogin,
+                  ),
+                ),
+
                 const SizedBox(height: 40),
               ],
             ),
@@ -460,5 +487,70 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildSocialButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: onTap,
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final authService = AuthService();
+      await authService.signInWithGoogle();
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const MainScreen(),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        if (e.toString() != 'تم إلغاء تسجيل الدخول عبر جوجل') {
+          _showErrorSnackBar('خطأ في التسجيل عبر جوجل: ${e.toString()}');
+        }
+      }
+    }
   }
 }
