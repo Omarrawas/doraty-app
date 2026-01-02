@@ -7,6 +7,7 @@ import '../settings/settings_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../admin/admin_dashboard_screen.dart';
 import '../teacher/teacher_dashboard_screen.dart';
+import '../courses/my_downloads_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -150,10 +151,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: AppColors.getGlassColor(context, opacity: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.getGlassColor(context, opacity: 0.2),
                     ),
                   ),
                   child: Row(
@@ -322,6 +323,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 16),
                 ],
 
+                // My Downloads Button
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildActionButton(
+                        icon: Icons.offline_pin,
+                        label: 'التنزيلات',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MyDownloadsScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
                 // Action Buttons
                 Row(
                   children: [
@@ -366,10 +388,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getGlassColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getGlassColor(context, opacity: 0.3),
                     width: 1,
                   ),
                 ),
@@ -479,10 +501,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getGlassColor(context),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getGlassColor(context, opacity: 0.3),
               width: 1,
             ),
           ),
@@ -541,10 +563,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getGlassColor(context),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getGlassColor(context, opacity: 0.3),
               width: 1,
             ),
           ),
@@ -633,10 +655,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getGlassColor(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getGlassColor(context, opacity: 0.3),
               width: 1,
             ),
           ),
@@ -723,10 +745,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: AppColors.getGlassColor(context, opacity: 0.1),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: AppColors.getGlassColor(context, opacity: 0.2),
         ),
       ),
       child: Row(

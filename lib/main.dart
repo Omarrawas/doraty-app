@@ -9,7 +9,7 @@ import 'screens/profile/profile_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'widgets/gradient_background.dart';
 import 'package:provider/provider.dart';
-import 'core/theme/theme_provider.dart' hide AppTheme;
+import 'core/theme/theme_provider.dart';
 import 'core/services/supabase_service.dart';
 import 'core/env/multi_env.dart';
 import 'models/download.dart';
@@ -18,6 +18,9 @@ import 'core/services/settings_service.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'models/offline_course.dart';
+import 'models/offline_lesson.dart';
+import 'core/services/sync_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +34,8 @@ void main() async {
   // Register Hive adapters
   Hive.registerAdapter(DownloadedLessonAdapter());
   Hive.registerAdapter(DownloadStatusAdapter());
+  Hive.registerAdapter(OfflineCourseAdapter());
+  Hive.registerAdapter(OfflineLessonAdapter());
 
   // Initialize DownloadManager
   await DownloadManager().init();
@@ -40,6 +45,9 @@ void main() async {
 
   // Initialize SettingsService
   await SettingsService().init();
+
+  // Initialize SyncService (Background)
+  SyncService().init();
 
   // Initialize Supabase
   // Use environment variables from Env class
@@ -187,9 +195,7 @@ class _MainScreenState extends State<MainScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: isDarkMode
-              ? const Color(0xFF1A1A2E).withOpacity(0.95)
-              : Colors.white.withOpacity(0.9),
+          color: AppColors.getSurfaceColor(context).withOpacity(0.95),
           boxShadow: [
             BoxShadow(
               color: AppColors.primaryPurple.withOpacity(0.1),

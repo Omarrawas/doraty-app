@@ -9,6 +9,7 @@ class SettingsService {
   static const String _keyNotifications = 'notifications_enabled';
   static const String _keyAutoDownload = 'auto_download';
   static const String _keyVideoQuality = 'video_quality';
+  static const String _keyWifiOnly = 'wifi_only';
 
   late SharedPreferences _prefs;
 
@@ -50,5 +51,14 @@ class SettingsService {
 
   Future<void> setVideoQuality(String quality) async {
     await _prefs.setString(_keyVideoQuality, quality);
+  }
+
+  // WiFi Only
+  bool getWifiOnly() {
+    return _prefs.getBool(_keyWifiOnly) ?? true;
+  }
+
+  Future<void> setWifiOnly(bool enabled) async {
+    await _prefs.setBool(_keyWifiOnly, enabled);
   }
 }

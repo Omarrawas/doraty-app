@@ -419,10 +419,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: AppColors.getGlassColor(context),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
                       width: 1,
                     ),
                   ),
@@ -474,13 +474,13 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppColors.getGlassColor(context),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.school,
-              color: Colors.white,
-              size: 24,
+            child: Image.asset(
+              'assets/images/logo.png',
+              width: 24,
+              height: 24,
             ),
           ),
         ],
@@ -495,10 +495,10 @@ class _HomeScreenState extends State<HomeScreen> {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.getGlassColor(context),
+            borderRadius: BorderRadius.circular(15),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getGlassColor(context, opacity: 0.3),
               width: 1,
             ),
           ),
@@ -533,17 +533,10 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           width: 280,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.25),
-                Colors.white.withOpacity(0.15),
-              ],
-            ),
+            color: AppColors.getGlassColor(context, opacity: 0.25),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getGlassColor(context, opacity: 0.3),
               width: 1.5,
             ),
           ),

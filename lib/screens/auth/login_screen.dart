@@ -92,10 +92,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     borderRadius: BorderRadius.circular(15),
                                   ),
-                                  child: const Icon(
-                                    Icons.school_rounded,
-                                    size: 32,
-                                    color: Colors.white,
+                                  child: Image.asset(
+                                    'assets/images/logo.png',
+                                    width: 32,
+                                    height: 32,
                                   ),
                                 ),
                               ],

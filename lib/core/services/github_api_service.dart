@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 
@@ -20,13 +20,15 @@ class GitHubApiService {
   
   /// Upload a file to GitHub repository
   /// 
-  /// [file] - The file to upload
+  /// [bytes] - The file bytes to upload
+  /// [fileName] - Original filename
   /// [remotePath] - Path in the repository (e.g., 'pdfs/worksheets/file.pdf')
   /// [commitMessage] - Optional custom commit message
   /// 
   /// Returns the raw URL of the uploaded file
   Future<String> uploadFile({
-    required File file,
+    required Uint8List bytes,
+    required String fileName,
     required String remotePath,
     String? commitMessage,
   }) async {
@@ -35,13 +37,11 @@ class GitHubApiService {
     }
     
     try {
-      // Read file content and encode to base64
-      final bytes = await file.readAsBytes();
+      // Encode bytes to base64
       final base64Content = base64Encode(bytes);
       
       // Get filename for commit message
-      final filename = path.basename(file.path);
-      final message = commitMessage ?? 'Upload $filename via Doraty app';
+      final message = commitMessage ?? 'Upload $fileName via Doraty app';
       
       // API URL
       final url = Uri.parse('$apiBaseUrl/repos/$owner/$repo/contents/$remotePath');
@@ -116,13 +116,12 @@ class GitHubApiService {
   }
   
   /// Generate recommended path for a file based on its type
-  static String generatePath(File file, {String? customFolder}) {
-    final filename = path.basename(file.path);
-    final extension = path.extension(file.path).toLowerCase();
+  static String generatePath(String fileName, {String? customFolder}) {
+    final extension = path.extension(fileName).toLowerCase();
     
     // Timestamp for unique filenames
     final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final uniqueFilename = '${timestamp}_$filename';
+    final uniqueFilename = '${timestamp}_${path.basename(fileName)}';
     
     // Determine folder based on file type
     String folder;

@@ -61,6 +61,7 @@ class AppColors {
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
   static const Color accentPink = Color(0xFFEC4899);
+  static const Color secondaryGold = Color(0xFFFFD700);
 
   // Category Colors
   static const Color scienceBranch = Color(0xFF8B5CF6);
@@ -74,6 +75,37 @@ class AppColors {
   // Glassmorphism
   static Color glassBackground = Colors.white.withAlpha((0.1 * 255).round());
   static Color glassBorder = Colors.white.withAlpha((0.2 * 255).round());
+
+  // Dynamic Theme Helpers
+  static Color getCardColor(BuildContext context) {
+    return Theme.of(context).cardTheme.color ??
+        (Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1E1E2E).withOpacity(0.8)
+            : Colors.white.withOpacity(0.9));
+  }
+
+  static Color getSurfaceColor(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? const Color(0xFF1A1A2E) : Colors.white;
+  }
+
+  static Color getGlassColor(BuildContext context, {double opacity = 0.2}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return (isDark ? Colors.black : Colors.white).withOpacity(opacity);
+  }
+
+  static Color getTextColor(BuildContext context, {bool secondary = false}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (secondary) {
+      return isDark ? Colors.white70 : textSecondary;
+    }
+    return isDark ? Colors.white : textPrimary;
+  }
+
+  static LinearGradient getBackgroundGradient(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return isDark ? darkBackgroundGradient : backgroundGradient;
+  }
 
   // Shadows
   static List<BoxShadow> cardShadow = [

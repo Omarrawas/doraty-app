@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'supabase_service.dart';
@@ -781,6 +782,7 @@ class DatabaseService {
           .select()
           .eq('user_id', userId)
           .eq('course_id', courseId)
+          .limit(1)
           .maybeSingle();
 
       return response;
@@ -1002,7 +1004,7 @@ class DatabaseService {
       // Calculate average exam score
       final examAttemptsResponse = await _client
           .from('exam_attempts')
-          .select('score, total_score')
+          .select('score, total_points')
           .eq('user_id', userId);
 
       double averageScore = 0.0;
@@ -1010,7 +1012,7 @@ class DatabaseService {
         double totalPercentage = 0;
         for (var attempt in examAttemptsResponse) {
           final score = (attempt['score'] as num?)?.toDouble() ?? 0;
-          final totalScore = (attempt['total_score'] as num?)?.toDouble() ?? 1;
+          final totalScore = (attempt['total_points'] as num?)?.toDouble() ?? 1;
           if (totalScore > 0) {
             totalPercentage += (score / totalScore) * 100;
           }
@@ -2410,16 +2412,279 @@ class DatabaseService {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) return [];
 
+      try {
+        final response = await _client
+            .from('orders')
+            .select()
+            .eq('user_id', userId)
+            .order('created_at', ascending: false);
+        return List<Map<String, dynamic>>.from(response);
+      } catch (e) {
+        // If table doesn't exist, return empty
+        return [];
+      }
+    } catch (e) {
+      debugPrint('Error getting user orders: $e');
+      // Return empty list if table doesn't exist (PGRST205) or any other error
+      return [];
+    }
+  }
+
+  // ==================== PAYMENT RECEIPTS & ACCOUNTS ====================
+
+  /// Get active payment accounts
+  Future<List<Map<String, dynamic>>> getPaymentAccounts() async {
+    try {
       final response = await _client
-          .from('orders')
+          .from('payment_accounts')
           .select()
+          .eq('is_active', true)
+          .order('display_order');
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting payment accounts: $e');
+      return [];
+    }
+  }
+
+  /// Upload receipt image to Supabase Storage
+  Future<String?> uploadReceiptImage(String filePath, String fileName) async {
+    try {
+      final file = File(filePath);
+      final bytes = await file.readAsBytes();
+
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not logged in');
+
+      // Create unique file name with user ID and timestamp
+      final uniqueFileName =
+          '${userId}_${DateTime.now().millisecondsSinceEpoch}_$fileName';
+
+      // Upload to Supabase Storage
+      await _client.storage
+          .from('payment-receipts')
+          .uploadBinary(uniqueFileName, bytes);
+
+      // Get public URL
+      final publicUrl =
+          _client.storage.from('payment-receipts').getPublicUrl(uniqueFileName);
+
+      debugPrint('Receipt uploaded: $publicUrl');
+      return publicUrl;
+    } catch (e) {
+      debugPrint('Error uploading receipt: $e');
+      return null;
+    }
+  }
+
+  /// Create payment receipt
+  Future<String?> createPaymentReceipt({
+    required String orderId,
+    required String paymentMethod,
+    required double amount,
+    String? transactionId,
+    String? receiptImageUrl,
+    String? phoneNumber,
+  }) async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not logged in');
+
+      final response = await _client
+          .from('payment_receipts')
+          .insert({
+            'order_id': orderId,
+            'user_id': userId,
+            'payment_method': paymentMethod,
+            'amount': amount,
+            'transaction_id': transactionId,
+            'receipt_image_url': receiptImageUrl,
+            'phone_number': phoneNumber,
+            'status': 'pending',
+          })
+          .select()
+          .single();
+
+      debugPrint('Payment receipt created: ${response['id']}');
+      return response['id'] as String;
+    } catch (e) {
+      debugPrint('Error creating payment receipt: $e');
+      rethrow;
+    }
+  }
+
+  /// Get payment receipts for current user
+  Future<List<Map<String, dynamic>>> getUserPaymentReceipts() async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return [];
+
+      final response = await _client
+          .from('payment_receipts')
+          .select('*, orders(*)')
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
       return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      debugPrint('Error getting user orders: $e');
+      debugPrint('Error getting user payment receipts: $e');
       return [];
+    }
+  }
+
+  /// Get all payment receipts (Admin only)
+  Future<List<Map<String, dynamic>>> getAllPaymentReceipts({
+    String? status,
+  }) async {
+    try {
+      var query = _client
+          .from('payment_receipts')
+          .select('*, orders(*), users!user_id(full_name, email)');
+
+      if (status != null) {
+        query = query.eq('status', status);
+      }
+
+      final response = await query.order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting all payment receipts: $e');
+      return [];
+    }
+  }
+
+  /// Get payment receipt by ID
+  Future<Map<String, dynamic>?> getPaymentReceiptById(String receiptId) async {
+    try {
+      final response = await _client
+          .from('payment_receipts')
+          .select('*, orders(*), users!user_id(full_name, email, phone)')
+          .eq('id', receiptId)
+          .single();
+
+      return Map<String, dynamic>.from(response);
+    } catch (e) {
+      debugPrint('Error getting payment receipt: $e');
+      return null;
+    }
+  }
+
+  /// Approve payment receipt and activate subscription (Admin only)
+  Future<void> approvePaymentReceipt({
+    required String receiptId,
+    String? adminNotes,
+  }) async {
+    try {
+      // Get receipt details
+      final receipt = await getPaymentReceiptById(receiptId);
+      if (receipt == null) throw Exception('Receipt not found');
+
+      // Call database function to approve
+      await _client.rpc('approve_payment_receipt', params: {
+        'receipt_id_param': receiptId,
+        'admin_notes_param': adminNotes,
+      });
+
+      // Get order details to activate subscription
+      final order = receipt['orders'] as Map<String, dynamic>;
+      if (order['order_type'] == 'subscription') {
+        // Extract plan details from order
+        final planId = order['plan_id'] as String?;
+        final userId = order['user_id'] as String;
+
+        if (planId != null) {
+          // You'll need to get plan duration - for now assuming it's in order or you query it
+          // This is a simplified version - adjust based on your schema
+          await activateSubscription(
+            userId: userId,
+            planId: planId,
+            durationMonths: 1, // Get this from the plan or order
+          );
+        }
+      }
+
+      debugPrint('Payment receipt approved: $receiptId');
+    } catch (e) {
+      debugPrint('Error approving payment receipt: $e');
+      rethrow;
+    }
+  }
+
+  /// Reject payment receipt (Admin only)
+  Future<void> rejectPaymentReceipt({
+    required String receiptId,
+    String? adminNotes,
+  }) async {
+    try {
+      await _client.rpc('reject_payment_receipt', params: {
+        'receipt_id_param': receiptId,
+        'admin_notes_param': adminNotes,
+      });
+
+      debugPrint('Payment receipt rejected: $receiptId');
+    } catch (e) {
+      debugPrint('Error rejecting payment receipt: $e');
+      rethrow;
+    }
+  }
+
+  /// Update payment account (Admin only)
+  Future<void> updatePaymentAccount({
+    required String paymentMethod,
+    required String accountName,
+    required String accountNumber,
+    String? instructions,
+  }) async {
+    try {
+      await _client.from('payment_accounts').upsert({
+        'payment_method': paymentMethod,
+        'account_name': accountName,
+        'account_number': accountNumber,
+        'instructions': instructions,
+        'is_active': true,
+        'updated_at': DateTime.now().toIso8601String(),
+      }, onConflict: 'payment_method');
+
+      debugPrint('Payment account updated: $paymentMethod');
+    } catch (e) {
+      debugPrint('Error updating payment account: $e');
+      rethrow;
+    }
+  }
+
+  /// Get payment statistics (Admin only)
+  Future<Map<String, dynamic>> getPaymentStatistics() async {
+    try {
+      // Total receipts
+      final allReceipts =
+          await _client.from('payment_receipts').select('status, amount');
+
+      final pending = allReceipts.where((r) => r['status'] == 'pending').length;
+      final approved =
+          allReceipts.where((r) => r['status'] == 'approved').length;
+      final rejected =
+          allReceipts.where((r) => r['status'] == 'rejected').length;
+
+      final totalRevenue = allReceipts
+          .where((r) => r['status'] == 'approved')
+          .fold<double>(0, (sum, r) => sum + (r['amount'] as num).toDouble());
+
+      return {
+        'total_receipts': allReceipts.length,
+        'pending_receipts': pending,
+        'approved_receipts': approved,
+        'rejected_receipts': rejected,
+        'total_revenue': totalRevenue,
+      };
+    } catch (e) {
+      debugPrint('Error getting payment statistics: $e');
+      return {
+        'total_receipts': 0,
+        'pending_receipts': 0,
+        'approved_receipts': 0,
+        'rejected_receipts': 0,
+        'total_revenue': 0.0,
+      };
     }
   }
 
@@ -2431,7 +2696,7 @@ class DatabaseService {
       final response = await _client
           .from('lesson_questions')
           .select(
-              '*, users!user_id(full_name, avatar_url), question_replies(*, users!user_id(full_name, avatar_url))')
+              '*, users!user_id(full_name, avatar_url), question_replies(*)')
           .eq('lesson_id', lessonId)
           .order('created_at', ascending: false);
 
@@ -2452,7 +2717,6 @@ class DatabaseService {
         'lesson_id': lessonId,
         'user_id': userId,
         'content': content,
-        'is_resolved': false,
       });
     } catch (e) {
       debugPrint('Error adding question: $e');
@@ -2495,3 +2759,4 @@ class DatabaseService {
     }
   }
 }
+

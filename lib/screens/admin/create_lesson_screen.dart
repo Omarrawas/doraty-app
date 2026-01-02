@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:path/path.dart' as path;
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/database_service.dart';
@@ -60,8 +59,8 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     );
     _isFree = widget.lessonData?['is_free'] ?? false;
 
-    if (widget.lessonData?['attachments'] != null) {
-      for (var item in widget.lessonData!['attachments']) {
+    if (widget.lessonData?['resources'] != null) {
+      for (var item in widget.lessonData!['resources']) {
         _attachments.add(Map<String, String>.from(item));
       }
     }
@@ -369,13 +368,23 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
 
       for (var file in files) {
         try {
+          final fileBytes = file.bytes;
+          final fileName = file.name;
+          final fileSize = file.size;
+
+          if (fileBytes == null) {
+            debugPrint('Error: File bytes are null for $fileName');
+            failCount++;
+            continue;
+          }
+
           // Check file size (GitHub has 100MB limit)
-          if (file.lengthSync() > 100 * 1024 * 1024) {
+          if (fileSize > 100 * 1024 * 1024) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    'الملف ${path.basename(file.path)} أكبر من 100 ميجابايت',
+                    'الملف $fileName أكبر من 100 ميجابايت',
                   ),
                   backgroundColor: Colors.orange,
                 ),
@@ -386,15 +395,16 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
           }
 
           // Generate path and upload
-          final remotePath = GitHubApiService.generatePath(file);
+          final remotePath = GitHubApiService.generatePath(fileName);
           final rawUrl = await githubService.uploadFile(
-            file: file,
+            bytes: fileBytes,
+            fileName: fileName,
             remotePath: remotePath,
           );
 
           // Add to attachments
           final resourceMap = {
-            'name': path.basename(file.path),
+            'name': fileName,
             'url': rawUrl,
             'type': GitHubStorageService.getFileType(rawUrl).name,
           };
@@ -402,7 +412,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
           _attachments.add(resourceMap);
           successCount++;
         } catch (e) {
-          debugPrint('Error uploading file ${path.basename(file.path)}: $e');
+          debugPrint('Error uploading file ${file.name}: $e');
           failCount++;
         }
       }
@@ -429,8 +439,8 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         }
       }
     } catch (e) {
-      setState(() => _isUploadingToGitHub = false);
       if (mounted) {
+        setState(() => _isUploadingToGitHub = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('خطأ: $e'),
@@ -452,10 +462,10 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'video_url': _videoUrlController.text.trim(),
-        'duration': _parseDuration(_durationController.text),
+        'duration': _durationController.text.trim(),
         'content': _contentController.text.trim(),
         'is_free': _isFree,
-        if (_attachments.isNotEmpty) 'attachments': _attachments,
+        if (_attachments.isNotEmpty) 'resources': _attachments,
       };
 
       if (widget.lessonId != null) {
@@ -487,23 +497,5 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         );
       }
     }
-  }
-
-  int _parseDuration(String text) {
-    text = text.trim();
-    if (text.contains(':')) {
-      final parts = text.split(':');
-      if (parts.length == 2) {
-        final minutes = int.tryParse(parts[0]) ?? 0;
-        final seconds = int.tryParse(parts[1]) ?? 0;
-        return minutes * 60 + seconds;
-      } else if (parts.length == 3) {
-        final hours = int.tryParse(parts[0]) ?? 0;
-        final minutes = int.tryParse(parts[1]) ?? 0;
-        final seconds = int.tryParse(parts[2]) ?? 0;
-        return hours * 3600 + minutes * 60 + seconds;
-      }
-    }
-    return int.tryParse(text) ?? 0;
   }
 }

@@ -11,10 +11,13 @@ import '../../models/interactive_element.dart';
 import '../../core/services/database_service.dart';
 import '../../widgets/lesson/rich_content_viewer.dart';
 import '../../widgets/lesson/flashcard_widget.dart';
+import '../lesson/pdf_viewer_screen.dart';
+import '../lesson/interactive_quiz_screen.dart';
 import '../../models/download.dart'; // Add import
 import 'lesson_exam_screen.dart';
 
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LessonViewScreen extends StatefulWidget {
   final Lesson lesson;
@@ -819,6 +822,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
   }
 
   Widget _buildResources() {
+    if (widget.lesson.resources.isEmpty) return const SizedBox.shrink();
+    
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -853,31 +858,92 @@ class _LessonViewScreenState extends State<LessonViewScreen>
               ),
               const SizedBox(height: 16),
               ...widget.lesson.resources.map((resource) {
+                final fileName = resource['name'] ?? 'ملف غير معروف';
+                final url = resource['url'] ?? '';
+                final ext = fileName.split('.').last.toLowerCase();
+
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.attach_file,
-                        color: Colors.white70,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          resource['title'] ?? '',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.white,
+                  child: InkWell(
+                    onTap: () async {
+                      if (ext == 'pdf') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PdfViewerScreen(
+                              url: url,
+                              title: fileName,
+                            ),
                           ),
-                        ),
+                        );
+                      } else if (ext == 'html' || ext == 'htm') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => InteractiveQuizScreen(
+                              url: url,
+                              title: fileName,
+                            ),
+                          ),
+                        );
+                      } else {
+                        final uri = Uri.parse(url);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                        } else {
+                          debugPrint('Could not launch $url');
+                        }
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.2)),
                       ),
-                      const Icon(
-                        Icons.download,
-                        color: AppColors.primaryPurple,
-                        size: 20,
+                      child: Row(
+                        children: [
+                          Icon(
+                            ext == 'pdf'
+                                ? Icons.picture_as_pdf
+                                : (ext == 'html' || ext == 'htm'
+                                    ? Icons.play_circle_outline
+                                    : Icons.attach_file),
+                            color: Colors.white70,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              fileName,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            (ext == 'html' || ext == 'htm')
+                                ? 'تشغيل'
+                                : (ext == 'pdf' ? 'عرض' : 'تنزيل'),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryPurple,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.chevron_left,
+                            color: AppColors.primaryPurple,
+                            size: 16,
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 );
               }),

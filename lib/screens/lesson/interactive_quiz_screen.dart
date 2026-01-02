@@ -5,16 +5,18 @@ import '../../core/theme/app_colors.dart';
 import 'package:flutter/foundation.dart';
 
 class InteractiveQuizScreen extends StatefulWidget {
-  final String content;
+  final String? content;
+  final String? url;
   final String title;
   final bool isHtml;
 
   const InteractiveQuizScreen({
     super.key,
-    required this.content,
-    this.title = 'الاختبار التفاعلي',
+    this.content,
+    this.url,
+    this.title = 'عرض المحتوى',
     this.isHtml = true,
-  });
+  }) : assert(content != null || url != null, 'Either content or url must be provided');
 
   @override
   State<InteractiveQuizScreen> createState() => _InteractiveQuizScreenState();
@@ -44,8 +46,13 @@ class _InteractiveQuizScreenState extends State<InteractiveQuizScreen> {
               });
             },
           ),
-        )
-        ..loadHtmlString(_wrapHtmlContent(widget.content));
+        );
+      
+      if (widget.url != null) {
+        _controller.loadRequest(Uri.parse(widget.url!));
+      } else if (widget.content != null) {
+        _controller.loadHtmlString(_wrapHtmlContent(widget.content!));
+      }
     }
   }
 
@@ -92,7 +99,7 @@ class _InteractiveQuizScreenState extends State<InteractiveQuizScreen> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
+
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -11,6 +11,10 @@ import '../../core/services/settings_service.dart';
 import '../../models/category.dart';
 import '../auth/login_screen.dart';
 import '../categories/branch_selection_screen.dart';
+import '../../core/services/offline_storage_service.dart';
+import 'dart:ui' as ui;
+import 'terms_conditions_screen.dart';
+import 'privacy_policy_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -22,6 +26,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _autoDownload = false;
+  bool _wifiOnly = true;
   String _videoQuality = 'عالية';
 
   // User profile data
@@ -42,6 +47,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _notificationsEnabled = settings.getNotificationsEnabled();
       _autoDownload = settings.getAutoDownload();
+      _wifiOnly = settings.getWifiOnly();
       _videoQuality = settings.getVideoQuality();
       _selectedLanguage = settings.getLanguage();
     });
@@ -186,6 +192,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 12),
 
                     _buildSettingCard(
+                      icon: Icons.wifi,
+                      title: 'التحميل عبر واي فاي فقط',
+                      subtitle: 'توفير استهلاك البيانات عبر شبكة الجوال',
+                      trailing: Switch(
+                        value: _wifiOnly,
+                        onChanged: (value) async {
+                          setState(() {
+                            _wifiOnly = value;
+                          });
+                          await SettingsService().setWifiOnly(value);
+                        },
+                        activeColor: AppColors.primaryPurple,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _buildSettingCard(
                       icon: Icons.high_quality,
                       title: 'جودة الفيديو',
                       subtitle: _videoQuality,
@@ -194,6 +218,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: Colors.white,
                       ),
                       onTap: () => _showQualityDialog(),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    _buildSettingCard(
+                      icon: Icons.delete_outline,
+                      title: 'مسح التنزيلات',
+                      subtitle: 'حذف جميع الدروس المحملة لتوفير المساحة',
+                      trailing: const Icon(
+                        Icons.chevron_left,
+                        color: Colors.white,
+                      ),
+                      onTap: _clearAllDownloads,
                     ),
 
                     const SizedBox(height: 24),
@@ -214,7 +251,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Icons.chevron_left,
                         color: Colors.white,
                       ),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+                        );
+                      },
                     ),
 
                     _buildSettingCard(
@@ -224,7 +266,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Icons.chevron_left,
                         color: Colors.white,
                       ),
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const TermsConditionsScreen()),
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 24),
@@ -267,13 +314,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getGlassColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getGlassColor(context, opacity: 0.3),
                     width: 1,
                   ),
                 ),
@@ -305,20 +352,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.1),
-              ],
-            ),
+            color: AppColors.getGlassColor(context),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getGlassColor(context, opacity: 0.3),
               width: 1.5,
             ),
           ),
@@ -463,21 +503,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.25),
-                Colors.white.withOpacity(0.15),
-              ],
-            ),
+            color: AppColors.getGlassColor(context, opacity: 0.25),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getGlassColor(context, opacity: 0.3),
               width: 1.5,
             ),
           ),
@@ -568,12 +601,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           gradient: isSelected ? AppColors.primaryGradient : null,
-          color: isSelected ? null : Colors.white.withOpacity(0.1),
+          color: isSelected
+              ? null
+              : AppColors.getGlassColor(context, opacity: 0.1),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? Colors.white.withOpacity(0.5)
-                : Colors.white.withOpacity(0.2),
+                ? AppColors.getGlassColor(context, opacity: 0.5)
+                : AppColors.getGlassColor(context, opacity: 0.2),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -611,20 +646,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.2),
-                  Colors.white.withOpacity(0.1),
-                ],
-              ),
+              color: AppColors.getGlassColor(context),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: AppColors.getGlassColor(context, opacity: 0.3),
                 width: 1.5,
               ),
             ),
@@ -641,7 +669,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.3),
+                          color: AppColors.getGlassColor(context, opacity: 0.3),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
@@ -692,7 +720,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.red.withOpacity(0.3),
@@ -808,7 +836,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -953,7 +981,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -1075,7 +1103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -1170,7 +1198,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -1258,5 +1286,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _videoQuality = quality;
     });
     await SettingsService().setVideoQuality(quality);
+  }
+
+  Future<void> _clearAllDownloads() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: const Text('مسح التنزيلات'),
+        content: const Text('هل أنت متأكد من مسح جميع الدروس المحملة؟'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'مسح',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      // Show loading indicator or snackbar before deleting
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('جاري مسح التنزيلات...')),
+        );
+      }
+
+      await OfflineStorageService().clearAll();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم مسح جميع التنزيلات بنجاح')),
+        );
+        // Refresh settings or stats if needed
+      }
+    }
   }
 }

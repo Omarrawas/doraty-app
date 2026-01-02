@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
+import '../../core/services/database_service.dart';
 import '../../models/subscription.dart' as sub_models;
+import '../../models/payment_account.dart';
 import '../../services/payment_service.dart' as service;
 
 class PaymentScreen extends StatefulWidget {
@@ -19,9 +21,36 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   service.PaymentMethod? _selectedMethod;
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _transactionIdController =
-      TextEditingController();
+  final TextEditingController _transactionIdController = TextEditingController();
+  
   bool _isProcessing = false;
+  bool _isLoadingAccounts = true;
+  List<PaymentAccount> _paymentAccounts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPaymentAccounts();
+  }
+
+  Future<void> _loadPaymentAccounts() async {
+    try {
+      final dbService = DatabaseService();
+      final accounts = await dbService.getPaymentAccounts();
+      
+      setState(() {
+        _paymentAccounts = accounts
+            .map((json) => PaymentAccount.fromJson(json))
+            .toList();
+        _isLoadingAccounts = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading payment accounts: $e');
+      setState(() {
+        _isLoadingAccounts = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -41,12 +70,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
       return;
     }
 
-    if (_phoneController.text.trim().isEmpty && 
-        (_selectedMethod == service.PaymentMethod.syriatelCash || 
-         _selectedMethod == service.PaymentMethod.mtnCash)) {
+    if (_phoneController.text.trim().isEmpty &&
+        (_selectedMethod == service.PaymentMethod.syriatelCash ||
+            _selectedMethod == service.PaymentMethod.mtnCash)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('الرجاء إدخال رقم الهاتف'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // رقم العملية إلزامي
+    if (_transactionIdController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('الرجاء إدخال رقم العملية'),
           backgroundColor: Colors.red,
         ),
       );
@@ -59,26 +99,25 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
     try {
       final paymentService = service.PaymentService();
-      final success = await paymentService.processPayment(
+      final result = await paymentService.processPaymentWithReceipt(
         plan: widget.plan,
         method: _selectedMethod!,
         phoneNumber: _phoneController.text.trim(),
         transactionId: _transactionIdController.text.trim(),
+        receiptImagePath: null, // لا توجد صورة
       );
 
-      if (success && mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => _buildSuccessDialog(),
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('فشل في معالجة عملية الدفع. يرجى المحاولة مرة أخرى.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      if (mounted) {
+        if (result['success'] == true) {
+          _showPendingDialog(result['order_id'], result['receipt_id']);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(result['message'] ?? 'حدث خطأ'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -98,6 +137,36 @@ class _PaymentScreenState extends State<PaymentScreen> {
     }
   }
 
+  PaymentAccount? _getSelectedAccount() {
+    if (_selectedMethod == null) return null;
+    
+    final methodKey = _getMethodKey(_selectedMethod!);
+    return _paymentAccounts.firstWhere(
+      (account) => account.paymentMethod == methodKey,
+      orElse: () => PaymentAccount(
+        id: '',
+        paymentMethod: methodKey,
+        accountName: 'غير متوفر',
+        accountNumber: 'N/A',
+        isActive: false,
+        displayOrder: 0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  String _getMethodKey(service.PaymentMethod method) {
+    switch (method) {
+      case service.PaymentMethod.shamCash:
+        return 'sham_cash';
+      case service.PaymentMethod.syriatelCash:
+        return 'syriatel_cash';
+      case service.PaymentMethod.mtnCash:
+        return 'mtn_cash';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -110,71 +179,57 @@ class _PaymentScreenState extends State<PaymentScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header
               _buildHeader(),
-
-              // Content
               Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Plan Summary
-                      _buildPlanSummary(),
-
-                      const SizedBox(height: 24),
-
-                      // Payment Methods
-                      const Text(
-                        'اختر طريقة الدفع',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                child: _isLoadingAccounts
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      )
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildPlanSummary(),
+                            const SizedBox(height: 24),
+                            const Text(
+                              'اختر طريقة الدفع',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            _buildPaymentMethod(
+                              method: service.PaymentMethod.syriatelCash,
+                              title: 'سيريتل كاش',
+                              icon: Icons.phone_android,
+                              color: const Color(0xFF00A651),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildPaymentMethod(
+                              method: service.PaymentMethod.mtnCash,
+                              title: 'MTN كاش',
+                              icon: Icons.phone_android,
+                              color: const Color(0xFFFFCC00),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildPaymentMethod(
+                              method: service.PaymentMethod.shamCash,
+                              title: 'شام كاش',
+                              icon: Icons.account_balance_wallet,
+                              color: const Color(0xFF2196F3),
+                            ),
+                            if (_selectedMethod != null) ...[ 
+                              const SizedBox(height: 24),
+                              _buildPaymentDetails(),
+                            ],
+                            const SizedBox(height: 30),
+                            _buildPayButton(),
+                          ],
                         ),
                       ),
-
-                      const SizedBox(height: 16),
-
-                      _buildPaymentMethod(
-                        method: service.PaymentMethod.syriatelCash,
-                        title: 'سيرياتيل كاش',
-                        icon: Icons.phone_android,
-                        color: const Color(0xFF00A651),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      _buildPaymentMethod(
-                        method: service.PaymentMethod.mtnCash,
-                        title: 'MTN كاش',
-                        icon: Icons.phone_android,
-                        color: const Color(0xFFFFCC00),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      _buildPaymentMethod(
-                        method: service.PaymentMethod.shamCash,
-                        title: 'شام كاش',
-                        icon: Icons.account_balance_wallet,
-                        color: const Color(0xFF2196F3),
-                      ),
-
-                      // Payment Details
-                      if (_selectedMethod != null) ...[
-                        const SizedBox(height: 24),
-                        _buildPaymentDetails(),
-                      ],
-
-                      const SizedBox(height: 30),
-
-                      // Pay Button
-                      _buildPayButton(),
-                    ],
-                  ),
-                ),
               ),
             ],
           ),
@@ -330,9 +385,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            gradient: isSelected
-                ? AppColors.primaryGradient
-                : null,
+            gradient: isSelected ? AppColors.primaryGradient : null,
             color: isSelected ? null : Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
@@ -396,6 +449,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   }
 
   Widget _buildPaymentDetails() {
+    final account = _getSelectedAccount();
+    
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -429,6 +484,49 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              
+              // Account Information
+              if (account != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.blue.withOpacity(0.5),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'معلومات التحويل:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildInfoRow('اسم الحساب:', account.accountName),
+                      _buildInfoRow('رقم الحساب:', account.accountNumber),
+                      if (account.instructions != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          account.instructions!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.9),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Phone Number (للطرق التي تحتاجه)
               if (_selectedMethod == service.PaymentMethod.syriatelCash ||
                   _selectedMethod == service.PaymentMethod.mtnCash) ...[
                 TextField(
@@ -437,7 +535,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   textAlign: TextAlign.right,
                   style: const TextStyle(color: Colors.white),
                   decoration: InputDecoration(
-                    labelText: 'رقم الهاتف',
+                    labelText: 'رقم الهاتف الذي حولت منه',
                     labelStyle: const TextStyle(color: Colors.white),
                     hintText: '09XX XXX XXX',
                     hintStyle: TextStyle(
@@ -466,75 +564,72 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
-              if (_selectedMethod == service.PaymentMethod.shamCash) ...[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.2),
+
+              // Transaction ID - إلزامي
+              TextField(
+                controller: _transactionIdController,
+                keyboardType: TextInputType.text,
+                textAlign: TextAlign.right,
+                style: const TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  labelText: 'رقم العملية *',
+                  labelStyle: const TextStyle(color: Colors.white),
+                  hintText: 'أدخل رقم عملية التحويل',
+                  hintStyle: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.1),
+                  prefixIcon: const Icon(Icons.receipt, color: Colors.white),
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Colors.blue.withOpacity(0.5),
+                    borderSide: BorderSide(
+                      color: Colors.white.withOpacity(0.3),
                     ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'معلومات التحويل:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildInfoRow('اسم البنك:', 'بنك سوريا الدولي الإسلامي'),
-                      _buildInfoRow('رقم الحساب:', '123456789'),
-                      _buildInfoRow('اسم المستفيد:', 'منصة دراتي'),
-                      const SizedBox(height: 12),
-                      Text(
-                        'بعد إتمام التحويل، الرجاء إدخال رقم العملية:',
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Colors.white.withOpacity(0.3),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Colors.white,
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.orange.withOpacity(0.5),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.orange, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'بعد إتمام التحويل، أدخل رقم العملية الذي حصلت عليه من التطبيق',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.white.withOpacity(0.9),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _transactionIdController,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: InputDecoration(
-                    labelText: 'رقم العملية',
-                    labelStyle: const TextStyle(color: Colors.white),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withOpacity(0.3),
-                      ),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Colors.white.withOpacity(0.3),
-                      ),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: Colors.white,
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ],
           ),
         ),
@@ -598,10 +693,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             ),
                           ),
                         )
-                      : Text(
-                          'ادفع ${widget.plan.formattedPrice}',
+                      : const Text(
+                          'إرسال الطلب للمراجعة',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -616,96 +711,108 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Widget _buildSuccessDialog() {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.3),
-                  Colors.white.withOpacity(0.2),
-                ],
+  void _showPendingDialog(String orderId, String receiptId) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.3),
+                    Colors.white.withOpacity(0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
               ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.3),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 50,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'تم الدفع بنجاح!',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'تم تفعيل اشتراكك في ${widget.plan.name}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: Container(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.orange.withOpacity(0.3),
+                      shape: BoxShape.circle,
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
+                    child: const Icon(
+                      Icons.schedule,
+                      color: Colors.orange,
+                      size: 50,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'طلبك قيد المراجعة',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'تم إرسال طلبك بنجاح\nسيتم مراجعته والرد عليك قريباً',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'رقم الطلب: ${orderId.substring(0, 8)}...',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.white.withOpacity(0.8),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          Navigator.of(context).popUntil((route) => route.isFirst);
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                          child: Text(
-                            'العودة للرئيسية',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            Navigator.of(context).popUntil((route) => route.isFirst);
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            child: Text(
+                              'العودة للرئيسية',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

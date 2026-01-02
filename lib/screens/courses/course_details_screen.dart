@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart'
+    hide DownloadProgress;
+import 'dart:async';
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
 import '../../models/lesson.dart';
@@ -10,6 +12,10 @@ import '../../core/services/certificate_service.dart';
 import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../teacher/teacher_profile_screen.dart';
 import '../subscription/subscription_plans_screen.dart';
+import '../../core/services/course_download_service.dart';
+import '../../core/services/offline_storage_service.dart';
+import '../../models/download_progress.dart';
+
 
 class CourseDetailsScreen extends StatefulWidget {
   final Course course;
@@ -50,9 +56,17 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   bool _isCertificateLoading = false;
   bool _isCourseCompleted = false;
 
+  // Offline & Downloads
+  bool _isDownloaded = false;
+  DownloadProgress? _downloadProgress;
+  StreamSubscription<DownloadProgress>? _downloadSubscription;
+  final OfflineStorageService _offlineStorage = OfflineStorageService();
+  final CourseDownloadService _downloadService = CourseDownloadService();
+
   @override
   void initState() {
     super.initState();
+    _checkOfflineStatus(); // Check if course is downloaded
     _instructorPhoto = widget.course.instructorPhoto;
     _instructorName = widget.course.instructorName;
     _currentRating = widget.course.rating;
@@ -203,8 +217,85 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     }
   }
 
+  Future<void> _checkOfflineStatus() async {
+    final offlineCourse = await _offlineStorage.getCourse(widget.course.id);
+    if (mounted) {
+      setState(() {
+        _isDownloaded = offlineCourse != null;
+      });
+    }
+  }
+
+  void _downloadCourse() {
+    // Only allow download if enrolled
+    if (!_isEnrolled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('يجب الاشتراك في الدورة أولاً')),
+      );
+      return;
+    }
+
+    _downloadSubscription?.cancel();
+    _downloadSubscription = _downloadService
+        .downloadCourse(widget.course.id,
+            includeVideos: false) // Optional: confirm/ask user
+        .listen((progress) {
+      if (mounted) {
+        setState(() {
+          _downloadProgress = progress;
+          if (progress.status == DownloadStatus.completed) {
+            _isDownloaded = true;
+            _downloadProgress = null;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تم تحميل الدورة بنجاح')),
+            );
+          } else if (progress.status == DownloadStatus.failed) {
+            _downloadProgress = null;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('فشل التحميل: ${progress.error}')),
+            );
+          }
+        });
+      }
+    });
+  }
+
+  Future<void> _deleteOfflineCourse() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('حذف المحتوى المحلي'),
+        content: const Text(
+            'هل أنت متأكد من حذف هذه الدورة من الجهاز؟ ستحتاج إلى إنترنت لتصفحها مجدداً.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _offlineStorage.deleteCourse(widget.course.id);
+      if (mounted) {
+        setState(() {
+          _isDownloaded = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم حذف المحتوى المحلي')),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
+    _downloadSubscription?.cancel();
     _tabController.dispose();
     super.dispose();
   }
@@ -215,8 +306,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+        decoration: BoxDecoration(
+          gradient: AppColors.getBackgroundGradient(context),
         ),
         child: SafeArea(
           child: Column(
@@ -317,6 +408,14 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         ),
 
         // Back Button
+        // Download Button
+        Positioned(
+          top: 10,
+          left: 10,
+          child: _buildDownloadButton(),
+        ),
+
+        // Back Button
         Positioned(
           top: 10,
           right: 10,
@@ -326,10 +425,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getGlassColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getGlassColor(context, opacity: 0.3),
                     width: 1,
                   ),
                 ),
@@ -339,7 +438,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                     if (Navigator.canPop(context)) {
                       Navigator.pop(context);
                     } else {
-                      // Fallback to root/home if we can't pop (fixes white screen)
                       Navigator.of(context)
                           .pushNamedAndRemoveUntil('/', (route) => false);
                     }
@@ -353,7 +451,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         // Premium Badge
         if (widget.course.price > 0)
           Positioned(
-            top: 10,
+            top: 60, // Moved down
             left: 10,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
@@ -365,10 +463,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: AppColors.getGlassColor(context),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
                       width: 1,
                     ),
                   ),
@@ -396,6 +494,73 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildDownloadButton() {
+    if (_downloadProgress != null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.6),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                value: _downloadProgress!.percentage,
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${(_downloadProgress!.percentage * 100).toInt()}%',
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!_isEnrolled) return const SizedBox.shrink();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: _isDownloaded
+                ? Colors.green.withOpacity(0.2)
+                : AppColors.getGlassColor(context),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isDownloaded
+                  ? Colors.green.withOpacity(0.5)
+                  : AppColors.getGlassColor(context, opacity: 0.3),
+              width: 1,
+            ),
+          ),
+          child: IconButton(
+            icon: Icon(
+              _isDownloaded ? Icons.download_done : Icons.download,
+              color: _isDownloaded ? Colors.green : Colors.white,
+            ),
+            onPressed: () {
+              if (_isDownloaded) {
+                _deleteOfflineCourse();
+              } else {
+                _downloadCourse();
+              }
+            },
+          ),
+        ),
+      ),
     );
   }
 
@@ -431,17 +596,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(0.25),
-                    Colors.white.withOpacity(0.15),
-                  ],
-                ),
+                color: AppColors.getGlassColor(context),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: AppColors.getGlassColor(context, opacity: 0.3),
                   width: 1.5,
                 ),
               ),
@@ -714,10 +872,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getGlassColor(context),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getGlassColor(context, opacity: 0.3),
               width: 1,
             ),
           ),
@@ -897,17 +1055,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.2),
-                  Colors.white.withOpacity(0.1),
-                ],
-              ),
+              color: AppColors.getGlassColor(context, opacity: 0.2),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: AppColors.getGlassColor(context, opacity: 0.2),
                 width: 1,
               ),
             ),
@@ -1276,7 +1427,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
                   width: 1,
                 ),
               ),

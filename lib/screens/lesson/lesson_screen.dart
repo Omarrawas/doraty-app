@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter/foundation.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'pdf_viewer_screen.dart';
 import 'interactive_quiz_screen.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
@@ -15,9 +17,12 @@ import '../../models/lesson_question.dart';
 import '../exams/exam_taking_screen.dart';
 import '../../core/services/database_service.dart';
 import '../notes/add_note_screen.dart';
-import '../../core/data/demo_data.dart';
+
 import '../../widgets/dynamic_gradient_background.dart';
 import 'dart:ui';
+import 'dart:io'; 
+
+import '../../core/services/offline_storage_service.dart';
 
 class LessonScreen extends StatefulWidget {
   final Lesson lesson;
@@ -38,9 +43,6 @@ class LessonScreen extends StatefulWidget {
 class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   
-  // TTS
-  final FlutterTts _flutterTts = FlutterTts();
-  bool _isSpeaking = false;
   final TextEditingController _questionController = TextEditingController();
 
   // Video
@@ -52,89 +54,152 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   // WebView
   String? _currentHtmlContent;
 
-  // Exams
-  List<Map<String, dynamic>> _lessonExams = [];
-  bool _isLoadingExams = true;
-
   // Progress tracking
   int _videoWatchTime = 0;
   Timer? _watchTimeTimer;
+
+  // Refactor: Futures for DB calls
+  late Future<List<Map<String, dynamic>>> _notesFuture;
+  late Future<List<Map<String, dynamic>>> _questionsFuture;
+  late Future<List<Map<String, dynamic>>> _examsFuture;
+  final ScrollController _mainScrollController = ScrollController();
+
+  // Offline
+  bool _isOffline = false;
+  final OfflineStorageService _offlineStorage = OfflineStorageService();
+  late String _videoUrl;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    // _currentHtmlContent will be used for the interactive quiz
     _currentHtmlContent = widget.lesson.contentHtml;
+    _videoUrl = (widget.lesson.videoUrl as String?) ?? '';
     
-    _initTts();
+    _initLesson();
+  }
+
+  Future<void> _initLesson() async {
+    await _checkOfflineLesson();
     _initVideoPlayer();
-    _fetchLessonExams();
+    _refreshFutures();
     _startWatchTimeTracking();
   }
 
-  Future<void> _fetchLessonExams() async {
+  Future<void> _checkOfflineLesson() async {
     try {
-      final exams = await DatabaseService().getExamsForLesson(widget.lesson.id);
-      if (mounted) {
-        setState(() {
-          _lessonExams = exams;
-          _isLoadingExams = false;
-        });
+      final offlineLesson = await _offlineStorage.getLesson(widget.lesson.id);
+      if (offlineLesson != null && offlineLesson.isDownloaded) {
+        if (mounted) {
+          setState(() {
+            _isOffline = true;
+            if (offlineLesson.videoPath != null && File(offlineLesson.videoPath!).existsSync()) {
+              _videoUrl = offlineLesson.videoPath!;
+            }
+          });
+        }
       }
     } catch (e) {
-      debugPrint('Error fetching lesson exams: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingExams = false;
-        });
-      }
+      debugPrint('Error checking offline lesson: $e');
     }
   }
 
-  void _loadDemoQuiz() {
-    const quizContent = BiologyDemoData.biologyQuiz;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const InteractiveQuizScreen(
-          content: quizContent,
-          title: 'اختبار تجريبي: الأحياء',
-        ),
-      ),
-    );
+  void _refreshFutures() {
+    if (mounted) {
+      setState(() {
+        _notesFuture = DatabaseService().getNotes(widget.lesson.id);
+        _questionsFuture =
+            DatabaseService().getLessonQuestions(widget.lesson.id);
+        _examsFuture = DatabaseService().getExamsForLesson(widget.lesson.id);
+      });
+    }
   }
 
-  Future<void> _initTts() async {
-    await _flutterTts.setLanguage("ar-SA");
-    await _flutterTts.setPitch(1.0);
-    
-    _flutterTts.setStartHandler(() {
-      setState(() => _isSpeaking = true);
-    });
+  bool _hasInteractiveContent() {
+    // Check only if there is internal HTML content
+    return _currentHtmlContent != null &&
+        _currentHtmlContent!.trim().isNotEmpty;
+  }
 
-    _flutterTts.setCompletionHandler(() {
-      setState(() => _isSpeaking = false);
-    });
+  void _openInteractiveApp() {
+    // Schedule navigation to avoid gesture conflicts during device updates
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
 
-    _flutterTts.setCancelHandler(() {
-      setState(() => _isSpeaking = false);
+      if (_currentHtmlContent != null &&
+          _currentHtmlContent!.trim().isNotEmpty) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => InteractiveQuizScreen(
+              content: _currentHtmlContent,
+              title: 'الاختبار التفاعلي: ${widget.lesson.title}',
+              isHtml: true,
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'لا يوجد محتوى تفاعلي مخصص لهذا الدرس',
+              textAlign: TextAlign.right,
+              style: TextStyle(fontFamily: 'Cairo'),
+            ),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.orange.shade700,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
     });
   }
 
   void _initVideoPlayer() {
-    final url = widget.lesson.videoUrl;
+    final url = _videoUrl;
     if (url.isEmpty) return;
 
+    // Handle offline file
+    if (_isOffline && !url.startsWith('http')) {
+      _isYoutube = false;
+      _videoPlayerController = VideoPlayerController.file(File(url));
+      _videoPlayerController!.initialize().then((_) {
+        setState(() {
+          _chewieController = ChewieController(
+            videoPlayerController: _videoPlayerController!,
+            autoPlay: false,
+            looping: false,
+            aspectRatio: _videoPlayerController!.value.aspectRatio,
+            errorBuilder: (context, errorMessage) {
+              return Center(
+                  child: Text(errorMessage,
+                      style: const TextStyle(color: Colors.white)));
+            },
+          );
+        });
+      });
+      return;
+    }
+
+    // Handle Online/YouTube
     if (url.contains('youtu.be') || url.contains('youtube.com')) {
       _isYoutube = true;
+      if (kIsWeb) {
+        return; // Skip YouTube controller init on Web to avoid InAppWebView crash
+      }
+
       final videoId = YoutubePlayer.convertUrlToId(url);
       if (videoId != null) {
         _youtubePlayerController = YoutubePlayerController(
           initialVideoId: videoId,
           flags: const YoutubePlayerFlags(
-            autoPlay: false,
+            autoPlay: true,
             mute: false,
             forceHD: true,
+            enableCaption: false,
+            isLive: false,
+            disableDragSeek: false,
+            hideControls: true, 
+            hideThumbnail: true,
           ),
         );
       }
@@ -149,7 +214,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             looping: false,
             aspectRatio: _videoPlayerController!.value.aspectRatio,
             errorBuilder: (context, errorMessage) {
-              return Center(child: Text(errorMessage, style: const TextStyle(color: Colors.white)));
+              return Center(
+                  child: Text(errorMessage,
+                      style: const TextStyle(color: Colors.white)));
             },
           );
         });
@@ -163,32 +230,23 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   @override
   void dispose() {
     _watchTimeTimer?.cancel();
-    _saveProgressBeforeExit();
+    // _saveProgressBeforeExit(); // Removed async call from dispose
     _tabController.dispose();
-    _flutterTts.stop();
+    _mainScrollController.dispose();
+    _questionController.dispose();
+
+    // Proper video disposal
     _videoPlayerController?.dispose();
     _chewieController?.dispose();
     _youtubePlayerController?.dispose();
+    
     super.dispose();
   }
 
-  Future<void> _speakDescription() async {
-    if (_isSpeaking) {
-      await _flutterTts.stop();
-      return;
-    }
-
-    // Determine text to speak
-    String textToSpeak = widget.lesson.content ?? widget.lesson.description;
-
-    if (textToSpeak.trim().isNotEmpty) {
-      // Strip tags if any
-      textToSpeak = textToSpeak.replaceAll(RegExp(r'<[^>]*>'), '');
-      await _flutterTts.speak(textToSpeak);
-    }
-  }
 
   void _startWatchTimeTracking() {
+    if (((widget.lesson.videoUrl as String?) ?? '').isEmpty) return;
+
     _watchTimeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       bool isPlaying = false;
       
@@ -221,9 +279,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     if (_isYoutube) {
       return _youtubePlayerController?.value.position.inSeconds;
     } else {
-      return _videoPlayerController?.value.position.inSeconds;
+      return _videoPlayerController!.value.position.inSeconds;
     }
   }
+
 
   int? _getVideoDuration() {
     if (_isYoutube) {
@@ -236,157 +295,388 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   bool _isLessonCompleted() {
     final position = _getCurrentVideoPosition() ?? 0;
     final duration = _getVideoDuration() ?? 1;
+    if (duration <= 0) return false;
     // Mark as completed if watched > 80% of video
-    return duration > 0 && (position / duration) > 0.8;
+    return (position / (duration > 0 ? duration : 1)) > 0.8;
   }
 
+  void _seekRelative(int seconds) {
+    if (_isYoutube) {
+      final currentPos =
+          _youtubePlayerController?.value.position.inSeconds ?? 0;
+      final duration = _getVideoDuration() ?? 0;
+      _youtubePlayerController?.seekTo(
+          Duration(seconds: (currentPos + seconds).clamp(0, duration)));
+    } else {
+      final currentPos = _videoPlayerController?.value.position.inSeconds ?? 0;
+      final duration = _getVideoDuration() ?? 0;
+      _videoPlayerController?.seekTo(
+          Duration(seconds: (currentPos + seconds).clamp(0, duration)));
+    }
+  }
+
+  String _formatDuration(int? seconds) {
+    if (seconds == null || seconds <= 0) return "--:--";
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return "$minutes:${remainingSeconds.toString().padLeft(2, '0')}";
+  }
 
 
   @override
   Widget build(BuildContext context) {
+    if (_isYoutube && _youtubePlayerController != null && !kIsWeb) {
+      return YoutubePlayerBuilder(
+        player: YoutubePlayer(
+          controller: _youtubePlayerController!,
+          showVideoProgressIndicator: false,
+        ),
+        builder: (context, player) {
+          return _buildScaffold(
+            context,
+            videoPlayer: _buildVideoWithOverlay(
+              player: Positioned.fill(child: player),
+              additionalOverlays: [
+                // Custom Controls Overlay (Privacy Shield)
+                Positioned.fill(
+                  child: GestureDetector(
+                    onTap: () {
+                      if (_youtubePlayerController!.value.isPlaying) {
+                        _youtubePlayerController!.pause();
+                      } else {
+                        _youtubePlayerController!.play();
+                      }
+                      setState(() {});
+                    },
+                    child: Container(
+                      color: Colors.transparent,
+                      child: Center(
+                        child: AnimatedOpacity(
+                          opacity: _youtubePlayerController!.value.isPlaying
+                              ? 0.0
+                              : 1.0,
+                          duration: const Duration(milliseconds: 300),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: const BoxDecoration(
+                              color: Colors.black26,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _youtubePlayerController!.value.isPlaying
+                                  ? Icons.pause
+                                  : Icons.play_arrow,
+                              color: Colors.white,
+                              size: 50,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                // Progress Bar at bottom
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: ValueListenableBuilder<YoutubePlayerValue>(
+                    valueListenable: _youtubePlayerController!,
+                    builder: (context, value, child) {
+                      final duration = value.metaData.duration.inSeconds;
+                      return LinearProgressIndicator(
+                        value: duration > 0
+                            ? value.position.inSeconds / duration
+                            : 0,
+                        backgroundColor: Colors.white24,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                            AppColors.primaryPurple),
+                        minHeight: 4,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+
+    Widget playerWidget = _buildVideoPlayer();
+    return _buildScaffold(context,
+        videoPlayer: _buildVideoWithOverlay(
+            player: Positioned.fill(child: playerWidget)));
+  }
+
+  Widget _buildVideoWithOverlay(
+      {required Widget player, List<Widget> additionalOverlays = const []}) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        player,
+        ...additionalOverlays,
+        // Educational Header Overlay
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 50, vertical: 12), // Added padding to avoid icons
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.7),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.lesson.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                Text(
+                  '⏱ ${_formatDuration(_getVideoDuration())}',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context, {required Widget videoPlayer}) {
     return DynamicGradientBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Text(
-            widget.lesson.title,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.science_outlined, color: Colors.white),
-              tooltip: 'اختبار تفاعلي',
-              onPressed: _loadDemoQuiz,
-            ),
-          ],
-        ),
-        body: Column(
-          children: [
-            // Video Player Area
-             _buildVideoPlayer(),
-
-            // Content Tabs
-            Expanded(
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(30),
-                  topRight: Radius.circular(30),
-                ),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.85),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30),
-                      ),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
-                        width: 1,
-                      ),
+        body: NestedScrollView(
+          controller: _mainScrollController,
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverOverlapAbsorber(
+                handle:
+                    NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                sliver: SliverAppBar(
+                  expandedHeight: (MediaQuery.of(context).size.width * 9 / 16)
+                      .clamp(250.0, MediaQuery.of(context).size.height * 0.5),
+                  floating: false,
+                  pinned: true,
+                  stretch: true,
+                  backgroundColor: AppColors.primaryPurple,
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: videoPlayer,
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.science_outlined,
+                          color: Colors.white),
+                      tooltip: 'تطبيق تفاعلي',
+                      onPressed: _openInteractiveApp,
                     ),
-                    child: NestedScrollView(
-                      headerSliverBuilder: (context, innerBoxIsScrolled) {
-                        return [
-                          SliverToBoxAdapter(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                  ],
+                ),
+              ),
+
+              // 1.5 Education Header (The "Professional" Bar) - Visible when scrolled
+              SliverToBoxAdapter(
+                child: Container(
+                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                        color: AppColors.primaryPurple.withOpacity(0.1)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPurple.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.book_outlined,
+                            color: AppColors.primaryPurple, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'الدرس ${widget.lesson.orderIndex}: ${widget.lesson.title}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Row(
                               children: [
-                                 Padding(
-                                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-                                  child: Text(
-                                    widget.lesson.title,
-                                    textAlign: TextAlign.center,
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
+                                const Icon(Icons.access_time,
+                                    size: 12, color: AppColors.textSecondary),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _formatDuration(_getVideoDuration()),
+                                  style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textSecondary),
                                 ),
-                                const SizedBox(height: 20),
-                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.05),
-                                      borderRadius: BorderRadius.circular(16),
-                                    ),
-                                    child: TabBar(
-                                      controller: _tabController,
-                                      indicator: BoxDecoration(
-                                        gradient: AppColors.primaryGradient,
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppColors.primaryPurple.withOpacity(0.3),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      indicatorSize: TabBarIndicatorSize.tab,
-                                      labelColor: Colors.white,
-                                      unselectedLabelColor: AppColors.textSecondary,
-                                      labelStyle: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      dividerColor: Colors.transparent,
-                                      tabs: const [
-                                        Tab(text: 'الوصف'),
-                                        Tab(text: 'الملاحظات'),
-                                        Tab(text: 'الأسئلة'),
-                                      ],
-                                    ),
+                                const SizedBox(width: 12),
+                                Icon(
+                                  _isLessonCompleted()
+                                      ? Icons.check_circle
+                                      : Icons.radio_button_unchecked,
+                                  size: 12,
+                                  color: _isLessonCompleted()
+                                      ? Colors.green
+                                      : AppColors.textLight,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _isLessonCompleted()
+                                      ? 'تم الإكمال'
+                                      : 'قيد التقدم',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: _isLessonCompleted()
+                                        ? Colors.green
+                                        : AppColors.textLight,
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                        ];
-                      },
-                      body: TabBarView(
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 2. Educational Action Buttons
+              SliverToBoxAdapter(child: _buildEducationalActionButtons()),
+
+              // 3. التبويبات المثبتة
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: LessonSliverAppBarDelegate(
+                  child: Container(
+                    color: const Color(0xFFF5F5F5),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: TabBar(
                         controller: _tabController,
-                        children: [
-                          _buildTabContent(_buildDescriptionTab()),
-                          _buildTabContent(_buildNotesTab()),
-                          _buildTabContent(_buildQuestionsTab()),
+                        indicator: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.primaryPurple.withOpacity(0.3),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        indicatorSize: TabBarIndicatorSize.tab,
+                        labelColor: Colors.white,
+                        unselectedLabelColor: AppColors.textSecondary,
+                        labelStyle: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        dividerColor: Colors.transparent,
+                        tabs: const [
+                          Tab(text: 'الوصف'),
+                          Tab(text: 'الملاحظات'),
+                          Tab(text: 'الأسئلة'),
                         ],
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            
-            // Navigation Buttons
-             _buildNavigationButtons(),
-          ],
+            ];
+          },
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _buildTabContent(_buildDescriptionTab()),
+              _buildTabContent(_buildNotesTab()),
+              _buildTabContent(_buildQuestionsTab())
+            ],
+          ),
         ),
+        bottomNavigationBar: _buildNavigationButtons(),
       ),
     );
   }
 
   Widget _buildTabContent(Widget child) {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.all(20),
-      child: child,
+    return Builder(
+      builder: (context) {
+        return CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverOverlapInjector(
+              handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+            ),
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 10),
+            ),
+            SliverPadding(
+              padding: const EdgeInsets.all(20),
+              sliver: SliverToBoxAdapter(child: child),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildVideoPlayer() {
-    if (widget.lesson.videoUrl.isEmpty) {
+    if (((widget.lesson.videoUrl as String?) ?? '').isEmpty) {
       return Container(
         width: double.infinity,
         height: 250,
@@ -398,20 +688,76 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     }
 
     if (_isYoutube) {
-      if (_youtubePlayerController == null) {
-        return Container(height: 250, color: Colors.black, child: const Center(child: CircularProgressIndicator()));
+      if (kIsWeb) {
+        final videoId = YoutubePlayer.convertUrlToId(
+            (widget.lesson.videoUrl as String?) ?? '');
+        if (videoId != null) {
+          return Container(
+            width: double.infinity,
+            height: double.infinity,
+            color: Colors.black,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                // 1. Full-size Iframe
+                HtmlWidget(
+                  '''
+                  <div style="width: 100%; height: 100%; position: relative; background: #000; overflow: hidden;">
+                    <iframe 
+                      src="https://www.youtube.com/embed/$videoId?modestbranding=1&rel=0&controls=0&disablekb=1&showinfo=0&iv_load_policy=3&autoplay=1&mute=0" 
+                      style="position: absolute; top: -50px; left: 0; width: 100%; height: calc(100% + 100px); border: 0;" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                      allowfullscreen>
+                    </iframe>
+                    <!-- Advanced Privacy Masks -->
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 80px; background: transparent; z-index: 100; cursor: default;"></div>
+                    <div style="position: absolute; bottom: 0; right: 0; width: 150px; height: 80px; background: transparent; z-index: 100; cursor: default;"></div>
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; pointer-events: none;"></div>
+                  </div>
+                  ''',
+                ),
+                // 2. Custom Control Overlay (Optional - to block all clicks)
+                Positioned.fill(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      // Note: We can't easily control the iframe via standard web-view bridging without API
+                      // But the iframe params controls=0 will handle basic non-interaction.
+                    },
+                    child: Container(color: Colors.transparent),
+                  ),
+                ),
+                // 3. Title Shield (UI Label)
+                Positioned(
+                  top: 10,
+                  right: 16,
+                  child: Text(
+                    widget.lesson.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      shadows: [Shadow(blurRadius: 10, color: Colors.black)],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
       }
-      return YoutubePlayer(
-        controller: _youtubePlayerController!,
-        showVideoProgressIndicator: true,
-        progressIndicatorColor: AppColors.primaryPurple,
-        progressColors: const ProgressBarColors(
-          playedColor: AppColors.primaryPurple,
-          handleColor: AppColors.primaryPurple,
-        ),
-      );
+
+      // In YoutubePlayerBuilder, we shouldn't build it again here if used in builder
+      // But for the non-youtube path (_isYoutube = false), this is skipped anyway.
+      // If we reach here and _isYoutube is true, it means _youtubePlayerController is null
+      return Container(
+          height: 250,
+          color: Colors.black,
+          child: const Center(child: CircularProgressIndicator()));
     } else {
-      if (_chewieController != null && _videoPlayerController!.value.isInitialized) {
+      if (_chewieController != null &&
+          _videoPlayerController != null &&
+          _videoPlayerController!.value.isInitialized) {
         return AspectRatio(
           aspectRatio: _videoPlayerController!.value.aspectRatio,
           child: Chewie(controller: _chewieController!),
@@ -429,275 +775,315 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // AI Reader Control
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 107, 76, 250).withOpacity(0.5),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.primaryPurple.withOpacity(0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primaryPurple.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: _speakDescription,
-                icon: Icon(
-                  _isSpeaking ? Icons.stop_circle_outlined : Icons.play_circle_fill,
-                  color: AppColors.primaryPurple,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                   crossAxisAlignment: CrossAxisAlignment.start,
-                   children: [
-                     Text(
-                       _isSpeaking ? 'جاري القراءة...' : 'استمع للشرح',
-                       style: const TextStyle(
-                         fontWeight: FontWeight.bold,
-                         color: AppColors.primaryPurple,
-                         fontSize: 16,
-                       ),
-                     ),
-                     const Text(
-                       'استخدم القارئ الذكي للاستماع للدرس أثناء التنقل',
-                       style: TextStyle(
-                         color: AppColors.textSecondary,
-                         fontSize: 12,
-                       ),
-                     ),
-                   ],
-                ),
-              ),
-            ],
+        const SizedBox(height: 10),
+
+        // Section: The Core Idea
+        _buildContentSection(
+          title: 'الفكرة الأساسية',
+          icon: Icons.lightbulb_outline,
+          color: Colors.amber.shade700,
+          child: HtmlWidget(
+            widget.lesson.description,
+            textStyle: const TextStyle(
+                fontSize: 16, height: 1.8, color: AppColors.textPrimary),
           ),
         ),
-        
-        const SizedBox(height: 20),
 
-        // Content
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: const Color.fromARGB(255, 250, 250, 250),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[200]!),
+        const SizedBox(height: 16),
+
+        // Section: Interactive Content (If exists)
+        if (_hasInteractiveContent())
+          _buildContentSection(
+            title: 'المحتوى التفاعلي',
+            icon: Icons.play_lesson_outlined,
+            color: AppColors.primaryPurple,
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _openInteractiveApp,
+                icon: const Icon(Icons.stars),
+                label: const Text('بدء التجربة التفاعلية'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryPurple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if ((_currentHtmlContent != null && _currentHtmlContent!.trim().isNotEmpty) || (widget.lesson.contentMarkdown != null && widget.lesson.contentMarkdown!.trim().isNotEmpty))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        final contentToLoad = _currentHtmlContent ?? widget.lesson.contentMarkdown ?? '';
-                        Navigator.of(context).push(
+
+        // Section: Detailed Content (If exists and different from description)
+        if (widget.lesson.content != null &&
+            widget.lesson.content != widget.lesson.description)
+          _buildContentSection(
+            title: 'شرح مفصل',
+            icon: Icons.subject,
+            color: Colors.blue.shade700,
+            child: HtmlWidget(
+              widget.lesson.content!,
+              textStyle: const TextStyle(
+                  fontSize: 16, height: 1.8, color: AppColors.textPrimary),
+            ),
+          ),
+
+        const SizedBox(height: 16),
+        
+        // Dynamic Resources Section
+        if (widget.lesson.resources.isNotEmpty) ...[
+          const Text(
+            'المرفقات والموارد',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...widget.lesson.resources.map((resource) {
+            final fileName = resource['name'] ?? 'ملف غير معروف';
+            final url = resource['url'] ?? '';
+            
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[200]!),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _getResourceIcon(fileName),
+                    color: AppColors.primaryPurple,
+                    size: 28,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      fileName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () {
+                      final ext = fileName.split('.').last.toLowerCase();
+                      if (ext == 'pdf') {
+                        Navigator.push(
+                          context,
                           MaterialPageRoute(
-                            builder: (context) => InteractiveQuizScreen(
-                              content: contentToLoad,
-                              title: 'الاختبار التفاعلي: ${widget.lesson.title}',
-                              isHtml: _currentHtmlContent != null,
+                            builder: (context) => PdfViewerScreen(
+                              url: url,
+                              title: fileName,
                             ),
                           ),
                         );
-                      },
-                      icon: const Icon(Icons.play_lesson_outlined),
-                      label: const Text('فتح المحتوى التفاعلي'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryPurple,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                ),
-              HtmlWidget(
-                widget.lesson.content ?? widget.lesson.description,
-                textStyle: const TextStyle(fontSize: 16, height: 1.8, color: AppColors.textPrimary),
-              ),
-            ],
-          ),
-        ),
-
-        const SizedBox(height: 20),
-        
-        // Exam Logic Link
-        _buildExamSection(context),
-
-        const SizedBox(height: 20),
-
-        // PDF Download Button
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[200]!),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text(
-                  'تنزيل',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-                ),
-              ),
-              const Row(
-                children: [
-                  Text(
-                    'ملخص الدرس.pdf',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(Icons.picture_as_pdf, color: AppColors.error, size: 28),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExamSection(BuildContext context) {
-    if (_isLoadingExams) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_lessonExams.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'الاختبارات المرتبطة بالدرس',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 12),
-        ..._lessonExams.map((examData) {
-          final exam = Exam.fromJson(examData);
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFFFF5722).withOpacity(0.1),
-                  const Color(0xFFFF9800).withOpacity(0.1),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                  color: const Color(0xFFFF5722).withOpacity(0.3), width: 2),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
+                      } else {
+                        // Logic to open/download URL
+                        debugPrint('Downloading resource: $url');
+                        launchUrl(Uri.parse(url),
+                            mode: LaunchMode.externalApplication);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFF5722).withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.quiz,
-                          color: Color(0xFFFF5722), size: 28),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            exam.title,
-                            style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            exam.description,
-                            style: const TextStyle(
-                                fontSize: 14, color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) =>
-                                      ExamTakingScreen(exam: exam)));
-                        },
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'ابدأ الاختبار',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(width: 8),
-                              Icon(Icons.arrow_back,
-                                  color: Colors.white, size: 20),
-                            ],
-                          ),
+                      child: Text(
+                        fileName.toLowerCase().endsWith('.pdf')
+                            ? 'عرض'
+                            : 'تنزيل',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
-        }),
+                ],
+              ),
+            );
+          }),
+        ],
+        const SizedBox(height: 20),
+        _buildExamSection(context),
       ],
+    );
+  }
+
+  IconData _getResourceIcon(String fileName) {
+    final ext = fileName.split('.').last.toLowerCase();
+    switch (ext) {
+      case 'pdf':
+        return Icons.picture_as_pdf;
+      case 'doc':
+      case 'docx':
+        return Icons.description;
+      case 'ppt':
+      case 'pptx':
+        return Icons.slideshow;
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+        return Icons.image;
+      case 'zip':
+      case 'rar':
+        return Icons.archive;
+      default:
+        return Icons.attach_file;
+    }
+  }
+
+  Widget _buildExamSection(BuildContext context) {
+    return FutureBuilder<List<Map<String, dynamic>>>(
+      future: _examsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final examsData = snapshot.data ?? [];
+        if (examsData.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'الاختبارات المرتبطة بالدرس',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ...examsData.map((examData) {
+              final exam = Exam.fromJson(examData);
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFFFF5722).withOpacity(0.1),
+                      const Color(0xFFFF9800).withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: const Color(0xFFFF5722).withOpacity(0.3),
+                      width: 2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF5722).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.quiz,
+                              color: Color(0xFFFF5722), size: 28),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                exam.title,
+                                style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                exam.description,
+                                style: const TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(12),
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) =>
+                                          ExamTakingScreen(exam: exam)));
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 14),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'ابدأ الاختبار',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.arrow_back,
+                                      color: Colors.white, size: 20),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
+          ],
+        );
+      },
     );
   }
 
@@ -719,7 +1105,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 ),
               );
               if (result == true) {
-                setState(() {}); // Refresh notes
+                _refreshFutures();
               }
             },
             icon: const Icon(Icons.add),
@@ -735,7 +1121,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         const SizedBox(height: 20),
         
         FutureBuilder<List<Map<String, dynamic>>>(
-          future: DatabaseService().getNotes(widget.lesson.id),
+          future: _notesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -889,7 +1275,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         const SizedBox(height: 24),
 
         FutureBuilder<List<Map<String, dynamic>>>(
-          future: DatabaseService().getLessonQuestions(widget.lesson.id),
+          future: _questionsFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -1085,7 +1471,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               final messenger = ScaffoldMessenger.of(context);
               try {
                 await DatabaseService().addReply(question.id, content);
-                setState(() {}); // Refresh
+                _refreshFutures();
               } catch (e) {
                 if (mounted) {
                   messenger.showSnackBar(
@@ -1111,7 +1497,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
     try {
       await DatabaseService().askLessonQuestion(widget.lesson.id, content);
-      setState(() {}); // Refresh questions list
+      _refreshFutures(); 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('تم إرسال سؤالك بنجاح')),
@@ -1288,5 +1674,168 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         ),
       ),
     );
+  }
+
+  Widget _buildEducationalActionButtons() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildActionItem(
+            icon: Icons.replay_30,
+            label: 'إعادة 30ث',
+            onTap: () => _seekRelative(-30),
+          ),
+          _buildActionItem(
+            icon: Icons.quiz_outlined,
+            label: 'اختبار سريع',
+            onTap: () {
+              // Scroll to exams or open interactive if available
+              if (_hasInteractiveContent()) {
+                _openInteractiveApp();
+              } else {
+                _tabController
+                    .animateTo(0); // Switch to content where exams usually are
+              }
+            },
+          ),
+          _buildActionItem(
+            icon: Icons.file_download_outlined,
+            label: 'تحميل ملخص',
+            onTap: () {
+              // Highlight resources
+              _tabController.animateTo(0);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                    content: Text('تفقد المرفقات في الأسفل'),
+                    duration: Duration(seconds: 1)),
+              );
+            },
+          ),
+          _buildActionItem(
+            icon: Icons.question_answer_outlined,
+            label: 'اسأل المعلم',
+            onTap: () {
+              _tabController.animateTo(2); // Switch to Questions tab
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionItem(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: AppColors.primaryPurple, size: 24),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+                shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContentSection({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required Widget child,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey[100]!),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: color, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+          const Divider(height: 24),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class LessonSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  LessonSliverAppBarDelegate({required this.child});
+
+  final Widget child;
+
+  @override
+  double get minExtent => 80;
+
+  @override
+  double get maxExtent => 80;
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return SizedBox(
+      height: 80,
+      child: child,
+    );
+  }
+
+  @override
+  bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) {
+    return true;
   }
 }

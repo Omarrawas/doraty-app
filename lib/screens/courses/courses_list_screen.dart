@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/offline_storage_service.dart';
 import 'course_details_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
@@ -22,7 +23,9 @@ class CoursesListScreen extends StatefulWidget {
 
 class _CoursesListScreenState extends State<CoursesListScreen> {
   final DatabaseService _databaseService = DatabaseService();
+  final OfflineStorageService _offlineStorage = OfflineStorageService();
   List<Map<String, dynamic>> _enrolledCourses = [];
+  Set<String> _offlineCourseIds = {};
   bool _isLoading = true;
   int _selectedTab = 0; // 0: Current, 1: Completed
 
@@ -30,6 +33,16 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
   void initState() {
     super.initState();
     _loadEnrolledCourses();
+    _loadOfflineStatus();
+  }
+
+  Future<void> _loadOfflineStatus() async {
+    final courses = await _offlineStorage.getAllCourses();
+    if (mounted) {
+      setState(() {
+        _offlineCourseIds = courses.map((c) => c.id).toSet();
+      });
+    }
   }
 
   @override
@@ -37,7 +50,9 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     super.didUpdateWidget(oldWidget);
     // Reload courses when widget updates
     _loadEnrolledCourses();
+    _loadOfflineStatus();
   }
+
 
   Future<void> _loadEnrolledCourses() async {
     try {
@@ -89,21 +104,29 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     return await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
-        title: const Text(
+        backgroundColor: AppColors.getSurfaceColor(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
           'تأكيد الحذف',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(
+            color: AppColors.getTextColor(context),
+            fontWeight: FontWeight.bold,
+          ),
           textAlign: TextAlign.right,
         ),
-        content: const Text(
+        content: Text(
           'هل تريد إزالة هذه الدورة من قائمتك؟',
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(
+              color: AppColors.getTextColor(context, secondary: true)),
           textAlign: TextAlign.right,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child: const Text(
+              'إلغاء',
+              style: TextStyle(color: AppColors.primaryPurple),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -134,10 +157,10 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: AppColors.getGlassColor(context, opacity: 0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.getGlassColor(context, opacity: 0.2),
                     ),
                   ),
                   child: Row(
@@ -282,10 +305,10 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: AppColors.getGlassColor(context),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
                       width: 1,
                     ),
                   ),
@@ -378,17 +401,10 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.25),
-                  Colors.white.withOpacity(0.15),
-                ],
-              ),
+              color: AppColors.getGlassColor(context, opacity: 0.25),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: AppColors.getGlassColor(context, opacity: 0.3),
                 width: 1.5,
               ),
             ),
@@ -447,6 +463,30 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                               color: Colors.white,
                             ),
                           ),
+
+                          // Offline Badge
+                          if (_offlineCourseIds.contains(course.id))
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4, bottom: 4),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.offline_pin, 
+                                    color: Colors.greenAccent.shade400, 
+                                    size: 16
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'محمّل على الجهاز',
+                                    style: TextStyle(
+                                      color: Colors.greenAccent.shade400,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
 
                           if (!course.isPublished)
                             Container(
