@@ -212,3 +212,54 @@ ON CONFLICT (payment_method) DO NOTHING;
 -- يتم إنشاؤه عبر Supabase Dashboard أو API:
 -- Bucket name: payment-receipts
 -- Public: false (خاص فقط بالمستخدم والمشرف)
+-- 1. إنشاء الجدول
+CREATE TABLE IF NOT EXISTS public.enrollments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    course_id UUID NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
+    
+    -- حالة الاشتراك: (نشط، منتهي، ملغي)
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'cancelled')),
+    
+    -- التواريخ
+    enrolled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ, -- يمكن تركه فارغاً للاشتراكات الدائمة
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    -- منع التكرار: لا يمكن للطالب الاشتراك في نفس الدورة أكثر من مرة في نفس الوقت
+    UNIQUE(user_id, course_id)
+);
+
+-- 2. إضافة سياسات الحماية (RLS - Row Level Security)
+ALTER TABLE public.enrollments ENABLE ROW LEVEL SECURITY;
+
+-- سياسة: الطلاب يمكنهم رؤية اشتراكاتهم الخاصة فقط
+CREATE POLICY "Users can view their own enrollments"
+ON public.enrollments FOR SELECT
+USING (auth.uid() = user_id);
+
+-- سياسة: الأدمن يمكنه رؤية جميع الاشتراكات والتحكم بها
+CREATE POLICY "Admins have full access to enrollments"
+ON public.enrollments FOR ALL
+USING (
+    EXISTS (
+        SELECT 1 FROM user_roles 
+        JOIN roles ON user_roles.role_id = roles.id 
+        WHERE user_roles.user_id = auth.uid() 
+        AND roles.name = 'super_admin'
+    )
+);
+
+-- 3. تفعيل التحديث التلقائي لحقل updated_at (اختياري)
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+CREATE TRIGGER update_enrollments_updated_at
+    BEFORE UPDATE ON public.enrollments
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_updated_at_column();

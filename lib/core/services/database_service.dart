@@ -685,6 +685,26 @@ class DatabaseService {
   }
 
   // ==================== NOTIFICATIONS ====================
+  
+  /// Update FCM Token for user
+  Future<void> updateFcmToken(String token) async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return;
+
+      // Update token in profiles table (assuming profiles is linked to auth.users)
+      // If using a public 'users' table, verify the table name.
+      // Based on previous code, 'users' seems to be the public table name.
+      await _client
+          .from('users') // or 'profiles'
+          .update({'fcm_token': token}).eq('id', userId);
+
+      debugPrint("✅ FCM Token updated in database for user: $userId");
+    } catch (e) {
+      debugPrint("❌ Error updating FCM Token: $e");
+      // Don't rethrow to avoid blocking app flow
+    }
+  }
 
   /// Get user notifications
   Future<List<Map<String, dynamic>>> getNotifications() async {
@@ -1665,13 +1685,26 @@ class DatabaseService {
       final userId = SupabaseService.instance.currentUserId;
       if (userId == null) return 'student';
 
-      final result = await _client.rpc('get_user_role', params: {
-        'user_id_param': userId,
-      });
+      // Join user_roles with roles table to get role name
+      final response = await _client
+          .from('user_roles')
+          .select('role_id, roles(name)')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-      return result as String? ?? 'student';
+      if (response == null) {
+        debugPrint('⚠️ No role found for user, defaulting to student');
+        return 'student';
+      }
+
+      // Extract role name from joined data
+      final rolesData = response['roles'] as Map<String, dynamic>?;
+      final role = rolesData?['name'] as String?;
+
+      debugPrint('✅ User role loaded: $role (role_id: ${response['role_id']})');
+      return role ?? 'student';
     } catch (e) {
-      debugPrint('Error getting user role: $e');
+      debugPrint('❌ Error getting user role: $e');
       return 'student';
     }
   }
@@ -2139,6 +2172,295 @@ class DatabaseService {
         'total_exams': 0,
         'total_attempts': 0,
       };
+    }
+  }
+
+  // ==================== ADMIN: SUBSCRIPTIONS MANAGEMENT ====================
+
+  /// Get all enrollments (Admin only)
+  Future<List<Map<String, dynamic>>> getAllEnrollments({
+    String? status,
+    String? searchQuery,
+  }) async {
+    try {
+      // Use the administrative view for reliable flattened data
+      var query = _client.from('admin_enrollments_view').select();
+
+      if (status != null && status != 'all') {
+        query = query.eq('status', status);
+      }
+
+      final response = await query.order('enrolled_at', ascending: false);
+      final rawData = List<Map<String, dynamic>>.from(response);
+
+      // Reconstruct UI compatible structure
+      final enrollments = rawData.map((row) {
+        return {
+          'id': row['id'],
+          'user_id': row['user_id'],
+          'course_id': row['course_id'],
+          'status': row['status'],
+          'enrolled_at': row['enrolled_at'],
+          'expires_at': row['expires_at'],
+          'updated_at': row['updated_at'],
+          'progress': row['progress'],
+          'users': {
+            'id': row['user_id'],
+            'full_name': row['user_full_name'],
+            'email': row['user_email'],
+            'avatar_url': row['user_avatar_url'],
+          },
+          'courses': {
+            'id': row['course_id'],
+            'title': row['course_title'],
+            'thumbnail':
+                row['course_image_url'], // Map image_url to thumbnail for UI
+            'price': row['course_price'],
+            'instructor_name': row['instructor_name'],
+          }
+        };
+      }).toList();
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        final search = searchQuery.toLowerCase();
+        return enrollments.where((e) {
+          final userName =
+              e['users']['full_name']?.toString().toLowerCase() ?? '';
+          final courseTitle =
+              e['courses']['title']?.toString().toLowerCase() ?? '';
+          return userName.contains(search) || courseTitle.contains(search);
+        }).toList();
+      }
+
+      return enrollments;
+    } catch (e) {
+      debugPrint('Error getting all enrollments via view: $e');
+      // If view fails, try the fallback join logic
+      return _getAllEnrollmentsFallback(status, searchQuery);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _getAllEnrollmentsFallback(
+      String? status, String? searchQuery) async {
+    try {
+      var query = _client.from('enrollments').select('*');
+      if (status != null && status != 'all') {
+        query = query.eq('status', status);
+      }
+      final response = await query.order('enrolled_at', ascending: false);
+      final enrollments = List<Map<String, dynamic>>.from(response);
+
+      for (var enrollment in enrollments) {
+        try {
+          final course = await _client
+              .from('courses')
+              .select('id, title, image_url, price')
+              .eq('id', enrollment['course_id'])
+              .maybeSingle();
+          if (course != null) {
+            course['thumbnail'] = course['image_url']; // Normalization
+          }
+          enrollment['courses'] = course;
+
+          final user = await _client
+              .from('users')
+              .select('id, full_name, email, avatar_url')
+              .eq('id', enrollment['user_id'])
+              .maybeSingle();
+          enrollment['users'] = user;
+        } catch (_) {}
+      }
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        final search = searchQuery.toLowerCase();
+        return enrollments.where((e) {
+          final userName =
+              e['users']?['full_name']?.toString().toLowerCase() ?? '';
+          final courseTitle =
+              e['courses']?['title']?.toString().toLowerCase() ?? '';
+          return userName.contains(search) || courseTitle.contains(search);
+        }).toList();
+      }
+      return enrollments;
+    } catch (e) {
+      debugPrint('Fallback failed: $e');
+      return [];
+    }
+  }
+
+  /// Get subscription statistics (Admin only)
+  Future<Map<String, dynamic>> getSubscriptionStats() async {
+    try {
+      // Use the view for stats as well to ensure we get prices
+      final response = await _client
+          .from('admin_enrollments_view')
+          .select('status, enrolled_at, expires_at, course_price');
+      final enrollments = List<Map<String, dynamic>>.from(response);
+
+      int totalEnrollments = enrollments.length;
+      int activeCount = 0;
+      int expiredCount = 0;
+      double totalRevenue = 0.0;
+
+      for (var row in enrollments) {
+        final status = row['status'] as String?;
+        if (status == 'active') {
+          activeCount++;
+        } else if (status == 'expired') {
+          expiredCount++;
+        }
+
+        final price = row['course_price'] as num?;
+        if (price != null) totalRevenue += price.toDouble();
+      }
+
+      // Format for monthly revenue helper
+      final mappedEnrollments = enrollments
+          .map((e) => {
+                'enrolled_at': e['enrolled_at'],
+                'courses': {'price': e['course_price']}
+              })
+          .toList();
+
+      return {
+        'total_enrollments': totalEnrollments,
+        'active_subscriptions': activeCount,
+        'expired_subscriptions': expiredCount,
+        'total_revenue': totalRevenue,
+        'monthly_revenue': _calculateMonthlyRevenue(mappedEnrollments),
+      };
+    } catch (e) {
+      debugPrint('Error getting subscription stats: $e');
+      return {
+        'total_enrollments': 0,
+        'active_subscriptions': 0,
+        'expired_subscriptions': 0,
+        'total_revenue': 0.0,
+        'monthly_revenue': 0.0,
+      };
+    }
+  }
+
+  double _calculateMonthlyRevenue(List<Map<String, dynamic>> enrollments) {
+    final now = DateTime.now();
+    final firstDayOfMonth = DateTime(now.year, now.month, 1);
+    double monthlyRevenue = 0.0;
+
+    for (var enrollment in enrollments) {
+      final enrolledAtStr = enrollment['enrolled_at'] as String?;
+      if (enrolledAtStr != null) {
+        final enrolledAt = DateTime.parse(enrolledAtStr);
+        if (enrolledAt.isAfter(firstDayOfMonth)) {
+          final courseData = enrollment['courses'] as Map<String, dynamic>?;
+          final price = courseData?['price'] as num?;
+          if (price != null) {
+            monthlyRevenue += price.toDouble();
+          }
+        }
+      }
+    }
+    return monthlyRevenue;
+  }
+
+  /// Get enrollments grouped by course
+  Future<List<Map<String, dynamic>>> getEnrollmentsGroupedByCourse() async {
+    try {
+      final enrollments = await getAllEnrollments();
+      final Map<String, Map<String, dynamic>> grouped = {};
+
+      for (var enrollment in enrollments) {
+        final course = enrollment['courses'] as Map<String, dynamic>?;
+        if (course == null) continue;
+
+        final courseId = course['id']?.toString() ?? 'unknown';
+        if (!grouped.containsKey(courseId)) {
+          grouped[courseId] = {
+            'course': course,
+            'enrollment_count': 0,
+            'total_revenue': 0.0,
+            'active_count': 0,
+          };
+        }
+
+        grouped[courseId]!['enrollment_count']++;
+        final price = course['price'] as num? ?? 0;
+        grouped[courseId]!['total_revenue'] += price.toDouble();
+        if (enrollment['status'] == 'active') {
+          grouped[courseId]!['active_count']++;
+        }
+      }
+
+      return grouped.values.toList()
+        ..sort((a, b) => (b['total_revenue'] as double)
+            .compareTo(a['total_revenue'] as double));
+    } catch (e) {
+      debugPrint('Error grouping enrollments by course: $e');
+      return [];
+    }
+  }
+
+  /// Get enrollments grouped by teacher
+  Future<List<Map<String, dynamic>>> getEnrollmentsGroupedByTeacher() async {
+    try {
+      // Use the view to get instructor data reliably
+      final response = await _client.from('admin_enrollments_view').select();
+      final rawData = List<Map<String, dynamic>>.from(response);
+
+      final Map<String, Map<String, dynamic>> grouped = {};
+
+      for (var row in rawData) {
+        final teacherId = row['instructor_id']?.toString() ?? 'unknown';
+
+        if (!grouped.containsKey(teacherId)) {
+          grouped[teacherId] = {
+            'teacher': {
+              'id': row['instructor_id'],
+              'full_name': row['instructor_name'] ?? 'مدرس غير معروف',
+            },
+            'student_count': 0,
+            'total_revenue': 0.0,
+            '_course_ids': <String>{},
+          };
+        }
+
+        if (row['course_id'] != null) {
+          (grouped[teacherId]!['_course_ids'] as Set<String>)
+              .add(row['course_id'].toString());
+        }
+
+        grouped[teacherId]!['student_count']++;
+        final price = row['course_price'] as num? ?? 0;
+        grouped[teacherId]!['total_revenue'] += price.toDouble();
+      }
+
+      final result = grouped.values.map((item) {
+        item['course_count'] = (item['_course_ids'] as Set<String>).length;
+        item.remove('_course_ids');
+        return item;
+      }).toList();
+
+      return result
+        ..sort((a, b) => (b['total_revenue'] as double)
+            .compareTo(a['total_revenue'] as double));
+    } catch (e) {
+      debugPrint('Error grouping enrollments by teacher: $e');
+      return [];
+    }
+  }
+
+  /// Update enrollment status (Admin only)
+  Future<void> updateEnrollmentStatus(
+      String enrollmentId, String status) async {
+    try {
+      await _client.from('enrollments').update({
+        'status': status,
+        'updated_at': DateTime.now().toIso8601String()
+      }).eq('id', enrollmentId);
+
+      debugPrint('✅ Enrollment status updated: $enrollmentId -> $status');
+    } catch (e) {
+      debugPrint('Error updating enrollment status: $e');
+      rethrow;
     }
   }
 

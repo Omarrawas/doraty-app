@@ -23,7 +23,7 @@ class OfflineLessonAdapter extends TypeAdapter<OfflineLesson> {
       videoPath: fields[3] as String?,
       content: fields[4] as String?,
       isDownloaded: fields[5] as bool,
-      duration: fields[6] as int,
+      duration: fields[6] as String,
       orderIndex: fields[7] as int,
     );
   }

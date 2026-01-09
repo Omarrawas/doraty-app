@@ -58,6 +58,8 @@ dependencies:
   
   # Notifications
   flutter_local_notifications: ^16.3.0
+  firebase_core: ^3.1.1
+  firebase_messaging: ^15.0.3
   
   # HTML & Markdown
   flutter_markdown: ^0.6.18

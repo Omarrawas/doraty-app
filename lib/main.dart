@@ -15,6 +15,7 @@ import 'core/env/multi_env.dart';
 import 'models/download.dart';
 import 'core/services/offline_cache_service.dart';
 import 'core/services/settings_service.dart';
+import 'core/services/notification_service.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -45,9 +46,6 @@ void main() async {
 
   // Initialize SettingsService
   await SettingsService().init();
-
-  // Initialize SyncService (Background)
-  SyncService().init();
 
   // Initialize Supabase
   // Use environment variables from Env class
@@ -103,6 +101,12 @@ void main() async {
     );
     return; // Exit early
   }
+
+  // Initialize SyncService (Background) - AFTER Supabase
+  SyncService().init();
+
+  // Initialize Notification Service - AFTER Supabase
+  await NotificationService().init();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(

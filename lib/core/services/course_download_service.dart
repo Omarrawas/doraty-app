@@ -141,7 +141,7 @@ class CourseDownloadService {
           videoPath: localVideoPath,
           content: lessonJson['content'] ?? lessonJson['description'], // Assuming content is available
           isDownloaded: true,
-          duration: lessonJson['duration'] ?? 0,
+          duration: lessonJson['duration']?.toString() ?? '0:00',
           orderIndex: lessonJson['order_index'] ?? 0,
         );
 

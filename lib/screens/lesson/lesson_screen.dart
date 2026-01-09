@@ -23,6 +23,7 @@ import 'dart:ui';
 import 'dart:io'; 
 
 import '../../core/services/offline_storage_service.dart';
+import '../../widgets/lesson/video_player_controls.dart';
 
 class LessonScreen extends StatefulWidget {
   final Lesson lesson;
@@ -335,68 +336,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           return _buildScaffold(
             context,
             videoPlayer: _buildVideoWithOverlay(
-              player: Positioned.fill(child: player),
-              additionalOverlays: [
-                // Custom Controls Overlay (Privacy Shield)
-                Positioned.fill(
-                  child: GestureDetector(
-                    onTap: () {
-                      if (_youtubePlayerController!.value.isPlaying) {
-                        _youtubePlayerController!.pause();
-                      } else {
-                        _youtubePlayerController!.play();
-                      }
-                      setState(() {});
-                    },
-                    child: Container(
-                      color: Colors.transparent,
-                      child: Center(
-                        child: AnimatedOpacity(
-                          opacity: _youtubePlayerController!.value.isPlaying
-                              ? 0.0
-                              : 1.0,
-                          duration: const Duration(milliseconds: 300),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: const BoxDecoration(
-                              color: Colors.black26,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              _youtubePlayerController!.value.isPlaying
-                                  ? Icons.pause
-                                  : Icons.play_arrow,
-                              color: Colors.white,
-                              size: 50,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Progress Bar at bottom
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: ValueListenableBuilder<YoutubePlayerValue>(
-                    valueListenable: _youtubePlayerController!,
-                    builder: (context, value, child) {
-                      final duration = value.metaData.duration.inSeconds;
-                      return LinearProgressIndicator(
-                        value: duration > 0
-                            ? value.position.inSeconds / duration
-                            : 0,
-                        backgroundColor: Colors.white24,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.primaryPurple),
-                        minHeight: 4,
-                      );
-                    },
-                  ),
-                ),
-              ],
+              player: player,
             ),
           );
         },
@@ -404,63 +344,23 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     }
 
     Widget playerWidget = _buildVideoPlayer();
-    return _buildScaffold(context,
-        videoPlayer: _buildVideoWithOverlay(
-            player: Positioned.fill(child: playerWidget)));
+    return _buildScaffold(
+      context,
+      videoPlayer: _buildVideoWithOverlay(
+        player: playerWidget,
+      ),
+    );
   }
 
-  Widget _buildVideoWithOverlay(
-      {required Widget player, List<Widget> additionalOverlays = const []}) {
+  Widget _buildVideoWithOverlay({required Widget player}) {
     return Stack(
       fit: StackFit.expand,
       children: [
         player,
-        ...additionalOverlays,
-        // Educational Header Overlay
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: Container(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 50, vertical: 12), // Added padding to avoid icons
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.7),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.lesson.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                Text(
-                  '⏱ ${_formatDuration(_getVideoDuration())}',
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        VideoPlayerControls(
+          isYoutube: _isYoutube,
+          youtubeController: _youtubePlayerController,
+          videoController: _videoPlayerController,
         ),
       ],
     );
@@ -506,84 +406,60 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               // 1.5 Education Header (The "Professional" Bar) - Visible when scrolled
               SliverToBoxAdapter(
                 child: Container(
-                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: AppColors.primaryPurple.withOpacity(0.1)),
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        width: 50,
+                        height: 50,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryPurple.withOpacity(0.1),
-                          shape: BoxShape.circle,
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: BorderRadius.circular(15),
                         ),
-                        child: const Icon(Icons.book_outlined,
-                            color: AppColors.primaryPurple, size: 20),
+                        child: const Icon(Icons.class_outlined,
+                            color: Colors.white),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 15),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'الدرس ${widget.lesson.orderIndex}: ${widget.lesson.title}',
+                              'الدرس ${widget.lesson.orderIndex}',
                               style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: AppColors.textPrimary,
-                              ),
+                                  color: Colors.white70, fontSize: 12),
                             ),
-                            Row(
-                              children: [
-                                const Icon(Icons.access_time,
-                                    size: 12, color: AppColors.textSecondary),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _formatDuration(_getVideoDuration()),
-                                  style: const TextStyle(
-                                      fontSize: 11,
-                                      color: AppColors.textSecondary),
-                                ),
-                                const SizedBox(width: 12),
-                                Icon(
-                                  _isLessonCompleted()
-                                      ? Icons.check_circle
-                                      : Icons.radio_button_unchecked,
-                                  size: 12,
-                                  color: _isLessonCompleted()
-                                      ? Colors.green
-                                      : AppColors.textLight,
-                                ),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _isLessonCompleted()
-                                      ? 'تم الإكمال'
-                                      : 'قيد التقدم',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: _isLessonCompleted()
-                                        ? Colors.green
-                                        : AppColors.textLight,
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              widget.lesson.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
                       ),
+                      _isLessonCompleted()
+                          ? const Icon(Icons.check_circle,
+                              color: Color(0xFF10B981))
+                          : const Icon(Icons.play_circle_outline,
+                              color: Colors.white38),
                     ],
                   ),
                 ),
@@ -596,42 +472,45 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               SliverPersistentHeader(
                 pinned: true,
                 delegate: LessonSliverAppBarDelegate(
-                  child: Container(
-                    color: const Color(0xFFF5F5F5),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: TabBar(
-                        controller: _tabController,
-                        indicator: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primaryPurple.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                  child: ClipRRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryDark.withOpacity(0.8),
+                          border: Border(
+                              bottom: BorderSide(
+                                  color: Colors.white.withOpacity(0.1))),
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white10,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: TabBar(
+                            controller: _tabController,
+                            indicator: BoxDecoration(
+                              gradient: AppColors.primaryGradient,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
+                            indicatorSize: TabBarIndicatorSize.tab,
+                            labelColor: Colors.white,
+                            unselectedLabelColor: Colors.white38,
+                            labelStyle: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            dividerColor: Colors.transparent,
+                            tabs: const [
+                              Tab(text: 'الوصف'),
+                              Tab(text: 'الملاحظات'),
+                              Tab(text: 'الأسئلة'),
+                            ],
+                          ),
                         ),
-                        indicatorSize: TabBarIndicatorSize.tab,
-                        labelColor: Colors.white,
-                        unselectedLabelColor: AppColors.textSecondary,
-                        labelStyle: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        dividerColor: Colors.transparent,
-                        tabs: const [
-                          Tab(text: 'الوصف'),
-                          Tab(text: 'الملاحظات'),
-                          Tab(text: 'الأسئلة'),
-                        ],
                       ),
                     ),
                   ),
@@ -1517,159 +1396,104 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     final hasNext = currentIndex != -1 && currentIndex < widget.allLessons.length - 1;
     final hasPrev = currentIndex > 0;
     
-    // Calculate progress (just for display)
-    final totalLessons = widget.allLessons.length;
-    final displayIndex = currentIndex == -1 ? 1 : currentIndex + 1;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.primaryDark.withOpacity(0.95),
+        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.1))),
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            if (hasPrev)
+              Expanded(
+                child: _buildNavButton(
+                  label: 'السابق',
+                  icon: Icons.arrow_back_ios_new,
+                  isPrimary: false,
+                  onTap: () async {
+                    await _saveProgressBeforeExit();
+                    if (mounted) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => LessonScreen(
+                            lesson: widget.allLessons[currentIndex - 1],
+                            allLessons: widget.allLessons,
+                            courseTitle: widget.courseTitle,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+            if (hasPrev && hasNext) const SizedBox(width: 15),
+            if (hasNext)
+              Expanded(
+                child: _buildNavButton(
+                  label: 'الدرس التالي',
+                  icon: Icons.arrow_forward_ios,
+                  isPrimary: true,
+                  onTap: () async {
+                    await _saveProgressBeforeExit();
+                    if (mounted) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => LessonScreen(
+                            lesson: widget.allLessons[currentIndex + 1],
+                            allLessons: widget.allLessons,
+                            courseTitle: widget.courseTitle,
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.8),
-            border: Border(
-              top: BorderSide(color: Colors.white.withOpacity(0.3), width: 1),
+  Widget _buildNavButton({
+    required String label,
+    required IconData icon,
+    required bool isPrimary,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      height: 54,
+      decoration: BoxDecoration(
+        gradient: isPrimary ? AppColors.primaryGradient : null,
+        color: isPrimary ? null : Colors.white10,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: isPrimary ? AppColors.buttonShadow : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (!isPrimary) Icon(icon, color: Colors.white, size: 16),
+                if (!isPrimary) const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15),
+                ),
+                if (isPrimary) const SizedBox(width: 8),
+                if (isPrimary) Icon(icon, color: Colors.white, size: 16),
+              ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Opacity(
-                  opacity: hasPrev ? 1.0 : 0.5,
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      gradient: hasPrev ? AppColors.primaryGradient : null,
-                      color: hasPrev ? null : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: hasPrev 
-                          ? () async {
-                              // Save progress before navigating
-                              await _saveProgressBeforeExit();
-                              
-                              if (mounted) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => LessonScreen(
-                                      lesson: widget.allLessons[currentIndex - 1],
-                                      allLessons: widget.allLessons,
-                                      courseTitle: widget.courseTitle,
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          : null,
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.arrow_forward, color: Colors.white, size: 20),
-                            SizedBox(width: 8),
-                            Text(
-                              'الدرس السابق',
-                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 60,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[200],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerRight,
-                      widthFactor: totalLessons > 0 ? displayIndex / totalLessons : 0,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '$displayIndex من $totalLessons دروس',
-                    style: const TextStyle(fontSize: 11, color: AppColors.textLight),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Opacity(
-                  opacity: hasNext ? 1.0 : 0.5,
-                  child: Container(
-                    height: 50,
-                    decoration: BoxDecoration(
-                      gradient: hasNext ? AppColors.primaryGradient : null,
-                      color: hasNext ? null : Colors.grey[300],
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(12),
-                        onTap: hasNext
-                          ? () async {
-                              // Save progress before navigating
-                              await _saveProgressBeforeExit();
-                              
-                              if (mounted) {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => LessonScreen(
-                                      lesson: widget.allLessons[currentIndex + 1],
-                                      allLessons: widget.allLessons,
-                                      courseTitle: widget.courseTitle,
-                                    ),
-                                  ),
-                                );
-                              }
-                            }
-                          : null,
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'الدرس التالي',
-                              style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_back, color: Colors.white, size: 20),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ),
         ),
       ),
@@ -1677,34 +1501,46 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Widget _buildEducationalActionButtons() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildActionItem(
-            icon: Icons.replay_30,
-            label: 'إعادة 30ث',
-            onTap: () => _seekRelative(-30),
+            icon: Icons.replay_10,
+            label: 'إعادة 10ث',
+            onTap: () => _seekRelative(-10),
+            color: const Color(0xFF6B4CE6),
           ),
           _buildActionItem(
             icon: Icons.quiz_outlined,
             label: 'اختبار سريع',
             onTap: () {
-              // Scroll to exams or open interactive if available
               if (_hasInteractiveContent()) {
                 _openInteractiveApp();
               } else {
-                _tabController
-                    .animateTo(0); // Switch to content where exams usually are
+                _tabController.animateTo(0);
               }
             },
+            color: const Color(0xFF4E9FF5),
           ),
           _buildActionItem(
             icon: Icons.file_download_outlined,
             label: 'تحميل ملخص',
             onTap: () {
-              // Highlight resources
               _tabController.animateTo(0);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -1712,13 +1548,15 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     duration: Duration(seconds: 1)),
               );
             },
+            color: const Color(0xFF10B981),
           ),
           _buildActionItem(
             icon: Icons.question_answer_outlined,
             label: 'اسأل المعلم',
             onTap: () {
-              _tabController.animateTo(2); // Switch to Questions tab
+              _tabController.animateTo(2);
             },
+            color: const Color(0xFFEC4899),
           ),
         ],
       ),
@@ -1728,38 +1566,35 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   Widget _buildActionItem(
       {required IconData icon,
       required String label,
+      required Color color,
       required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        width: 75,
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
+                color: color.withOpacity(0.15),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+                border: Border.all(color: color.withOpacity(0.3), width: 1.5),
               ),
-              child: Icon(icon, color: AppColors.primaryPurple, size: 24),
+              child: Icon(icon, color: color, size: 26),
             ),
             const SizedBox(height: 8),
             Text(
               label,
+              textAlign: TextAlign.center,
               style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
                 color: Colors.white,
-                shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
+                shadows: [Shadow(blurRadius: 4, color: Colors.black45)],
               ),
             ),
           ],
@@ -1777,36 +1612,47 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[100]!),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: color.withOpacity(0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
+        border: Border.all(color: color.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 20),
-              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(width: 12),
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: color,
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-          const Divider(height: 24),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1, color: Color(0xFFEEEEEE)),
+          ),
           child,
         ],
       ),

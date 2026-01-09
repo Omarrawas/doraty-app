@@ -5,6 +5,7 @@ import '../../core/services/database_service.dart';
 import 'users_management_screen.dart';
 import 'teachers_management_screen.dart';
 import 'courses_management_screen.dart';
+import 'subscriptions_management_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -229,6 +230,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => const CoursesManagementScreen(),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        _buildActionCard(
+          icon: Icons.card_membership,
+          title: 'إدارة الاشتراكات',
+          subtitle: 'عرض وإدارة جميع اشتراكات الطلاب',
+          color: Colors.amber,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SubscriptionsManagementScreen(),
               ),
             );
           },

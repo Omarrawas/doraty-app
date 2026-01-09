@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "386239634560",
+    "project_id": "atmetny",
+    "storage_bucket": "atmetny.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:386239634560:android:f32efd991d1a614bfcda65",
+        "android_client_info": {
+          "package_name": "com.doraty.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "386239634560-n2l3sc43k3j3ipg5ko3nidj63ij161ml.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAhCOaTZZB3G1JQeuWbGMj1UpaoQ5mgQo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "386239634560-jhneg3lhevs0l8g9md8vii1mvgv46de4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "386239634560-glgef33aeof8hspojlvrtus0bhes4veh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.Atmetny"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

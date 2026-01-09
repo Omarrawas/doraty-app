@@ -23,7 +23,8 @@ class OfflineLesson extends HiveObject {
   final bool isDownloaded;
   
   @HiveField(6)
-  final int duration; // in seconds/minutes depending on usage, storing as int
+  final String
+      duration; // in seconds/minutes depending on usage, storing as String to match DB
 
   @HiveField(7)
   final int orderIndex;
@@ -35,7 +36,7 @@ class OfflineLesson extends HiveObject {
     this.videoPath,
     this.content,
     required this.isDownloaded,
-    this.duration = 0,
+    this.duration = '0:00',
     required this.orderIndex,
   });
 }
