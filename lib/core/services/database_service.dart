@@ -3,9 +3,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'supabase_service.dart';
 import '../../models/course.dart';
+import '../../models/chapter.dart';
 import 'offline_cache_service.dart';
 
 class DatabaseService {
+  // Singleton pattern
+  static final DatabaseService instance = DatabaseService._internal();
+
+  factory DatabaseService() {
+    return instance;
+  }
+
+  DatabaseService._internal();
+
   final SupabaseClient _client = SupabaseService.instance.client;
 
   // Getter for accessing the client from other classes
@@ -146,11 +156,13 @@ class DatabaseService {
   /// Get exams for a specific lesson
   Future<List<Map<String, dynamic>>> getExamsForLesson(String lessonId) async {
     try {
+      final userId = SupabaseService.instance.currentUserId;
       final response = await _client
           .from('exams')
-          .select('*, courses(title)')
+          .select('*, courses(title), questions(*), attempts:exam_attempts(*)')
           .eq('lesson_id', lessonId)
           .eq('is_published', true)
+          .eq('attempts.user_id', userId ?? '')
           .order('created_at', ascending: false);
 
       return List<Map<String, dynamic>>.from(response);
@@ -469,6 +481,78 @@ class DatabaseService {
           .eq('course_id', courseId);
     } catch (e) {
       debugPrint('Error updating course progress: $e');
+    }
+  }
+
+  // ==================== CHAPTERS ====================
+
+  /// Get chapters for a course
+  Future<List<Chapter>> getChapters(String courseId) async {
+    try {
+      final response = await _client
+          .from('chapters')
+          .select()
+          .eq('course_id', courseId)
+          .order('order_index', ascending: true);
+
+      return (response as List).map((json) => Chapter.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Error getting chapters: $e');
+      return [];
+    }
+  }
+
+  /// Create a chapter
+  Future<void> createChapter({
+    required String courseId,
+    required String title,
+    int? orderIndex,
+  }) async {
+    try {
+      // If orderIndex is not provided, put it at the end
+      int index = orderIndex ?? 0;
+      if (orderIndex == null) {
+        final chapters = await getChapters(courseId);
+        index = chapters.length;
+      }
+
+      await _client.from('chapters').insert({
+        'course_id': courseId,
+        'title': title,
+        'order_index': index,
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Update a chapter
+  Future<void> updateChapter({
+    required String chapterId,
+    String? title,
+    int? orderIndex,
+  }) async {
+    try {
+      final updates = <String, dynamic>{};
+      if (title != null) updates['title'] = title;
+      if (orderIndex != null) updates['order_index'] = orderIndex;
+
+      if (updates.isEmpty) return;
+
+      updates['updated_at'] = DateTime.now().toIso8601String();
+
+      await _client.from('chapters').update(updates).eq('id', chapterId);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Delete a chapter
+  Future<void> deleteChapter(String chapterId) async {
+    try {
+      await _client.from('chapters').delete().eq('id', chapterId);
+    } catch (e) {
+      rethrow;
     }
   }
 
@@ -1243,11 +1327,13 @@ class DatabaseService {
   /// Get all exams for a course
   Future<List<Map<String, dynamic>>> getExamsForCourse(String courseId) async {
     try {
+      final userId = SupabaseService.instance.currentUserId;
       final response = await _client
           .from('exams')
-          .select()
+          .select('*, questions(*), attempts:exam_attempts(*)')
           .eq('course_id', courseId)
           .eq('is_published', true)
+          .eq('attempts.user_id', userId ?? '')
           .order('created_at', ascending: false);
 
       return List<Map<String, dynamic>>.from(response);
@@ -1262,7 +1348,7 @@ class DatabaseService {
     try {
       final response = await _client
           .from('exams')
-          .select()
+          .select('*, questions(*)')
           .eq('course_id', courseId)
           .order('created_at', ascending: false);
 
@@ -1534,6 +1620,83 @@ class DatabaseService {
       attempt['answers'] = answers;
       return attempt;
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get exam statistics for teacher
+  Future<Map<String, dynamic>> getExamStats(String examId) async {
+    try {
+      // Get all attempts for this exam
+      final attemptsResponse = await _client
+          .from('exam_attempts')
+          .select('id, score, total_points, user_id, users(full_name)')
+          .eq('exam_id', examId)
+          .eq('status', 'submitted');
+
+      final attempts = List<Map<String, dynamic>>.from(attemptsResponse);
+
+      if (attempts.isEmpty) {
+        return {
+          'attemptCount': 0,
+          'averageScore': 0.0,
+          'attempts': [],
+          'questionStats': [],
+        };
+      }
+
+      // Calculate average score
+      double totalScore = 0;
+      for (var attempt in attempts) {
+        totalScore += (attempt['score'] as num).toDouble();
+      }
+      final averageScore = totalScore / attempts.length;
+
+      // Get question stats
+      // We need to fetch all answers for these attempts to calculate per-question stats
+      final attemptIds = attempts.map((a) => a['id']).toList();
+      final answersResponse = await _client
+          .from('exam_answers')
+          .select('question_id, is_correct, questions(question_text)')
+          .filter('attempt_id', 'in', attemptIds);
+
+      final answers = List<Map<String, dynamic>>.from(answersResponse);
+
+      // Group by question
+      final Map<String, Map<String, dynamic>> questionStatsMap = {};
+
+      for (var answer in answers) {
+        final qId = answer['question_id'] as String;
+        final isCorrect = answer['is_correct'] as bool;
+        final qText =
+            answer['questions']?['question_text'] ?? 'Unknown Question';
+
+        if (!questionStatsMap.containsKey(qId)) {
+          questionStatsMap[qId] = {
+            'questionId': qId,
+            'questionText': qText,
+            'correctCount': 0,
+            'totalCount': 0,
+            'wrongCount': 0,
+          };
+        }
+
+        questionStatsMap[qId]!['totalCount']++;
+        if (isCorrect) {
+          questionStatsMap[qId]!['correctCount']++;
+        } else {
+          questionStatsMap[qId]!['wrongCount']++;
+        }
+      }
+
+      return {
+        'attemptCount': attempts.length,
+        'averageScore': averageScore,
+        'attempts': attempts,
+        'questionStats': questionStatsMap.values.toList(),
+      };
+    } catch (e) {
+      debugPrint('Error getting exam stats: $e');
       rethrow;
     }
   }
@@ -2555,13 +2718,13 @@ class DatabaseService {
   }
 
   /// Reorder lessons
-  Future<void> reorderLessons(List<Map<String, String>> updates) async {
+  Future<void> reorderLessons(List<Map<String, dynamic>> updates) async {
     try {
       for (var update in updates) {
-        await _client
-            .from('lessons')
-            .update({'order_index': int.parse(update['order_index']!)}).eq(
-                'id', update['id']!);
+        final id = update.remove('id');
+        if (id != null) {
+          await _client.from('lessons').update(update).eq('id', id);
+        }
       }
     } catch (e) {
       rethrow;

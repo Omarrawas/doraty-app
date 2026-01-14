@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import 'exam_stats_screen.dart';
 
 class StudentsResultsScreen extends StatefulWidget {
   final String? examId;
@@ -56,7 +57,11 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
           child: Column(
             children: [
               _buildHeader(),
-              if (_exams.isNotEmpty) _buildExamFilter(),
+              if (_exams.isNotEmpty) ...[
+                _buildExamFilter(),
+                const SizedBox(height: 12),
+                _buildAnalyticsButton(),
+              ],
               Expanded(
                 child: _isLoading
                     ? const Center(
@@ -302,6 +307,43 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsButton() {
+    if (_selectedExamId == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            final exam = _exams.firstWhere((e) => e['id'] == _selectedExamId);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ExamStatsScreen(
+                  examId: _selectedExamId!,
+                  examTitle: exam['title'],
+                ),
+              ),
+            );
+          },
+          icon: const Icon(Icons.analytics_outlined),
+          label: const Text('عرض التحليلات والإحصائيات'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white.withOpacity(0.2),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.white.withOpacity(0.3)),
+            ),
+            elevation: 0,
+          ),
+        ),
       ),
     );
   }

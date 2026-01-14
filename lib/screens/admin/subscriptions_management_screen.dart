@@ -24,7 +24,7 @@ class _SubscriptionsManagementScreenState
   Map<String, dynamic> _stats = {};
   bool _isLoading = true;
   String _searchQuery = '';
-  String _selectedStatus = 'all';
+  final String _selectedStatus = 'all';
   int _selectedTabIndex = 0; // 0: All, 1: By Course, 2: By Teacher
 
   @override

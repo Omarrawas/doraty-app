@@ -38,6 +38,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   List<Map<String, dynamic>> _teachers = [];
   String? _selectedTeacherId;
   bool _isLoadingTeachers = true;
+  String _selectedCurrency = 'ل.س';
 
   @override
   void initState() {
@@ -69,6 +70,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     );
 
     _isPublished = widget.courseData?['is_published'] ?? false;
+    _selectedCurrency = widget.courseData?['currency'] ?? 'ل.س';
     // Don't load instructor_id from courseData - we'll get it from teacher_courses table
 
     _loadTeachers();
@@ -283,6 +285,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   Row(
                     children: [
                       Expanded(
+                        flex: 2,
                         child: TextFormField(
                           controller: _priceController,
                           decoration: const InputDecoration(
@@ -291,6 +294,25 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                             prefixIcon: Icon(Icons.attach_money),
                           ),
                           keyboardType: TextInputType.number,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 1,
+                        child: DropdownButtonFormField<String>(
+                          value: _selectedCurrency,
+                          decoration: const InputDecoration(
+                            labelText: 'العملة',
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'ل.س', child: Text('ل.س')),
+                            DropdownMenuItem(value: r'$', child: Text(r'$')),
+                          ],
+                          onChanged: (v) {
+                            if (v != null) {
+                              setState(() => _selectedCurrency = v);
+                            }
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -423,6 +445,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         'instructor_id': _selectedTeacherId,
         'duration_hours': _durationController.text.trim(),
         'is_published': _isPublished,
+        'currency': _selectedCurrency,
       };
 
       if (widget.courseId != null) {

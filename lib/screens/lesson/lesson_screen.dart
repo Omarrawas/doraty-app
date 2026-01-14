@@ -8,19 +8,20 @@ import 'pdf_viewer_screen.dart';
 import 'interactive_quiz_screen.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:url_launcher/url_launcher.dart';
-
 import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
 import '../../models/note.dart';
 import '../../models/exam.dart';
 import '../../models/lesson_question.dart';
 import '../exams/exam_taking_screen.dart';
+import '../exams/review_exam_screen.dart';
 import '../../core/services/database_service.dart';
 import '../notes/add_note_screen.dart';
 
 import '../../widgets/dynamic_gradient_background.dart';
 import 'dart:ui';
-import 'dart:io'; 
+import 'dart:io';
+import 'dart:math' as math; 
 
 import '../../core/services/offline_storage_service.dart';
 import '../../widgets/lesson/video_player_controls.dart';
@@ -60,9 +61,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   Timer? _watchTimeTimer;
 
   // Refactor: Futures for DB calls
-  late Future<List<Map<String, dynamic>>> _notesFuture;
-  late Future<List<Map<String, dynamic>>> _questionsFuture;
-  late Future<List<Map<String, dynamic>>> _examsFuture;
+  Future<List<Map<String, dynamic>>>? _notesFuture;
+  Future<List<Map<String, dynamic>>>? _questionsFuture;
+  Future<List<Map<String, dynamic>>>? _examsFuture;
   final ScrollController _mainScrollController = ScrollController();
 
   // Offline
@@ -73,9 +74,13 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
     _currentHtmlContent = widget.lesson.contentHtml;
     _videoUrl = (widget.lesson.videoUrl as String?) ?? '';
+    
+    _notesFuture = DatabaseService().getNotes(widget.lesson.id);
+    _questionsFuture = DatabaseService().getLessonQuestions(widget.lesson.id);
+    _examsFuture = DatabaseService().getExamsForLesson(widget.lesson.id);
     
     _initLesson();
   }
@@ -301,27 +306,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return (position / (duration > 0 ? duration : 1)) > 0.8;
   }
 
-  void _seekRelative(int seconds) {
-    if (_isYoutube) {
-      final currentPos =
-          _youtubePlayerController?.value.position.inSeconds ?? 0;
-      final duration = _getVideoDuration() ?? 0;
-      _youtubePlayerController?.seekTo(
-          Duration(seconds: (currentPos + seconds).clamp(0, duration)));
-    } else {
-      final currentPos = _videoPlayerController?.value.position.inSeconds ?? 0;
-      final duration = _getVideoDuration() ?? 0;
-      _videoPlayerController?.seekTo(
-          Duration(seconds: (currentPos + seconds).clamp(0, duration)));
-    }
-  }
 
-  String _formatDuration(int? seconds) {
-    if (seconds == null || seconds <= 0) return "--:--";
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return "$minutes:${remainingSeconds.toString().padLeft(2, '0')}";
-  }
+
 
 
   @override
@@ -379,7 +365,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     NestedScrollView.sliverOverlapAbsorberHandleFor(context),
                 sliver: SliverAppBar(
                   expandedHeight: (MediaQuery.of(context).size.width * 9 / 16)
-                      .clamp(250.0, MediaQuery.of(context).size.height * 0.5),
+                      .clamp(
+                          250.0,
+                          math.max(
+                              250.0, MediaQuery.of(context).size.height * 0.5)),
                   floating: false,
                   pinned: true,
                   stretch: true,
@@ -392,81 +381,53 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                   flexibleSpace: FlexibleSpaceBar(
                     background: videoPlayer,
                   ),
-                  actions: [
-                    IconButton(
-                      icon: const Icon(Icons.science_outlined,
-                          color: Colors.white),
-                      tooltip: 'تطبيق تفاعلي',
-                      onPressed: _openInteractiveApp,
-                    ),
-                  ],
                 ),
               ),
 
-              // 1.5 Education Header (The "Professional" Bar) - Visible when scrolled
+              // 1.5 Education Header (The "Professional" Bar) - Minimalist approach
               SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: Row(
                     children: [
                       Container(
-                        width: 50,
-                        height: 50,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(15),
+                          color: AppColors.primaryPurple.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: AppColors.primaryPurple.withOpacity(0.2)),
                         ),
-                        child: const Icon(Icons.class_outlined,
-                            color: Colors.white),
+                        child: Text(
+                          'الدرس ${widget.lesson.orderIndex}',
+                          style: const TextStyle(
+                            color: AppColors.primaryPurple,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
-                      const SizedBox(width: 15),
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'الدرس ${widget.lesson.orderIndex}',
-                              style: const TextStyle(
-                                  color: Colors.white70, fontSize: 12),
-                            ),
-                            Text(
-                              widget.lesson.title,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                        child: Text(
+                          widget.lesson.title,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      _isLessonCompleted()
-                          ? const Icon(Icons.check_circle,
-                              color: Color(0xFF10B981))
-                          : const Icon(Icons.play_circle_outline,
-                              color: Colors.white38),
                     ],
                   ),
                 ),
               ),
 
-              // 2. Educational Action Buttons
-              SliverToBoxAdapter(child: _buildEducationalActionButtons()),
+
 
               // 3. التبويبات المثبتة
               SliverPersistentHeader(
@@ -479,7 +440,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                         padding: const EdgeInsets.symmetric(
                             horizontal: 20, vertical: 10),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryDark.withOpacity(0.8),
+                          color: AppColors.getSurfaceColor(context)
+                              .withOpacity(0.8), // Darker background
                           border: Border(
                               bottom: BorderSide(
                                   color: Colors.white.withOpacity(0.1))),
@@ -487,7 +449,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                         child: Container(
                           padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.white10,
+                            color: Colors.white
+                                .withOpacity(0.05), // Subtle inner container
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: TabBar(
@@ -498,16 +461,75 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                             ),
                             indicatorSize: TabBarIndicatorSize.tab,
                             labelColor: Colors.white,
-                            unselectedLabelColor: Colors.white38,
+                            unselectedLabelColor: Colors.white60,
                             labelStyle: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
                             dividerColor: Colors.transparent,
+                            isScrollable: true,
                             tabs: const [
-                              Tab(text: 'الوصف'),
-                              Tab(text: 'الملاحظات'),
-                              Tab(text: 'الأسئلة'),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.description_outlined, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('الوصف'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.attach_file, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('المرفقات'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.science_outlined, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('تفاعل'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.quiz_outlined, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('اختبارات'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.note_alt_outlined, size: 18),
+                                    SizedBox(width: 8),
+                                    Text('الملاحظات'),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.question_answer_outlined,
+                                        size: 18),
+                                    SizedBox(width: 8),
+                                    Text('الأسئلة'),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
                         ),
@@ -522,6 +544,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             controller: _tabController,
             children: [
               _buildTabContent(_buildDescriptionTab()),
+              _buildTabContent(_buildResourcesTab()),
+              _buildTabContent(_buildInteractiveTab()),
+              _buildTabContent(_buildExamSection(context)),
               _buildTabContent(_buildNotesTab()),
               _buildTabContent(_buildQuestionsTab())
             ],
@@ -542,7 +567,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
             ),
             const SliverToBoxAdapter(
-              child: SizedBox(height: 10),
+              child: SizedBox(height: 24),
             ),
             SliverPadding(
               padding: const EdgeInsets.all(20),
@@ -571,6 +596,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         final videoId = YoutubePlayer.convertUrlToId(
             (widget.lesson.videoUrl as String?) ?? '');
         if (videoId != null) {
+          final width = MediaQuery.of(context).size.width;
           return Container(
             width: double.infinity,
             height: double.infinity,
@@ -579,21 +605,30 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               fit: StackFit.expand,
               children: [
                 // 1. Full-size Iframe
-                HtmlWidget(
-                  '''
-                  <div style="width: 100%; height: 100%; position: relative; background: #000; overflow: hidden;">
-                    <iframe 
-                      src="https://www.youtube.com/embed/$videoId?modestbranding=1&rel=0&controls=0&disablekb=1&showinfo=0&iv_load_policy=3&autoplay=1&mute=0" 
-                      style="position: absolute; top: -50px; left: 0; width: 100%; height: calc(100% + 100px); border: 0;" 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                      allowfullscreen>
-                    </iframe>
-                    <!-- Advanced Privacy Masks -->
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 80px; background: transparent; z-index: 100; cursor: default;"></div>
-                    <div style="position: absolute; bottom: 0; right: 0; width: 150px; height: 80px; background: transparent; z-index: 100; cursor: default;"></div>
-                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; pointer-events: none;"></div>
-                  </div>
-                  ''',
+                Container(
+                  color: Colors.black,
+                  child: Center(
+                    child: ConstrainedBox(
+                      // Limit max width for larger screens
+                      constraints: const BoxConstraints(maxWidth: 1000),
+                      child: SizedBox(
+                        width: width > 1000 ? 1000 : width,
+                        height: (width > 1000 ? 1000 : width) * 9 / 16,
+                        child: HtmlWidget(
+                          '''
+                          <div style="width: 100%; height: 100%; background: #000;">
+                            <iframe 
+                              src="https://www.youtube.com/embed/$videoId?modestbranding=1&rel=0&controls=0&disablekb=1&showinfo=0&iv_load_policy=3&autoplay=1&mute=0" 
+                              style="width: 100%; height: 100%; border: 0;" 
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                              allowfullscreen>
+                            </iframe>
+                          </div>
+                          ''',
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 // 2. Custom Control Overlay (Optional - to block all clicks)
                 Positioned.fill(
@@ -654,158 +689,226 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 10),
-
-        // Section: The Core Idea
-        _buildContentSection(
-          title: 'الفكرة الأساسية',
-          icon: Icons.lightbulb_outline,
-          color: Colors.amber.shade700,
-          child: HtmlWidget(
-            widget.lesson.description,
-            textStyle: const TextStyle(
-                fontSize: 16, height: 1.8, color: AppColors.textPrimary),
-          ),
+        HtmlWidget(
+          widget.lesson.description,
+          textStyle:
+              const TextStyle(fontSize: 16, height: 1.8, color: Colors.white),
         ),
 
-        const SizedBox(height: 16),
+        if (widget.lesson.content != null &&
+            widget.lesson.content != widget.lesson.description) ...[
+          const SizedBox(height: 24),
+          HtmlWidget(
+            widget.lesson.content!,
+            textStyle:
+                const TextStyle(fontSize: 16, height: 1.8, color: Colors.white),
+          ),
+        ],
+      ],
+    );
+  }
 
-        // Section: Interactive Content (If exists)
-        if (_hasInteractiveContent())
-          _buildContentSection(
-            title: 'المحتوى التفاعلي',
-            icon: Icons.play_lesson_outlined,
-            color: AppColors.primaryPurple,
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _openInteractiveApp,
-                icon: const Icon(Icons.stars),
-                label: const Text('بدء التجربة التفاعلية'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryPurple,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
+  Widget _buildResourcesTab() {
+    if (widget.lesson.resources.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.folder_open, size: 64, color: Colors.grey[300]),
+            const SizedBox(height: 16),
+            const Text(
+              'لا توجد مرفقات لهذا الدرس',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...widget.lesson.resources.map((resource) {
+          final fileName = resource['name'] ?? 'ملف غير معروف';
+          final url = resource['url'] ?? '';
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _getResourceIcon(fileName),
+                        color: AppColors.primaryPurple,
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          fileName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: () {
+                          final ext = fileName.split('.').last.toLowerCase();
+                          if (ext == 'pdf') {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PdfViewerScreen(
+                                  url: url,
+                                  title: fileName,
+                                ),
+                              ),
+                            );
+                          } else {
+                            launchUrl(Uri.parse(url),
+                                mode: LaunchMode.externalApplication);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            fileName.toLowerCase().endsWith('.pdf')
+                                ? 'عرض'
+                                : 'تنزيل',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildInteractiveTab() {
+    if (!_hasInteractiveContent()) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.science_outlined,
+                size: 64, color: Colors.white.withOpacity(0.2)),
+            const SizedBox(height: 16),
+            Text(
+              'لا يوجد تطبيق تفاعلي لهذا الدرس',
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: double.infinity,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: Colors.white.withOpacity(0.2), width: 1.5),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryPurple.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.rocket_launch_outlined,
+                        size: 48,
+                        color: AppColors.primaryPurple,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      'المحتوى التفاعلي',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'استمتع بتجربة تعليمية تفاعلية غنية تعزز فهمك للموضوع.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        height: 1.6,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _openInteractiveApp,
+                        icon: const Icon(Icons.play_arrow_rounded),
+                        label: const Text('بدء التجربة الآن'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-
-        // Section: Detailed Content (If exists and different from description)
-        if (widget.lesson.content != null &&
-            widget.lesson.content != widget.lesson.description)
-          _buildContentSection(
-            title: 'شرح مفصل',
-            icon: Icons.subject,
-            color: Colors.blue.shade700,
-            child: HtmlWidget(
-              widget.lesson.content!,
-              textStyle: const TextStyle(
-                  fontSize: 16, height: 1.8, color: AppColors.textPrimary),
-            ),
-          ),
-
-        const SizedBox(height: 16),
-        
-        // Dynamic Resources Section
-        if (widget.lesson.resources.isNotEmpty) ...[
-          const Text(
-            'المرفقات والموارد',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...widget.lesson.resources.map((resource) {
-            final fileName = resource['name'] ?? 'ملف غير معروف';
-            final url = resource['url'] ?? '';
-            
-            return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.grey[200]!),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _getResourceIcon(fileName),
-                    color: AppColors.primaryPurple,
-                    size: 28,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      fileName,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: () {
-                      final ext = fileName.split('.').last.toLowerCase();
-                      if (ext == 'pdf') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PdfViewerScreen(
-                              url: url,
-                              title: fileName,
-                            ),
-                          ),
-                        );
-                      } else {
-                        // Logic to open/download URL
-                        debugPrint('Downloading resource: $url');
-                        launchUrl(Uri.parse(url),
-                            mode: LaunchMode.externalApplication);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        fileName.toLowerCase().endsWith('.pdf')
-                            ? 'عرض'
-                            : 'تنزيل',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-        const SizedBox(height: 20),
-        _buildExamSection(context),
+        ),
       ],
     );
   }
@@ -834,6 +937,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Widget _buildExamSection(BuildContext context) {
+    if (_examsFuture == null) return const SizedBox.shrink();
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _examsFuture,
       builder: (context, snapshot) {
@@ -849,114 +953,299 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'الاختبارات المرتبطة بالدرس',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
             ...examsData.map((examData) {
               final exam = Exam.fromJson(examData);
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFFFF5722).withOpacity(0.1),
-                      const Color(0xFFFF9800).withOpacity(0.1),
-                    ],
-                  ),
+                child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: const Color(0xFFFF5722).withOpacity(0.3),
-                      width: 2),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFF5722).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.quiz,
-                              color: Color(0xFFFF5722), size: 28),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1.5,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Text(
-                                exam.title,
-                                style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary),
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color:
+                                      AppColors.primaryPurple.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  (examData['type'] ?? 'exam') == 'quiz'
+                                      ? Icons.quiz
+                                      : Icons.assignment,
+                                  color: AppColors.primaryPurple,
+                                  size: 24,
+                                ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                exam.description,
-                                style: const TextStyle(
-                                    fontSize: 14,
-                                    color: AppColors.textSecondary),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      exam.title,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    if (exam.description.isNotEmpty)
+                                      Text(
+                                        exam.description,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white.withOpacity(0.7),
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: AppColors.primaryGradient,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () {
-                              Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          ExamTakingScreen(exam: exam)));
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 14),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    'ابدأ الاختبار',
-                                    style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold),
+                          const SizedBox(height: 16),
+                          // Attempts Info
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                exam.maxAttempts != null
+                                    ? 'المحاولات: ${exam.attemptCount} / ${exam.maxAttempts}'
+                                    : 'المحاولات: ${exam.attemptCount}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: exam.canTakeAgain
+                                      ? Colors.white.withOpacity(0.7)
+                                      : Colors.redAccent,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              if (exam.attempts.isNotEmpty)
+                                Text(
+                                  'أفضل نتيجة: ${((exam.bestAttempt?['score'] ?? 0) / (exam.calculatedTotalPoints > 0 ? exam.calculatedTotalPoints : 1) * 100).toStringAsFixed(1)}%',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.greenAccent,
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  SizedBox(width: 8),
-                                  Icon(Icons.arrow_back,
-                                      color: Colors.white, size: 20),
-                                ],
+                                ),
+                            ],
+                          ),
+
+                          if (exam.attempts.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            const Text(
+                              'سجل المحاولات:',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white70,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
+                            const SizedBox(height: 12),
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: exam.attempts.length,
+                              separatorBuilder: (_, __) =>
+                                  const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final attempt = exam.attempts[index];
+                                final percentage = ((attempt['score'] ?? 0) /
+                                    (exam.calculatedTotalPoints > 0
+                                        ? exam.calculatedTotalPoints
+                                        : 1) *
+                                    100);
+                                final isPassed = percentage >= 60;
+                                final dateStr = attempt['submitted_at'] != null
+                                    ? DateTime.parse(
+                                            attempt['submitted_at'].toString())
+                                        .toString()
+                                        .substring(0, 16)
+                                        .replaceAll('T', ' ')
+                                    : '';
+
+                                return Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () async {
+                                      if (attempt['id'] != null) {
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                ReviewExamScreen(
+                                              attemptId: attempt['id'],
+                                            ),
+                                          ),
+                                        );
+                                        _refreshFutures();
+                                      }
+                                    },
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.05),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color: isPassed
+                                                ? Colors.green.withOpacity(0.3)
+                                                : Colors.red.withOpacity(0.3)),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.all(8),
+                                            decoration: BoxDecoration(
+                                              color: isPassed
+                                                  ? Colors.green
+                                                      .withOpacity(0.1)
+                                                  : Colors.red.withOpacity(0.1),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: Icon(
+                                              isPassed
+                                                  ? Icons.check
+                                                  : Icons.close,
+                                              size: 16,
+                                              color: isPassed
+                                                  ? Colors.green
+                                                  : Colors.red,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'محاولة ${index + 1}',
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                if (dateStr.isNotEmpty)
+                                                  Text(
+                                                    dateStr,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.white
+                                                          .withOpacity(0.5),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                          Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                '${percentage.toStringAsFixed(1)}%',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: isPassed
+                                                      ? Colors.greenAccent
+                                                      : Colors.redAccent,
+                                                ),
+                                              ),
+                                              Text(
+                                                isPassed ? 'ناجح' : 'راسب',
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: isPassed
+                                                      ? Colors.green
+                                                      : Colors.red,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Icon(
+                                            Icons.arrow_forward_ios,
+                                            size: 12,
+                                            color:
+                                                Colors.white.withOpacity(0.3),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: exam.canTakeAgain
+                                      ? () async {
+                                          await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ExamTakingScreen(exam: exam),
+                                            ),
+                                          );
+                                          _refreshFutures();
+                                        }
+                                      : null,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppColors.primaryPurple,
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    disabledBackgroundColor:
+                                        Colors.grey.withOpacity(0.2),
+                                    elevation: 0,
+                                  ),
+                                  child: Text(
+                                    exam.canTakeAgain
+                                        ? 'ابدأ الاختبار'
+                                        : 'انتهت المحاولات',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                              if (exam.attempts.isNotEmpty) ...[
+                                const SizedBox(width: 12),
+                                // "Review Results" button removed as requested
+                              ],
+                            ],
                           ),
-                        ),
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               );
             }),
@@ -999,8 +1288,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         ),
         const SizedBox(height: 20),
         
-        FutureBuilder<List<Map<String, dynamic>>>(
-          future: _notesFuture,
+        if (_notesFuture == null)
+          const Center(child: CircularProgressIndicator())
+        else
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _notesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -1011,24 +1303,36 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             
             final notesData = snapshot.data ?? [];
             if (notesData.isEmpty) {
-              return Container(
+                return SizedBox(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.note_outlined, size: 60, color: AppColors.textLight),
-                    SizedBox(height: 16),
-                    Text(
-                      'لا توجد ملاحظات بعد',
-                      style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                              color: Colors.white.withOpacity(0.2), width: 1.5),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.note_outlined,
+                                size: 60, color: Colors.white.withOpacity(0.3)),
+                            const SizedBox(height: 16),
+                            Text(
+                              'لا توجد ملاحظات بعد',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.white.withOpacity(0.7)),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ],
                 ),
               );
             }
@@ -1040,57 +1344,57 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final note = Note.fromJson(notesData[index]);
-                return Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
+                  return ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                    border: Border.all(color: Colors.grey[200]!),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              note.title,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: AppColors.textPrimary,
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                              color: Colors.white.withOpacity(0.2), width: 1.5),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    note.title,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  _formatDate(note.updatedAt),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.white.withOpacity(0.5),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              note.content,
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white.withOpacity(0.8),
+                                height: 1.5,
                               ),
                             ),
-                          ),
-                          Text(
-                            _formatDate(note.updatedAt),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textLight,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        note.content,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: AppColors.textSecondary,
-                          height: 1.5,
+                          ],
                         ),
                       ),
-                    ],
                   ),
                 );
               },
@@ -1109,52 +1413,54 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'أسئلة الطلاب',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-        ),
-        const SizedBox(height: 16),
         
         // Question Input
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey[200]!),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: Colors.white.withOpacity(0.2), width: 1.5),
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: _sendQuestion,
-                icon: const Icon(Icons.send_rounded, color: AppColors.primaryPurple),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _questionController,
-                  textAlign: TextAlign.right,
-                  onSubmitted: (_) => _sendQuestion(),
-                  decoration: const InputDecoration(
-                    hintText: 'اسأل سؤالاً عن هذا الدرس...',
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: _sendQuestion,
+                    icon: const Icon(Icons.send_rounded, color: Colors.white),
                   ),
-                ),
+                  Expanded(
+                    child: TextField(
+                      controller: _questionController,
+                      textAlign: TextAlign.right,
+                      onSubmitted: (_) => _sendQuestion(),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: InputDecoration(
+                        hintText: 'اسأل سؤالاً عن هذا الدرس...',
+                        hintStyle:
+                            TextStyle(color: Colors.white.withOpacity(0.5)),
+                        border: InputBorder.none,
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 24),
 
-        FutureBuilder<List<Map<String, dynamic>>>(
-          future: _questionsFuture,
+        if (_questionsFuture == null)
+          const Center(child: CircularProgressIndicator())
+        else
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _questionsFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
@@ -1190,12 +1496,109 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Widget _buildQuestionItem(LessonQuestion question) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border:
+                Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          question.userName,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.white),
+                        ),
+                        Text(
+                          _formatDate(question.createdAt),
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white.withOpacity(0.5)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.white.withOpacity(0.1),
+                    backgroundImage: question.userPhoto != null
+                        ? NetworkImage(question.userPhoto!)
+                        : null,
+                    child: question.userPhoto == null
+                        ? const Icon(Icons.person,
+                            size: 20, color: Colors.white)
+                        : null,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                question.content,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                    fontSize: 14, height: 1.5, color: Colors.white),
+              ),
+              if (question.replies.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Divider(color: Colors.white24, height: 1),
+                ),
+                ...question.replies.map((reply) => _buildReplyItem(reply)),
+              ],
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () => _showReplyDialog(question),
+                  icon: const Icon(Icons.reply_rounded,
+                      size: 18, color: Colors.white),
+                  label:
+                      const Text('رد', style: TextStyle(color: Colors.white)),
+                  style: TextButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReplyItem(LessonQuestionReply reply) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        color: reply.isInstructorReply
+            ? AppColors.primaryPurple.withOpacity(0.1)
+            : Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: reply.isInstructorReply
+              ? AppColors.primaryPurple.withOpacity(0.2)
+              : Colors.white.withOpacity(0.1),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1207,120 +1610,50 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      question.userName,
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      reply.userName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: reply.isInstructorReply
+                            ? AppColors.primaryPurple
+                            : Colors.white,
+                      ),
                     ),
                     Text(
-                      _formatDate(question.createdAt),
-                      style: const TextStyle(fontSize: 10, color: AppColors.textLight),
+                      _formatDate(reply.createdAt),
+                      style: TextStyle(
+                          fontSize: 10, color: Colors.white.withOpacity(0.5)),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               CircleAvatar(
-                radius: 18,
-                backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
-                backgroundImage: question.userPhoto != null ? NetworkImage(question.userPhoto!) : null,
-                child: question.userPhoto == null 
-                    ? const Icon(Icons.person, size: 20, color: AppColors.primaryPurple)
+                radius: 12,
+                backgroundColor: Colors.white.withOpacity(0.1),
+                backgroundImage: reply.userPhoto != null
+                    ? NetworkImage(reply.userPhoto!)
+                    : null,
+                child: reply.userPhoto == null
+                    ? const Icon(Icons.person, size: 14, color: Colors.white)
                     : null,
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 4),
           Text(
-            question.content,
+            reply.content,
             textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
-          ),
-          if (question.replies.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            ...question.replies.map((reply) => Container(
-                  margin: const EdgeInsets.only(top: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                    color: reply.isInstructorReply
-                        ? AppColors.primaryPurple.withOpacity(0.05)
-                        : Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: reply.isInstructorReply
-                          ? AppColors.primaryPurple.withOpacity(0.1)
-                          : Colors.grey[200]!,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  reply.userName,
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                    color: reply.isInstructorReply
-                                        ? AppColors.primaryPurple
-                                        : AppColors.textPrimary,
-                                  ),
-                                ),
-                                Text(
-                                  _formatDate(reply.createdAt),
-                                  style: const TextStyle(
-                                      fontSize: 10, color: AppColors.textLight),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundImage: reply.userPhoto != null
-                                ? NetworkImage(reply.userPhoto!)
-                                : null,
-                            child: reply.userPhoto == null
-                                ? const Icon(Icons.person, size: 14)
-                                : null,
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        reply.content,
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                            fontSize: 13, color: AppColors.textPrimary),
-                      ),
-                    ],
-                  ),
-                )),
-          ],
-
-          const SizedBox(height: 12),
-          // Reply Button
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => _showReplyDialog(question),
-              icon: const Icon(Icons.reply, size: 16),
-              label: const Text('رد', style: TextStyle(fontSize: 12)),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primaryPurple,
-                padding: EdgeInsets.zero,
-                minimumSize: const Size(50, 30),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.white.withOpacity(0.9),
             ),
           ),
         ],
       ),
     );
   }
+
 
   void _showReplyDialog(LessonQuestion question) {
     final replyController = TextEditingController();
@@ -1499,169 +1832,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       ),
     );
   }
-
-  Widget _buildEducationalActionButtons() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildActionItem(
-            icon: Icons.replay_10,
-            label: 'إعادة 10ث',
-            onTap: () => _seekRelative(-10),
-            color: const Color(0xFF6B4CE6),
-          ),
-          _buildActionItem(
-            icon: Icons.quiz_outlined,
-            label: 'اختبار سريع',
-            onTap: () {
-              if (_hasInteractiveContent()) {
-                _openInteractiveApp();
-              } else {
-                _tabController.animateTo(0);
-              }
-            },
-            color: const Color(0xFF4E9FF5),
-          ),
-          _buildActionItem(
-            icon: Icons.file_download_outlined,
-            label: 'تحميل ملخص',
-            onTap: () {
-              _tabController.animateTo(0);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('تفقد المرفقات في الأسفل'),
-                    duration: Duration(seconds: 1)),
-              );
-            },
-            color: const Color(0xFF10B981),
-          ),
-          _buildActionItem(
-            icon: Icons.question_answer_outlined,
-            label: 'اسأل المعلم',
-            onTap: () {
-              _tabController.animateTo(2);
-            },
-            color: const Color(0xFFEC4899),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionItem(
-      {required IconData icon,
-      required String label,
-      required Color color,
-      required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: 75,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                shape: BoxShape.circle,
-                border: Border.all(color: color.withOpacity(0.3), width: 1.5),
-              ),
-              child: Icon(icon, color: color, size: 26),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                shadows: [Shadow(blurRadius: 4, color: Colors.black45)],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContentSection({
-    required String title,
-    required IconData icon,
-    required Color color,
-    required Widget child,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-        border: Border.all(color: color.withOpacity(0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 16),
-            child: Divider(height: 1, color: Color(0xFFEEEEEE)),
-          ),
-          child,
-        ],
-      ),
-    );
-  }
 }
 
 class LessonSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  LessonSliverAppBarDelegate({required this.child});
+  const LessonSliverAppBarDelegate({required this.child});
 
   final Widget child;
 

@@ -7,6 +7,7 @@ import '../../core/services/github_storage_service.dart';
 import '../../core/services/github_api_service.dart';
 import '../../core/config/github_config.dart';
 import '../../widgets/video_preview_widget.dart';
+import '../../models/chapter.dart';
 
 class CreateLessonScreen extends StatefulWidget {
   final String courseId;
@@ -38,6 +39,11 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   bool _isSaving = false;
   bool _isUploadingToGitHub = false;
   final List<Map<String, String>> _attachments = [];
+  
+  // Chapters
+  List<Chapter> _chapters = [];
+  String? _selectedChapterId;
+  bool _isLoadingChapters = false;
 
   @override
   void initState() {
@@ -63,6 +69,73 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
       for (var item in widget.lessonData!['resources']) {
         _attachments.add(Map<String, String>.from(item));
       }
+    }
+    
+    _loadChapters();
+  }
+
+  Future<void> _loadChapters() async {
+    setState(() => _isLoadingChapters = true);
+    try {
+      final chapters = await _db.getChapters(widget.courseId);
+      if (mounted) {
+        setState(() {
+          _chapters = chapters;
+          _isLoadingChapters = false;
+
+          if (widget.lessonData?['chapter_id'] != null) {
+            _selectedChapterId = widget.lessonData?['chapter_id'];
+          }
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingChapters = false);
+        debugPrint('Error loading chapters: $e');
+      }
+    }
+  }
+
+  Future<void> _createNewChapter() async {
+    final titleController = TextEditingController();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('إضافة فصل جديد'),
+        content: TextField(
+          controller: titleController,
+          decoration: const InputDecoration(
+            labelText: 'عنوان الفصل',
+            hintText: 'مثال: المقدمة',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('إلغاء'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (titleController.text.trim().isEmpty) return;
+              try {
+                // Show local loading if needed, or just await
+                await _db.createChapter(
+                  courseId: widget.courseId,
+                  title: titleController.text.trim(),
+                );
+                if (context.mounted) Navigator.pop(context, true);
+              } catch (e) {
+                debugPrint('Error creating chapter: $e');
+              }
+            },
+            child: const Text('إضافة'),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true) {
+      _loadChapters();
     }
   }
 
@@ -98,6 +171,72 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Chapter Selection
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'الفصل',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            TextButton.icon(
+                              onPressed: _createNewChapter,
+                              icon: const Icon(Icons.add, size: 18),
+                              label: const Text('فصل جديد'),
+                            ),
+                          ],
+                        ),
+                        if (_isLoadingChapters)
+                          const Center(child: LinearProgressIndicator())
+                        else if (_chapters.isEmpty)
+                          const Text(
+                              'لا توجد فصول. اضغط "فصل جديد" لإنشاء فصل.',
+                              style: TextStyle(color: Colors.grey))
+                        else
+                          DropdownButtonFormField<String>(
+                            value: _selectedChapterId,
+                            decoration: const InputDecoration(
+                              hintText: 'اختر الفصل',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                            ),
+                            items: [
+                              const DropdownMenuItem<String>(
+                                value: null,
+                                child: Text('بدون فصل (عام)'),
+                              ),
+                              ..._chapters.map((chapter) {
+                                return DropdownMenuItem<String>(
+                                  value: chapter.id,
+                                  child: Text(chapter.title),
+                                );
+                              }),
+                            ],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedChapterId = value;
+                              });
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
                   TextFormField(
                     controller: _titleController,
                     decoration: const InputDecoration(
@@ -459,6 +598,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     try {
       final data = {
         'course_id': widget.courseId,
+        'chapter_id': _selectedChapterId,
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
         'video_url': _videoUrlController.text.trim(),

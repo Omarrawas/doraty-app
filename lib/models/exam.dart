@@ -28,10 +28,10 @@ class Question {
 
   factory Question.fromJson(Map<String, dynamic> json) {
     return Question(
-      id: json['id'],
-      text: json['text'],
-      options: List<String>.from(json['options']),
-      correctAnswer: json['correctAnswer'],
+      id: json['id']?.toString() ?? '',
+      text: json['text'] ?? json['question_text'] ?? '',
+      options: List<String>.from(json['options'] ?? []),
+      correctAnswer: json['correctAnswer'] ?? json['correct_answer'] ?? 0,
       explanation: json['explanation'],
       points: json['points'] ?? 1,
     );
@@ -44,13 +44,17 @@ class Exam {
   final String description;
   final String courseId;
   final String courseName;
-  final String? lessonId; // Added lessonId
+  final String? lessonId;
   final List<Question> questions;
   final int duration; // in minutes
   final int totalPoints;
   final DateTime? startTime;
   final DateTime? endTime;
   final bool isCompleted;
+  final int? maxAttempts;
+  final List<Map<String, dynamic>> attempts;
+  final bool shuffleQuestions;
+  final bool shuffleOptions;
   final int? score;
 
   Exam({
@@ -66,12 +70,32 @@ class Exam {
     this.startTime,
     this.endTime,
     this.isCompleted = false,
+    this.maxAttempts,
+    this.attempts = const [],
+    this.shuffleQuestions = false,
+    this.shuffleOptions = false,
     this.score,
   });
 
   double? get percentage {
-    if (score == null || totalPoints == 0) return null;
-    return (score! / totalPoints) * 100;
+    final total = calculatedTotalPoints;
+    if (score == null || total == 0) return null;
+    return (score! / total) * 100;
+  }
+
+  int get attemptCount => attempts.length;
+
+  bool get canTakeAgain {
+    if (maxAttempts == null) return true;
+    return attemptCount < maxAttempts!;
+  }
+
+  Map<String, dynamic>? get bestAttempt {
+    if (attempts.isEmpty) return null;
+    return attempts.reduce((curr, next) =>
+        ((curr['score'] as num?) ?? 0) > ((next['score'] as num?) ?? 0)
+            ? curr
+            : next);
   }
 
   String get formattedDuration {
@@ -85,6 +109,11 @@ class Exam {
       }
       return '$hours ساعة و $minutes دقيقة';
     }
+  }
+
+  int get calculatedTotalPoints {
+    if (questions.isEmpty) return totalPoints; // Fallback to DB value
+    return questions.fold(0, (sum, q) => sum + q.points);
   }
 
   Map<String, dynamic> toJson() {
@@ -101,28 +130,45 @@ class Exam {
       'startTime': startTime?.toIso8601String(),
       'endTime': endTime?.toIso8601String(),
       'isCompleted': isCompleted,
+      'max_attempts': maxAttempts,
+      'shuffle_questions': shuffleQuestions,
+      'shuffle_options': shuffleOptions,
       'score': score,
     };
   }
 
   factory Exam.fromJson(Map<String, dynamic> json) {
+    // Handle course name from joined data if present
+    String courseNameVal = json['courseName'] ?? '';
+    if (courseNameVal.isEmpty && json['courses'] != null) {
+      if (json['courses'] is Map) {
+        courseNameVal = json['courses']['title'] ?? '';
+      }
+    }
+
     return Exam(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
+      id: json['id']?.toString() ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
       courseId:
-          json['courseId'] ?? json['course_id'], // handle both cases safely
-      courseName: json['courseName'] ?? '',
+          json['courseId'] ??
+          json['course_id'] ??
+          '', // handle both cases safely
+      courseName: courseNameVal,
       lessonId: json['lesson_id'],
       questions: (json['questions'] as List? ?? [])
           .map((q) => Question.fromJson(q))
           .toList(),
-      duration: json['duration'],
+      duration: json['duration'] ?? 0,
       totalPoints: json['totalPoints'] ?? json['total_points'] ?? 0,
       startTime:
           json['startTime'] != null ? DateTime.parse(json['startTime']) : null,
       endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
       isCompleted: json['isCompleted'] ?? false,
+      maxAttempts: json['max_attempts'],
+      attempts: List<Map<String, dynamic>>.from(json['attempts'] ?? []),
+      shuffleQuestions: json['shuffle_questions'] ?? false,
+      shuffleOptions: json['shuffle_options'] ?? false,
       score: json['score'],
     );
   }

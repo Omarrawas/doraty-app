@@ -432,8 +432,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 activeColor: Colors.white,
                 inactiveColor: Colors.white.withOpacity(0.3),
                 labels: RangeLabels(
-                  '${_minPrice.toInt()} ل.س',
-                  '${_maxPrice.toInt()} ل.س',
+                  '${_minPrice.toInt()}',
+                  '${_maxPrice.toInt()}',
                 ),
                 onChanged: (values) {
                   setState(() {

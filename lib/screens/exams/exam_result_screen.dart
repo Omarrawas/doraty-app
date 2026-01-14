@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../models/exam.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'exam_taking_screen.dart';
 
-class ExamResultScreen extends StatelessWidget {
+class ExamResultScreen extends StatefulWidget {
   final Exam exam;
   final Map<int, int>? userAnswers;
 
@@ -14,8 +16,43 @@ class ExamResultScreen extends StatelessWidget {
   });
 
   @override
+  State<ExamResultScreen> createState() => _ExamResultScreenState();
+}
+
+class _ExamResultScreenState extends State<ExamResultScreen> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  @override
+  void initState() {
+    super.initState();
+    _playResultSound();
+  }
+
+  void _playResultSound() async {
+    final percentage = widget.exam.percentage ?? 0.0;
+    final isPassed = percentage >= 60;
+    try {
+      debugPrint(
+          '📣 Playing result sound: ${isPassed ? "success.mp3" : "failure.mp3"}');
+      if (isPassed) {
+        await _audioPlayer.play(AssetSource('sounds/success.mp3'), volume: 1.0);
+      } else {
+        await _audioPlayer.play(AssetSource('sounds/failure.mp3'), volume: 1.0);
+      }
+    } catch (e) {
+      debugPrint('❌ Error playing result sound: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final percentage = exam.percentage ?? 0.0;
+    final percentage = widget.exam.percentage ?? 0.0;
     final isPassed = percentage >= 60;
     final correctAnswers = _getCorrectAnswersCount();
 
@@ -49,7 +86,7 @@ class ExamResultScreen extends StatelessWidget {
                       const SizedBox(height: 24),
 
                       // Questions Review
-                      if (userAnswers != null) ...[
+                      if (widget.userAnswers != null) ...[
                         const Text(
                           'مراجعة الأسئلة',
                           style: TextStyle(
@@ -59,7 +96,7 @@ class ExamResultScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        ...List.generate(exam.questions.length, (index) {
+                        ...List.generate(widget.exam.questions.length, (index) {
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: _buildQuestionReview(index),
@@ -185,9 +222,9 @@ class ExamResultScreen extends StatelessWidget {
 
               const SizedBox(height: 12),
 
-              // Score
+              // Percentage - MAIN
               Text(
-                '${exam.score} / ${exam.totalPoints}',
+                '${percentage.toStringAsFixed(1)}%',
                 style: const TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
@@ -197,13 +234,13 @@ class ExamResultScreen extends StatelessWidget {
 
               const SizedBox(height: 8),
 
-              // Percentage
+              // Score points - SECONDARY
               Text(
-                '${percentage.toStringAsFixed(1)}%',
+                '(${widget.exam.score} / ${widget.exam.calculatedTotalPoints})',
                 style: TextStyle(
-                  fontSize: 24,
+                  fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withOpacity(0.7),
                 ),
               ),
             ],
@@ -229,7 +266,7 @@ class ExamResultScreen extends StatelessWidget {
           child: _buildStatCard(
             icon: Icons.cancel,
             label: 'إجابات خاطئة',
-            value: '${exam.questions.length - correctAnswers}',
+            value: '${widget.exam.questions.length - correctAnswers}',
             color: Colors.red,
           ),
         ),
@@ -238,7 +275,7 @@ class ExamResultScreen extends StatelessWidget {
           child: _buildStatCard(
             icon: Icons.assignment,
             label: 'مجموع الأسئلة',
-            value: '${exam.questions.length}',
+            value: '${widget.exam.questions.length}',
             color: const Color.fromARGB(255, 0, 140, 255),
           ),
         ),
@@ -295,8 +332,8 @@ class ExamResultScreen extends StatelessWidget {
   }
 
   Widget _buildQuestionReview(int index) {
-    final question = exam.questions[index];
-    final userAnswer = userAnswers?[index];
+    final question = widget.exam.questions[index];
+    final userAnswer = widget.userAnswers?[index];
     final isCorrect = userAnswer == question.correctAnswer;
     final wasAnswered = userAnswer != null;
 
@@ -481,10 +518,10 @@ class ExamResultScreen extends StatelessWidget {
       children: [
         Expanded(
           child: _buildActionButton(
-            label: 'العودة للرئيسية',
-            icon: Icons.home,
+            label: 'العودة للدرس',
+            icon: Icons.play_lesson,
             onTap: () {
-              Navigator.popUntil(context, (route) => route.isFirst);
+              Navigator.pop(context);
             },
           ),
         ),
@@ -494,7 +531,12 @@ class ExamResultScreen extends StatelessWidget {
             label: 'إعادة الاختبار',
             icon: Icons.refresh,
             onTap: () {
-              Navigator.pop(context);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ExamTakingScreen(exam: widget.exam),
+                ),
+              );
             },
             isPrimary: true,
           ),
@@ -554,11 +596,11 @@ class ExamResultScreen extends StatelessWidget {
   }
 
   int _getCorrectAnswersCount() {
-    if (userAnswers == null) return 0;
+    if (widget.userAnswers == null) return 0;
 
     int count = 0;
-    for (var entry in userAnswers!.entries) {
-      if (entry.value == exam.questions[entry.key].correctAnswer) {
+    for (var entry in widget.userAnswers!.entries) {
+      if (entry.value == widget.exam.questions[entry.key].correctAnswer) {
         count++;
       }
     }

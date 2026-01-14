@@ -6,6 +6,7 @@ import 'dart:async';
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
 import '../../models/lesson.dart';
+import '../../models/chapter.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/services/certificate_service.dart';
@@ -37,6 +38,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
   // Lessons data
   List<Map<String, dynamic>> _lessons = [];
+  List<Chapter> _chapters = [];
   bool _isLoadingLessons = true;
 
   // Reviews data
@@ -177,18 +179,22 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   Future<void> _loadLessons() async {
     try {
       final lessons = await _databaseService.getLessons(widget.course.id);
+      final chapters = await _databaseService.getChapters(widget.course.id);
+
       if (mounted) {
         setState(() {
           _lessons = lessons;
+          _chapters = chapters;
           _isLoadingLessons = false;
           // Check completion
           if (lessons.isNotEmpty) {
-            _isCourseCompleted = lessons.every((l) => l['is_completed'] == true);
+            _isCourseCompleted =
+                lessons.every((l) => l['is_completed'] == true);
           }
         });
       }
     } catch (e) {
-      debugPrint('Error loading lessons: $e');
+      debugPrint('Error loading lessons or chapters: $e');
       if (mounted) {
         setState(() {
           _isLoadingLessons = false;
@@ -1252,15 +1258,46 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       );
     }
 
-    // Group lessons by sections (every 5 lessons)
+    // Group lessons by chapters
     final sections = <Map<String, dynamic>>[];
-    for (var i = 0; i < _lessons.length; i += 5) {
-      final end = (i + 5 < _lessons.length) ? i + 5 : _lessons.length;
-      final sectionLessons = _lessons.sublist(i, end);
-      final sectionNumber = (i ~/ 5) + 1;
+
+    if (_chapters.isNotEmpty) {
+      // 1. Group by Chapters
+      // Sort chapters by orderIndex
+      _chapters.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+
+      for (var chapter in _chapters) {
+        final chapterLessons = _lessons.where((l) {
+          return l['chapter_id'] == chapter.id;
+        }).toList();
+
+        if (chapterLessons.isNotEmpty) {
+          sections.add({
+            'title': chapter.title,
+            'lessons': chapterLessons,
+          });
+        }
+      }
+
+      // 2. Add lessons without chapter (Uncategorized)
+      final uncategorizedLessons = _lessons.where((l) {
+        return l['chapter_id'] == null;
+      }).toList();
+
+      if (uncategorizedLessons.isNotEmpty) {
+        sections.add({
+          'title': 'دروس أخرى',
+          'lessons': uncategorizedLessons,
+        });
+      }
+    } else {
+      // Fallback: If no chapters, show as one list or keep old logic if preferred.
+      // Current preference: Move away from "every 5".
+      // If purely no chapters defined, show all in one "Course Content" section
+      // unless the list is huge? Let's just show all.
       sections.add({
-        'title': 'الفصل $sectionNumber (${sectionLessons.length} دروس)',
-        'lessons': sectionLessons,
+        'title': 'محتوى الدورة',
+        'lessons': _lessons,
       });
     }
 

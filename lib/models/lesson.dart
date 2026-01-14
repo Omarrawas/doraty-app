@@ -1,6 +1,7 @@
 class Lesson {
   final String id;
   final String courseId;
+  final String? chapterId; // Added chapterId
   final String title;
   final String description;
   final String videoUrl;
@@ -18,6 +19,7 @@ class Lesson {
   Lesson({
     required this.id,
     required this.courseId,
+    this.chapterId,
     required this.title,
     required this.description,
     required this.videoUrl,
@@ -57,6 +59,7 @@ class Lesson {
     return Lesson(
       id: json['id'] ?? '',
       courseId: json['course_id'] ?? '',
+      chapterId: json['chapter_id'],
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       videoUrl: json['video_url'] ?? '',
@@ -77,6 +80,7 @@ class Lesson {
     return {
       'id': id,
       'course_id': courseId,
+      'chapter_id': chapterId,
       'title': title,
       'description': description,
       'video_url': videoUrl,
@@ -96,6 +100,7 @@ class Lesson {
   Lesson copyWith({
     String? id,
     String? courseId,
+    String? chapterId,
     String? title,
     String? description,
     String? videoUrl,
@@ -113,6 +118,7 @@ class Lesson {
     return Lesson(
       id: id ?? this.id,
       courseId: courseId ?? this.courseId,
+      chapterId: chapterId ?? this.chapterId,
       title: title ?? this.title,
       description: description ?? this.description,
       videoUrl: videoUrl ?? this.videoUrl,

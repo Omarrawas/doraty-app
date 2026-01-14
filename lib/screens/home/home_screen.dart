@@ -615,7 +615,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              '${course.price.toInt()} د.ع',
+                              course.formattedPrice,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,

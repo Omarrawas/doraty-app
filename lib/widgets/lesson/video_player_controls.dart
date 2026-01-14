@@ -59,16 +59,20 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
   void _togglePlayPause() {
     if (widget.isYoutube) {
-      if (widget.youtubeController!.value.isPlaying) {
-        widget.youtubeController!.pause();
+      final controller = widget.youtubeController;
+      if (controller == null) return;
+      if (controller.value.isPlaying) {
+        controller.pause();
       } else {
-        widget.youtubeController!.play();
+        controller.play();
       }
     } else {
-      if (widget.videoController!.value.isPlaying) {
-        widget.videoController!.pause();
+      final controller = widget.videoController;
+      if (controller == null) return;
+      if (controller.value.isPlaying) {
+        controller.pause();
       } else {
-        widget.videoController!.play();
+        controller.play();
       }
     }
     setState(() {});
@@ -77,11 +81,15 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
   void _seekRelative(int seconds) {
     if (widget.isYoutube) {
-      final current = widget.youtubeController!.value.position;
-      widget.youtubeController!.seekTo(current + Duration(seconds: seconds));
+      final controller = widget.youtubeController;
+      if (controller == null) return;
+      final current = controller.value.position;
+      controller.seekTo(current + Duration(seconds: seconds));
     } else {
-      final current = widget.videoController!.value.position;
-      widget.videoController!.seekTo(current + Duration(seconds: seconds));
+      final controller = widget.videoController;
+      if (controller == null) return;
+      final current = controller.value.position;
+      controller.seekTo(current + Duration(seconds: seconds));
     }
     _startHideTimer();
   }
@@ -91,7 +99,9 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
     if (widget.isYoutube) {
       // YouTube player speed can be limited by the plugin, but we try
     } else {
-      widget.videoController!.setPlaybackSpeed(speed);
+      if (widget.videoController != null) {
+        widget.videoController!.setPlaybackSpeed(speed);
+      }
     }
     Navigator.pop(context);
     _startHideTimer();
@@ -201,9 +211,9 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
   }
 
   Widget _buildPlayPauseButton() {
-    final isPlaying = widget.isYoutube 
-      ? widget.youtubeController!.value.isPlaying 
-      : widget.videoController!.value.isPlaying;
+    final bool isPlaying = widget.isYoutube
+        ? (widget.youtubeController?.value.isPlaying ?? false)
+        : (widget.videoController?.value.isPlaying ?? false);
 
     return Container(
       decoration: BoxDecoration(
@@ -279,13 +289,21 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
         children: [
           Expanded(
             child: widget.isYoutube 
-              ? ProgressBar(controller: widget.youtubeController!, colors: const ProgressBarColors(
-                  playedColor: AppColors.primaryPurple,
-                  handleColor: AppColors.primaryPurple,
-                ))
-              : VideoProgressIndicator(widget.videoController!, allowScrubbing: true, colors: const VideoProgressColors(
-                  playedColor: AppColors.primaryPurple,
-                )),
+                ? (widget.youtubeController != null
+                    ? ProgressBar(
+                        controller: widget.youtubeController!,
+                        colors: const ProgressBarColors(
+                          playedColor: AppColors.primaryPurple,
+                          handleColor: AppColors.primaryPurple,
+                        ))
+                    : const SizedBox.shrink())
+                : (widget.videoController != null
+                    ? VideoProgressIndicator(widget.videoController!,
+                        allowScrubbing: true,
+                        colors: const VideoProgressColors(
+                          playedColor: AppColors.primaryPurple,
+                        ))
+                    : const SizedBox.shrink()),
           ),
           if (widget.onToggleFullScreen != null)
             IconButton(

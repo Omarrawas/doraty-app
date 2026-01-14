@@ -18,6 +18,7 @@ class Course {
   final int completedLessons;
   final String? level; // Added level
   final bool isPublished;
+  final String currency;
 
   Course({
     required this.id,
@@ -39,6 +40,7 @@ class Course {
     this.completedLessons = 0,
     this.level,
     this.isPublished = true,
+    this.currency = 'ل.س',
   });
 
   factory Course.fromJson(Map<String, dynamic> json) {
@@ -63,6 +65,7 @@ class Course {
       completedLessons: json['completed_lessons'] ?? 0,
       level: json['level'],
       isPublished: json['is_published'] ?? true,
+      currency: json['currency'] ?? 'ل.س',
     );
   }
 
@@ -87,6 +90,7 @@ class Course {
       'completed_lessons': completedLessons,
       'level': level,
       'is_published': isPublished,
+      'currency': currency,
     };
   }
 
@@ -96,6 +100,6 @@ class Course {
   }
 
   String get formattedPrice {
-    return '${price.toStringAsFixed(0)} ل.س';
+    return '${price.toStringAsFixed(0)} $currency';
   }
 }
