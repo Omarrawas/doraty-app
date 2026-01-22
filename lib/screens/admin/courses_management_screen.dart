@@ -8,7 +8,9 @@ import 'lessons_management_screen.dart';
 import 'exams_management_screen.dart';
 
 class CoursesManagementScreen extends StatefulWidget {
-  const CoursesManagementScreen({super.key});
+  final String? instructorId; // Added
+
+  const CoursesManagementScreen({super.key, this.instructorId});
 
   @override
   State<CoursesManagementScreen> createState() =>
@@ -32,7 +34,10 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
   Future<void> _loadCourses() async {
     setState(() => _isLoading = true);
     try {
-      final courses = await _db.getCourses(includeDrafts: true);
+      final courses = await _db.getCourses(
+        includeDrafts: true,
+        instructorId: widget.instructorId,
+      );
 
       // Load teacher for each course
       for (var course in courses) {
@@ -111,7 +116,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
       child: Scaffold(
         backgroundColor: const Color.fromARGB(255, 107, 76, 230),
         appBar: AppBar(
-          title: const Text('إدارة الدورات'),
+          title: Text(
+              widget.instructorId != null ? 'إدارة دوراتي' : 'إدارة الدورات'),
           elevation: 2,
           actions: [
             Container(
@@ -166,7 +172,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             final result = await Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const CreateCourseScreen(),
+                builder: (context) => CreateCourseScreen(
+                  preselectedInstructorId: widget.instructorId,
+                ),
               ),
             );
             if (result == true) _loadCourses();
@@ -310,7 +318,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Teacher and Branch info
+            // Teacher info
             Row(
               children: [
                 // Teacher info
@@ -353,28 +361,6 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Branch info
-                if (course['branch'] != null)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.purple.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.purple.withOpacity(0.2),
-                      ),
-                    ),
-                    child: Text(
-                      course['branch'],
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.purple.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
               ],
             ),
             const SizedBox(height: 16),

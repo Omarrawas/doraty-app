@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/services/database_service.dart';
-import '../models/subscription.dart';
 
 enum PaymentMethod {
   shamCash,
@@ -16,21 +15,22 @@ class PaymentService {
 
   /// Process payment with manual verification (NEW SYSTEM)
   Future<Map<String, dynamic>> processPaymentWithReceipt({
-    required SubscriptionPlan plan,
+    required double amount,
     required PaymentMethod method,
     required String phoneNumber,
     String? transactionId,
     String? receiptImagePath,
+    String? courseId,
   }) async {
     try {
       final dbService = DatabaseService();
 
       // 1. Create a "Pending" order in Supabase
       final order = await dbService.createOrder(
-        planId: plan.id,
-        amount: plan.price,
+        amount: amount,
         paymentMethod: _getMethodKey(method),
         transactionId: transactionId,
+        courseId: courseId,
       );
 
       final orderId = order['id'] as String;
@@ -48,10 +48,11 @@ class PaymentService {
       final receiptId = await dbService.createPaymentReceipt(
         orderId: orderId,
         paymentMethod: _getMethodKey(method),
-        amount: plan.price,
+        amount: amount,
         transactionId: transactionId,
         receiptImageUrl: receiptUrl,
         phoneNumber: phoneNumber,
+        courseId: courseId,
       );
 
       debugPrint('Payment receipt created: $receiptId');

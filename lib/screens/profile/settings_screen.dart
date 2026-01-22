@@ -1,5 +1,5 @@
 // Settings screen for user profile
-// Allows changing name, profile picture, branch, and theme (dark/light)
+// Allows changing name, profile picture, and theme (dark/light)
 
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -20,7 +20,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final ImagePicker _picker = ImagePicker();
 
   String? _name;
-  String? _branch; // e.g., "علمي" أو "أدبي"
   XFile? _imageFile;
 
   @override
@@ -34,7 +33,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (user != null) {
       setState(() {
         _name = user.userMetadata?['full_name'] as String? ?? '';
-        _branch = user.userMetadata?['branch'] as String? ?? '';
       });
     }
   }
@@ -49,12 +47,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _saveChanges() async {
-    // Update Supabase user metadata (name & branch)
+    // Update Supabase user metadata (name)
     final userId = SupabaseService.instance.currentUserId;
     if (userId != null) {
       final updates = <String, dynamic>{};
       if (_name != null) updates['full_name'] = _name;
-      if (_branch != null) updates['branch'] = _branch;
       // Note: image upload is omitted for brevity – you would upload to storage and save URL.
       try {
         await SupabaseService.instance.client
@@ -118,19 +115,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               onChanged: (v) => _name = v,
             ),
             const SizedBox(height: 20),
-            // Branch selector
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                labelText: 'الفرع',
-                border: OutlineInputBorder(),
-              ),
-              value: _branch?.isNotEmpty == true ? _branch : null,
-              items: const [
-                DropdownMenuItem(value: 'علمي', child: Text('علمي')),
-                DropdownMenuItem(value: 'أدبي', child: Text('أدبي')),
-              ],
-              onChanged: (v) => setState(() => _branch = v),
-            ),
             const SizedBox(height: 20),
             // Theme toggle
             SwitchListTile(

@@ -9,6 +9,7 @@ class AppTheme {
       useMaterial3: true,
       scaffoldBackgroundColor: AppColors.cardBackground,
 
+      fontFamily: 'Cairo',
       // Arabic Font Support
       textTheme:
           GoogleFonts.cairoTextTheme(ThemeData.light().textTheme).copyWith(
@@ -152,6 +153,7 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: Colors.transparent,
 
+      fontFamily: 'Cairo',
       // Arabic Font Support
       textTheme:
           GoogleFonts.cairoTextTheme(ThemeData.light().textTheme).copyWith(
@@ -295,6 +297,7 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: Colors.transparent,
 
+      fontFamily: 'Cairo',
       // Arabic Font Support
       textTheme:
           GoogleFonts.cairoTextTheme(ThemeData.dark().textTheme).copyWith(

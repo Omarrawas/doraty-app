@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
-import '../../models/subscription.dart' as sub_models;
 import '../../models/payment_account.dart';
 import '../../services/payment_service.dart' as service;
+import '../../models/course.dart';
 
 class PaymentScreen extends StatefulWidget {
-  final sub_models.SubscriptionPlan plan;
+  final Course? course;
+  final double amount;
+  final String title;
 
   const PaymentScreen({
     super.key,
-    required this.plan,
+    this.course,
+    required this.amount,
+    required this.title,
   });
 
   @override
@@ -100,11 +104,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
     try {
       final paymentService = service.PaymentService();
       final result = await paymentService.processPaymentWithReceipt(
-        plan: widget.plan,
+        amount: widget.amount,
         method: _selectedMethod!,
         phoneNumber: _phoneController.text.trim(),
         transactionId: _transactionIdController.text.trim(),
         receiptImagePath: null, // لا توجد صورة
+        courseId: widget.course?.id,
       );
 
       if (mounted) {
@@ -318,14 +323,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    widget.plan.name,
+                    widget.title,
                     style: const TextStyle(
                       fontSize: 16,
                       color: Colors.white,
                     ),
                   ),
                   Text(
-                    widget.plan.formattedPrice,
+                    '${widget.amount} ل.س',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -335,13 +340,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              Text(
-                widget.plan.formattedDuration,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
               const Divider(color: Colors.white, height: 24),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -355,7 +353,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     ),
                   ),
                   Text(
-                    widget.plan.formattedPrice,
+                    '${widget.amount} ل.س',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,

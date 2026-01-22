@@ -4,7 +4,6 @@ class AppUser {
   final String email;
   final String? bio;
   final String? photoUrl;
-  final String branch;
   final List<String> enrolledCourses;
   final int completedCourses;
   final int totalHours;
@@ -16,7 +15,6 @@ class AppUser {
     required this.name,
     required this.email,
     this.photoUrl,
-    required this.branch,
     this.bio,
     this.enrolledCourses = const [],
     this.completedCourses = 0,
@@ -31,7 +29,6 @@ class AppUser {
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       photoUrl: json['photo_url'],
-      branch: json['branch'] ?? 'علمي',
       bio: json['bio'],
       enrolledCourses: List<String>.from(json['enrolled_courses'] ?? []),
       completedCourses: json['completed_courses'] ?? 0,
@@ -49,7 +46,6 @@ class AppUser {
       'name': name,
       'email': email,
       'photo_url': photoUrl,
-      'branch': branch,
       'bio': bio,
       'enrolled_courses': enrolledCourses,
       'completed_courses': completedCourses,

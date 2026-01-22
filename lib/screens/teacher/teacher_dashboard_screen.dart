@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/services/supabase_service.dart';
+import '../admin/courses_management_screen.dart';
 import 'manage_exams_screen.dart';
 import 'students_results_screen.dart';
 
@@ -324,6 +326,23 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 12),
+        _buildActionCard(
+          icon: Icons.school,
+          label: 'إدارة دوراتي',
+          color: Colors.blue,
+          onTap: () {
+            final userId = SupabaseService.instance.currentUserId;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CoursesManagementScreen(
+                  instructorId: userId,
+                ),
+              ),
+            );
+          },
         ),
       ],
     );

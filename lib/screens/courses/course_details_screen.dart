@@ -12,18 +12,27 @@ import '../../core/services/supabase_service.dart';
 import '../../core/services/certificate_service.dart';
 import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../teacher/teacher_profile_screen.dart';
-import '../subscription/subscription_plans_screen.dart';
+import '../subscription/payment_screen.dart';
 import '../../core/services/course_download_service.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../models/download_progress.dart';
+import '../../widgets/shimmer_loader.dart';
+import '../../widgets/empty_state.dart';
+import 'package:provider/provider.dart';
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/utils/string_utils.dart';
 
 
 class CourseDetailsScreen extends StatefulWidget {
   final Course course;
 
+  final String? heroTag;
+
   const CourseDetailsScreen({
     super.key,
     required this.course,
+    this.heroTag,
   });
 
   @override
@@ -48,6 +57,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   bool _isEnrolled = false;
   Map<String, dynamic>? _userReview;
   bool _isCheckingEnrollment = true;
+  bool _hasPendingRequest = false;
   String? _instructorPhoto;
   late String _instructorName;
   late double _currentRating;
@@ -65,12 +75,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   final OfflineStorageService _offlineStorage = OfflineStorageService();
   final CourseDownloadService _downloadService = CourseDownloadService();
 
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
+
   @override
   void initState() {
     super.initState();
     _checkOfflineStatus(); // Check if course is downloaded
     _instructorPhoto = widget.course.instructorPhoto;
-    _instructorName = widget.course.instructorName;
+    _instructorName =
+        StringUtils.cleanTeacherName(widget.course.instructorName);
     _currentRating = widget.course.rating;
     _reviewsCount = 0; // Will be updated by _loadReviews
     _tabController = TabController(length: 3, vsync: this);
@@ -148,7 +162,17 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       if (mounted && profile.isNotEmpty) {
         setState(() {
           _instructorPhoto = profile['avatar_url'];
-          _instructorName = profile['full_name'] ?? _instructorName;
+          final locale =
+              Provider.of<LocaleProvider>(context, listen: false).locale;
+          if (locale == 'en' &&
+              profile['full_name_en'] != null &&
+              (profile['full_name_en'] as String).isNotEmpty) {
+            _instructorName =
+                StringUtils.cleanTeacherName(profile['full_name_en']);
+          } else {
+            _instructorName = StringUtils.cleanTeacherName(
+                profile['full_name'] ?? _instructorName);
+          }
           debugPrint('📸 Instructor Photo URL: $_instructorPhoto');
         });
       }
@@ -160,9 +184,12 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   Future<void> _checkEnrollment() async {
     try {
       final isEnrolled = await _databaseService.isEnrolled(widget.course.id);
+      final hasPending =
+          await _databaseService.hasPendingCourseRequest(widget.course.id);
       if (mounted) {
         setState(() {
           _isEnrolled = isEnrolled;
+          _hasPendingRequest = hasPending;
           _isCheckingEnrollment = false;
         });
       }
@@ -332,7 +359,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Text(
-                          widget.course.title,
+                          widget.course.getLocalizedTitle(
+                              Provider.of<LocaleProvider>(context,
+                                      listen: false)
+                                  .locale),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 26,
@@ -341,6 +371,68 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                           ),
                         ),
                       ),
+
+                      // Subject Tag
+                      if (widget.course.subject.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              top: 12, left: 20, right: 20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: AppColors.primaryPurple.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: AppColors.primaryPurple.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Text(
+                              widget.course.getLocalizedSubject(
+                                  Provider.of<LocaleProvider>(context).locale),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      // Categories Tags
+                      if (widget.course.categories.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(
+                              top: 12, left: 20, right: 20),
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: widget.course.categories
+                                .map((cat) => Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.12),
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: Colors.white.withOpacity(0.15),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Text(
+                                        cat,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ))
+                                .toList(),
+                          ),
+                        ),
 
                       const SizedBox(height: 20),
 
@@ -389,17 +481,22 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   Widget _buildHeader() {
     return Stack(
       children: [
-        // Course Image
+        Hero(
+          tag: widget.heroTag ?? 'course_image_${widget.course.id}',
+          child: Container(
+            height: 200,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: CachedNetworkImageProvider(widget.course.imageUrl ?? ''),
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
+        ),
         Container(
           height: 200,
           width: double.infinity,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: CachedNetworkImageProvider(widget.course.imageUrl ?? ''),
-              fit: BoxFit.cover,
-            ),
-          ),
-          child: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -410,7 +507,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 ],
               ),
             ),
-          ),
         ),
 
         // Back Button
@@ -476,18 +572,18 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                       width: 1,
                     ),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.workspace_premium,
                         color: Colors.white,
                         size: 16,
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'Premium Course',
-                        style: TextStyle(
+                        _t('premium_course'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -594,8 +690,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 );
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('لا يوجد ملف شخصي لهذا المدرب حالياً')),
+                  SnackBar(content: Text(_t('no_instructor_profile'))),
                 );
               }
             },
@@ -646,9 +741,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'الأستاذ',
-                          style: TextStyle(
+                        Text(
+                          _t('instructor_title'),
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Colors.white70,
                           ),
@@ -689,7 +784,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '$_reviewsCount تقييم',
+                        '$_reviewsCount ${_t('reviews_label')}',
                         style: const TextStyle(
                           fontSize: 11,
                           color: Colors.white70,
@@ -697,7 +792,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '$_studentsCount طالب',
+                        '$_studentsCount ${_t('students_count_label')}',
                         style: const TextStyle(
                           fontSize: 11,
                           color: Colors.white70,
@@ -767,6 +862,38 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       );
     }
 
+    if (_hasPendingRequest && !_isEnrolled) {
+      return Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.orange.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.orange.withOpacity(0.5),
+            width: 1.5,
+          ),
+        ),
+        child: const Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.schedule, color: Colors.orange),
+              SizedBox(width: 12),
+              Text(
+                'لقد أرسلت طلب اشتراك للمراجعة',
+                style: TextStyle(
+                  color: Colors.orange,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       height: 56,
@@ -803,7 +930,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 Text(
                   _isEnrolled
                       ? 'متابعة التعلم'
-                      : 'اشترك الآن - ${widget.course.formattedPrice}',
+                      : 'اشترك الآن - ${widget.course.getFormattedPrice(Provider.of<LocaleProvider>(context, listen: false).locale)}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -859,11 +986,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       return;
     }
 
-    // Navigate to subscription plans instead of direct enrollment
+    // Navigate to payment screen directly for this course
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => const SubscriptionPlansScreen(),
+        builder: (context) => PaymentScreen(
+          amount: widget.course.price,
+          title: widget.course.title,
+          course: widget.course,
+        ),
       ),
     ).then((_) {
       // Re-check enrollment after returning
@@ -902,10 +1033,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
-            tabs: const [
-              Tab(text: 'نظرة عامة'),
-              Tab(text: 'المحتوى'),
-              Tab(text: 'التقييمات'),
+            tabs: [
+              Tab(text: _t('about')),
+              Tab(text: _t('lessons')),
+              Tab(text: _t('reviews')),
             ],
           ),
         ),
@@ -949,8 +1080,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             ),
           ),
           child: Text(
-            widget.course.description ?? 'لا يوجد وصف',
-            textAlign: TextAlign.right,
+            widget.course.getLocalizedDescription(
+                    Provider.of<LocaleProvider>(context, listen: false)
+                        .locale) ??
+                _t('no_description'),
+            textAlign:
+                Provider.of<LocaleProvider>(context, listen: false).locale ==
+                        'ar'
+                    ? TextAlign.right
+                    : TextAlign.left,
             style: const TextStyle(
               fontSize: 15,
               height: 1.8,
@@ -964,8 +1102,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
   Widget _buildReviewsTab() {
     if (_isLoadingReviews) {
-      return const Center(
-          child: CircularProgressIndicator(color: Colors.white));
+      return Column(
+        children: List.generate(
+          3,
+          (index) => const Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: ShimmerLoader.rectangular(height: 100),
+          ),
+        ),
+      );
     }
 
     return Column(
@@ -1016,25 +1161,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             ),
 
         if (_reviews.isEmpty)
-          Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.star_border,
-                  size: 64,
-                  color: Colors.white.withOpacity(0.5),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'لا توجد تقييمات بعد',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                ),
-              ],
-            ),
+          const ProfessionalEmptyState(
+            title: 'لا توجد تقييمات بعد',
+            message: 'كن أول من يقيم هذه الدورة ويشارك تجربته مع الآخرين.',
+            icon: Icons.star_outline_rounded,
           )
         else
           ..._reviews.map((review) => _buildReviewCard(review)),
@@ -1144,10 +1274,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       builder: (dialogContext) => StatefulBuilder(
         builder: (innerContext, setState) => AlertDialog(
           backgroundColor: const Color(0xFF1E1E2C),
-          title: const Text(
-            'أضف تقييمك',
+          title: Text(
+            _t('add_review'),
             textAlign: TextAlign.right,
-            style: TextStyle(color: Colors.white),
+            style: const TextStyle(color: Colors.white),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -1174,7 +1304,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 controller: commentController,
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
-                  hintText: 'اكتب تعليقك هنا...',
+                  hintText: _t('your_comment_here'),
                   hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.1),
@@ -1190,7 +1320,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('إلغاء'),
+              child: Text(_t('cancel')),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -1199,7 +1329,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
                   // Show loading
                   scaffoldMessenger.showSnackBar(
-                    const SnackBar(content: Text('جاري إضافة التقييم...')),
+                    SnackBar(content: Text(_t('adding_review'))),
                   );
 
                   await _databaseService.addReview(
@@ -1211,10 +1341,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                   // Reload and show success
                   await _loadReviews();
                   await _refreshCourseData();
+                  await _checkUserReview();
                   if (mounted) {
                     scaffoldMessenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('تم إضافة تقييمك بنجاح'),
+                      SnackBar(
+                        content: Text(_t('review_added_success')),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -1231,7 +1362,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 backgroundColor: AppColors.primaryPurple,
                 foregroundColor: Colors.white,
               ),
-              child: const Text('نشر'),
+              child: Text(_t('publish')),
             ),
           ],
         ),
@@ -1241,20 +1372,22 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
   Widget _buildContentTab() {
     if (_isLoadingLessons) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      return Column(
+        children: List.generate(
+          5,
+          (index) => const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: ShimmerLoader.rectangular(height: 60),
+          ),
+        ),
       );
     }
 
     if (_lessons.isEmpty) {
-      return Center(
-        child: Text(
-          'لا توجد دروس متاحة حالياً',
-          style: TextStyle(
-            fontSize: 16,
-            color: Colors.white.withOpacity(0.7),
-          ),
-        ),
+      return ProfessionalEmptyState(
+        title: _t('no_lessons_yet'),
+        message: _t('course_content_working'),
+        icon: Icons.auto_stories_rounded,
       );
     }
 
@@ -1286,7 +1419,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
       if (uncategorizedLessons.isNotEmpty) {
         sections.add({
-          'title': 'دروس أخرى',
+          'title': _t('other_lessons'),
           'lessons': uncategorizedLessons,
         });
       }
@@ -1296,7 +1429,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       // If purely no chapters defined, show all in one "Course Content" section
       // unless the list is huge? Let's just show all.
       sections.add({
-        'title': 'محتوى الدورة',
+        'title': _t('course_content'),
         'lessons': _lessons,
       });
     }
@@ -1369,7 +1502,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                         Expanded(
                           child: Text(
                             title,
-                            textAlign: TextAlign.right,
+                            textAlign:
+                                Provider.of<LocaleProvider>(context).locale ==
+                                        'ar'
+                                    ? TextAlign.right
+                                    : TextAlign.left,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -1392,7 +1529,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   }
 
   Widget _buildLessonItem(Map<String, dynamic> lesson) {
-    final title = lesson['title'] ?? '';
+    final locale = Provider.of<LocaleProvider>(context).locale;
+    final lessonObj = Lesson.fromJson(lesson);
+    final title = lessonObj.getLocalizedTitle(locale);
     final duration = lesson['duration'] ?? '0:00';
     final isCompleted = lesson['is_completed'] ?? false;
     final isFree = lesson['is_free'] ?? false;
@@ -1421,10 +1560,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 // Show message that lesson is locked
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: const Text(
-                      'يجب إكمال الدرس السابق أولاً',
+                    content: Text(
+                      _t('must_complete_previous'),
                       textAlign: TextAlign.right,
-                      style: TextStyle(fontFamily: 'Cairo'),
+                      style: const TextStyle(fontFamily: 'Cairo'),
                     ),
                     backgroundColor: Colors.orange.shade400,
                     behavior: SnackBarBehavior.floating,
@@ -1449,7 +1588,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                     builder: (context) => lesson_ui.LessonScreen(
                       lesson: lessonObj,
                       allLessons: allLessons,
-                      courseTitle: widget.course.title,
+                      courseTitle: widget.course.getLocalizedTitle(locale),
                     ),
                   ),
                 );
@@ -1501,9 +1640,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                         color: Colors.green.withOpacity(0.5),
                       ),
                     ),
-                    child: const Text(
-                      'مجاني',
-                      style: TextStyle(
+                    child: Text(
+                      _t('free'),
+                      style: const TextStyle(
                         fontSize: 10,
                         color: Colors.greenAccent,
                         fontWeight: FontWeight.bold,

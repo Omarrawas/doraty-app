@@ -5,12 +5,7 @@ import '../../models/category.dart';
 import '../courses/courses_list_screen.dart';
 
 class SubjectsScreen extends StatefulWidget {
-  final Branch branch;
-
-  const SubjectsScreen({
-    super.key,
-    required this.branch,
-  });
+  const SubjectsScreen({super.key});
 
   @override
   State<SubjectsScreen> createState() => _SubjectsScreenState();
@@ -26,13 +21,30 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
   }
 
   void _initializeCategories() {
-    final subjects = widget.branch.subjects;
-    _categories = subjects.asMap().entries.map((entry) {
+    final scientificSubjects = [
+      'الرياضيات',
+      'الفيزياء',
+      'الكيمياء',
+      'الأحياء',
+      'اللغة العربية',
+      'اللغة الإنجليزية',
+      'اللغة الفرنسية',
+      'الديانة',
+    ];
+    final literarySubjects = [
+      'التاريخ',
+      'الجغرافيا',
+      'الفلسفة',
+      'علم الاجتماع',
+    ];
+
+    final allSubjects = {...scientificSubjects, ...literarySubjects}.toList();
+
+    _categories = allSubjects.asMap().entries.map((entry) {
       return Category(
         id: '${entry.key + 1}',
         name: entry.value,
         description: 'دورات ${entry.value} للثانوية العامة',
-        branch: widget.branch,
         icon: _getIconForSubject(entry.value),
         coursesCount: (entry.key + 1) * 3,
       );
@@ -93,10 +105,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Branch Info
-                      _buildBranchInfo(),
-
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 8),
 
                       // Title
                       const Text(
@@ -178,79 +187,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
     );
   }
 
-  Widget _buildBranchInfo() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                widget.branch == Branch.scientific
-                    ? const Color(0xFF7B2CBF).withOpacity(0.4)
-                    : const Color(0xFFE91E63).withOpacity(0.4),
-                widget.branch == Branch.scientific
-                    ? const Color(0xFF5A67D8).withOpacity(0.3)
-                    : const Color(0xFFFF6B9D).withOpacity(0.3),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.4),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  widget.branch == Branch.scientific
-                      ? Icons.science
-                      : Icons.menu_book,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.branch.name,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${_categories.length} مادة دراسية',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildSubjectCard(Category category, int index) {
     final color = _getColorForIndex(index);

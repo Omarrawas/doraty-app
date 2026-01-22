@@ -5,6 +5,7 @@ import 'supabase_service.dart';
 import '../../models/course.dart';
 import '../../models/chapter.dart';
 import 'offline_cache_service.dart';
+import 'cache_service.dart';
 
 class DatabaseService {
   // Singleton pattern
@@ -21,12 +22,140 @@ class DatabaseService {
   // Getter for accessing the client from other classes
   SupabaseClient get supabaseClient => _client;
 
+  // ==================== CATEGORIES (NEW) ====================
+  // Added CRUD for admin management
+
+  /// Get all categories
+  Future<List<Map<String, dynamic>>> getCategories() async {
+    try {
+      final response = await _client.from('categories').select().order('name');
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting categories: $e');
+      return [];
+    }
+  }
+
+  /// Get subcategories for a parent category
+  Future<List<Map<String, dynamic>>> getSubCategories(String parentId) async {
+    try {
+      final response = await _client
+          .from('categories')
+          .select()
+          .eq('parent_id', parentId)
+          .order('name');
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting subcategories: $e');
+      return [];
+    }
+  }
+
+  /// Create a new category
+  Future<void> createCategory({
+    required String name,
+    required String slug,
+    String? parentId,
+    String? iconUrl,
+  }) async {
+    try {
+      await _client.from('categories').insert({
+        'name': name,
+        'slug': slug,
+        'parent_id': parentId,
+        'icon_url': iconUrl,
+      });
+    } catch (e) {
+      debugPrint('Error creating category: $e');
+      rethrow;
+    }
+  }
+
+  /// Update a category
+  Future<void> updateCategory({
+    required String id,
+    String? name,
+    String? slug,
+    String? parentId,
+    String? iconUrl,
+  }) async {
+    try {
+      final updates = <String, dynamic>{};
+      if (name != null) updates['name'] = name;
+      if (slug != null) updates['slug'] = slug;
+      if (parentId != null) {
+        updates['parent_id'] = parentId; // Allow changing parent
+      }
+      if (iconUrl != null) updates['icon_url'] = iconUrl;
+
+      // If we want to remove parent, we might need logic for null,
+      // but usually updates ignore nulls unless specific object "unnset" pattern used.
+      // For simple usage, assuming non-null values for updates.
+
+      if (updates.isNotEmpty) {
+        await _client.from('categories').update(updates).eq('id', id);
+      }
+    } catch (e) {
+      debugPrint('Error updating category: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a category
+  Future<void> deleteCategory(String id) async {
+    try {
+      await _client.from('categories').delete().eq('id', id);
+    } catch (e) {
+      debugPrint('Error deleting category: $e');
+      rethrow;
+    }
+  }
+
+  // ==================== TAGS (NEW) ====================
+
+  /// Get tags for a course
+  Future<List<String>> getCourseTags(String courseId) async {
+    try {
+      final response = await _client
+          .from('course_tags')
+          .select('tag')
+          .eq('course_id', courseId);
+
+      return (response as List).map((e) => e['tag'] as String).toList();
+    } catch (e) {
+      debugPrint('Error getting course tags: $e');
+      return [];
+    }
+  }
+
+  /// Add tags to a course
+  Future<void> addCourseTags(String courseId, List<String> tags) async {
+    try {
+      if (tags.isEmpty) return;
+
+      final data = tags
+          .map((tag) => {
+                'course_id': courseId,
+                'tag': tag,
+              })
+          .toList();
+
+      await _client.from('course_tags').insert(data);
+    } catch (e) {
+      debugPrint('Error adding course tags: $e');
+      rethrow;
+    }
+  }
+
+
+
   // ==================== SEARCH ====================
 
   /// Search courses with filters
   Future<List<Map<String, dynamic>>> searchCourses({
     String? query,
     String? category,
+    String? categoryId, // Added categoryId support
     String? subject,
     double? minPrice,
     double? maxPrice,
@@ -34,7 +163,8 @@ class DatabaseService {
   }) async {
     try {
       // Build query
-      var dbQuery = _client.from('courses').select('*, users!instructor_id(full_name, avatar_url)');
+      var dbQuery = _client.from('courses').select(
+          '*, users!instructor_id(full_name, full_name_en, avatar_url)');
 
       // Text Search
       if (query != null && query.isNotEmpty) {
@@ -43,8 +173,12 @@ class DatabaseService {
       }
 
       // Category Filter
-      if (category != null && category != 'الكل') {
-        dbQuery = dbQuery.eq('category', category);
+      if (categoryId != null) {
+        // Search in course_category_junction
+        dbQuery = dbQuery.filter(
+            'course_category_junction.category_id', 'eq', categoryId);
+      } else if (category != null && category != 'الكل') {
+        dbQuery = dbQuery.filter('category', 'eq', category);
       }
 
       // Subject Filter
@@ -176,17 +310,35 @@ class DatabaseService {
   /// Get all courses
   Future<List<Map<String, dynamic>>> getCourses({
     String? category,
+    String? categoryId, // Added
     String? subject,
+    String? instructorId, // Added
     bool includeDrafts = false,
     bool forceRefresh = false,
   }) async {
     try {
       // Join with users to get correct instructor details
-      var query = _client
-          .from('courses')
-          .select('*, users!instructor_id(full_name, avatar_url)');
+      // Join with junction table to get categories
+      var query = _client.from('courses').select('''
+            *, 
+            users!instructor_id(full_name, full_name_en, avatar_url),
+            course_category_junction(category:categories(id, name, name_en))
+          ''');
 
-      if (category != null) {
+      if (instructorId != null) {
+        query = query.eq('instructor_id', instructorId);
+      }
+
+      if (categoryId != null) {
+        // Query courses that have this category in the junction table
+        // Note: Filtering by junction table requires specific syntax or a separate query
+        // For simplicity and since PostgREST filter on join can be complex,
+        // we'll keep the category_id filter if it exists in the courses table for now,
+        // OR we can fetch course IDs first.
+        // Let's try the modern PostgREST inner join filter syntax if available:
+        query = query.filter(
+            'course_category_junction.category_id', 'eq', categoryId);
+      } else if (category != null) {
         query = query.eq('category', category);
       }
 
@@ -210,6 +362,44 @@ class DatabaseService {
           course['instructor_photo'] =
               user['avatar_url'] ?? course['instructor_photo'];
         }
+
+        // Map categories from junction
+        final junction = course['course_category_junction'] as List?;
+        if (junction != null) {
+          final categories = junction
+              .map((j) {
+                final cat = j['category'] as Map?;
+                return cat?['name'] as String? ?? '';
+              })
+              .where((name) => name.isNotEmpty)
+              .toList();
+
+          final categoriesEn = junction
+              .map((j) {
+                final cat = j['category'] as Map?;
+                return cat?['name_en'] as String? ?? '';
+              })
+              .where((name) => name.isNotEmpty)
+              .toList();
+
+          final categoryIds = junction
+              .map((j) {
+                final cat = j['category'] as Map?;
+                return cat?['id'] as String? ?? '';
+              })
+              .where((id) => id.isNotEmpty)
+              .toList();
+
+          course['categories_names'] = categories;
+          course['categories_names_en'] = categoriesEn;
+          course['category_ids'] = categoryIds;
+
+          // Fallback for single category field
+          if (categories.isNotEmpty) {
+            course['category'] = categories.first;
+          }
+        }
+
         return course;
       }).toList();
 
@@ -230,8 +420,11 @@ class DatabaseService {
                   lessonsCount: c['lessons_count'] ?? 0,
                   durationHours:
                       c['duration_hours']?.toString() ?? c['duration'],
-                  category: c['category'] ?? '',
+                  categories: c['categories_names'] != null
+                      ? List<String>.from(c['categories_names'])
+                      : (c['category'] != null ? [c['category']] : []),
                   subject: c['subject'] ?? '',
+                  subjectEn: c['subject_en'],
                   curriculum: [],
                   isEnrolled: false,
                 ))
@@ -254,7 +447,9 @@ class DatabaseService {
           // Filter manually if needed (category/subject)
           var filtered = cachedCourses;
           if (category != null) {
-            filtered = filtered.where((c) => c.category == category).toList();
+              filtered = filtered
+                  .where((c) => c.categories.contains(category))
+                  .toList();
           }
           if (subject != null) {
             filtered = filtered.where((c) => c.subject == subject).toList();
@@ -274,7 +469,7 @@ class DatabaseService {
               'students_count': c.studentsCount,
               'lessons_count': c.lessonsCount,
               'duration_hours': c.durationHours,
-              'category': c.category,
+                'categories': c.categories,
               'subject': c.subject,
             };
           }).toList();
@@ -286,17 +481,31 @@ class DatabaseService {
 
       // Fallback to simple select if join fails AND cache fails
       return _getCoursesSimple(
-          category: category, subject: subject, includeDrafts: includeDrafts);
+        category: category,
+        categoryId: categoryId,
+        subject: subject,
+        instructorId: instructorId,
+        includeDrafts: includeDrafts,
+      );
     }
   }
 
   Future<List<Map<String, dynamic>>> _getCoursesSimple({
     String? category,
+    String? categoryId,
     String? subject,
+    String? instructorId,
     bool includeDrafts = false,
   }) async {
     var query = _client.from('courses').select();
-    if (category != null) query = query.eq('category', category);
+    if (instructorId != null) {
+      query = query.eq('instructor_id', instructorId);
+    }
+    if (categoryId != null) {
+      query = query.eq('category_id', categoryId);
+    } else if (category != null) {
+      query = query.eq('category', category);
+    }
     if (subject != null) query = query.eq('subject', subject);
     if (!includeDrafts) {
       query = query.eq('is_published', true);
@@ -310,7 +519,11 @@ class DatabaseService {
     try {
       final response = await _client
           .from('courses')
-          .select('*, users!instructor_id(full_name, avatar_url)')
+          .select('''
+            *, 
+            users!instructor_id(full_name, full_name_en, avatar_url),
+            course_category_junction(category:categories(id, name, name_en))
+          ''')
           .eq('id', courseId)
           .maybeSingle();
 
@@ -321,9 +534,38 @@ class DatabaseService {
       if (user != null) {
         course['instructor_name'] =
             user['full_name'] ?? course['instructor_name'];
+        course['instructor_full_name_en'] = user['full_name_en'];
         course['instructor_photo'] =
             user['avatar_url'] ?? course['instructor_photo'];
       }
+
+      // Map categories from junction
+      final junction = course['course_category_junction'] as List?;
+      if (junction != null) {
+        final categories = junction
+            .map((j) {
+              final cat = j['category'] as Map?;
+              return cat?['name'] as String? ?? '';
+            })
+            .where((name) => name.isNotEmpty)
+            .toList();
+
+        final categoryIds = junction
+            .map((j) {
+              final cat = j['category'] as Map?;
+              return cat?['id'] as String? ?? '';
+            })
+            .where((id) => id.isNotEmpty)
+            .toList();
+
+        course['categories_names'] = categories;
+        course['category_ids'] = categoryIds;
+
+        if (categories.isNotEmpty) {
+          course['category'] = categories.first;
+        }
+      }
+
       return course;
     } catch (e) {
       debugPrint('Error getting course by id with join: $e');
@@ -1084,9 +1326,9 @@ class DatabaseService {
       // Calculate completed courses
       final enrollmentsResponse = await _client
           .from('enrollments')
-          .select('id, progress')
+          .select('id, progress_percentage')
           .eq('user_id', userId)
-          .gte('progress', 100);
+          .gte('progress_percentage', 100);
 
       final completedCourses = (enrollmentsResponse as List).length;
 
@@ -1109,10 +1351,11 @@ class DatabaseService {
       final examAttemptsResponse = await _client
           .from('exam_attempts')
           .select('score, total_points')
-          .eq('user_id', userId);
+          .eq('user_id', userId)
+          .eq('status', 'submitted');
 
       double averageScore = 0.0;
-      if (examAttemptsResponse.isNotEmpty) {
+      if ((examAttemptsResponse as List).isNotEmpty) {
         double totalPercentage = 0;
         for (var attempt in examAttemptsResponse) {
           final score = (attempt['score'] as num?)?.toDouble() ?? 0;
@@ -1229,7 +1472,8 @@ class DatabaseService {
       // Fetch enrollments with course details AND instructor details
       final response = await _client
           .from('enrollments')
-          .select('*, courses(*, users!instructor_id(full_name, avatar_url))')
+          .select(
+              '*, courses(*, users!instructor_id(full_name, full_name_en, avatar_url))')
           .eq('user_id', userId)
           .order('enrolled_at', ascending: false);
 
@@ -1243,6 +1487,7 @@ class DatabaseService {
           if (user != null) {
             course['instructor_name'] =
                 user['full_name'] ?? course['instructor_name'];
+            course['instructor_full_name_en'] = user['full_name_en'];
             course['instructor_photo'] =
                 user['avatar_url'] ?? course['instructor_photo'];
           }
@@ -1843,16 +2088,16 @@ class DatabaseService {
   }
 
   /// Get current user's role
-  Future<String> getUserRole() async {
+  Future<String> getUserRole([String? userId]) async {
     try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) return 'student';
+      final targetUserId = userId ?? SupabaseService.instance.currentUserId;
+      if (targetUserId == null) return 'student';
 
       // Join user_roles with roles table to get role name
       final response = await _client
           .from('user_roles')
           .select('role_id, roles(name)')
-          .eq('user_id', userId)
+          .eq('user_id', targetUserId)
           .maybeSingle();
 
       if (response == null) {
@@ -1872,16 +2117,22 @@ class DatabaseService {
     }
   }
 
-  /// Check if user is teacher
+  /// Check if user is teacher or higher
   Future<bool> isTeacher() async {
     final role = await getUserRole();
     return role == 'teacher' || role == 'admin' || role == 'super_admin';
   }
 
-  /// Check if user is admin
+  /// Check if user is admin or higher
   Future<bool> isAdmin() async {
     final role = await getUserRole();
     return role == 'admin' || role == 'super_admin';
+  }
+
+  /// Check if user is super admin
+  Future<bool> isSuperAdmin() async {
+    final role = await getUserRole();
+    return role == 'super_admin';
   }
 
   /// Check if user is teacher of specific course
@@ -1970,6 +2221,11 @@ class DatabaseService {
         'teacher_id': teacherId,
         'course_id': courseId,
       });
+
+      // SYNC: Update the instructor_id in courses table
+      await _client.from('courses').update({
+        'instructor_id': teacherId,
+      }).eq('id', courseId);
     } catch (e) {
       rethrow;
     }
@@ -1984,6 +2240,20 @@ class DatabaseService {
           .delete()
           .eq('teacher_id', teacherId)
           .eq('course_id', courseId);
+
+      // SYNC: Clear instructor_id in courses table ONLY if it matches being removed
+      // This handles cases where another teacher might have been assigned in the meantime
+      final courseData = await _client
+          .from('courses')
+          .select('instructor_id')
+          .eq('id', courseId)
+          .maybeSingle();
+
+      if (courseData != null && courseData['instructor_id'] == teacherId) {
+        await _client.from('courses').update({
+          'instructor_id': null,
+        }).eq('id', courseId);
+      }
     } catch (e) {
       rethrow;
     }
@@ -2272,46 +2542,53 @@ class DatabaseService {
   }
 
   /// Get all teachers
+  /// Get all teachers
   Future<List<Map<String, dynamic>>> getAllTeachers() async {
-    try {
-      // Use RPC to bypass RLS and get teachers list cleanly
-      final response = await _client.rpc('get_all_teachers_public');
-      final data = List<Map<String, dynamic>>.from(response);
+    return await fetchWithCache(
+      key: CacheKeys.teachers,
+      duration: const Duration(hours: 1),
+      fetcher: () async {
+        try {
+          // Use RPC to bypass RLS and get teachers list cleanly
+          final response = await _client.rpc('get_all_teachers_public');
+          final data = List<Map<String, dynamic>>.from(response);
 
-      // Transform flattened data to nested structure expected by UI
-      return data.map((t) {
-        return {
-          'user_id': t['user_id'],
-          'users': {
-            'id': t['user_id'],
-            'name': t['name'],
-            'full_name': t['name'], // Map for admin screen compatibility
-            'email': t['email'],
-            'photo_url': t['avatar_url'], // Map avatar_url to photo_url for UI
-            'branch': t['branch'],
-            'bio': t['bio'], // Include bio field
+          // Transform flattened data to nested structure expected by UI
+          return data.map((t) {
+            return {
+              'user_id': t['user_id'],
+              'users': {
+                'id': t['user_id'],
+                'name': t['name'],
+                'full_name': t['name'], // Map for admin screen compatibility
+                'email': t['email'],
+                'photo_url':
+                    t['avatar_url'], // Map avatar_url to photo_url for UI
+                'bio': t['bio'], // Include bio field
+              }
+            };
+          }).toList();
+        } catch (e) {
+          // Fallback to old method if RPC not exists (though it will fail for students due to RLS)
+          try {
+            final teacherRole = await _client
+                .from('roles')
+                .select('id')
+                .eq('name', 'teacher')
+                .single();
+
+            final response = await _client
+                .from('user_roles')
+                .select('*, users(*)')
+                .eq('role_id', teacherRole['id']);
+
+            return List<Map<String, dynamic>>.from(response);
+          } catch (_) {
+            return []; // Return empty if both fail
           }
-        };
-      }).toList();
-    } catch (e) {
-      // Fallback to old method if RPC not exists (though it will fail for students due to RLS)
-      try {
-        final teacherRole = await _client
-            .from('roles')
-            .select('id')
-            .eq('name', 'teacher')
-            .single();
-
-        final response = await _client
-            .from('user_roles')
-            .select('*, users(*)')
-            .eq('role_id', teacherRole['id']);
-
-        return List<Map<String, dynamic>>.from(response);
-      } catch (_) {
-        return []; // Return empty if both fail
-      }
-    }
+        }
+      },
+    );
   }
 
   /// Get system statistics (Admin only)
@@ -2329,6 +2606,62 @@ class DatabaseService {
         'total_attempts': totalAttempts.length,
       };
     } catch (e) {
+      return {
+        'total_users': 0,
+        'total_courses': 0,
+        'total_exams': 0,
+        'total_attempts': 0,
+      };
+    }
+  }
+
+  /// Get statistics for a specific teacher
+  Future<Map<String, dynamic>> getTeacherStatistics(String teacherId) async {
+    try {
+      // Courses owned by this teacher
+      final teacherCourses = await _client
+          .from('courses')
+          .select('id')
+          .eq('instructor_id', teacherId);
+      final courseIds = teacherCourses.map((c) => c['id']).toList();
+
+      if (courseIds.isEmpty) {
+        return {
+          'total_users': 0, // Total students in their courses
+          'total_courses': 0,
+          'total_exams': 0,
+          'total_attempts': 0,
+        };
+      }
+
+      // Total exams in teacher's courses
+      final exams = await _client
+          .from('exams')
+          .select('id')
+          .inFilter('course_id', courseIds);
+
+      // Total students (distinct users) enrolled in teacher's courses
+      final enrollments = await _client
+          .from('enrollments')
+          .select('user_id')
+          .inFilter('course_id', courseIds);
+
+      final distinctUserIds = enrollments.map((e) => e['user_id']).toSet();
+
+      // Total attempts in teacher's courses
+      final attempts = await _client
+          .from('exam_attempts')
+          .select('id')
+          .inFilter('course_id', courseIds);
+
+      return {
+        'total_users': distinctUserIds.length,
+        'total_courses': courseIds.length,
+        'total_exams': exams.length,
+        'total_attempts': attempts.length,
+      };
+    } catch (e) {
+      debugPrint('Error getting teacher statistics: $e');
       return {
         'total_users': 0,
         'total_courses': 0,
@@ -2824,10 +3157,10 @@ class DatabaseService {
 
   /// Create a new order
   Future<Map<String, dynamic>> createOrder({
-    required String planId,
     required double amount,
     required String paymentMethod,
     String? transactionId,
+    String? courseId,
   }) async {
     try {
       final userId = _client.auth.currentUser?.id;
@@ -2835,12 +3168,14 @@ class DatabaseService {
 
       final orderData = {
         'user_id': userId,
-        'plan_id': planId,
-        'amount': amount,
+        'order_number': 'ORD-${DateTime.now().millisecondsSinceEpoch}',
+        'total_amount': amount,
         'payment_method': paymentMethod,
-        'transaction_id': transactionId,
+        'payment_transaction_id': transactionId,
+        'course_id': courseId,
         'status': 'pending',
         'created_at': DateTime.now().toIso8601String(),
+        'order_type': courseId != null ? 'course' : 'subscription',
       };
 
       final response =
@@ -2900,7 +3235,7 @@ class DatabaseService {
       try {
         final response = await _client
             .from('orders')
-            .select()
+            .select('*, courses(title)')
             .eq('user_id', userId)
             .order('created_at', ascending: false);
         return List<Map<String, dynamic>>.from(response);
@@ -2970,6 +3305,7 @@ class DatabaseService {
     String? transactionId,
     String? receiptImageUrl,
     String? phoneNumber,
+    String? courseId,
   }) async {
     try {
       final userId = _client.auth.currentUser?.id;
@@ -2980,6 +3316,7 @@ class DatabaseService {
           .insert({
             'order_id': orderId,
             'user_id': userId,
+            'course_id': courseId,
             'payment_method': paymentMethod,
             'amount': amount,
             'transaction_id': transactionId,
@@ -3017,6 +3354,26 @@ class DatabaseService {
     }
   }
 
+  /// Check if user has a pending payment receipt for a specific course
+  Future<bool> hasPendingCourseRequest(String courseId) async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return false;
+
+      final response = await _client
+          .from('payment_receipts')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('course_id', courseId)
+          .inFilter('status', ['pending', 'under_review']).maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      debugPrint('Error checking pending course request: $e');
+      return false;
+    }
+  }
+
   /// Get all payment receipts (Admin only)
   Future<List<Map<String, dynamic>>> getAllPaymentReceipts({
     String? status,
@@ -3024,7 +3381,8 @@ class DatabaseService {
     try {
       var query = _client
           .from('payment_receipts')
-          .select('*, orders(*), users!user_id(full_name, email)');
+          .select(
+          '*, orders(*), users!user_id(full_name, email), courses(title, image_url)');
 
       if (status != null) {
         query = query.eq('status', status);
@@ -3043,7 +3401,8 @@ class DatabaseService {
     try {
       final response = await _client
           .from('payment_receipts')
-          .select('*, orders(*), users!user_id(full_name, email, phone)')
+          .select(
+              '*, orders(*), users!user_id(full_name, email), courses(title)')
           .eq('id', receiptId)
           .single();
 
@@ -3060,33 +3419,11 @@ class DatabaseService {
     String? adminNotes,
   }) async {
     try {
-      // Get receipt details
-      final receipt = await getPaymentReceiptById(receiptId);
-      if (receipt == null) throw Exception('Receipt not found');
-
-      // Call database function to approve
+      // Logic is now prioritized in the database RPC/trigger
       await _client.rpc('approve_payment_receipt', params: {
         'receipt_id_param': receiptId,
         'admin_notes_param': adminNotes,
       });
-
-      // Get order details to activate subscription
-      final order = receipt['orders'] as Map<String, dynamic>;
-      if (order['order_type'] == 'subscription') {
-        // Extract plan details from order
-        final planId = order['plan_id'] as String?;
-        final userId = order['user_id'] as String;
-
-        if (planId != null) {
-          // You'll need to get plan duration - for now assuming it's in order or you query it
-          // This is a simplified version - adjust based on your schema
-          await activateSubscription(
-            userId: userId,
-            planId: planId,
-            durationMonths: 1, // Get this from the plan or order
-          );
-        }
-      }
 
       debugPrint('Payment receipt approved: $receiptId');
     } catch (e) {
@@ -3178,6 +3515,7 @@ class DatabaseService {
   /// Get questions for a lesson
   Future<List<Map<String, dynamic>>> getLessonQuestions(String lessonId) async {
     try {
+      // 1. Fetch questions with author data, basic replies, and reaction summary
       final response = await _client
           .from('lesson_questions')
           .select(
@@ -3185,7 +3523,107 @@ class DatabaseService {
           .eq('lesson_id', lessonId)
           .order('created_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response);
+      final questions = List<Map<String, dynamic>>.from(response);
+
+      final userId = SupabaseService.instance.currentUserId;
+
+      // 2. Collect all User IDs from replies to fetch their info
+      final replyUserIds = <String>{};
+      final questionIds = questions.map((q) => q['id'].toString()).toList();
+      final replyIds = <String>[];
+
+      for (var q in questions) {
+        if (q['question_replies'] != null) {
+          for (var r in q['question_replies']) {
+            if (r['user_id'] != null) {
+              replyUserIds.add(r['user_id']);
+            }
+            replyIds.add(r['id'].toString());
+          }
+        }
+      }
+
+      // 3. Fetch user details for those IDs and reactions if possible
+      final userMap = <String, dynamic>{};
+      if (replyUserIds.isNotEmpty) {
+        final usersResponse = await _client
+            .from('users')
+            .select('id, full_name, avatar_url')
+            .inFilter('id', replyUserIds.toList());
+
+        for (var u in usersResponse) {
+          userMap[u['id']] = u;
+        }
+      }
+
+      // Build reaction summaries
+      try {
+        final allItemIds = [...questionIds, ...replyIds];
+        if (allItemIds.isNotEmpty) {
+          // Construct the OR filter string safely
+          final qFilter = questionIds.isNotEmpty
+              ? 'question_id.in.(${questionIds.join(",")})'
+              : '';
+          final rFilter =
+              replyIds.isNotEmpty ? 'reply_id.in.(${replyIds.join(",")})' : '';
+
+          String combinedFilter = '';
+          if (qFilter.isNotEmpty && rFilter.isNotEmpty) {
+            combinedFilter = '$qFilter,$rFilter';
+          } else {
+            combinedFilter = qFilter.isNotEmpty ? qFilter : rFilter;
+          }
+
+          final reactionsResponse = await _client
+              .from('lesson_question_reactions')
+              .select()
+              .or(combinedFilter);
+
+          final reactions = List<Map<String, dynamic>>.from(reactionsResponse);
+
+          void processReactions(Map<String, dynamic> item, String idKey) {
+            final id = item['id'].toString();
+            final itemReactions =
+                reactions.where((r) => r[idKey]?.toString() == id).toList();
+
+            final summary = <String, int>{};
+            for (var r in itemReactions) {
+              final type = r['reaction_type'].toString();
+              summary[type] = (summary[type] ?? 0) + 1;
+              if (r['user_id'] == userId) {
+                item['my_reaction'] = type;
+              }
+            }
+            item['reaction_summary'] = summary;
+          }
+
+          for (var q in questions) {
+            processReactions(q, 'question_id');
+            if (q['question_replies'] != null) {
+              for (var r in q['question_replies']) {
+                processReactions(r, 'reply_id');
+                if (r['user_id'] != null && userMap.containsKey(r['user_id'])) {
+                  r['users'] = userMap[r['user_id']];
+                }
+              }
+            }
+          }
+        }
+      } catch (e) {
+        // If reactions table doesn't exist, just proceed without them
+        debugPrint('Reactions table might be missing: $e');
+        for (var q in questions) {
+          if (q['question_replies'] != null) {
+            for (var r in q['question_replies']) {
+              if (r['user_id'] != null && userMap.containsKey(r['user_id'])) {
+                r['users'] = userMap[r['user_id']];
+              }
+            }
+          }
+        }
+      }
+
+      return questions;
     } catch (e) {
       debugPrint('Error getting lesson questions: $e');
       return [];
@@ -3240,6 +3678,193 @@ class DatabaseService {
       });
     } catch (e) {
       debugPrint('Error adding reply: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a question
+  Future<void> deleteLessonQuestion(String questionId) async {
+    try {
+      await _client.from('lesson_questions').delete().eq('id', questionId);
+    } catch (e) {
+      debugPrint('Error deleting question: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a reply
+  Future<void> deleteReply(String replyId) async {
+    try {
+      await _client.from('question_replies').delete().eq('id', replyId);
+    } catch (e) {
+      debugPrint('Error deleting reply: $e');
+      rethrow;
+    }
+  }
+
+  /// Update a question
+  Future<void> updateLessonQuestion(String questionId, String content) async {
+    try {
+      await _client
+          .from('lesson_questions')
+          .update({'content': content}).eq('id', questionId);
+    } catch (e) {
+      debugPrint('Error updating question: $e');
+      rethrow;
+    }
+  }
+
+  /// Update a reply
+  Future<void> updateReply(String replyId, String content) async {
+    try {
+      await _client
+          .from('question_replies')
+          .update({'content': content}).eq('id', replyId);
+    } catch (e) {
+      debugPrint('Error updating reply: $e');
+      rethrow;
+    }
+  }
+
+  /// Toggle a reaction on a question or reply
+  Future<void> toggleReaction({
+    String? questionId,
+    String? replyId,
+    required String reactionType,
+  }) async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) throw Exception('User not logged in');
+
+      // Check for existing reaction
+      var query = _client
+          .from('lesson_question_reactions')
+          .select()
+          .eq('user_id', userId);
+
+      if (questionId != null) query = query.eq('question_id', questionId);
+      if (replyId != null) query = query.eq('reply_id', replyId);
+
+      final existing = await query.maybeSingle();
+
+      if (existing != null) {
+        if (existing['reaction_type'] == reactionType) {
+          // Remove if same
+          await _client
+              .from('lesson_question_reactions')
+              .delete()
+              .eq('id', existing['id']);
+        } else {
+          // Update if different
+          await _client
+              .from('lesson_question_reactions')
+              .update({'reaction_type': reactionType}).eq('id', existing['id']);
+        }
+      } else {
+        // Add new
+        await _client.from('lesson_question_reactions').insert({
+          'user_id': userId,
+          'question_id': questionId,
+          'reply_id': replyId,
+          'reaction_type': reactionType,
+        });
+      }
+    } catch (e) {
+      debugPrint('Error toggling reaction: $e');
+      rethrow;
+    }
+  }
+
+  // ==================== DYNAMIC PROGRESS & FEATURED CONTENT ====================
+
+  /// Get user enrollments with progress data
+  Future<List<Map<String, dynamic>>> getUserEnrollmentsWithProgress(
+      String userId) async {
+    try {
+      final response = await _client.from('enrollments').select('''
+            *,
+            courses(*),
+            last_accessed_lesson:lessons!last_accessed_lesson_id(*)
+          ''').eq('user_id', userId).order('updated_at', ascending: false);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error fetching enrollments with progress: $e');
+      rethrow;
+    }
+  }
+
+  /// Get featured courses for banner carousel
+  Future<List<Map<String, dynamic>>> getFeaturedCourses() async {
+    try {
+      final response = await _client
+          .from('courses')
+          .select('*, users!instructor_id(full_name, avatar_url)')
+          .eq('is_featured', true)
+          .eq('is_published', true)
+          .order('featured_order', ascending: true)
+          .limit(5);
+
+      final data = List<Map<String, dynamic>>.from(response);
+
+      // Map joined data to flat structure
+      return data.map((course) {
+        final user = course['users'];
+        if (user != null) {
+          course['instructor_name'] =
+              user['full_name'] ?? course['instructor_name'];
+          course['instructor_photo'] =
+              user['avatar_url'] ?? course['instructor_photo'];
+        }
+        return course;
+      }).toList();
+    } catch (e) {
+      debugPrint('Error fetching featured courses: $e');
+      rethrow;
+    }
+  }
+
+  /// Update enrollment progress (called after lesson completion)
+  Future<void> updateEnrollmentProgress(
+      String enrollmentId, String courseId) async {
+    try {
+      await _client.rpc('update_enrollment_progress', params: {
+        'p_enrollment_id': enrollmentId,
+        'p_course_id': courseId,
+      });
+    } catch (e) {
+      debugPrint('Error updating enrollment progress: $e');
+      rethrow;
+    }
+  }
+
+  /// Update last accessed lesson for an enrollment
+  Future<void> updateLastAccessedLesson(
+      String enrollmentId, String lessonId) async {
+    try {
+      await _client
+          .from('enrollments')
+          .update({'last_accessed_lesson_id': lessonId}).eq('id', enrollmentId);
+    } catch (e) {
+      debugPrint('Error updating last accessed lesson: $e');
+      rethrow;
+    }
+  }
+
+  /// Get enrollment by course for current user
+  Future<Map<String, dynamic>?> getEnrollmentByCourse(
+      String userId, String courseId) async {
+    try {
+      final response = await _client
+          .from('enrollments')
+          .select()
+          .eq('user_id', userId)
+          .eq('course_id', courseId)
+          .maybeSingle();
+
+      return response;
+    } catch (e) {
+      debugPrint('Error fetching enrollment: $e');
       rethrow;
     }
   }

@@ -3,6 +3,7 @@ import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/utils/string_utils.dart';
 
 class TeachersManagementScreen extends StatefulWidget {
   const TeachersManagementScreen({super.key});
@@ -38,12 +39,17 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
         final userId = teacher['users']?['id'];
         if (userId != null) {
           try {
-            // Get courses assigned to this specific teacher from teacher_courses table
-            final teacherCourses = await SupabaseService.instance.client
-                .from('teacher_courses')
-                .select('*, courses(*)')
-                .eq('teacher_id', userId);
-            teacher['teacher_courses'] = teacherCourses;
+            // Get courses assigned to this specific teacher directly from courses table
+            // This ensures consistency with what the Teacher sees on their dashboard
+            final teacherCourses = await _db.getCourses(
+              includeDrafts: true,
+              instructorId: userId,
+            );
+
+            // Map to the structure expected by the UI card
+            teacher['teacher_courses'] = teacherCourses
+                .map((c) => {'course_id': c['id'], 'courses': c})
+                .toList();
           } catch (e) {
             teacher['teacher_courses'] = [];
           }
@@ -209,7 +215,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user?['full_name'] ?? 'مدرس',
+                            StringUtils.cleanTeacherName(
+                                user?['full_name'] ?? 'مدرس'),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -223,16 +230,6 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                               color: Colors.white.withOpacity(0.7),
                             ),
                           ),
-                          if (user?['branch'] != null) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              user!['branch'],
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.white.withOpacity(0.6),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),
@@ -569,7 +566,6 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
     final avatarController =
         TextEditingController(text: user['avatar_url'] ?? '');
     final bioController = TextEditingController(text: user['bio'] ?? '');
-    String? selectedBranch = user['branch'];
 
     showDialog(
       context: context,
@@ -631,52 +627,6 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                 ),
                 const SizedBox(height: 16),
 
-                // Branch
-                const Text(
-                  'الفرع',
-                  style: TextStyle(color: Colors.white70, fontSize: 12),
-                ),
-                const SizedBox(height: 4),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedBranch,
-                      isExpanded: true,
-                      dropdownColor: AppColors.primaryPurple,
-                      icon: const Icon(Icons.arrow_drop_down,
-                          color: Colors.white),
-                      style: const TextStyle(color: Colors.white),
-                      hint: const Text(
-                        'اختر الفرع',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                      items: const [
-                        DropdownMenuItem<String>(
-                          value: null,
-                          child: Text('غير محدد'),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'علمي',
-                          child: Text('علمي'),
-                        ),
-                        DropdownMenuItem<String>(
-                          value: 'أدبي',
-                          child: Text('أدبي'),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          selectedBranch = value;
-                        });
-                      },
-                    ),
-                  ),
-                ),
                 const SizedBox(height: 16),
 
                 // Avatar URL
@@ -762,7 +712,6 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   // Update user data
                   await SupabaseService.instance.client.from('users').update({
                     'full_name': nameController.text.trim(),
-                    'branch': selectedBranch,
                     'avatar_url': avatarController.text.trim().isEmpty
                         ? null
                         : avatarController.text.trim(),

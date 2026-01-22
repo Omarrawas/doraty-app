@@ -5,6 +5,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 import '../../models/course.dart';
 import '../../widgets/course_card.dart';
+import '../../widgets/shimmer_loader.dart';
+import '../../widgets/empty_state.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -15,14 +17,13 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedBranch = 'الكل';
   String _selectedSubject = 'الكل';
   double _minPrice = 0;
   double _maxPrice = 100000;
   double _minRating = 0;
   bool _showFilters = false;
 
-  final List<String> _branches = ['الكل', 'علمي', 'أدبي'];
+
   final List<String> _subjects = [
     'الكل',
     'رياضيات',
@@ -74,7 +75,6 @@ class _SearchScreenState extends State<SearchScreen> {
       final query = _searchController.text.trim();
       final results = await _databaseService.searchCourses(
         query: query,
-        category: _selectedBranch == 'الكل' ? null : _selectedBranch,
         subject: _selectedSubject == 'الكل' ? null : _selectedSubject,
         minPrice: _minPrice > 0 ? _minPrice : null,
         maxPrice: _maxPrice < 1000000 ? _maxPrice : null,
@@ -147,8 +147,14 @@ class _SearchScreenState extends State<SearchScreen> {
               // Search Results
               Expanded(
                 child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white))
+                    ? ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: 5,
+                        itemBuilder: (context, index) => const Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: CourseCardShimmer(),
+                        ),
+                      )
                     : _searchResults.isEmpty
                         ? _buildEmptyState()
                         : ListView.builder(
@@ -356,34 +362,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Branch Filter
-              const Text(
-                'الفرع',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _branches.map((branch) {
-                  final isSelected = branch == _selectedBranch;
-                  return _buildFilterChip(
-                    label: branch,
-                    isSelected: isSelected,
-                    onTap: () {
-                      setState(() {
-                        _selectedBranch = branch;
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
 
-              const SizedBox(height: 20),
 
               // Subject Filter
               const Text(
@@ -567,60 +546,15 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            margin: const EdgeInsets.all(20),
-            padding: const EdgeInsets.all(40),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.25),
-                  Colors.white.withOpacity(0.15),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.search_off,
-                  size: 80,
-                  color: Colors.white.withOpacity(0.7),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'ابحث عن الدورات',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'استخدم شريط البحث أعلاه للعثور على الدورات التي تبحث عنها',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.white.withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return ProfessionalEmptyState(
+      title:
+          _searchController.text.isEmpty ? 'ابحث عن الدورات' : 'لا توجد نتائج',
+      message: _searchController.text.isEmpty
+          ? 'استخدم شريط البحث أعلاه للعثور على الدورات التي تبحث عنها'
+          : 'لم نتمكن من العثور على أي دورات تطابق بحثك. حاول تغيير كلمات البحث أو الفلاتر.',
+      icon: _searchController.text.isEmpty
+          ? Icons.search_rounded
+          : Icons.search_off_rounded,
     );
   }
 }

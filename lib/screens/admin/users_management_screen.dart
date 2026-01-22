@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/string_utils.dart';
 
 class UsersManagementScreen extends StatefulWidget {
   const UsersManagementScreen({super.key});
@@ -17,6 +18,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   List<Map<String, dynamic>> _roles = [];
   bool _isLoading = true;
   String _searchQuery = '';
+  String? _currentUserRole; // Added
 
   @override
   void initState() {
@@ -29,6 +31,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     try {
       final users = await _db.getAllUsers();
       final roles = await _db.getRoles();
+      final currentRole = await _db.getUserRole(); // Added
 
       // Load user roles for each user
       for (var user in users) {
@@ -39,6 +42,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       setState(() {
         _users = users;
         _roles = roles;
+        _currentUserRole = currentRole; // Added
         _isLoading = false;
       });
     } catch (e) {
@@ -239,7 +243,8 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            user['full_name'] ?? 'مستخدم',
+                            StringUtils.cleanTeacherName(
+                                user['full_name'] ?? 'مستخدم'),
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -279,13 +284,26 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(
-                      child: _buildActionButton(
-                        icon: Icons.admin_panel_settings,
-                        label: 'تعيين دور',
-                        onTap: () => _showRoleDialog(user),
+                    if (_canManageRole(user)) // Added condition
+                      Expanded(
+                        child: _buildActionButton(
+                          icon: Icons.admin_panel_settings,
+                          label: 'تعيين دور',
+                          onTap: () => _showRoleDialog(user),
+                        ),
+                      )
+                    else
+                      const Expanded(
+                        child: Text(
+                          'لا يمكن تعديل أدوار المديرين',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ],
@@ -310,6 +328,18 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       default:
         return Colors.blue;
     }
+  }
+
+  bool _canManageRole(Map<String, dynamic> targetUser) {
+    if (_currentUserRole == 'super_admin') return true;
+
+    // Admins can only manage students and teachers, not other admins
+    final targetUserRoles = targetUser['user_roles'] as List? ?? [];
+    if (targetUserRoles.isEmpty) return true; // Student
+
+    final targetRole =
+        targetUserRoles.first['roles']?['name']?.toString() ?? 'student';
+    return targetRole == 'student' || targetRole == 'teacher';
   }
 
   Widget _buildActionButton({
@@ -403,7 +433,13 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
         title: const Text('تعيين دور', style: TextStyle(color: Colors.white)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: _roles.map((role) {
+          children: _roles.where((r) {
+            // Admins cannot assign admin/super_admin roles
+            if (_currentUserRole != 'super_admin') {
+              return r['name'] != 'admin' && r['name'] != 'super_admin';
+            }
+            return true;
+          }).map((role) {
             return ListTile(
               title: Text(
                 role['display_name'] ?? '',

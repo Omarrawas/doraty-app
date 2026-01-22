@@ -63,9 +63,6 @@ class AppColors {
   static const Color accentPink = Color(0xFFEC4899);
   static const Color secondaryGold = Color(0xFFFFD700);
 
-  // Category Colors
-  static const Color scienceBranch = Color(0xFF8B5CF6);
-  static const Color literaryBranch = Color(0xFFEC4899);
 
   // Syrian Payment Methods Colors
   static const Color shamCash = Color(0xFFFF6B00);

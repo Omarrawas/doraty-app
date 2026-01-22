@@ -8,7 +8,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'settings_service.dart';
 import 'package:flutter/foundation.dart';
 import '../services/database_service.dart';
-import '../services/offline_storage_service.dart';
+import 'offline_storage_service.dart';
+import 'encryption_service.dart';
 import '../../models/download_progress.dart';
 import '../../models/offline_course.dart';
 import '../../models/offline_lesson.dart';
@@ -203,26 +204,177 @@ class CourseDownloadService {
     }
   }
 
+  Future<String?> downloadResource({
+    required String url,
+    required String courseId,
+    required String lessonId,
+    required String fileName,
+  }) async {
+    try {
+      if (kIsWeb) {
+        // 1. Download as bytes
+        final dio = Dio();
+        final response = await dio.get<List<int>>(
+          url,
+          options: Options(responseType: ResponseType.bytes),
+        );
+
+        if (response.data == null) return null;
+        final sourceBytes = Uint8List.fromList(response.data!);
+
+        // 2. Encrypt bytes
+        final encryptedBytes =
+            await EncryptionService().encryptBytes(sourceBytes);
+
+        // 3. Save to Hive
+        await _storage.saveResource(lessonId, fileName, encryptedBytes);
+
+        // 4. Update offline lesson record
+        final offlineLesson = await _storage.getLesson(lessonId);
+        if (offlineLesson != null) {
+          final Map<String, String> currentResources =
+              Map.from(offlineLesson.downloadedResources ?? {});
+          currentResources[fileName] =
+              'hive://$lessonId/$fileName'; // Virtual path for web
+
+          final updatedLesson = OfflineLesson(
+            id: offlineLesson.id,
+            courseId: offlineLesson.courseId,
+            title: offlineLesson.title,
+            videoPath: offlineLesson.videoPath,
+            content: offlineLesson.content,
+            isDownloaded: offlineLesson.isDownloaded,
+            duration: offlineLesson.duration,
+            orderIndex: offlineLesson.orderIndex,
+            downloadedResources: currentResources,
+          );
+          await _storage.saveLesson(updatedLesson);
+        }
+        // 5. Update course metadata to show in "Downloads"
+        await _updateCourseMetadata(courseId, encryptedBytes.length);
+        return 'hive://$lessonId/$fileName';
+      }
+
+      // Native implementation
+      final appDir = await getApplicationDocumentsDirectory();
+      final relativePath =
+          'courses/$courseId/lessons/$lessonId/resources/$fileName';
+      final savePath = '${appDir.path}/offline/$relativePath';
+
+      // 1. Download to temp file
+      final tempPath = '$savePath.tmp';
+      final tempFile = File(tempPath);
+      await tempFile.create(recursive: true);
+
+      final dio = Dio();
+      await dio.download(url, tempPath);
+
+      final fileSize = await tempFile.length();
+      final totalAddedSize = fileSize + 16; // Account for IV header
+
+      // 2. Encrypt to final path
+      await EncryptionService().encryptFile(tempFile, savePath);
+
+      // 3. Cleanup temp
+      await tempFile.delete();
+
+      // 4. Update offline lesson record
+      final offlineLesson = await _storage.getLesson(lessonId);
+      if (offlineLesson != null) {
+        final Map<String, String> currentResources =
+            Map.from(offlineLesson.downloadedResources ?? {});
+        currentResources[fileName] = savePath;
+
+        final updatedLesson = OfflineLesson(
+          id: offlineLesson.id,
+          courseId: offlineLesson.courseId,
+          title: offlineLesson.title,
+          videoPath: offlineLesson.videoPath,
+          content: offlineLesson.content,
+          isDownloaded: offlineLesson.isDownloaded,
+          duration: offlineLesson.duration,
+          orderIndex: offlineLesson.orderIndex,
+          downloadedResources: currentResources,
+        );
+        await _storage.saveLesson(updatedLesson);
+      }
+
+      // 5. Update course metadata to show in "Downloads"
+      await _updateCourseMetadata(courseId, totalAddedSize);
+
+      return savePath;
+    } catch (e) {
+      debugPrint('Failed to download and encrypt resource: $e');
+      return null;
+    }
+  }
+
+  Future<void> _updateCourseMetadata(String courseId, int addedSize) async {
+    try {
+      var offlineCourse = await _storage.getCourse(courseId);
+
+      if (offlineCourse == null) {
+        // Create skeleton course if it doesn't exist
+        final courseData = await _db.getCourseById(courseId);
+        if (courseData == null) return;
+
+        // Fetch lesson IDs for the course
+        final lessons = await _db.getLessons(courseId);
+        final lessonIds = lessons.map((l) => l['id'] as String).toList();
+
+        offlineCourse = OfflineCourse(
+          id: courseId,
+          title: courseData['title'] ?? 'Unknown Course',
+          description: courseData['description'],
+          thumbnailPath:
+              null, // We could download this too, but let's keep it simple
+          lessonIds: lessonIds,
+          downloadedAt: DateTime.now(),
+          lastSyncAt: DateTime.now(),
+          totalSize: addedSize,
+        );
+      } else {
+        // Update size
+        offlineCourse = OfflineCourse(
+          id: offlineCourse.id,
+          title: offlineCourse.title,
+          description: offlineCourse.description,
+          thumbnailPath: offlineCourse.thumbnailPath,
+          lessonIds: offlineCourse.lessonIds,
+          downloadedAt: offlineCourse.downloadedAt,
+          lastSyncAt: DateTime.now(),
+          totalSize: offlineCourse.totalSize + addedSize,
+        );
+      }
+
+      await _storage.saveCourse(offlineCourse);
+    } catch (e) {
+      debugPrint('Error updating course metadata: $e');
+    }
+  }
+
   Future<String?> _downloadFile(String url, String relativePath) async {
+    if (kIsWeb) {
+      // On Web, we don't download files to disk.
+      // This method is used for course thumbnails etc.
+      // For now, return the URL as the "local" path, or we could cache in Hive if needed.
+      return url;
+    }
+
     try {
       final appDir = await getApplicationDocumentsDirectory();
       final savePath = '${appDir.path}/offline/$relativePath';
       final file = File(savePath);
       
-      if (await file.exists()) {
-        // Already exists? Skip or overwrite? For now skip
-        return file.path;
-      }
+      if (await file.exists()) return savePath;
       
       await file.create(recursive: true);
-
-      // Use Dio for better large file handling
       final dio = Dio();
       await dio.download(url, savePath);
       
       return savePath;
     } catch (e) {
-      debugPrint('Failed to download file: $url, $e');
+      debugPrint('Error downloading file $relativePath: $e');
       return null;
     }
   }

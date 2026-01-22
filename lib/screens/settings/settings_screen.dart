@@ -8,13 +8,16 @@ import '../../core/theme/theme_provider.dart' as theme_provider;
 import '../../core/services/auth_service.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/services/settings_service.dart';
-import '../../models/category.dart';
+
 import '../auth/login_screen.dart';
-import '../categories/branch_selection_screen.dart';
+
 import '../../core/services/offline_storage_service.dart';
 import 'dart:ui' as ui;
 import 'terms_conditions_screen.dart';
 import 'privacy_policy_screen.dart';
+import '../../core/constants/app_strings.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/localization/locale_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -35,6 +38,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
 
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
+
   @override
   void initState() {
     super.initState();
@@ -48,12 +54,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _notificationsEnabled = settings.getNotificationsEnabled();
       _autoDownload = settings.getAutoDownload();
       _wifiOnly = settings.getWifiOnly();
-      _videoQuality = settings.getVideoQuality();
-      _selectedLanguage = settings.getLanguage();
     });
   }
 
-  String _selectedLanguage = 'ar';
+  String get _selectedLanguage =>
+      Provider.of<LocaleProvider>(context, listen: false).locale;
 
   Future<void> _loadUserProfile() async {
     try {
@@ -67,7 +72,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل البيانات: $e')),
+          SnackBar(content: Text('${_t('error_loading')}: $e')),
         );
       }
     }
@@ -79,13 +84,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await _loadUserProfile(); // Refresh data
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حفظ التغييرات')),
+          SnackBar(content: Text(_t('changes_saved'))),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في حفظ التغييرات: $e')),
+          SnackBar(content: Text('${_t('error_saving')}: $e')),
         );
       }
     }
@@ -94,6 +99,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<theme_provider.ThemeProvider>(context);
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final selectedLanguage = localeProvider.locale;
 
     return Scaffold(
       body: Container(
@@ -114,48 +121,39 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.all(20),
                   children: [
                     // Profile Section
-                    _buildSectionTitle('الملف الشخصي'),
+                    _buildSectionTitle(_t('profile')),
                     const SizedBox(height: 12),
                     _buildProfileAvatar(),
                     const SizedBox(height: 12),
                     _buildSettingCard(
                       icon: Icons.person,
-                      title: 'الاسم',
-                      subtitle: _userProfile?['full_name'] ?? 'المستخدم',
-                      trailing: const Icon(
-                        Icons.chevron_left,
+                      title: _t('name'),
+                      subtitle: _userProfile?['full_name'] ?? _t('profile'),
+                      trailing: Icon(
+                        selectedLanguage == 'ar'
+                            ? Icons.chevron_left
+                            : Icons.chevron_right,
                         color: Colors.white,
                       ),
                       onTap: _showNameEditDialog,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildSettingCard(
-                      icon: Icons.school,
-                      title: 'الفرع الدراسي',
-                      subtitle: _userProfile?['branch'] ?? 'غير محدد',
-                      trailing: const Icon(
-                        Icons.chevron_left,
-                        color: Colors.white,
-                      ),
-                      onTap: _showBranchSelection,
                     ),
 
                     const SizedBox(height: 24),
 
                     // Theme Section
-                    _buildSectionTitle('المظهر'),
+                    _buildSectionTitle(_t('theme')),
                     const SizedBox(height: 12),
                     _buildThemeSelector(themeProvider),
 
                     const SizedBox(height: 24),
 
                     // Notifications Section
-                    _buildSectionTitle('الإشعارات'),
+                    _buildSectionTitle(_t('notifications')),
                     const SizedBox(height: 12),
                     _buildSettingCard(
                       icon: Icons.notifications,
-                      title: 'تفعيل الإشعارات',
-                      subtitle: 'استقبال إشعارات الدروس والاختبارات',
+                      title: _t('enable_notifications'),
+                      subtitle: _t('notifications_desc'),
                       trailing: Switch(
                         value: _notificationsEnabled,
                         onChanged: (value) async {
@@ -171,12 +169,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 24),
 
                     // Download Section
-                    _buildSectionTitle('التحميل'),
+                    _buildSectionTitle(_t('downloads')),
                     const SizedBox(height: 12),
                     _buildSettingCard(
                       icon: Icons.download,
-                      title: 'التحميل التلقائي',
-                      subtitle: 'تحميل الدروس تلقائياً عند الاتصال بالواي فاي',
+                      title: _t('auto_download'),
+                      subtitle: _t('auto_download_desc'),
                       trailing: Switch(
                         value: _autoDownload,
                         onChanged: (value) async {
@@ -193,8 +191,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     _buildSettingCard(
                       icon: Icons.wifi,
-                      title: 'التحميل عبر واي فاي فقط',
-                      subtitle: 'توفير استهلاك البيانات عبر شبكة الجوال',
+                      title: _t('wifi_only'),
+                      subtitle: _t('wifi_only_desc'),
                       trailing: Switch(
                         value: _wifiOnly,
                         onChanged: (value) async {
@@ -211,10 +209,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     _buildSettingCard(
                       icon: Icons.high_quality,
-                      title: 'جودة الفيديو',
-                      subtitle: _videoQuality,
-                      trailing: const Icon(
-                        Icons.chevron_left,
+                      title: _t('video_quality'),
+                      subtitle: _videoQuality == 'عالية'
+                          ? _t('video_quality_high')
+                          : (_videoQuality == 'متوسطة'
+                              ? _t('video_quality_medium')
+                              : _t('video_quality_low')),
+                      trailing: Icon(
+                        selectedLanguage == 'ar'
+                            ? Icons.chevron_left
+                            : Icons.chevron_right,
                         color: Colors.white,
                       ),
                       onTap: () => _showQualityDialog(),
@@ -224,10 +228,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     _buildSettingCard(
                       icon: Icons.delete_outline,
-                      title: 'مسح التنزيلات',
-                      subtitle: 'حذف جميع الدروس المحملة لتوفير المساحة',
-                      trailing: const Icon(
-                        Icons.chevron_left,
+                      title: _t('clear_downloads'),
+                      subtitle: _t('clear_downloads_desc'),
+                      trailing: Icon(
+                        selectedLanguage == 'ar'
+                            ? Icons.chevron_left
+                            : Icons.chevron_right,
                         color: Colors.white,
                       ),
                       onTap: _clearAllDownloads,
@@ -236,19 +242,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 24),
 
                     // About Section
-                    _buildSectionTitle('حول التطبيق'),
+                    _buildSectionTitle(_t('about')),
                     const SizedBox(height: 12),
                     _buildSettingCard(
                       icon: Icons.info_outline,
-                      title: 'الإصدار',
+                      title: _t('version'),
                       subtitle: '1.0.0',
                     ),
 
                     _buildSettingCard(
                       icon: Icons.privacy_tip_outlined,
-                      title: 'سياسة الخصوصية',
-                      trailing: const Icon(
-                        Icons.chevron_left,
+                      title: _t('privacy_policy'),
+                      trailing: Icon(
+                        selectedLanguage == 'ar'
+                            ? Icons.chevron_left
+                            : Icons.chevron_right,
                         color: Colors.white,
                       ),
                       onTap: () {
@@ -261,9 +269,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     _buildSettingCard(
                       icon: Icons.description_outlined,
-                      title: 'شروط الاستخدام',
-                      trailing: const Icon(
-                        Icons.chevron_left,
+                      title: _t('terms_conditions'),
+                      trailing: Icon(
+                        selectedLanguage == 'ar'
+                            ? Icons.chevron_left
+                            : Icons.chevron_right,
                         color: Colors.white,
                       ),
                       onTap: () {
@@ -276,15 +286,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     const SizedBox(height: 24),
 
+                    // Support & Safety Section
+                    _buildSectionTitle(_t('contact_support')),
+                    const SizedBox(height: 12),
+                    _buildSettingCard(
+                      icon: Icons.headset_mic_outlined,
+                      title: _t('contact_support'),
+                      subtitle: _t('support_desc'),
+                      trailing: Icon(
+                        selectedLanguage == 'ar'
+                            ? Icons.chevron_left
+                            : Icons.chevron_right,
+                        color: Colors.white,
+                      ),
+                      onTap: _showSupportDialog,
+                    ),
+                    const SizedBox(height: 12),
+                    _buildSettingCard(
+                      icon: Icons.person_remove_outlined,
+                      title: _t('delete_account'),
+                      subtitle: _t('delete_account_desc'),
+                      trailing: Icon(
+                        selectedLanguage == 'ar'
+                            ? Icons.chevron_left
+                            : Icons.chevron_right,
+                        color: Colors.white,
+                      ),
+                      onTap: _showDeleteAccountDialog,
+                    ),
+
+                    const SizedBox(height: 24),
+
                     // Language Section
-                    _buildSectionTitle('اللغة'),
+                    _buildSectionTitle(_t('language')),
                     const SizedBox(height: 12),
                     _buildSettingCard(
                       icon: Icons.language,
-                      title: 'لغة التطبيق',
-                      subtitle: _selectedLanguage == 'ar' ? 'العربية' : 'English',
-                      trailing: const Icon(
-                        Icons.chevron_left,
+                      title: _t('app_language'),
+                      subtitle:
+                          selectedLanguage == 'ar' ? 'العربية' : 'English',
+                      trailing: Icon(
+                        selectedLanguage == 'ar'
+                            ? Icons.chevron_left
+                            : Icons.chevron_right,
                         color: Colors.white,
                       ),
                       onTap: _showLanguageDialog,
@@ -331,11 +375,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
-              'الإعدادات',
+              _t('settings'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -464,18 +508,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                     const SizedBox(width: 16),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'تغيير الصورة',
-                        style: TextStyle(
+                        _t('change_photo'),
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                         ),
                       ),
                     ),
-                    const Icon(
-                      Icons.chevron_left,
+                    Icon(
+                      _selectedLanguage == 'ar'
+                          ? Icons.chevron_left
+                          : Icons.chevron_right,
                       color: Colors.white,
                     ),
                   ],
@@ -533,10 +579,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'وضع العرض',
-                      style: TextStyle(
+                      _t('display_mode'),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -551,7 +597,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Expanded(
                     child: _buildThemeOption(
                       icon: Icons.light_mode,
-                      label: 'فاتح',
+                      label: _t('light'),
                       isSelected: themeProvider.appThemeMode ==
                           theme_provider.AppThemeMode.light,
                       onTap: () => themeProvider
@@ -562,7 +608,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Expanded(
                     child: _buildThemeOption(
                       icon: Icons.dark_mode,
-                      label: 'داكن',
+                      label: _t('dark'),
                       isSelected: themeProvider.appThemeMode ==
                           theme_provider.AppThemeMode.dark,
                       onTap: () => themeProvider
@@ -573,7 +619,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Expanded(
                     child: _buildThemeOption(
                       icon: Icons.brightness_auto,
-                      label: 'تلقائي',
+                      label: _t('system'),
                       isSelected: themeProvider.appThemeMode ==
                           theme_provider.AppThemeMode.system,
                       onTap: () => themeProvider
@@ -742,25 +788,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    title: const Text(
-                      'تسجيل الخروج',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(
+                    title: Text(
+                      _t('logout_confirm_title'),
+                      textAlign: _selectedLanguage == 'ar'
+                          ? TextAlign.right
+                          : TextAlign.left,
+                      style: const TextStyle(
                         fontFamily: 'Cairo',
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    content: const Text(
-                      'هل أنت متأكد من تسجيل الخروج؟',
-                      textAlign: TextAlign.right,
-                      style: TextStyle(fontFamily: 'Cairo'),
+                    content: Text(
+                      _t('logout_confirm_desc'),
+                      textAlign: _selectedLanguage == 'ar'
+                          ? TextAlign.right
+                          : TextAlign.left,
+                      style: const TextStyle(fontFamily: 'Cairo'),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text(
-                          'إلغاء',
-                          style: TextStyle(fontFamily: 'Cairo'),
+                        child: Text(
+                          _t('cancel'),
+                          style: const TextStyle(fontFamily: 'Cairo'),
                         ),
                       ),
                       ElevatedButton(
@@ -768,9 +818,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
                         ),
-                        child: const Text(
-                          'تسجيل الخروج',
-                          style: TextStyle(
+                        child: Text(
+                          _t('logout'),
+                          style: const TextStyle(
                             fontFamily: 'Cairo',
                             color: Colors.white,
                           ),
@@ -795,7 +845,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('خطأ في تسجيل الخروج: $e'),
+                          content: Text('${_t('error_logout')}: $e'),
                           backgroundColor: Colors.red,
                         ),
                       );
@@ -803,16 +853,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   }
                 }
               },
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.logout, color: Colors.red),
-                    SizedBox(width: 8),
+                    const Icon(Icons.logout, color: Colors.red),
+                    const SizedBox(width: 8),
                     Text(
-                      'تسجيل الخروج',
-                      style: TextStyle(
+                      _t('logout'),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.red,
@@ -857,9 +907,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'اختيار الصورة',
-                    style: TextStyle(
+                  Text(
+                    _t('choose_photo'),
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -868,13 +918,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 20),
                   _buildImageSourceOption(
                     icon: Icons.camera_alt,
-                    label: 'الكاميرا',
+                    label: _t('camera'),
                     onTap: () => _pickImage(ImageSource.camera),
                   ),
                   const SizedBox(height: 12),
                   _buildImageSourceOption(
                     icon: Icons.photo_library,
-                    label: 'معرض الصور',
+                    label: _t('gallery'),
                     onTap: () => _pickImage(ImageSource.gallery),
                   ),
                 ],
@@ -940,7 +990,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في اختيار الصورة: $e')),
+          SnackBar(content: Text('${_t('error_image_pick')}: $e')),
         );
       }
     }
@@ -964,7 +1014,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في رفع الصورة: $e')),
+          SnackBar(content: Text('${_t('error_image_upload')}: $e')),
         );
       }
     }
@@ -1002,9 +1052,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'تعديل الاسم',
-                    style: TextStyle(
+                  Text(
+                    _t('edit_name'),
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -1013,8 +1063,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const SizedBox(height: 20),
                   TextField(
                     controller: nameController,
+                    textAlign: _selectedLanguage == 'ar'
+                        ? TextAlign.right
+                        : TextAlign.left,
                     decoration: InputDecoration(
-                      hintText: 'أدخل الاسم الكامل',
+                      hintText: _t('enter_full_name'),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.1),
                       border: OutlineInputBorder(
@@ -1041,9 +1094,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Expanded(
                         child: TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text(
-                            'إلغاء',
-                            style: TextStyle(color: Colors.white70),
+                          child: Text(
+                            _t('cancel'),
+                            style: const TextStyle(color: Colors.white70),
                           ),
                         ),
                       ),
@@ -1066,7 +1119,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('حفظ'),
+                          child: Text(_t('save')),
                         ),
                       ),
                     ],
@@ -1080,20 +1133,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showBranchSelection() async {
-    final selectedBranch = await Navigator.push<Branch>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const BranchSelectionScreen(fromSettings: true),
-      ),
-    );
-
-    if (selectedBranch != null) {
-      await _updateUserProfile({'branch': selectedBranch.name});
-      // Reload user profile data to refresh the UI
-      await _loadUserProfile();
-    }
-  }
 
   void _showQualityDialog() {
     showDialog(
@@ -1124,9 +1163,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'جودة الفيديو',
-                    style: TextStyle(
+                  Text(
+                    _t('video_quality'),
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -1134,6 +1173,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 20),
                   ...['عالية', 'متوسطة', 'منخفضة'].map((quality) {
+                    final label = quality == 'عالية'
+                        ? _t('video_quality_high')
+                        : (quality == 'متوسطة'
+                            ? _t('video_quality_medium')
+                            : _t('video_quality_low'));
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Material(
@@ -1162,7 +1206,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    quality,
+                                    label,
                                     style: const TextStyle(
                                       fontSize: 16,
                                       color: Colors.white,
@@ -1219,9 +1263,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    'اختر اللغة',
-                    style: TextStyle(
+                  Text(
+                    _t('language'),
+                    style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -1246,12 +1290,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          setState(() {
-            _selectedLanguage = code;
-          });
-          await SettingsService().setLanguage(code);
-          if (mounted) Navigator.pop(context);
+        onTap: () {
+          context.read<LocaleProvider>().setLocale(code);
+          Navigator.pop(context);
         },
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -1293,18 +1334,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        title: const Text('مسح التنزيلات'),
-        content: const Text('هل أنت متأكد من مسح جميع الدروس المحملة؟'),
+        title: Text(_t('clear_downloads_confirm_title')),
+        content: Text(_t('clear_downloads_confirm_desc')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child: Text(_t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'مسح',
-              style: TextStyle(color: Colors.red),
+            child: Text(
+              _t('clear'),
+              style: const TextStyle(color: Colors.red),
             ),
           ),
         ],
@@ -1315,7 +1356,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // Show loading indicator or snackbar before deleting
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('جاري مسح التنزيلات...')),
+          SnackBar(content: Text(_t('clearing'))),
         );
       }
 
@@ -1323,9 +1364,179 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم مسح جميع التنزيلات بنجاح')),
+          SnackBar(content: Text(_t('clear_success'))),
         );
         // Refresh settings or stats if needed
+      }
+    }
+  }
+
+  void _showSupportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.3),
+                    Colors.white.withOpacity(0.2),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    _t('support_dialog_title'),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _t('support_dialog_desc'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildSupportOption(
+                    icon: Icons.email_outlined,
+                    label: _t('email_us'),
+                    onTap: () async {
+                      final Uri emailLaunchUri = Uri(
+                        scheme: 'mailto',
+                        path: 'support@doraty.com',
+                        query: Uri.encodeFull(
+                            'subject=Support Request from ${_userProfile?['full_name']}'),
+                      );
+                      if (await canLaunchUrl(emailLaunchUri)) {
+                        await launchUrl(emailLaunchUri);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildSupportOption(
+                    icon: Icons.chat_outlined,
+                    label: _t('whatsapp_us'),
+                    onTap: () async {
+                      final whatsappUrl = Uri.parse(
+                          "https://wa.me/+963931865704"); // Placeholder
+                      if (await canLaunchUrl(whatsappUrl)) {
+                        await launchUrl(whatsappUrl,
+                            mode: LaunchMode.externalApplication);
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSupportOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: Colors.white, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        title: Text(
+          _t('delete_confirm_title'),
+          style:
+              const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+        ),
+        content: Text(_t('delete_confirm_desc')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(_t('cancel')),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+              await _deleteAccount();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: Text(
+              _t('delete'),
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deleteAccount() async {
+    try {
+      await AuthService().deleteAccount();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
       }
     }
   }

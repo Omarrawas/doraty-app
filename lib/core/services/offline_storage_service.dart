@@ -14,9 +14,11 @@ class OfflineStorageService {
   static const String coursesBoxName = 'offline_courses';
   static const String lessonsBoxName = 'offline_lessons';
   static const String syncStatusBoxName = 'sync_status';
+  static const String resourcesBoxName = 'offline_resources';
 
   Box<OfflineCourse>? _coursesBox;
   Box<OfflineLesson>? _lessonsBox;
+  Box<Uint8List>? _resourcesBox;
   Box? _syncStatusBox;
   bool _isInitialized = false;
 
@@ -25,7 +27,9 @@ class OfflineStorageService {
     if (_isInitialized) return;
 
     try {
-      await Hive.initFlutter();
+      if (!kIsWeb) {
+        await Hive.initFlutter();
+      }
       
       // Register Adapters
       if (!Hive.isAdapterRegistered(2)) {
@@ -38,6 +42,7 @@ class OfflineStorageService {
       // Open Boxes
       _coursesBox = await Hive.openBox<OfflineCourse>(coursesBoxName);
       _lessonsBox = await Hive.openBox<OfflineLesson>(lessonsBoxName);
+      _resourcesBox = await Hive.openBox<Uint8List>(resourcesBoxName);
       _syncStatusBox = await Hive.openBox(syncStatusBoxName);
       
       _isInitialized = true;
@@ -108,15 +113,43 @@ class OfflineStorageService {
       ..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
   }
 
+  // --- Resource (Encrypted Attachments) Operations ---
+
+  Future<void> saveResource(
+      String lessonId, String fileName, Uint8List encryptedData) async {
+    await _ensureInitialized();
+    final key = '${lessonId}_$fileName';
+    await _resourcesBox!.put(key, encryptedData);
+  }
+
+  Future<Uint8List?> getResource(String lessonId, String fileName) async {
+    await _ensureInitialized();
+    final key = '${lessonId}_$fileName';
+    return _resourcesBox!.get(key);
+  }
+
+  Future<void> deleteResource(String lessonId, String fileName) async {
+    await _ensureInitialized();
+    final key = '${lessonId}_$fileName';
+    await _resourcesBox!.delete(key);
+  }
+
   Future<void> _deleteLesson(String id) async {
     final lesson = _lessonsBox!.get(id);
     if (lesson == null) return;
 
-    // Delete video file if exists
-    if (lesson.videoPath != null) {
+    // Delete video file if exists (Native only)
+    if (!kIsWeb && lesson.videoPath != null) {
       final file = File(lesson.videoPath!);
       if (await file.exists()) {
         await file.delete();
+      }
+    }
+
+    // Delete all resources for this lesson from Hive (All platforms)
+    if (lesson.downloadedResources != null) {
+      for (final fileName in lesson.downloadedResources!.keys) {
+        await deleteResource(id, fileName);
       }
     }
 
@@ -131,19 +164,23 @@ class OfflineStorageService {
     for (var course in _coursesBox!.values) {
       size += course.totalSize;
     }
+    // Add resources sizes
+    for (var bytes in _resourcesBox!.values) {
+      size += bytes.length;
+    }
     return size;
   }
 
   Future<void> clearAll() async {
     await _ensureInitialized();
     
-    // Delete all files usually associated?
-    // For now simplistic clear
     final courses = await getAllCourses();
     for (var c in courses) {
       await deleteCourse(c.id);
-    } await _coursesBox!.clear();
+    }
+    await _coursesBox!.clear();
     await _lessonsBox!.clear();
+    await _resourcesBox!.clear();
     await _syncStatusBox!.clear();
   }
 

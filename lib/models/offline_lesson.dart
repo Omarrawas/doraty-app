@@ -29,6 +29,9 @@ class OfflineLesson extends HiveObject {
   @HiveField(7)
   final int orderIndex;
 
+  @HiveField(8)
+  final Map<String, String>? downloadedResources; // Local paths to resources
+
   OfflineLesson({
     required this.id,
     required this.courseId,
@@ -38,5 +41,6 @@ class OfflineLesson extends HiveObject {
     required this.isDownloaded,
     this.duration = '0:00',
     required this.orderIndex,
+    this.downloadedResources,
   });
 }

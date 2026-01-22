@@ -8,6 +8,9 @@ import '../../core/services/supabase_service.dart';
 import '../../core/services/offline_storage_service.dart';
 import 'course_details_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import 'package:provider/provider.dart';
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
 
 class CoursesListScreen extends StatefulWidget {
   final bool showBackButton;
@@ -28,6 +31,9 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
   Set<String> _offlineCourseIds = {};
   bool _isLoading = true;
   int _selectedTab = 0; // 0: Current, 1: Completed
+
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   @override
   void initState() {
@@ -86,14 +92,14 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
           _enrolledCourses.removeAt(index);
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إزالة الدورة من قائمتك')),
+          SnackBar(content: Text(_t('unenroll_success'))),
         );
       }
       return true;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e')),
+          SnackBar(content: Text('${_t('error_label')}: $e')),
         );
       }
       return false;
@@ -107,31 +113,32 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
         backgroundColor: AppColors.getSurfaceColor(context),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
-          'تأكيد الحذف',
+          _t('confirm_delete_title'), // Replaced 'تأكيد الحذف'
           style: TextStyle(
             color: AppColors.getTextColor(context),
             fontWeight: FontWeight.bold,
           ),
-          textAlign: TextAlign.right,
+          textAlign:
+              TextAlign.center, // Changed from right for LTR/RTL consistency
         ),
         content: Text(
-          'هل تريد إزالة هذه الدورة من قائمتك؟',
+          _t('confirm_delete_message'), // Replaced 'هل تريد إزالة هذه الدورة من قائمتك؟'
           style: TextStyle(
               color: AppColors.getTextColor(context, secondary: true)),
-          textAlign: TextAlign.right,
+          textAlign: TextAlign.center, // Changed from right
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text(
-              'إلغاء',
-              style: TextStyle(color: AppColors.primaryPurple),
+            child: Text(
+              _t('cancel'), // Replaced 'إلغاء'
+              style: const TextStyle(color: AppColors.primaryPurple),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('حذف'),
+            child: Text(_t('delete')), // Replaced 'حذف'
           ),
         ],
       ),
@@ -167,14 +174,14 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                     children: [
                       Expanded(
                         child: _buildTab(
-                          title: 'الحالية',
+                          title: _t('current'),
                           isSelected: _selectedTab == 0,
                           onTap: () => setState(() => _selectedTab = 0),
                         ),
                       ),
                       Expanded(
                         child: _buildTab(
-                          title: 'المنتهية',
+                          title: _t('completed'),
                           isSelected: _selectedTab == 1,
                           onTap: () => setState(() => _selectedTab = 1),
                         ),
@@ -241,10 +248,14 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                 final course = Course(
                                   id: courseData['id'],
                                   title: courseData['title'] ?? '',
+                                  titleEn: courseData['title_en'],
                                   description: courseData['description'] ?? '',
+                                  descriptionEn: courseData['description_en'],
                                   instructorId: courseData['instructor_id'],
                                   instructorName:
                                       courseData['instructor_name'] ?? '',
+                                  instructorFullNameEn:
+                                      courseData['instructor_full_name_en'],
                                   instructorPhoto:
                                       courseData['instructor_photo'] ?? '',
                                   imageUrl: courseData['image_url'] ??
@@ -263,9 +274,16 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                   durationHours: courseData['duration_hours']
                                           ?.toString() ??
                                       courseData['duration'],
-                                  category: courseData['category'] ?? '',
+                                  categories:
+                                      courseData['categories_names'] != null
+                                          ? List<String>.from(
+                                              courseData['categories_names'])
+                                          : (courseData['category'] != null
+                                              ? [courseData['category']]
+                                              : []),
                                   subject: courseData['subject'] ?? '',
-                                  curriculum: [],
+                                  subjectEn: courseData['subject_en'],
+                                  curriculum: const [],
                                   isEnrolled: true,
                                   isPublished: courseData['is_published'] ?? true,
                                 );
@@ -321,11 +339,11 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
             )
           else
             const SizedBox(width: 48),
-          const Expanded(
+          Expanded(
             child: Text(
-              'دوراتي',
+              _t('my_courses'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -350,7 +368,9 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
           ),
           const SizedBox(height: 20),
           Text(
-            _selectedTab == 0 ? 'لا توجد دورات حالية' : 'لم تكمل أي دورة بعد',
+            _selectedTab == 0
+                ? _t('no_active_courses') // Replaced 'لا توجد دورات حالية'
+                : _t('no_completed_courses'), // Replaced 'لم تكمل أي دورة بعد'
             style: TextStyle(
               fontSize: 18,
               color: Colors.white.withOpacity(0.8),
@@ -358,13 +378,19 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          Text(
-            _selectedTab == 0
-                ? 'ابدأ بإضافة دورات من الصفحة الرئيسية'
-                : 'استمر في التعلم لإكمال دوراتك!',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.6),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              _selectedTab == 0
+                  ? _t(
+                      'start_learning_message') // Replaced 'ابدأ بإضافة دورات من الصفحة الرئيسية'
+                  : _t(
+                      'keep_learning_message'), // Replaced 'استمر في التعلم لإكمال دوراتك!'
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withOpacity(0.6),
+              ),
             ),
           ),
         ],
@@ -455,8 +481,13 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            course.title,
-                            textAlign: TextAlign.right,
+                            course.getLocalizedTitle(
+                                Provider.of<LocaleProvider>(context).locale),
+                            textAlign: TextAlign.values[
+                                Provider.of<LocaleProvider>(context).locale ==
+                                        'ar'
+                                    ? 4
+                                    : 3], // Adjust for LTR/RTL if needed
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -477,7 +508,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'محمّل على الجهاز',
+                                    _t('offline_badge_label'), // Replaced 'محمّل على الجهاز'
                                     style: TextStyle(
                                       color: Colors.greenAccent.shade400,
                                       fontSize: 11,
@@ -513,9 +544,9 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                     },
                                     icon: const Icon(Icons.delete_outline,
                                         color: Colors.redAccent, size: 18),
-                                    label: const Text(
-                                      'حذف من قائمتي',
-                                      style: TextStyle(
+                                    label: Text(
+                                      _t('unenroll_button_label'), // Replaced 'حذف من قائمتي'
+                                      style: const TextStyle(
                                         color: Colors.redAccent,
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
@@ -532,9 +563,9 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                     ),
                                   ),
                                   const Spacer(),
-                                  const Text(
-                                    'هذه الدورة غير متاحة حالياً',
-                                    style: TextStyle(
+                                  Text(
+                                    _t('course_unavailable_label'), // Replaced 'هذه الدورة غير متاحة حالياً'
+                                    style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 12,
                                     ),
@@ -550,8 +581,13 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
 
                           // Instructor
                           Text(
-                            course.instructorName,
-                            textAlign: TextAlign.right,
+                            course.getLocalizedInstructorName(
+                                Provider.of<LocaleProvider>(context).locale),
+                            textAlign: TextAlign.values[
+                                Provider.of<LocaleProvider>(context).locale ==
+                                        'ar'
+                                    ? 4
+                                    : 3],
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white.withOpacity(0.8),
@@ -576,9 +612,9 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const Text(
-                                    'التقدم',
-                                    style: TextStyle(
+                                  Text(
+                                    _t('progress_label'), // Replaced 'التقدم'
+                                    style: const TextStyle(
                                       color: Colors.white70,
                                       fontSize: 12,
                                     ),

@@ -8,6 +8,13 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../admin/admin_dashboard_screen.dart';
 import '../teacher/teacher_dashboard_screen.dart';
 import '../courses/my_downloads_screen.dart';
+import '../auth/login_screen.dart';
+import '../../widgets/empty_state.dart';
+import 'package:provider/provider.dart';
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/utils/string_utils.dart';
+import 'order_history_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,12 +25,14 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final DatabaseService _databaseService = DatabaseService();
+  int _selectedCoursesTab = 0; // 0: Current, 1: Completed
+  String _userRole = 'student';
   Map<String, dynamic>? _userProfile;
   Map<String, dynamic> _stats = {};
   List<Map<String, dynamic>> _enrolledCourses = [];
-  List<Map<String, dynamic>> _orders = [];
-  int _selectedCoursesTab = 0; // 0: Current, 1: Completed
-  String _userRole = 'student';
+
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   @override
   void initState() {
@@ -55,20 +64,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final stats = await _databaseService.getUserStats();
       final enrollments =
           await _databaseService.getEnrolledCoursesWithProgress();
-      final orders = await _databaseService.getUserOrders();
-      final role = await _databaseService.getUserRole();
+      String role = 'student';
+      try {
+        role = await _databaseService.getUserRole();
+        // Also check userData table directly for role/is_admin fields
+        if (userData != null) {
+          // Priority: explicit role field, then is_admin flag
+          if (userData['role'] != null &&
+              userData['role'].toString().isNotEmpty) {
+            role = userData['role'].toString();
+          } else if (userData['is_admin'] == true) {
+            role = 'admin';
+          }
+        }
+      } catch (e) {
+        debugPrint('Error fetching role: $e');
+      }
 
       setState(() {
         _userProfile = userData ?? {};
         _stats = stats;
         _enrolledCourses = enrollments;
-        _orders = orders;
         _userRole = role;
       });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل البيانات: $e')),
+          SnackBar(content: Text('${_t('error_loading')}: $e')),
         );
       }
     }
@@ -95,7 +117,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 // User Name
                 Text(
-                  _userProfile?['full_name'] ?? 'المستخدم',
+                  StringUtils.cleanTeacherName(
+                      _userProfile?['full_name'] ?? _t('user')),
                   style: const TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
@@ -105,8 +128,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 8),
 
-                // Branch Badge
-                _buildBranchBadge(),
+
 
                 const SizedBox(height: 30),
 
@@ -117,7 +139,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: _buildStatCard(
                         icon: Icons.book_outlined,
                         value: '${_stats['completed_courses'] ?? 0}',
-                        label: 'دورة مكتملة',
+                        label: _t('completed_courses_count_label'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -125,7 +147,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: _buildStatCard(
                         icon: Icons.access_time,
                         value: (_stats['learning_hours'] as num?)?.toStringAsFixed(1) ?? '0.0',
-                        label: 'ساعة تعلم',
+                        label: _t('learning_hours'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -133,7 +155,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: _buildStatCard(
                         icon: Icons.workspace_premium,
                         value: '${_stats['certificates'] ?? 0}',
-                        label: 'شهادات',
+                        label: _t('certificates'),
                       ),
                     ),
                   ],
@@ -143,7 +165,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 // My Courses Section
                 // My Courses Section
-                _buildSectionTitle('دوراتي'),
+                _buildSectionTitle(_t('my_courses')),
 
                 const SizedBox(height: 16),
 
@@ -161,14 +183,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     children: [
                       Expanded(
                         child: _buildCourseTab(
-                          title: 'الحالية',
+                          title: _t('current'),
                           isSelected: _selectedCoursesTab == 0,
                           onTap: () => setState(() => _selectedCoursesTab = 0),
                         ),
                       ),
                       Expanded(
                         child: _buildCourseTab(
-                          title: 'المنتهية',
+                          title: _t('completed'),
                           isSelected: _selectedCoursesTab == 1,
                           onTap: () => setState(() => _selectedCoursesTab = 1),
                         ),
@@ -185,7 +207,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     final filteredCourses =
                         _enrolledCourses.where((enrollment) {
                       final progress =
-                          (enrollment['progress'] as num?)?.toDouble() ?? 0.0;
+                          (enrollment['progress_percentage'] as num?)
+                                  ?.toDouble() ??
+                              0.0;
                       final isCompleted = progress >= 100.0;
                       return _selectedCoursesTab == 0
                           ? !isCompleted
@@ -193,18 +217,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     }).toList();
 
                     if (filteredCourses.isEmpty) {
-                      return Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Text(
-                          _selectedCoursesTab == 0
-                              ? 'لا توجد دورات حالية'
-                              : 'لم تكمل أي دورة بعد',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 16,
-                          ),
-                        ),
+                      return ProfessionalEmptyState(
+                        title: _t(_selectedCoursesTab == 0
+                            ? 'no_current_courses'
+                            : 'no_completed_courses'),
+                        message: _t(_selectedCoursesTab == 0
+                            ? 'enrolled_courses_desc'
+                            : 'courses_not_completed_desc'),
+                        icon: _selectedCoursesTab == 0
+                            ? Icons.book_rounded
+                            : Icons.assignment_turned_in_rounded,
                       );
                     }
 
@@ -214,7 +236,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         if (courseData == null) return const SizedBox();
 
                         final progress =
-                            (enrollment['progress'] as num?)?.toDouble() ?? 0.0;
+                            (enrollment['progress_percentage'] as num?)
+                                    ?.toDouble() ??
+                                0.0;
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -232,28 +256,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
 
                 const SizedBox(height: 30),
-
-                // Orders Section
-                _buildSectionTitle('طلباتي'),
-
-                const SizedBox(height: 16),
-
-                if (_orders.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Text(
-                      'لا توجد طلبات سابقة',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.6),
-                        fontSize: 14,
-                      ),
-                    ),
-                  )
-                else
-                  Column(
-                    children:
-                        _orders.map((order) => _buildOrderCard(order)).toList(),
-                  ),
 
                 const SizedBox(height: 30),
 
@@ -297,16 +299,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 );
                               }
                             },
-                            child: const Padding(
-                              padding: EdgeInsets.all(16),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.dashboard, color: Colors.white),
-                                  SizedBox(width: 8),
+                                  const Icon(Icons.dashboard,
+                                      color: Colors.white),
+                                  const SizedBox(width: 8),
                                   Text(
-                                    'لوحة التحكم',
-                                    style: TextStyle(
+                                    _userRole == 'teacher'
+                                        ? _t('teacher_dashboard')
+                                        : _t('admin_dashboard'),
+                                    style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -323,13 +328,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 16),
                 ],
 
-                // My Downloads Button
+                // My Downloads & Orders Buttons
                 Row(
                   children: [
                     Expanded(
                       child: _buildActionButton(
+                        icon: Icons.receipt_long_rounded,
+                        label: _t('orders'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const OrderHistoryScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildActionButton(
                         icon: Icons.offline_pin,
-                        label: 'التنزيلات',
+                        label: _t('my_downloads'),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -350,8 +370,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Expanded(
                       child: _buildActionButton(
                         icon: Icons.logout,
-                        label: 'تسجيل الخروج',
-                        onTap: () {},
+                        label: _t('logout'),
+                        onTap: () async {
+                          // Show confirmation dialog
+                          final confirmed = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text(_t('logout')),
+                              content: Text(_t('logout_confirm_desc')),
+                              actions: [
+                                TextButton(
+                                  onPressed: () =>
+                                      Navigator.pop(context, false),
+                                  child: Text(_t('cancel')),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: Text(_t('logout')),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (confirmed != true) return;
+
+                          if (!context.mounted) return;
+                          final navigator = Navigator.of(context);
+                          final scaffoldMessenger =
+                              ScaffoldMessenger.of(context);
+
+                          try {
+                            await SupabaseService.instance.signOut();
+
+                            // Navigate to login screen and clear stack
+                            navigator.pushAndRemoveUntil(
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                              (route) => false,
+                            );
+                          } catch (e) {
+                            scaffoldMessenger.showSnackBar(
+                              SnackBar(
+                                  content: Text('خطأ في تسجيل الخروج: $e')),
+                            );
+                          }
+                        },
                       ),
                     ),
                   ],
@@ -371,11 +435,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Text(
-              'الملف الشخصي',
+              _t('profile'),
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
@@ -460,34 +524,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildBranchBadge() {
-    final branch = _userProfile?['branch'] ?? 'علمي';
-    final branchText = branch == 'علمي'
-        ? 'الفرع العلمي'
-        : branch == 'أدبي'
-            ? 'الفرع الأدبي'
-            : 'الفرع $branch';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.primaryPurple.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: AppColors.primaryPurple.withOpacity(0.5),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        branchText,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
 
   Widget _buildStatCard({
     required IconData icon,
@@ -577,11 +614,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   topRight: Radius.circular(16),
                   bottomRight: Radius.circular(16),
                 ),
-                child: Image.network(
-                  image,
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
+                child: Hero(
+                  tag:
+                      'profile_course_image_${title}_$teacher', // Unique enough fallback or better use course ID if available
+                  child: Image.network(
+                    image,
+                    width: 80,
+                    height: 80,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               Expanded(
@@ -714,98 +755,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontSize: 14,
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildOrderCard(Map<String, dynamic> order) {
-    final status = order['status'] ?? 'pending';
-    final amount = order['amount'] ?? 0;
-    final createdAt = DateTime.parse(order['created_at']);
-    final dateStr = '${createdAt.year}/${createdAt.month}/${createdAt.day}';
-
-    Color statusColor;
-    String statusText;
-
-    switch (status) {
-      case 'completed':
-        statusColor = Colors.green;
-        statusText = 'مكتمل';
-        break;
-      case 'failed':
-        statusColor = Colors.red;
-        statusText = 'فاشل';
-        break;
-      default:
-        statusColor = Colors.orange;
-        statusText = 'قيد المعالجة';
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.getGlassColor(context, opacity: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.getGlassColor(context, opacity: 0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'طلب #${order['id'].toString().substring(0, 8)}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                dateStr,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.6),
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$amount ل.س',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: statusColor.withOpacity(0.5)),
-                ),
-                child: Text(
-                  statusText,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

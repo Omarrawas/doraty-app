@@ -192,4 +192,5 @@ class CacheKeys {
   // المستخدم
   static String userProfile(String userId) => 'user_${userId}_profile';
   static String userCourses(String userId) => 'user_${userId}_courses';
+  static String teachers = 'teachers_list';
 }

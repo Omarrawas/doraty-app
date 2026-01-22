@@ -480,6 +480,9 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
                 _buildInfoRow('رقم العملية', receipt['transaction_id']),
               if (user != null) _buildInfoRow('اسم المستخدم', user['full_name'] ?? 'غير متوفر'),
               if (user != null) _buildInfoRow('البريد الإلكتروني', user['email'] ?? 'غير متوفر'),
+              if (receipt['courses'] != null)
+                _buildInfoRow('المادة المستهدفة',
+                    receipt['courses']['title'] ?? 'غير متوفر'),
               _buildInfoRow('تاريخ الطلب', _formatDateTime(receipt['created_at'])),
               if (receipt['reviewed_at'] != null)
                 _buildInfoRow('تاريخ المراجعة', _formatDateTime(receipt['reviewed_at'])),

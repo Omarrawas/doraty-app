@@ -33,12 +33,10 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Sign up with email and password
   Future<AuthResponse> signUp({
     required String email,
     required String password,
     required String fullName,
-    required String branch,
   }) async {
     try {
       final response = await _client.auth.signUp(
@@ -46,7 +44,6 @@ class AuthService extends ChangeNotifier {
         password: password,
         data: {
           'full_name': fullName,
-          'branch': branch,
         },
       );
 
@@ -57,7 +54,6 @@ class AuthService extends ChangeNotifier {
             'id': response.user!.id,
             'email': email,
             'full_name': fullName,
-            'branch': branch,
           });
         } catch (dbError) {
           // If insertion fails due to existing user in database,
@@ -65,7 +61,6 @@ class AuthService extends ChangeNotifier {
           try {
             await _client.from('users').update({
               'full_name': fullName,
-              'branch': branch,
               'updated_at': DateTime.now().toIso8601String(),
             }).eq('email', email);
           } catch (updateError) {
@@ -126,6 +121,21 @@ class AuthService extends ChangeNotifier {
       if (currentUser == null) return;
 
       await _client.from('users').update(data).eq('id', currentUser!.id);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Delete account
+  Future<void> deleteAccount() async {
+    try {
+      if (currentUser == null) return;
+
+      // First delete from users table
+      await _client.from('users').delete().eq('id', currentUser!.id);
+
+      // Sign out
+      await signOut();
     } catch (e) {
       rethrow;
     }

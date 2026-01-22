@@ -2,6 +2,9 @@ class PaymentReceipt {
   final String id;
   final String orderId;
   final String userId;
+  final String? courseId;
+  final String? courseTitle;
+  final String? courseImageUrl;
   final String paymentMethod;
   final String? transactionId;
   final String? receiptImageUrl;
@@ -18,6 +21,9 @@ class PaymentReceipt {
     required this.id,
     required this.orderId,
     required this.userId,
+    this.courseId,
+    this.courseTitle,
+    this.courseImageUrl,
     required this.paymentMethod,
     this.transactionId,
     this.receiptImageUrl,
@@ -32,10 +38,14 @@ class PaymentReceipt {
   });
 
   factory PaymentReceipt.fromJson(Map<String, dynamic> json) {
+    final courses = json['courses'] as Map<String, dynamic>?;
     return PaymentReceipt(
       id: json['id'] as String,
       orderId: json['order_id'] as String,
       userId: json['user_id'] as String,
+      courseId: json['course_id'] as String?,
+      courseTitle: courses?['title'] as String?,
+      courseImageUrl: courses?['image_url'] as String?,
       paymentMethod: json['payment_method'] as String,
       transactionId: json['transaction_id'] as String?,
       receiptImageUrl: json['receipt_image_url'] as String?,

@@ -442,6 +442,17 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                           ),
                         ],
                       ),
+                      if (receipt.courseTitle != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          receipt.courseTitle!,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       Row(
                         children: [

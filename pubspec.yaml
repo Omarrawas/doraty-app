@@ -110,7 +110,17 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/sounds/
+    - assets/fonts/
     - .env
+
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-Regular.ttf
+        - asset: assets/fonts/Cairo-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Cairo-SemiBold.ttf
+          weight: 600
 
 flutter_launcher_icons:
   android: true

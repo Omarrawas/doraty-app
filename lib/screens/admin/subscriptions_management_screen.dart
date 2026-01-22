@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/string_utils.dart';
 import 'package:intl/intl.dart';
 
 class SubscriptionsManagementScreen extends StatefulWidget {
@@ -438,7 +439,8 @@ class _SubscriptionsManagementScreenState
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                userData?['full_name'] ?? 'مستخدم',
+                                StringUtils.cleanTeacherName(
+                                    userData?['full_name'] ?? 'مستخدم'),
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.7),
                                   fontSize: 12,
@@ -677,7 +679,8 @@ class _SubscriptionsManagementScreenState
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          teacher?['full_name'] ?? 'مدرس مجهول',
+                          StringUtils.cleanTeacherName(
+                              teacher?['full_name'] ?? 'مدرس مجهول'),
                           style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,

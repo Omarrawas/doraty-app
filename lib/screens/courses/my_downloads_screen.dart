@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../models/offline_course.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import 'dart:io';
+import 'course_download_details_screen.dart';
 
 class MyDownloadsScreen extends StatefulWidget {
   const MyDownloadsScreen({super.key});
@@ -191,42 +193,37 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
                                       color:
                                           AppColors.getGlassColor(context, opacity: 0.2)),
                                 ),
-                                child: ListTile(
-                                  leading: course.thumbnailPath != null &&
-                                          File(course.thumbnailPath!).existsSync()
-                                      ? ClipRRect(
-                                          borderRadius: BorderRadius.circular(8),
-                                          child: Image.file(
-                                            File(course.thumbnailPath!),
-                                            width: 50,
-                                            height: 50,
-                                            fit: BoxFit.cover,
-                                          ),
-                                        )
-                                      : Container(
-                                          width: 50,
-                                          height: 50,
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.withOpacity(0.3),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Icon(Icons.image, color: Colors.white),
-                                        ),
-                                  title: Text(
-                                    course.title,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(12),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            CourseDownloadDetailsScreen(
+                                                course: course),
+                                      ),
+                                    );
+                                  },
+                                  child: ListTile(
+                                    leading: _buildThumbnail(course),
+                                    title: Text(
+                                      course.title,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  subtitle: Text(
-                                    '${course.lessonIds.length} دروس • ${_formatSize(course.totalSize)}',
-                                    style: const TextStyle(color: Colors.white70),
-                                  ),
-                                  trailing: IconButton(
-                                    icon: const Icon(Icons.delete_outline,
-                                        color: Colors.redAccent),
-                                    onPressed: () => _deleteCourse(course.id),
+                                    subtitle: Text(
+                                      '${course.lessonIds.length} دروس • ${_formatSize(course.totalSize)} • اضغط للتفاصيل',
+                                      style: const TextStyle(
+                                          color: Colors.white70, fontSize: 12),
+                                    ),
+                                    trailing: IconButton(
+                                      icon: const Icon(Icons.delete_outline,
+                                          color: Colors.redAccent),
+                                      onPressed: () => _deleteCourse(course.id),
+                                    ),
                                   ),
                                 ),
                               );
@@ -237,6 +234,55 @@ class _MyDownloadsScreenState extends State<MyDownloadsScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildThumbnail(OfflineCourse course) {
+    if (course.thumbnailPath == null) {
+      return _buildPlaceholderIcon();
+    }
+
+    if (kIsWeb) {
+      if (course.thumbnailPath!.startsWith('http')) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.network(
+            course.thumbnailPath!,
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _buildPlaceholderIcon(),
+          ),
+        );
+      }
+      return _buildPlaceholderIcon();
+    }
+
+    final file = File(course.thumbnailPath!);
+    if (file.existsSync()) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.file(
+          file,
+          width: 50,
+          height: 50,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    return _buildPlaceholderIcon();
+  }
+
+  Widget _buildPlaceholderIcon() {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.grey.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: const Icon(Icons.image, color: Colors.white),
     );
   }
 }

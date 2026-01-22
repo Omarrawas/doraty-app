@@ -4,13 +4,13 @@ import '../../core/services/database_service.dart';
 import '../../models/course.dart';
 import '../../widgets/course_card.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../core/utils/string_utils.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   final String teacherId;
   final String teacherName;
   final String? teacherPhoto;
   final String? bio;
-  final String? specialization;
 
   const TeacherProfileScreen({
     super.key,
@@ -18,7 +18,6 @@ class TeacherProfileScreen extends StatefulWidget {
     required this.teacherName,
     this.teacherPhoto,
     this.bio,
-    this.specialization,
   });
 
   @override
@@ -32,17 +31,15 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
 
   // Teacher data loaded from database
   String? _teacherBio;
-  String? _teacherSpecialization;
   String? _teacherPhoto;
   String _teacherName = '';
 
   @override
   void initState() {
     super.initState();
-    _teacherName = widget.teacherName;
+    _teacherName = StringUtils.cleanTeacherName(widget.teacherName);
     _teacherPhoto = widget.teacherPhoto;
     _teacherBio = widget.bio;
-    _teacherSpecialization = widget.specialization;
     _loadTeacherData();
     _loadTeacherCourses();
   }
@@ -53,13 +50,12 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       final userData = await _databaseService.getUserById(widget.teacherId);
       if (mounted && userData != null) {
         setState(() {
-          _teacherName =
-              userData['full_name'] ?? userData['name'] ?? widget.teacherName;
+          _teacherName = StringUtils.cleanTeacherName(
+              userData['full_name'] ?? userData['name'] ?? widget.teacherName);
           _teacherPhoto = userData['photo_url'] ??
               userData['avatar_url'] ??
               widget.teacherPhoto;
           _teacherBio = userData['bio'];
-          _teacherSpecialization = userData['branch'];
         });
       }
     } catch (e) {
@@ -173,24 +169,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
           ),
         ),
 
-        // Specialization / Branch
-        if (_teacherSpecialization != null) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              _teacherSpecialization!,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
-            ),
-          ),
-        ],
+        const SizedBox(height: 8),
 
         // Bio
         if (_teacherBio != null && _teacherBio!.isNotEmpty) ...[

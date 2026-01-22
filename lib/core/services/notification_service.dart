@@ -104,6 +104,9 @@ class NotificationService {
       
       if (token != null) {
         await DatabaseService().updateFcmToken(token);
+        // Subscribe to general topic for broadcasting
+        await _firebaseMessaging!.subscribeToTopic('all_users');
+        debugPrint('🔔 Subscribed to all_users topic');
       }
 
       _isInitialized = true;

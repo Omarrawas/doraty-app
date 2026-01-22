@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/app_colors.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/explore/explore_screen.dart';
 import 'screens/courses/courses_list_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/splash/splash_screen.dart';
@@ -15,13 +16,15 @@ import 'core/env/multi_env.dart';
 import 'models/download.dart';
 import 'core/services/offline_cache_service.dart';
 import 'core/services/settings_service.dart';
-import 'core/services/notification_service.dart';
+import 'core/localization/locale_provider.dart';
+import 'core/constants/app_strings.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/offline_course.dart';
 import 'models/offline_lesson.dart';
 import 'core/services/sync_service.dart';
+import 'core/services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -125,8 +128,11 @@ void main() async {
   ]);
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -137,16 +143,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
+    return Consumer2<ThemeProvider, LocaleProvider>(
+      builder: (context, themeProvider, localeProvider, child) {
         return MaterialApp(
           title: 'منصة دوراتي',
           debugShowCheckedModeBanner: false,
 
-          // RTL Support
-          locale: const Locale('ar', 'SY'),
+          // Localization Support
+          locale: localeProvider.flutterLocale,
           supportedLocales: const [
             Locale('ar', 'SY'),
+            Locale('en', 'US'),
           ],
           localizationsDelegates: const [
             GlobalMaterialLocalizations.delegate,
@@ -180,6 +187,7 @@ class _MainScreenState extends State<MainScreen> {
   // Keys to force rebuild when switching tabs
   Key _coursesKey = UniqueKey();
   Key _profileKey = UniqueKey();
+  Key _exploreKey = UniqueKey();
 
   @override
   Widget build(BuildContext context) {
@@ -192,68 +200,81 @@ class _MainScreenState extends State<MainScreen> {
           index: _currentIndex,
           children: [
             const HomeScreen(),
+            ExploreScreen(key: _exploreKey),
             CoursesListScreen(key: _coursesKey, showBackButton: false),
             ProfileScreen(key: _profileKey),
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppColors.getSurfaceColor(context).withOpacity(0.95),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryPurple.withOpacity(0.1),
-              blurRadius: 20,
-              offset: const Offset(0, -5),
+      bottomNavigationBar: Consumer<LocaleProvider>(
+        builder: (context, localeProvider, child) {
+          final lang = localeProvider.locale;
+          return Container(
+            decoration: BoxDecoration(
+              color: AppColors.getSurfaceColor(context).withOpacity(0.95),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryPurple.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
             ),
-          ],
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
-          child: BottomNavigationBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            currentIndex: _currentIndex,
-            selectedItemColor: AppColors.primaryPurple,
-            unselectedItemColor:
-                isDarkMode ? Colors.white.withOpacity(0.6) : Colors.grey,
-            onTap: (index) {
-              setState(() {
-                _currentIndex = index;
-                // Force rebuild of courses and profile screens
-                if (index == 1) {
-                  _coursesKey = UniqueKey();
-                } else if (index == 2) {
-                  _profileKey = UniqueKey();
-                }
-              });
-            },
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home_outlined),
-                activeIcon: Icon(Icons.home),
-                label: 'الرئيسية',
+            child: ClipRRect(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.explore_outlined),
-                activeIcon: Icon(Icons.explore),
-                label: 'دوراتي',
+              child: BottomNavigationBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                currentIndex: _currentIndex,
+                selectedItemColor: AppColors.primaryPurple,
+                unselectedItemColor:
+                    isDarkMode ? Colors.white.withOpacity(0.6) : Colors.grey,
+                onTap: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                    // Force rebuild of courses and profile screens
+                    if (index == 1) {
+                      _exploreKey = UniqueKey();
+                    } else if (index == 2) {
+                      _coursesKey = UniqueKey();
+                    } else if (index == 3) {
+                      _profileKey = UniqueKey();
+                    }
+                  });
+                },
+                items: [
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.home_outlined),
+                    activeIcon: const Icon(Icons.home),
+                    label: AppStrings.get('home', lang),
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.manage_search_outlined),
+                    activeIcon: const Icon(Icons.manage_search),
+                    label: AppStrings.get('explore', lang),
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.play_circle_outline),
+                    activeIcon: const Icon(Icons.play_circle_filled),
+                    label: AppStrings.get('my_courses', lang),
+                  ),
+                  BottomNavigationBarItem(
+                    icon: const Icon(Icons.person_outline),
+                    activeIcon: const Icon(Icons.person),
+                    label: AppStrings.get('profile', lang),
+                  ),
+                ],
               ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.person_outline),
-                activeIcon: Icon(Icons.person),
-                label: 'الملف الشخصي',
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
   }

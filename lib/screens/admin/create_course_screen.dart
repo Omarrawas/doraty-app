@@ -3,15 +3,19 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/image_upload_service.dart';
+import '../../models/category_model.dart';
 
 class CreateCourseScreen extends StatefulWidget {
   final String? courseId;
   final Map<String, dynamic>? courseData;
 
+  final String? preselectedInstructorId;
+
   const CreateCourseScreen({
     super.key,
     this.courseId,
     this.courseData,
+    this.preselectedInstructorId,
   });
 
   @override
@@ -24,7 +28,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
-  late TextEditingController _categoryController;
+  late TextEditingController
+      _subjectController; // Renamed from _categoryController
   late TextEditingController _levelController;
   late TextEditingController _imageUrlController;
   late TextEditingController _priceController;
@@ -37,7 +42,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   List<Map<String, dynamic>> _teachers = [];
   String? _selectedTeacherId;
+  String? _selectedCategoryId;
+  List<CategoryModel> _categories = [];
   bool _isLoadingTeachers = true;
+  bool _isLoadingCategories = true;
   String _selectedCurrency = 'ل.س';
 
   @override
@@ -49,8 +57,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     _descriptionController = TextEditingController(
       text: widget.courseData?['description'] ?? '',
     );
-    _categoryController = TextEditingController(
-      text: widget.courseData?['category'] ?? '',
+    _subjectController = TextEditingController(
+      text: widget.courseData?['subject'] ?? '', // Load subject from DB
     );
     _levelController = TextEditingController(
       text: widget.courseData?['level'] ?? 'مبتدئ',
@@ -71,9 +79,26 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     _isPublished = widget.courseData?['is_published'] ?? false;
     _selectedCurrency = widget.courseData?['currency'] ?? 'ل.س';
-    // Don't load instructor_id from courseData - we'll get it from teacher_courses table
-
+    _selectedCategoryId = widget.courseData?['category_id']; // Load ID
+    _selectedTeacherId =
+        widget.preselectedInstructorId ?? widget.courseData?['instructor_id'];
+    
     _loadTeachers();
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final data = await _db.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = data.map((e) => CategoryModel.fromJson(e)).toList();
+          _isLoadingCategories = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingCategories = false);
+    }
   }
 
   Future<void> _loadTeachers() async {
@@ -144,7 +169,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _categoryController.dispose();
+    _subjectController.dispose();
     _levelController.dispose();
     _imageUrlController.dispose();
     _priceController.dispose();
@@ -209,13 +234,47 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   Row(
                     children: [
                       Expanded(
+                        child: _isLoadingCategories
+                            ? const Center(child: CircularProgressIndicator())
+                            : DropdownButtonFormField<String>(
+                                value: _selectedCategoryId,
+                                decoration: const InputDecoration(
+                                  labelText: 'التصنيف',
+                                  prefixIcon: Icon(Icons.category),
+                                ),
+                                items: _categories.map((cat) {
+                                  return DropdownMenuItem(
+                                    value: cat.id,
+                                    child: Text(cat.name),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() {
+                                      _selectedCategoryId = value;
+                                    });
+                                  }
+                                },
+                                validator: (value) => value == null
+                                    ? 'الرجاء اختيار تصنيف'
+                                    : null,
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
                         child: TextFormField(
-                          controller: _categoryController,
+                          controller: _subjectController,
                           decoration: const InputDecoration(
-                            labelText: 'التصنيف',
-                            hintText: 'رياضيات، فيزياء، إلخ',
-                            prefixIcon: Icon(Icons.category),
+                            labelText: 'المادة',
+                            hintText: 'مثال: فيزياء',
+                            prefixIcon: Icon(Icons.book),
                           ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'الرجاء إدخال اسم المادة';
+                            }
+                            return null;
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -365,7 +424,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                               );
                             }),
                           ],
-                          onChanged: (value) {
+                          onChanged: widget.preselectedInstructorId != null
+                              ? null
+                              : (value) {
                             setState(() {
                               _selectedTeacherId = value;
                               // Update controller text for consistency/fallback
@@ -437,7 +498,12 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       final data = {
         'title': _titleController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'category': _categoryController.text.trim(),
+        'category_id': _selectedCategoryId,
+        'category': _categories
+            .firstWhere((c) => c.id == _selectedCategoryId,
+                orElse: () => _categories.first)
+            .name,
+        'subject': _subjectController.text.trim(), // Subject column
         'level': _levelController.text,
         'image_url': _imageUrlController.text.trim(),
         'price': int.tryParse(_priceController.text) ?? 0,

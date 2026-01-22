@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'pdf_viewer_screen.dart';
+import 'image_viewer_screen.dart';
 import 'interactive_quiz_screen.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -17,14 +18,19 @@ import '../exams/exam_taking_screen.dart';
 import '../exams/review_exam_screen.dart';
 import '../../core/services/database_service.dart';
 import '../notes/add_note_screen.dart';
+import '../../core/services/course_download_service.dart';
 
 import '../../widgets/dynamic_gradient_background.dart';
 import 'dart:ui';
 import 'dart:io';
 import 'dart:math' as math; 
 
+import '../../core/services/supabase_service.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../widgets/lesson/video_player_controls.dart';
+import 'package:provider/provider.dart';
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
 
 class LessonScreen extends StatefulWidget {
   final Lesson lesson;
@@ -45,6 +51,9 @@ class LessonScreen extends StatefulWidget {
 class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
+  
   final TextEditingController _questionController = TextEditingController();
 
   // Video
@@ -62,14 +71,16 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
   // Refactor: Futures for DB calls
   Future<List<Map<String, dynamic>>>? _notesFuture;
-  Future<List<Map<String, dynamic>>>? _questionsFuture;
   Future<List<Map<String, dynamic>>>? _examsFuture;
+  List<LessonQuestion>? _questionsList;
   final ScrollController _mainScrollController = ScrollController();
 
   // Offline
   bool _isOffline = false;
   final OfflineStorageService _offlineStorage = OfflineStorageService();
   late String _videoUrl;
+  Map<String, String>? _downloadedResources;
+  final Set<String> _downloadingFiles = {};
 
   @override
   void initState() {
@@ -79,7 +90,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     _videoUrl = (widget.lesson.videoUrl as String?) ?? '';
     
     _notesFuture = DatabaseService().getNotes(widget.lesson.id);
-    _questionsFuture = DatabaseService().getLessonQuestions(widget.lesson.id);
     _examsFuture = DatabaseService().getExamsForLesson(widget.lesson.id);
     
     _initLesson();
@@ -87,9 +97,63 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
   Future<void> _initLesson() async {
     await _checkOfflineLesson();
+    await _checkDownloadedResources();
     _initVideoPlayer();
     _refreshFutures();
     _startWatchTimeTracking();
+  }
+
+  Future<void> _checkDownloadedResources() async {
+    final offlineLesson = await _offlineStorage.getLesson(widget.lesson.id);
+    if (mounted) {
+      setState(() {
+        _downloadedResources = offlineLesson?.downloadedResources;
+      });
+    }
+  }
+
+  Future<void> _downloadResource(Map<String, String> resource) async {
+    final url = resource['url'] ?? '';
+    final fileName = resource['name'] ?? 'file';
+    if (url.isEmpty) return;
+
+    if (mounted) {
+      setState(() {
+        _downloadingFiles.add(fileName);
+      });
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${_t('starting_download')} $fileName...')),
+    );
+
+    try {
+      await CourseDownloadService().downloadResource(
+        url: url,
+        courseId: widget.lesson.courseId,
+        lessonId: widget.lesson.id,
+        fileName: fileName,
+      );
+      await _checkDownloadedResources();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('${_t('download_success_encrypted')} $fileName')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${_t('download_error')}: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _downloadingFiles.remove(fileName);
+        });
+      }
+    }
   }
 
   Future<void> _checkOfflineLesson() async {
@@ -114,10 +178,105 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     if (mounted) {
       setState(() {
         _notesFuture = DatabaseService().getNotes(widget.lesson.id);
-        _questionsFuture =
-            DatabaseService().getLessonQuestions(widget.lesson.id);
+        DatabaseService().getLessonQuestions(widget.lesson.id).then((data) {
+          if (mounted) {
+            setState(() {
+              _questionsList =
+                  data.map((q) => LessonQuestion.fromJson(q)).toList();
+            });
+          }
+        });
         _examsFuture = DatabaseService().getExamsForLesson(widget.lesson.id);
       });
+    }
+  }
+
+  Future<void> _deleteNote(String noteId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('delete_note')),
+        content: Text(_t('delete_note_confirm')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(_t('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(_t('delete')),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await DatabaseService().deleteNote(noteId);
+        _refreshFutures();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(_t('note_deleted_success'))),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('حدث خطأ أثناء حذف الملاحظة: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _editNote(Note note) async {
+    final controller = TextEditingController(text: note.content);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('edit_note'), textAlign: TextAlign.right),
+        content: TextField(
+          controller: controller,
+          textAlign: TextAlign.right,
+          maxLines: 5,
+          decoration: InputDecoration(
+            hintText: _t('your_comment_here'),
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(_t('cancel')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple),
+            child:
+                Text(_t('save'), style: const TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.trim().isNotEmpty) {
+      try {
+        await DatabaseService().updateNote(note.id, result.trim());
+        _refreshFutures();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم تحديث الملاحظة بنجاح')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('خطأ في التحديث: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -146,10 +305,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'لا يوجد محتوى تفاعلي مخصص لهذا الدرس',
+            content: Text(
+              _t('no_interactive_content'),
               textAlign: TextAlign.right,
-              style: TextStyle(fontFamily: 'Cairo'),
+              style: const TextStyle(fontFamily: 'Cairo'),
             ),
             behavior: SnackBarBehavior.floating,
             backgroundColor: Colors.orange.shade700,
@@ -309,7 +468,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
 
 
-
   @override
   Widget build(BuildContext context) {
     if (_isYoutube && _youtubePlayerController != null && !kIsWeb) {
@@ -401,7 +559,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                               color: AppColors.primaryPurple.withOpacity(0.2)),
                         ),
                         child: Text(
-                          'الدرس ${widget.lesson.orderIndex}',
+                          '${_t('lesson_prefix')} ${widget.lesson.orderIndex}',
                           style: const TextStyle(
                             color: AppColors.primaryPurple,
                             fontWeight: FontWeight.bold,
@@ -412,7 +570,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          widget.lesson.title,
+                          widget.lesson.getLocalizedTitle(
+                              Provider.of<LocaleProvider>(context).locale),
                           style: const TextStyle(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.bold,
@@ -468,65 +627,68 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                             ),
                             dividerColor: Colors.transparent,
                             isScrollable: true,
-                            tabs: const [
+                            tabs: [
                               Tab(
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.description_outlined, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('الوصف'),
-                                  ],
-                                ),
-                              ),
-                              Tab(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.attach_file, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('المرفقات'),
-                                  ],
-                                ),
-                              ),
-                              Tab(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.science_outlined, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('تفاعل'),
-                                  ],
-                                ),
-                              ),
-                              Tab(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.quiz_outlined, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('اختبارات'),
-                                  ],
-                                ),
-                              ),
-                              Tab(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.note_alt_outlined, size: 18),
-                                    SizedBox(width: 8),
-                                    Text('الملاحظات'),
-                                  ],
-                                ),
-                              ),
-                              Tab(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.question_answer_outlined,
+                                    const Icon(Icons.description_outlined,
                                         size: 18),
-                                    SizedBox(width: 8),
-                                    Text('الأسئلة'),
+                                    const SizedBox(width: 8),
+                                    Text(_t('description_tab')),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.attach_file, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(_t('attachments_tab')),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.science_outlined,
+                                        size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(_t('interactive_tab')),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.quiz_outlined, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(_t('exams_tab')),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.note_alt_outlined,
+                                        size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(_t('notes_tab')),
+                                  ],
+                                ),
+                              ),
+                              Tab(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.question_answer_outlined,
+                                        size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(_t('questions_tab')),
                                   ],
                                 ),
                               ),
@@ -585,8 +747,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         width: double.infinity,
         height: 250,
         color: Colors.black,
-        child: const Center(
-          child: Text('لا يوجد فيديو لهذا الدرس', style: TextStyle(color: Colors.white)),
+        child: Center(
+          child: Text(_t('no_video_available'),
+              style: const TextStyle(color: Colors.white)),
         ),
       );
     }
@@ -596,66 +759,24 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         final videoId = YoutubePlayer.convertUrlToId(
             (widget.lesson.videoUrl as String?) ?? '');
         if (videoId != null) {
-          final width = MediaQuery.of(context).size.width;
           return Container(
             width: double.infinity,
-            height: double.infinity,
+            // تأكد من تحديد ارتفاع ثابت هنا لمنع خطأ الـ Layout
+            height:
+                (MediaQuery.of(context).size.width * 9 / 16).clamp(200, 500),
             color: Colors.black,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                // 1. Full-size Iframe
-                Container(
-                  color: Colors.black,
-                  child: Center(
-                    child: ConstrainedBox(
-                      // Limit max width for larger screens
-                      constraints: const BoxConstraints(maxWidth: 1000),
-                      child: SizedBox(
-                        width: width > 1000 ? 1000 : width,
-                        height: (width > 1000 ? 1000 : width) * 9 / 16,
-                        child: HtmlWidget(
-                          '''
-                          <div style="width: 100%; height: 100%; background: #000;">
-                            <iframe 
-                              src="https://www.youtube.com/embed/$videoId?modestbranding=1&rel=0&controls=0&disablekb=1&showinfo=0&iv_load_policy=3&autoplay=1&mute=0" 
-                              style="width: 100%; height: 100%; border: 0;" 
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                              allowfullscreen>
-                            </iframe>
-                          </div>
-                          ''',
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // 2. Custom Control Overlay (Optional - to block all clicks)
-                Positioned.fill(
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () {
-                      // Note: We can't easily control the iframe via standard web-view bridging without API
-                      // But the iframe params controls=0 will handle basic non-interaction.
-                    },
-                    child: Container(color: Colors.transparent),
-                  ),
-                ),
-                // 3. Title Shield (UI Label)
-                Positioned(
-                  top: 10,
-                  right: 16,
-                  child: Text(
-                    widget.lesson.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      shadows: [Shadow(blurRadius: 10, color: Colors.black)],
-                    ),
-                  ),
-                ),
-              ],
+            child: HtmlWidget(
+              '''
+              <iframe 
+                width="100%" 
+                height="100%" 
+                src="https://www.youtube.com/embed/$videoId?autoplay=1&rel=0" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allowfullscreen>
+              </iframe>
+              ''',
+              factoryBuilder: () => WidgetFactory(),
             ),
           );
         }
@@ -731,6 +852,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         ...widget.lesson.resources.map((resource) {
           final fileName = resource['name'] ?? 'ملف غير معروف';
           final url = resource['url'] ?? '';
+          final localPath = _downloadedResources?[fileName];
+          final isDownloaded = localPath != null;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -769,43 +892,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                         ),
                       ),
                       const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () {
-                          final ext = fileName.split('.').last.toLowerCase();
-                          if (ext == 'pdf') {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => PdfViewerScreen(
-                                  url: url,
-                                  title: fileName,
-                                ),
-                              ),
-                            );
-                          } else {
-                            launchUrl(Uri.parse(url),
-                                mode: LaunchMode.externalApplication);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            fileName.toLowerCase().endsWith('.pdf')
-                                ? 'عرض'
-                                : 'تنزيل',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
+                      _buildTelegramStyleButton(
+                          resource, fileName, url, localPath, isDownloaded),
                     ],
                   ),
                 ),
@@ -814,6 +902,93 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           );
         }),
       ],
+    );
+  }
+
+  Widget _buildTelegramStyleButton(Map<String, String> resource,
+      String fileName, String url, String? localPath, bool isDownloaded) {
+    final isDownloading = _downloadingFiles.contains(fileName);
+
+    if (isDownloading) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        child: const SizedBox(
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (!isDownloaded) {
+          _downloadResource(resource);
+        } else {
+          final ext = fileName.split('.').last.toLowerCase();
+          if (ext == 'pdf') {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PdfViewerScreen(
+                  url: null,
+                  localPath: localPath,
+                  title: fileName,
+                  isOffline: true,
+                ),
+              ),
+            );
+          } else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].contains(ext)) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ImageViewerScreen(
+                  url: null,
+                  localPath: localPath,
+                  title: fileName,
+                  isOffline: true,
+                ),
+              ),
+            );
+          } else {
+            // For other types, fallback to browser for now as we don't have internal decryption-viewers
+            launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+          }
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: isDownloaded ? AppColors.primaryGradient : null,
+          color: isDownloaded ? null : Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: isDownloaded ? null : Border.all(color: Colors.white24),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isDownloaded
+                  ? Icons.remove_red_eye_outlined
+                  : Icons.download_outlined,
+              color: Colors.white,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              isDownloaded ? 'عرض' : 'تحميل',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1363,21 +1538,52 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
-                                  child: Text(
-                                    note.title,
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                    ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        note.title,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      Text(
+                                        _formatDate(note.updatedAt),
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white.withOpacity(0.5),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                Text(
-                                  _formatDate(note.updatedAt),
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white.withOpacity(0.5),
-                                  ),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      onPressed: () => _editNote(note),
+                                      icon: Icon(
+                                        Icons.edit_outlined,
+                                        color: Colors.white.withOpacity(0.7),
+                                      ),
+                                      iconSize: 20,
+                                      constraints: const BoxConstraints(),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      onPressed: () => _deleteNote(note.id),
+                                      icon: Icon(
+                                        Icons.delete_outline_rounded,
+                                        color: Colors.red.withOpacity(0.7),
+                                      ),
+                                      iconSize: 20,
+                                      constraints: const BoxConstraints(),
+                                      padding: EdgeInsets.zero,
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -1456,41 +1662,25 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         ),
         const SizedBox(height: 24),
 
-        if (_questionsFuture == null)
+        if (_questionsList == null)
           const Center(child: CircularProgressIndicator())
+        else if (_questionsList!.isEmpty)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Text('لا توجد أسئلة بعد. كن أول من يسأل!'),
+            ),
+          )
         else
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: _questionsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text('حدث خطأ: ${snapshot.error}'));
-            }
-
-            final questionsData = snapshot.data ?? [];
-            if (questionsData.isEmpty) {
-              return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(20),
-                  child: Text('لا توجد أسئلة بعد. كن أول من يسأل!'),
-                ),
-              );
-            }
-
-            return ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: questionsData.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final question = LessonQuestion.fromJson(questionsData[index]);
-                return _buildQuestionItem(question);
-              },
-            );
-          },
-        ),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _questionsList!.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              return _buildQuestionItem(_questionsList![index]);
+            },
+          ),
       ],
     );
   }
@@ -1517,12 +1707,36 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          question.userName,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: Colors.white),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (question.userId ==
+                                SupabaseService.instance.currentUserId) ...[
+                              IconButton(
+                                onPressed: () => _editQuestion(question),
+                                icon: Icon(Icons.edit_outlined,
+                                    size: 18,
+                                    color: Colors.white.withOpacity(0.7)),
+                                constraints: const BoxConstraints(),
+                                padding: const EdgeInsets.only(left: 8),
+                              ),
+                              IconButton(
+                                onPressed: () => _deleteQuestion(question.id),
+                                icon: Icon(Icons.delete_outline_rounded,
+                                    size: 18,
+                                    color: Colors.red.withOpacity(0.7)),
+                                constraints: const BoxConstraints(),
+                                padding: const EdgeInsets.only(left: 8),
+                              ),
+                            ],
+                            Text(
+                              question.userName,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Colors.white),
+                            ),
+                          ],
                         ),
                         Text(
                           _formatDate(question.createdAt),
@@ -1559,7 +1773,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                   padding: EdgeInsets.symmetric(vertical: 8),
                   child: Divider(color: Colors.white24, height: 1),
                 ),
-                ...question.replies.map((reply) => _buildReplyItem(reply)),
+                ...question.replies
+                    .map((reply) => _buildReplyItem(reply, question)),
               ],
               const SizedBox(height: 12),
               Align(
@@ -1578,6 +1793,12 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                   ),
                 ),
               ),
+              const SizedBox(height: 8),
+              _buildReactionsRow(
+                questionId: question.id,
+                reactionCounts: question.reactionCounts,
+                myReaction: question.myReaction,
+              ),
             ],
           ),
         ),
@@ -1585,7 +1806,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildReplyItem(LessonQuestionReply reply) {
+  Widget _buildReplyItem(LessonQuestionReply reply, LessonQuestion question) {
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.all(12),
@@ -1609,15 +1830,37 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
-                      reply.userName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: reply.isInstructorReply
-                            ? AppColors.primaryPurple
-                            : Colors.white,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (reply.userId ==
+                            SupabaseService.instance.currentUserId) ...[
+                          IconButton(
+                            onPressed: () => _editReply(reply),
+                            icon: Icon(Icons.edit_outlined,
+                                size: 16, color: Colors.white.withOpacity(0.7)),
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.only(left: 8),
+                          ),
+                          IconButton(
+                            onPressed: () => _deleteReply(reply.id),
+                            icon: Icon(Icons.delete_outline_rounded,
+                                size: 16, color: Colors.red.withOpacity(0.7)),
+                            constraints: const BoxConstraints(),
+                            padding: const EdgeInsets.only(left: 8),
+                          ),
+                        ],
+                        Text(
+                          reply.userName,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                            color: reply.isInstructorReply
+                                ? AppColors.primaryPurple
+                                : Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
                     Text(
                       _formatDate(reply.createdAt),
@@ -1649,14 +1892,300 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               color: Colors.white.withOpacity(0.9),
             ),
           ),
+          _buildReactionsRow(
+            replyId: reply.id,
+            reactionCounts: reply.reactionCounts,
+            myReaction: reply.myReaction,
+            isSmall: true,
+          ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton(
+              onPressed: () => _showReplyDialog(question,
+                  initialText: '@${reply.userName} '),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                'رد',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white.withOpacity(0.6),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
+  Future<void> _deleteQuestion(String questionId) async {
+    final confirmed = await _showConfirmDialog(
+        'حذف السؤال', 'هل أنت متأكد من حذف هذا السؤال وكل الردود عليه؟');
+    if (confirmed) {
+      try {
+        await DatabaseService().deleteLessonQuestion(questionId);
+        _refreshFutures();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+        }
+      }
+    }
+  }
 
-  void _showReplyDialog(LessonQuestion question) {
-    final replyController = TextEditingController();
+  Future<void> _deleteReply(String replyId) async {
+    final confirmed =
+        await _showConfirmDialog('حذف الرد', 'هل أنت متأكد من حذف هذا الرد؟');
+    if (confirmed) {
+      try {
+        await DatabaseService().deleteReply(replyId);
+        _refreshFutures();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+        }
+      }
+    }
+  }
+
+  Future<bool> _showConfirmDialog(String title, String content) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(title, textAlign: TextAlign.right),
+            content: Text(content, textAlign: TextAlign.right),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('إلغاء')),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('حذف'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Widget _buildReactionsRow({
+    String? questionId,
+    String? replyId,
+    required Map<String, int> reactionCounts,
+    String? myReaction,
+    bool isSmall = false,
+  }) {
+    final reactions = {
+      'like': '👍',
+      'love': '❤️',
+      'haha': '😂',
+    };
+
+    final hasReacted = myReaction != null;
+    final String label = hasReacted ? reactions[myReaction]! : '👍';
+    final Color activeColor =
+        hasReacted ? AppColors.primaryPurple : Colors.white70;
+
+    // Calculate total reactions count
+    int totalCount = 0;
+    for (var v in reactionCounts.values) {
+      totalCount += v;
+    }
+
+    return Row(
+      children: [
+        GestureDetector(
+          onLongPress: () =>
+              _showReactionPicker(questionId: questionId, replyId: replyId),
+          child: InkWell(
+            onTap: () => _toggleReaction(
+                questionId: questionId,
+                replyId: replyId,
+                type: myReaction ?? 'like'),
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: hasReacted
+                    ? AppColors.primaryPurple.withOpacity(0.15)
+                    : Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: hasReacted ? AppColors.primaryPurple : Colors.white10,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(label, style: TextStyle(fontSize: isSmall ? 14 : 16)),
+                  const SizedBox(width: 6),
+                  Text(
+                    hasReacted ? 'تم' : 'إعجاب',
+                    style: TextStyle(
+                      color: activeColor,
+                      fontSize: isSmall ? 11 : 13,
+                      fontWeight:
+                          hasReacted ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (totalCount > 0) ...[
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white10,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              children: [
+                ...reactionCounts.entries
+                    .where((e) => e.value > 0)
+                    .take(3)
+                    .map((e) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 1),
+                          child: Text(reactions[e.key]!,
+                              style: const TextStyle(fontSize: 10)),
+                        )),
+                const SizedBox(width: 4),
+                Text(
+                  totalCount.toString(),
+                  style: const TextStyle(fontSize: 10, color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _showReactionPicker({String? questionId, String? replyId}) {
+    final reactions = {
+      'like': '👍',
+      'love': '❤️',
+      'haha': '😂',
+    };
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black26,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.primaryDark.withOpacity(0.95),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: reactions.entries.map((e) {
+            return InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                _toggleReaction(
+                    questionId: questionId, replyId: replyId, type: e.key);
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Text(e.value, style: const TextStyle(fontSize: 30)),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _toggleReaction(
+      {String? questionId, String? replyId, required String type}) async {
+    if (_questionsList == null) return;
+
+    // Optimistic Update
+    setState(() {
+      _questionsList = _questionsList!.map((q) {
+        if (questionId != null && q.id == questionId) {
+          return _updateItemReaction(q, type) as LessonQuestion;
+        } else if (replyId != null) {
+          return q.copyWith(
+            replies: q.replies.map((r) {
+              if (r.id == replyId) {
+                return _updateItemReaction(r, type) as LessonQuestionReply;
+              }
+              return r;
+            }).toList(),
+          );
+        }
+        return q;
+      }).toList();
+    });
+
+    try {
+      await DatabaseService().toggleReaction(
+        questionId: questionId,
+        replyId: replyId,
+        reactionType: type,
+      );
+      // Optional: sync with real server data again to ensure consistency
+      // but without the jarring refresh since we already updated the list
+      final freshData =
+          await DatabaseService().getLessonQuestions(widget.lesson.id);
+      if (mounted) {
+        setState(() {
+          _questionsList =
+              freshData.map((q) => LessonQuestion.fromJson(q)).toList();
+        });
+      }
+    } catch (e) {
+      // Revert or show error
+      _refreshFutures();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('حدث خطأ أثناء التفاعل. $e')),
+        );
+      }
+    }
+  }
+
+  dynamic _updateItemReaction(dynamic item, String type) {
+    final Map<String, int> newCounts = Map.from(item.reactionCounts);
+    String? newMyReaction = item.myReaction;
+
+    if (item.myReaction == type) {
+      // Remove reaction
+      newCounts[type] = (newCounts[type] ?? 1) - 1;
+      if (newCounts[type]! <= 0) newCounts.remove(type);
+      newMyReaction = null;
+    } else {
+      // If had different reaction, remove it first
+      if (item.myReaction != null) {
+        final oldType = item.myReaction!;
+        newCounts[oldType] = (newCounts[oldType] ?? 1) - 1;
+        if (newCounts[oldType]! <= 0) newCounts.remove(oldType);
+      }
+      // Add new reaction
+      newCounts[type] = (newCounts[type] ?? 0) + 1;
+      newMyReaction = type;
+    }
+
+    return item.copyWith(
+      reactionCounts: newCounts,
+      myReaction: newMyReaction,
+    );
+  }
+
+  void _showReplyDialog(LessonQuestion question, {String? initialText}) {
+    final replyController = TextEditingController(text: initialText);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -1831,6 +2360,87 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         ),
       ),
     );
+  }
+
+  Future<void> _editQuestion(LessonQuestion question) async {
+    final controller = TextEditingController(text: question.content);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تعديل السؤال', textAlign: TextAlign.right),
+        content: TextField(
+          controller: controller,
+          textAlign: TextAlign.right,
+          maxLines: 4,
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('إلغاء')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple),
+            child: const Text('حفظ التعديل',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.trim().isNotEmpty) {
+      try {
+        await DatabaseService()
+            .updateLessonQuestion(question.id, result.trim());
+        _refreshFutures();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('خطأ في التعديل: $e')));
+        }
+      }
+    }
+  }
+
+  Future<void> _editReply(LessonQuestionReply reply) async {
+    final controller = TextEditingController(text: reply.content);
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('تعديل الرد', textAlign: TextAlign.right),
+        content: TextField(
+          controller: controller,
+          textAlign: TextAlign.right,
+          maxLines: 4,
+          decoration: const InputDecoration(border: OutlineInputBorder()),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('إلغاء')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple),
+            child: const Text('حفظ التعديل',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.trim().isNotEmpty) {
+      try {
+        await DatabaseService().updateReply(reply.id, result.trim());
+        _refreshFutures();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('خطأ في التعديل: $e')));
+        }
+      }
+    }
   }
 }
 

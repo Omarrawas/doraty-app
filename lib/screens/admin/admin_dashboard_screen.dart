@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/services/database_service.dart';
+import '../../core/services/supabase_service.dart';
 import 'users_management_screen.dart';
 import 'teachers_management_screen.dart';
 import 'courses_management_screen.dart';
 import 'subscriptions_management_screen.dart';
+import 'payment_receipts_screen.dart';
+import 'categories_management_screen.dart';
+import 'notifications_management_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -19,17 +23,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   bool _isLoading = true;
   Map<String, dynamic> _stats = {};
+  String? _userRole;
+  String? _userId;
 
   @override
   void initState() {
     super.initState();
-    _loadStats();
+    _loadUserRole();
+  }
+
+  Future<void> _loadUserRole() async {
+    try {
+      final user = SupabaseService.instance.currentUser;
+      if (user != null) {
+        _userId = user.id;
+        final role = await _db.getUserRole(user.id);
+        setState(() {
+          _userRole = role;
+        });
+        _loadStats();
+      }
+    } catch (e) {
+      debugPrint('Error loading user role: $e');
+      _loadStats();
+    }
   }
 
   Future<void> _loadStats() async {
     setState(() => _isLoading = true);
     try {
-      final stats = await _db.getSystemStatistics();
+      Map<String, dynamic> stats;
+      if (_userRole == 'teacher' && _userId != null) {
+        stats = await _db.getTeacherStatistics(_userId!);
+      } else {
+        stats = await _db.getSystemStatistics();
+      }
+      
       setState(() {
         _stats = stats;
         _isLoading = false;
@@ -51,12 +80,21 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: Scaffold(
         resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          title: const Column(
+          title: Column(
             children: [
-              Text('لوحة تحكم الأدمن'),
+              Text(_userRole == 'teacher'
+                  ? 'لوحة تحكم المدرس'
+                  : _userRole == 'super_admin'
+                      ? 'لوحة تحكم المدير العام'
+                      : 'لوحة تحكم الأدمن'),
               Text(
-                'إدارة شاملة للنظام',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+                _userRole == 'teacher'
+                    ? 'إدارة دوراتك ومحتواك'
+                    : _userRole == 'super_admin'
+                        ? 'إدارة النظام الشاملة والرقابة'
+                        : 'إدارة العمليات اليومية',
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.normal),
               ),
             ],
           ),
@@ -190,65 +228,115 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ),
         const SizedBox(height: 16),
-        _buildActionCard(
-          icon: Icons.people_alt,
-          title: 'إدارة المستخدمين',
-          subtitle: 'عرض وإدارة جميع المستخدمين',
-          color: Colors.blue,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const UsersManagementScreen(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        _buildActionCard(
-          icon: Icons.school,
-          title: 'إدارة المدرسين',
-          subtitle: 'ربط المدرسين بالدورات',
-          color: Colors.purple,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const TeachersManagementScreen(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
+        if (_userRole != 'teacher') ...[
+          _buildActionCard(
+            icon: Icons.people_alt,
+            title: 'إدارة المستخدمين',
+            subtitle: 'عرض وإدارة جميع المستخدمين',
+            color: Colors.blue,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const UsersManagementScreen(),
+                ),
+              );
+            },
+          ),
+          _buildActionCard(
+            icon: Icons.category,
+            title: 'إدارة التصنيفات',
+            subtitle: 'إضافة وتعديل تصنيفات الدورات',
+            color: Colors.pink,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CategoriesManagementScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildActionCard(
+            icon: Icons.school,
+            title: 'إدارة المدرسين',
+            subtitle: 'ربط المدرسين بالدورات',
+            color: Colors.purple,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TeachersManagementScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+        ],
         _buildActionCard(
           icon: Icons.library_books,
-          title: 'إدارة الدورات',
+          title: _userRole == 'teacher' ? 'إدارة دوراتي' : 'إدارة الدورات',
           subtitle: 'إنشاء وتعديل الدورات والدروس',
           color: Colors.teal,
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const CoursesManagementScreen(),
+                builder: (context) => CoursesManagementScreen(
+                  instructorId: _userRole == 'teacher' ? _userId : null,
+                ),
               ),
             );
           },
         ),
         const SizedBox(height: 12),
-        _buildActionCard(
-          icon: Icons.card_membership,
-          title: 'إدارة الاشتراكات',
-          subtitle: 'عرض وإدارة جميع اشتراكات الطلاب',
-          color: Colors.amber,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SubscriptionsManagementScreen(),
-              ),
-            );
-          },
-        ),
+        if (_userRole != 'teacher') ...[
+          _buildActionCard(
+            icon: Icons.card_membership,
+            title: 'إدارة الاشتراكات',
+            subtitle: 'عرض وإدارة جميع اشتراكات الطلاب',
+            color: Colors.amber,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SubscriptionsManagementScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildActionCard(
+            icon: Icons.receipt_long,
+            title: 'طلبات الدفع لإيصالات',
+            subtitle: 'مراجعة وتأكيد إيصالات دفع الطلاب',
+            color: Colors.orange,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PaymentReceiptsScreen(),
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildActionCard(
+            icon: Icons.notifications_active,
+            title: 'إدارة الإشعارات',
+            subtitle: 'إرسال إشعارات وتنبيهات',
+            color: Colors.redAccent,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const NotificationsManagementScreen(),
+                ),
+              );
+            },
+          ),
+        ],
       ],
     );
   }

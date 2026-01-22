@@ -1,15 +1,24 @@
+import 'dart:io' show File;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import '../../core/services/encryption_service.dart';
+import '../../core/services/offline_storage_service.dart';
 import '../../core/theme/app_colors.dart';
 
 class PdfViewerScreen extends StatefulWidget {
-  final String url;
+  final String? url;
+  final String? localPath;
   final String title;
+  final bool isOffline;
 
   const PdfViewerScreen({
     super.key,
-    required this.url,
+    this.url,
+    this.localPath,
     required this.title,
+    this.isOffline = false,
   });
 
   @override
@@ -19,6 +28,57 @@ class PdfViewerScreen extends StatefulWidget {
 class _PdfViewerScreenState extends State<PdfViewerScreen> {
   final GlobalKey<SfPdfViewerState> _pdfViewerKey = GlobalKey();
   bool _isLoading = true;
+  Uint8List? _offlineData;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isOffline && widget.localPath != null) {
+      _loadOfflinePdf();
+    }
+  }
+
+  Future<void> _loadOfflinePdf() async {
+    try {
+      Uint8List decrypted;
+
+      if (widget.localPath!.startsWith('hive://')) {
+        // Handle Hive storage (Web & Native fallback)
+        final parts = widget.localPath!.replaceFirst('hive://', '').split('/');
+        if (parts.length < 2) throw Exception('Invalid hive path');
+
+        final lessonId = parts[0];
+        final fileName = parts[1];
+
+        final encryptedData =
+            await OfflineStorageService().getResource(lessonId, fileName);
+        if (encryptedData == null) {
+          throw Exception('Resource not found in Hive');
+        }
+
+        decrypted = await EncryptionService().decryptBytes(encryptedData);
+      } else {
+        // Handle File storage (Native only)
+        if (kIsWeb) throw Exception('File access not supported on Web');
+        final file = File(widget.localPath!);
+        if (!await file.exists()) throw Exception('File not found');
+
+        final bytes = await EncryptionService()
+            .decryptRange(file, 0, await file.length() - 17);
+        decrypted = Uint8List.fromList(bytes);
+      }
+
+      setState(() {
+        _offlineData = decrypted;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading offline PDF: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,28 +95,35 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         ),
         backgroundColor: AppColors.primaryPurple,
         iconTheme: const IconThemeData(color: Colors.white),
-        // [SECURITY] No external launch or download buttons allowed
       ),
       body: Stack(
         children: [
-          SfPdfViewer.network(
-            widget.url,
-            key: _pdfViewerKey,
-            onDocumentLoaded: (PdfDocumentLoadedDetails details) {
-              setState(() {
-                _isLoading = false;
-              });
-            },
-            onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
-              setState(() {
-                _isLoading = false;
-              });
-              _showErrorDialog(context, details.error);
-            },
-            // [SECURITY] Disable features that might expose the data or URL
-            enableDoubleTapZooming: true,
-            enableTextSelection: false, // Prevents copying text
-          ),
+          if (widget.isOffline)
+            _offlineData != null
+                ? SfPdfViewer.memory(
+                    _offlineData!,
+                    key: _pdfViewerKey,
+                    enableTextSelection: false,
+                  )
+                : const Center(child: Text('تعذر تحميل الملف المشفر'))
+          else
+            SfPdfViewer.network(
+              widget.url!,
+              key: _pdfViewerKey,
+              onDocumentLoaded: (PdfDocumentLoadedDetails details) {
+                setState(() {
+                  _isLoading = false;
+                });
+              },
+              onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
+                setState(() {
+                  _isLoading = false;
+                });
+                _showErrorDialog(context, details.error);
+              },
+              enableDoubleTapZooming: true,
+              enableTextSelection: false,
+            ),
           if (_isLoading)
             const Center(
               child: CircularProgressIndicator(
