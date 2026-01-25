@@ -23,6 +23,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   bool _isLoading = true;
   Map<String, dynamic> _stats = {};
+  List<Map<String, dynamic>> _recentAttempts = [];
   String? _userRole;
   String? _userId;
 
@@ -58,9 +59,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       } else {
         stats = await _db.getSystemStatistics();
       }
+
+      List<Map<String, dynamic>> attempts = [];
+      if (_userRole == 'teacher' && _userId != null) {
+        attempts = await _db.getRecentTeacherExamAttempts(_userId!);
+      }
       
       setState(() {
         _stats = stats;
+        _recentAttempts = attempts;
         _isLoading = false;
       });
     } catch (e) {
@@ -121,6 +128,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     children: [
                       _buildStatsGrid(),
                       const SizedBox(height: 24),
+                      if (_userRole == 'teacher') ...[
+                        _buildRecentAttempts(),
+                        const SizedBox(height: 24),
+                      ],
+                      const SizedBox(height: 24),
+                      if (_userRole == 'teacher') ...[
+                        _buildRecentAttempts(),
+                        const SizedBox(height: 24),
+                      ],
                       _buildQuickActions(),
                       const SizedBox(height: 24),
                       _buildSystemInfo(),
@@ -474,6 +490,113 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRecentAttempts() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'أحدث محاولات الطلاب',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (_recentAttempts.isEmpty)
+          Card(
+            elevation: 0,
+            color: Colors.grey[50],
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.grey[200]!),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(
+                child: Text(
+                  'لا يوجد محاولات حديثة',
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+              ),
+            ),
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _recentAttempts.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final attempt = _recentAttempts[index];
+              final user = attempt['users'] as Map<String, dynamic>?;
+              final exam = attempt['exams'] as Map<String, dynamic>?;
+              final score = attempt['score'];
+              final total = attempt['total_points'];
+              final isPassed = attempt['is_passed'] == true;
+              final date = DateTime.parse(attempt['submitted_at']).toLocal();
+
+              return Card(
+                elevation: 0,
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(color: Colors.grey[200]!),
+                ),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundImage: user?['avatar_url'] != null
+                        ? NetworkImage(user!['avatar_url'])
+                        : null,
+                    backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
+                    child: user?['avatar_url'] == null
+                        ? const Icon(Icons.person,
+                            color: AppColors.primaryPurple)
+                        : null,
+                  ),
+                  title: Text(
+                    user?['full_name'] ?? 'مستخدم',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(exam?['title'] ?? 'اختبار'),
+                      Text(
+                        '${date.year}-${date.month}-${date.day} ${date.hour}:${date.minute}',
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '$score / $total',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: isPassed ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      Text(
+                        isPassed ? 'ناجح' : 'راسب',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isPassed ? Colors.green : Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+      ],
     );
   }
 }

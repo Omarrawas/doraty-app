@@ -1,9 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:convert';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:doraty/core/services/database_service.dart';
+import 'package:doraty/core/services/supabase_service.dart';
 
 // Top-level function for background handling
 @pragma('vm:entry-point')
@@ -28,13 +30,6 @@ class NotificationService {
     if (_isInitialized) return;
 
     try {
-      // Skip Firebase initialization on Web (not fully supported yet)
-      if (kIsWeb) {
-        debugPrint('⚠️ FCM not supported on Web, skipping initialization');
-        _isInitialized = true;
-        return;
-      }
-
       // 1. Initialize Firebase if not already (usually done in main, but safe to check)
       try {
         await Firebase.initializeApp();
@@ -55,51 +50,86 @@ class NotificationService {
 
       debugPrint('User granted permission: ${settings.authorizationStatus}');
 
-      // 3. Setup Local Notifications (for foreground display)
-      const AndroidInitializationSettings initializationSettingsAndroid =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+      // 3. Setup Local Notifications (for foreground display on mobile)
+      if (!kIsWeb) {
+        const AndroidInitializationSettings initializationSettingsAndroid =
+            AndroidInitializationSettings('@mipmap/ic_launcher');
 
-      // iOS settings
-      const DarwinInitializationSettings initializationSettingsIOS =
-          DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
-      );
+        // iOS settings
+        const DarwinInitializationSettings initializationSettingsIOS =
+            DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
 
-      const InitializationSettings initializationSettings =
-          InitializationSettings(
-        android: initializationSettingsAndroid,
-        iOS: initializationSettingsIOS,
-      );
+        const InitializationSettings initializationSettings =
+            InitializationSettings(
+          android: initializationSettingsAndroid,
+          iOS: initializationSettingsIOS,
+        );
 
-      await _localNotifications.initialize(
-        initializationSettings,
-        onDidReceiveNotificationResponse: (NotificationResponse details) {
-          debugPrint('Notification clicked payload: ${details.payload}');
-          // Handle notification tap logic here if needed
-        },
-      );
-      
-      // Create high importance channel for Android
-      await _createNotificationChannel();
+        await _localNotifications.initialize(
+          initializationSettings,
+          onDidReceiveNotificationResponse: (NotificationResponse details) {
+            debugPrint('Notification clicked payload: ${details.payload}');
+            // Handle notification tap logic here if needed
+          },
+        );
 
-      // 4. Register Background Handler
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+        // Create high importance channel for Android
+        await _createNotificationChannel();
+
+        // 4. Register Background Handler (Mobile only)
+        FirebaseMessaging.onBackgroundMessage(
+            _firebaseMessagingBackgroundHandler);
+      }
 
       // 5. Handle Foreground Messages
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
         debugPrint('Got a message whilst in the foreground!');
         debugPrint('Message data: ${message.data}');
 
         if (message.notification != null) {
           debugPrint('Message also contained a notification: ${message.notification}');
-          _showLocalNotification(message);
+          
+          // Save notification to database
+          final userId = SupabaseService.instance.currentUserId;
+          if (userId != null) {
+            await DatabaseService().saveNotification(
+              userId: userId,
+              title: message.notification!.title ?? 'إشعار جديد',
+              body: message.notification!.body ?? '',
+              data: message.data,
+              type: message.data['type'],
+              category: message.data['category'],
+              imageUrl: message.data['image_url'],
+              actionUrl:
+                  message.data['action_url'] ?? message.data['click_action'],
+            );
+          }
+
+          if (!kIsWeb) {
+            _showLocalNotification(message);
+          } else {
+            // On web, browser handles notification display
+            debugPrint(
+                '📱 Web notification received: ${message.notification!.title}');
+          }
         }
       });
 
       // 6. Get Token
-      String? token = await _firebaseMessaging!.getToken();
+      String? token;
+      if (kIsWeb) {
+        token = await _firebaseMessaging!.getToken(
+          vapidKey:
+              'BAwflgI9xXrkurTw5b7k1gXp7Y2VPIDdWgLECj4gttuMWTLLhHlC8fLss_YH-AKelslav3776Fu-iKTeWvJM99E',
+        );
+      } else {
+        token = await _firebaseMessaging!.getToken();
+      }
+      
       debugPrint("FCM Token: $token");
       
       if (token != null) {
@@ -108,6 +138,12 @@ class NotificationService {
         await _firebaseMessaging!.subscribeToTopic('all_users');
         debugPrint('🔔 Subscribed to all_users topic');
       }
+
+      // 7. Listen for token refresh
+      _firebaseMessaging!.onTokenRefresh.listen((newToken) async {
+        debugPrint("🔄 FCM Token Refreshed: $newToken");
+        await DatabaseService().updateFcmToken(newToken);
+      });
 
       _isInitialized = true;
     } catch (e) {
@@ -148,7 +184,7 @@ class NotificationService {
             priority: Priority.high,
           ),
         ),
-        payload: message.data.toString(), // Or custom payload
+        payload: jsonEncode(message.data), // Encode payload as JSON string
       );
     }
   }

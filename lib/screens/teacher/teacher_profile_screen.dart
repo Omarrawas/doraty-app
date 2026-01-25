@@ -5,6 +5,7 @@ import '../../models/course.dart';
 import '../../widgets/course_card.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/string_utils.dart';
+import '../../core/theme/app_colors.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   final String teacherId;
@@ -44,10 +45,11 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     _loadTeacherCourses();
   }
 
-  Future<void> _loadTeacherData() async {
+  Future<void> _loadTeacherData({bool forceRefresh = false}) async {
     try {
       // Get complete teacher data from database
-      final userData = await _databaseService.getUserById(widget.teacherId);
+      final userData = await _databaseService.getUserById(widget.teacherId,
+          forceRefresh: forceRefresh);
       if (mounted && userData != null) {
         setState(() {
           _teacherName = StringUtils.cleanTeacherName(
@@ -64,7 +66,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     }
   }
 
-  Future<void> _loadTeacherCourses() async {
+  Future<void> _loadTeacherCourses({bool forceRefresh = false}) async {
     try {
       final coursesData =
           await _databaseService.getCoursesByTeacherId(widget.teacherId);
@@ -85,6 +87,13 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     }
   }
 
+  Future<void> _refreshProfile() async {
+    await Future.wait([
+      _loadTeacherData(forceRefresh: true),
+      _loadTeacherCourses(forceRefresh: true),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,23 +106,29 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: DynamicGradientBackground(
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(color: Colors.white))
-            : SingleChildScrollView(
-                padding: const EdgeInsets.only(top: 80, bottom: 20),
-                child: Column(
-                  children: [
-                    // Teacher Info
-                    _buildTeacherInfo(),
-                    const SizedBox(height: 30),
+      body: RefreshIndicator(
+        onRefresh: _refreshProfile,
+        color: AppColors.primaryPurple,
+        backgroundColor: Colors.white,
+        child: DynamicGradientBackground(
+          child: _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(color: Colors.white))
+              : SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.only(top: 80, bottom: 20),
+                  child: Column(
+                    children: [
+                      // Teacher Info
+                      _buildTeacherInfo(),
+                      const SizedBox(height: 30),
 
-                    // Courses
-                    _buildCoursesList(),
-                  ],
+                      // Courses
+                      _buildCoursesList(),
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }

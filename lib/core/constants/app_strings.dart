@@ -21,7 +21,7 @@ class AppStrings {
       'video_quality': 'جودة الفيديو',
       'clear_downloads': 'مسح التنزيلات',
       'clear_downloads_desc': 'حذف جميع الدروس المحملة لتوفير المساحة',
-      'about': 'حول التطبيق',
+      'about': 'حول الكورس ',
       'version': 'الإصدار',
       'privacy_policy': 'سياسة الخصوصية',
       'terms_conditions': 'شروط الاستخدام',
@@ -135,6 +135,7 @@ class AppStrings {
       'download_course': 'تنزيل الدورة',
       'get_certificate': 'الحصول على الشهادة',
       'lesson': 'درس',
+      'lessons': 'دروس',
       'exam': 'اختبار',
       'free': 'مجاني',
       'certificate_ready': 'الشهادة جاهزة!',
@@ -157,6 +158,7 @@ class AppStrings {
       'students_count_label': 'طالب',
       'duration_label': 'ساعة',
       'no_reviews_yet': 'لا توجد تقييمات بعد',
+      'reviews': 'تقييمات',
       'add_review': 'أضف تقييمك',
       'your_comment_here': 'اكتب تعليقك هنا...',
       'publish': 'نشر',
@@ -183,6 +185,17 @@ class AppStrings {
       'edit_note': 'تعديل الملاحظة',
       'no_video_available': 'لا يوجد فيديو لهذا الدرس',
       'no_interactive_content': 'لا يوجد محتوى تفاعلي مخصص لهذا الدرس',
+      'flashcards_tab': 'بطاقات الاستذكار',
+      'generate_flashcards': 'إنشاء بطاقات ذكية بالذكاء الاصطناعي',
+      'review_flashcards': 'مراجعة البطاقات التعليمية',
+      'flashcards_desc':
+          'بطاقات استذكار ذكية تعتمد على محتوى الدرس لمساعدتك في الحفظ والمراجعة باستخدام نظام التكرار المتباعد.',
+      'generating_flashcards':
+          'جاري إنشاء البطاقات باستخدام الذكاء الاصطناعي...',
+      'flashcards_generated_success':
+          'تم إنشاء البطاقات بنجاح! يمكنك الآن البدء في المراجعة.',
+      'recent_exam_attempts': 'أحدث محاولات الطلاب',
+      'no_recent_attempts': 'لا توجد محاولات حديثة',
     },
     'en': {
       'settings': 'Settings',
@@ -271,7 +284,7 @@ class AppStrings {
       'featured_courses': 'Featured Courses',
       'no_featured_courses_message': 'No featured courses found at the moment.',
       'welcome_with_name': 'Welcome',
-
+      'lessons': 'lessons',
       'ready_to_learn': 'Ready to learn?',
       'search_course_hint': 'Search for a course...',
       'continue_learning': 'Continue Learning',
@@ -285,6 +298,7 @@ class AppStrings {
       'loading': 'Loading...',
       'current_courses': 'Current Courses',
       'completed_status': 'Completed',
+      'reviews': 'reviews',
       'enrolled': 'Enrolled',
       'no_current_courses': 'No current courses',
       'no_completed_courses': 'No completed courses yet',
@@ -367,6 +381,16 @@ class AppStrings {
       'edit_note': 'Edit Note',
       'no_video_available': 'No video available for this lesson',
       'no_interactive_content': 'No interactive content for this lesson',
+      'flashcards_tab': 'Flashcards',
+      'generate_flashcards': 'Generate AI Flashcards',
+      'review_flashcards': 'Review Flashcards',
+      'flashcards_desc':
+          'Smart flashcards based on lesson content to help you memorize and review using spaced repetition.',
+      'generating_flashcards': 'Generating flashcards using AI...',
+      'flashcards_generated_success':
+          'Flashcards generated successfully! You can now start reviewing.',
+      'recent_exam_attempts': 'Recent Student Attempts',
+      'no_recent_attempts': 'No recent attempts',
     },
   };
 

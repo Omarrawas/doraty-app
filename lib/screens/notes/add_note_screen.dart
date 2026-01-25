@@ -6,11 +6,13 @@ import '../../core/services/database_service.dart';
 class AddNoteScreen extends StatefulWidget {
   final String? lessonId;
   final String? courseId;
+  final int? videoTimestamp;
 
   const AddNoteScreen({
     super.key,
     this.lessonId,
     this.courseId,
+    this.videoTimestamp,
   });
 
   @override
@@ -23,6 +25,12 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   final TextEditingController _tagController = TextEditingController();
   final List<String> _tags = [];
   bool _isSubmitting = false;
+
+  String _formatTime(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
 
   @override
   void dispose() {
@@ -90,6 +98,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         courseId: widget.courseId!,
         title: _titleController.text.trim(),
         content: _contentController.text.trim(),
+        timestamp: widget.videoTimestamp,
       );
 
       if (mounted) {
@@ -194,15 +203,28 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               ),
             ),
           ),
-          const Expanded(
-            child: Text(
-              'ملاحظة جديدة',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color.fromARGB(255, 8, 5, 5),
-              ),
+          Expanded(
+            child: Column(
+              children: [
+                const Text(
+                  'ملاحظة جديدة',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                if (widget.videoTimestamp != null)
+                  Text(
+                    'توقيت الفيديو: ${_formatTime(widget.videoTimestamp!)}',
+                    style: const TextStyle(
+                      color: AppColors.primaryPurple,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+              ],
             ),
           ),
           const SizedBox(width: 48),

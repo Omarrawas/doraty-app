@@ -120,17 +120,6 @@ class _NotificationsManagementScreenState
         'target_id': _selectedTargetId,
         'sender_id': SupabaseService.instance.currentUserId,
       });
-
-      // 2. Trigger Sending Logic (Placeholder / Edge Function Call)
-      // Since we don't have the Edge Function setup with keys yet,
-      // we will simulate the success and inform the user.
-      // Ideally: await supabase.functions.invoke('send-push', body: { ... });
-      
-      // Sending logic via NotificationService helper (if we implemented it to call sending API)
-      // specific logic would go here. For now, we assume the DB record is enough 
-      // or that an external trigger watches the table.
-      
-      // TODO: Implement actual FCM sending call here using Edge Function
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

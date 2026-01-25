@@ -8,6 +8,9 @@ class AppUser {
   final int completedCourses;
   final int totalHours;
   final int certificates;
+  final int streakCount;
+  final DateTime? lastActivityDate;
+  final List<String> badges;
   final DateTime createdAt;
 
   AppUser({
@@ -20,6 +23,9 @@ class AppUser {
     this.completedCourses = 0,
     this.totalHours = 0,
     this.certificates = 0,
+    this.streakCount = 0,
+    this.lastActivityDate,
+    this.badges = const [],
     required this.createdAt,
   });
 
@@ -34,6 +40,11 @@ class AppUser {
       completedCourses: json['completed_courses'] ?? 0,
       totalHours: json['total_hours'] ?? 0,
       certificates: json['certificates'] ?? 0,
+      streakCount: json['streak_count'] ?? 0,
+      lastActivityDate: json['last_activity_date'] != null
+          ? DateTime.parse(json['last_activity_date'])
+          : null,
+      badges: List<String>.from(json['badges'] ?? []),
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])
           : DateTime.now(),
@@ -51,6 +62,9 @@ class AppUser {
       'completed_courses': completedCourses,
       'total_hours': totalHours,
       'certificates': certificates,
+      'streak_count': streakCount,
+      'last_activity_date': lastActivityDate?.toIso8601String(),
+      'badges': badges,
       'created_at': createdAt.toIso8601String(),
     };
   }

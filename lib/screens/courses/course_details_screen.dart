@@ -22,6 +22,7 @@ import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
+import 'widgets/discussions_tab.dart';
 
 
 class CourseDetailsScreen extends StatefulWidget {
@@ -87,7 +88,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         StringUtils.cleanTeacherName(widget.course.instructorName);
     _currentRating = widget.course.rating;
     _reviewsCount = 0; // Will be updated by _loadReviews
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _selectedTabIndex = _tabController.index;
@@ -1008,6 +1009,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
+          height: 54, // Added explicit height
           decoration: BoxDecoration(
             color: AppColors.getGlassColor(context),
             borderRadius: BorderRadius.circular(16),
@@ -1016,28 +1018,34 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
               width: 1,
             ),
           ),
-          child: TabBar(
-            controller: _tabController,
-            indicator: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [
-                  Color(0xFF7B2CBF),
-                  Color(0xFF5A67D8),
-                ],
+          child: Material(
+            // Added Material wrapper for better ink effects and hit testing
+            color: Colors.transparent,
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF7B2CBF),
+                    Color(0xFF5A67D8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(16),
               ),
-              borderRadius: BorderRadius.circular(16),
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              labelStyle: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Cairo', // Ensure consistent font
+              ),
+              tabs: [
+                Tab(text: _t('about')),
+                Tab(text: _t('lessons')),
+                Tab(text: _t('reviews')),
+                const Tab(text: 'المناقشات'),
+              ],
             ),
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            labelStyle: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
-            tabs: [
-              Tab(text: _t('about')),
-              Tab(text: _t('lessons')),
-              Tab(text: _t('reviews')),
-            ],
           ),
         ),
       ),
@@ -1052,6 +1060,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         return _buildContentTab();
       case 2:
         return _buildReviewsTab();
+      case 3:
+        return DiscussionsTab(courseId: widget.course.id);
       default:
         return const SizedBox();
     }

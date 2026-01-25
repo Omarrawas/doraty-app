@@ -74,6 +74,22 @@ class DownloadManager extends ChangeNotifier {
     await _startDownloadWithRetry(lesson, 0);
   }
 
+  Future<StreamManifest?> getYouTubeStreams(String url) async {
+    final isYoutube = url.contains('youtube.com') || url.contains('youtu.be');
+    if (!isYoutube) return null;
+
+    final yt = YoutubeExplode();
+    try {
+      final videoId = VideoId(url);
+      return await yt.videos.streamsClient.getManifest(videoId);
+    } catch (e) {
+      debugPrint('Error fetching YouTube streams: $e');
+      return null;
+    } finally {
+      yt.close();
+    }
+  }
+
   Future<void> _startDownloadWithRetry(
       DownloadedLesson lesson, int retryCount) async {
     // Check if already downloaded/downloading

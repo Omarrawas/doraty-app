@@ -25,15 +25,23 @@ class DatabaseService {
   // ==================== CATEGORIES (NEW) ====================
   // Added CRUD for admin management
 
-  /// Get all categories
-  Future<List<Map<String, dynamic>>> getCategories() async {
-    try {
-      final response = await _client.from('categories').select().order('name');
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      debugPrint('Error getting categories: $e');
-      return [];
-    }
+  Future<List<Map<String, dynamic>>> getCategories(
+      {bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: 'categories_all',
+      forceRefresh: forceRefresh,
+      duration: const Duration(days: 1),
+      fetcher: () async {
+        try {
+          final response =
+              await _client.from('categories').select().order('name');
+          return List<Map<String, dynamic>>.from(response);
+        } catch (e) {
+          debugPrint('Error getting categories: $e');
+          return [];
+        }
+      },
+    );
   }
 
   /// Get subcategories for a parent category
@@ -1384,6 +1392,145 @@ class DatabaseService {
     }
   }
 
+  /// Get leaderboard data (Top students)
+  Future<List<Map<String, dynamic>>> getLeaderboard() async {
+    try {
+      // Aggregate points from exam_attempts and lesson_progress
+      final response = await _client
+          .from('users')
+          .select(
+              'id, full_name, avatar_url, exam_attempts(score), lesson_progress(is_completed)')
+          .order('full_name');
+
+      final users = List<Map<String, dynamic>>.from(response);
+
+      final results = users.map((u) {
+        // Points from exams (50 XP per submitted exam)
+        final attempts = u['exam_attempts'] as List?;
+        int examPoints = 0;
+        if (attempts != null) {
+          examPoints =
+              attempts.where((a) => a['status'] == 'submitted').length * 50;
+          // Add score points too
+          for (var attempt in attempts) {
+            examPoints += (attempt['score'] as num?)?.toInt() ?? 0;
+          }
+        }
+
+        // Points from lessons (10 XP per completion)
+        final progress = u['lesson_progress'] as List?;
+        int lessonPoints = 0;
+        if (progress != null) {
+          lessonPoints =
+              progress.where((p) => p['is_completed'] == true).length * 10;
+        }
+
+        int totalPoints = examPoints + lessonPoints;
+
+        return {
+          'id': u['id'],
+          'full_name': u['full_name'],
+          'avatar_url': u['avatar_url'],
+          'points': totalPoints,
+          'rank_title': _getRankTitle(totalPoints),
+        };
+      }).toList();
+
+      // Sort by points descending
+      results
+          .sort((a, b) => (b['points'] as int).compareTo(a['points'] as int));
+
+      return results.take(20).toList();
+    } catch (e) {
+      debugPrint('Error fetching leaderboard: $e');
+      return [];
+    }
+  }
+
+  String _getRankTitle(int points) {
+    if (points > 5000) return 'أسطورة';
+    if (points > 2000) return 'خبير';
+    if (points > 1000) return 'متميز';
+    if (points > 500) return 'مجتهد';
+    return 'مبتدئ';
+  }
+
+  // ==================== DISCUSSIONS ====================
+
+  /// Get discussion threads for a course
+  Future<List<Map<String, dynamic>>> getDiscussionThreads(
+      String courseId) async {
+    try {
+      final response = await _client
+          .from('discussion_threads')
+          .select('*, users(full_name, avatar_url)')
+          .eq('course_id', courseId)
+          .order('created_at', ascending: false);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error fetching discussion threads: $e');
+      return [];
+    }
+  }
+
+  /// Create a new discussion thread
+  Future<void> createDiscussionThread({
+    required String courseId,
+    required String title,
+    required String content,
+  }) async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) throw Exception('User not authenticated');
+
+      await _client.from('discussion_threads').insert({
+        'course_id': courseId,
+        'user_id': userId,
+        'title': title,
+        'content': content,
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get replies for a discussion thread
+  Future<List<Map<String, dynamic>>> getDiscussionReplies(
+      String threadId) async {
+    try {
+      final response = await _client
+          .from('discussion_replies')
+          .select('*, users(full_name, avatar_url)')
+          .eq('thread_id', threadId)
+          .order('created_at', ascending: true);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error fetching replies: $e');
+      return [];
+    }
+  }
+
+  /// Add a reply to a discussion thread
+  Future<void> addDiscussionReply({
+    required String threadId,
+    required String content,
+  }) async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) throw Exception('User not authenticated');
+
+      await _client.from('discussion_replies').insert({
+        'thread_id': threadId,
+        'user_id': userId,
+        'content': content,
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // ==================== ENROLLMENTS ====================
 
   /// Check if user is enrolled in a course
@@ -2526,26 +2673,34 @@ class DatabaseService {
     }
   }
 
-  /// Get user by ID
-  Future<Map<String, dynamic>?> getUserById(String userId) async {
-    try {
-      final response = await _client
-          .from('users')
-          .select('*')
-          .eq('id', userId)
-          .maybeSingle();
-      return response;
-    } catch (e) {
-      debugPrint('Error getting user by ID: $e');
-      return null;
-    }
+  Future<Map<String, dynamic>?> getUserById(String userId,
+      {bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: CacheKeys.userProfile(userId),
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 1),
+      fetcher: () async {
+        try {
+          final response = await _client
+              .from('users')
+              .select('*')
+              .eq('id', userId)
+              .maybeSingle();
+          return response;
+        } catch (e) {
+          debugPrint('Error getting user by ID: $e');
+          return null;
+        }
+      },
+    );
   }
 
   /// Get all teachers
-  /// Get all teachers
-  Future<List<Map<String, dynamic>>> getAllTeachers() async {
+  Future<List<Map<String, dynamic>>> getAllTeachers(
+      {bool forceRefresh = false}) async {
     return await fetchWithCache(
       key: CacheKeys.teachers,
+      forceRefresh: forceRefresh,
       duration: const Duration(hours: 1),
       fetcher: () async {
         try {
@@ -2565,6 +2720,8 @@ class DatabaseService {
                 'photo_url':
                     t['avatar_url'], // Map avatar_url to photo_url for UI
                 'bio': t['bio'], // Include bio field
+                'full_name_en': t['full_name_en'],
+                'subjects': t['subjects'],
               }
             };
           }).toList();
@@ -2615,59 +2772,90 @@ class DatabaseService {
     }
   }
 
-  /// Get statistics for a specific teacher
-  Future<Map<String, dynamic>> getTeacherStatistics(String teacherId) async {
+  Future<Map<String, dynamic>> getTeacherStatistics(String teacherId,
+      {bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: 'teacher_stats_$teacherId',
+      forceRefresh: forceRefresh,
+      duration: const Duration(minutes: 30),
+      fetcher: () async {
+        try {
+          // Courses owned by this teacher
+          final teacherCourses = await _client
+              .from('courses')
+              .select('id')
+              .eq('instructor_id', teacherId);
+          final courseIds = teacherCourses.map((c) => c['id']).toList();
+
+          if (courseIds.isEmpty) {
+            return {
+              'total_users': 0,
+              'total_courses': 0,
+              'total_exams': 0,
+              'total_attempts': 0,
+            };
+          }
+
+          // Total exams in teacher's courses
+          final exams = await _client
+              .from('exams')
+              .select('id')
+              .inFilter('course_id', courseIds);
+
+          // Total students (distinct users) enrolled in teacher's courses
+          final enrollments = await _client
+              .from('enrollments')
+              .select('user_id')
+              .inFilter('course_id', courseIds);
+
+          final distinctUserIds = enrollments.map((e) => e['user_id']).toSet();
+
+          // Total attempts in teacher's courses
+          final attempts = await _client
+              .from('exam_attempts')
+              .select('id')
+              .inFilter('course_id', courseIds);
+
+          return {
+            'total_users': distinctUserIds.length,
+            'total_courses': courseIds.length,
+            'total_exams': exams.length,
+            'total_attempts': attempts.length,
+          };
+        } catch (e) {
+          debugPrint('Error getting teacher statistics: $e');
+          return {
+            'total_users': 0,
+            'total_courses': 0,
+            'total_exams': 0,
+            'total_attempts': 0,
+          };
+        }
+      },
+    );
+  }
+
+  // ==================== ADMIN: SUBSCRIPTIONS MANAGEMENT ====================
+
+  /// Get recent exam attempts for a specific teacher's courses
+  Future<List<Map<String, dynamic>>> getRecentTeacherExamAttempts(
+      String teacherId,
+      {int limit = 5}) async {
     try {
-      // Courses owned by this teacher
-      final teacherCourses = await _client
-          .from('courses')
-          .select('id')
-          .eq('instructor_id', teacherId);
-      final courseIds = teacherCourses.map((c) => c['id']).toList();
-
-      if (courseIds.isEmpty) {
-        return {
-          'total_users': 0, // Total students in their courses
-          'total_courses': 0,
-          'total_exams': 0,
-          'total_attempts': 0,
-        };
-      }
-
-      // Total exams in teacher's courses
-      final exams = await _client
-          .from('exams')
-          .select('id')
-          .inFilter('course_id', courseIds);
-
-      // Total students (distinct users) enrolled in teacher's courses
-      final enrollments = await _client
-          .from('enrollments')
-          .select('user_id')
-          .inFilter('course_id', courseIds);
-
-      final distinctUserIds = enrollments.map((e) => e['user_id']).toSet();
-
-      // Total attempts in teacher's courses
-      final attempts = await _client
+      final response = await _client
           .from('exam_attempts')
-          .select('id')
-          .inFilter('course_id', courseIds);
+          .select(
+              'id, score, total_points, percentage, is_passed, submitted_at, '
+              'users(full_name, avatar_url), '
+              'exams!inner(title, courses!inner(instructor_id))')
+          .eq('exams.courses.instructor_id', teacherId)
+          .order('submitted_at', ascending: false)
+          .limit(limit);
 
-      return {
-        'total_users': distinctUserIds.length,
-        'total_courses': courseIds.length,
-        'total_exams': exams.length,
-        'total_attempts': attempts.length,
-      };
+      return List<Map<String, dynamic>>.from(response);
     } catch (e) {
-      debugPrint('Error getting teacher statistics: $e');
-      return {
-        'total_users': 0,
-        'total_courses': 0,
-        'total_exams': 0,
-        'total_attempts': 0,
-      };
+      debugPrint('Error getting recent teacher exam attempts: $e');
+      return [];
     }
   }
 
@@ -3794,34 +3982,41 @@ class DatabaseService {
     }
   }
 
-  /// Get featured courses for banner carousel
-  Future<List<Map<String, dynamic>>> getFeaturedCourses() async {
-    try {
-      final response = await _client
-          .from('courses')
-          .select('*, users!instructor_id(full_name, avatar_url)')
-          .eq('is_featured', true)
-          .eq('is_published', true)
-          .order('featured_order', ascending: true)
-          .limit(5);
+  Future<List<Map<String, dynamic>>> getFeaturedCourses(
+      {bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: CacheKeys.featuredCourses,
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 2),
+      fetcher: () async {
+        try {
+          final response = await _client
+              .from('courses')
+              .select('*, users!instructor_id(full_name, avatar_url)')
+              .eq('is_featured', true)
+              .eq('is_published', true)
+              .order('featured_order', ascending: true)
+              .limit(5);
 
-      final data = List<Map<String, dynamic>>.from(response);
+          final data = List<Map<String, dynamic>>.from(response);
 
-      // Map joined data to flat structure
-      return data.map((course) {
-        final user = course['users'];
-        if (user != null) {
-          course['instructor_name'] =
-              user['full_name'] ?? course['instructor_name'];
-          course['instructor_photo'] =
-              user['avatar_url'] ?? course['instructor_photo'];
+          // Map joined data to flat structure
+          return data.map((course) {
+            final user = course['users'];
+            if (user != null) {
+              course['instructor_name'] =
+                  user['full_name'] ?? course['instructor_name'];
+              course['instructor_photo'] =
+                  user['avatar_url'] ?? course['instructor_photo'];
+            }
+            return course;
+          }).toList();
+        } catch (e) {
+          debugPrint('Error fetching featured courses: $e');
+          return [];
         }
-        return course;
-      }).toList();
-    } catch (e) {
-      debugPrint('Error fetching featured courses: $e');
-      rethrow;
-    }
+      },
+    );
   }
 
   /// Update enrollment progress (called after lesson completion)
@@ -3865,6 +4060,217 @@ class DatabaseService {
       return response;
     } catch (e) {
       debugPrint('Error fetching enrollment: $e');
+      rethrow;
+    }
+  }
+
+  // ==================== NOTIFICATIONS ====================
+
+  /// Get all notifications for current user
+  /// Get all notifications for current user (including global ones)
+  Future<List<Map<String, dynamic>>> getUserNotifications() async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return [];
+
+      // 1. User specific notifications
+      final userResponse = await _client
+          .from('notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(50);
+
+      final notifications = List<Map<String, dynamic>>.from(userResponse);
+
+      // 2. Global admin notifications (type = 'all')
+      try {
+        final adminResponse = await _client
+            .from('admin_notifications')
+            .select()
+            .eq('notification_type', 'all')
+            .order('created_at', ascending: false)
+            .limit(20);
+
+        final adminNotifications =
+            List<Map<String, dynamic>>.from(adminResponse);
+
+        for (var adminNotif in adminNotifications) {
+          // Avoid duplicates if app already saved it locally
+          // We assume if title and body match and time is close, it's a diff one?
+          // For simplicity, just add them. The ID will be different.
+
+          // Only add if not already present (by ID check - useless if diff tables)
+          // Just add them as read-only items
+
+          notifications.add({
+            'id': adminNotif['id'], // Use admin notif ID
+            'user_id': userId,
+            'title': adminNotif['title'],
+            'body': adminNotif['body'],
+            'data': {'type': 'admin_broadcast'},
+            'is_read': true, // Mark global ones as read to avoid update errors
+            'created_at': adminNotif['created_at'],
+          });
+        }
+      } catch (e) {
+        debugPrint('Error fetching admin notifications: $e');
+        // Continue with just user notifications
+      }
+
+      // 3. Sort merged list
+      notifications.sort((a, b) {
+        final dateA = DateTime.parse(a['created_at']);
+        final dateB = DateTime.parse(b['created_at']);
+        return dateB.compareTo(dateA); // Newest first
+      });
+
+      return notifications;
+    } catch (e) {
+      debugPrint('Error getting notifications: $e');
+      return [];
+    }
+  }
+
+  /// Get unread notifications count
+  Future<int> getUnreadNotificationsCount() async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return 0;
+
+      final response = await _client
+          .from('notifications')
+          .select()
+          .eq('user_id', userId)
+          .eq('is_read', false)
+          .count();
+
+      return response.count;
+    } catch (e) {
+      debugPrint('Error getting unread count: $e');
+      return 0;
+    }
+  }
+
+  /// Mark notification as read
+  Future<void> setNotificationRead(String notificationId) async {
+    try {
+      await _client
+          .from('notifications')
+          .update({'is_read': true}).eq('id', notificationId);
+    } catch (e) {
+      debugPrint('Error marking notification as read: $e');
+    }
+  }
+
+  /// Mark all notifications as read
+  Future<void> setAllNotificationsRead() async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return;
+
+      await _client
+          .from('notifications')
+          .update({'is_read': true})
+          .eq('user_id', userId)
+          .eq('is_read', false);
+    } catch (e) {
+      debugPrint('Error marking all notifications as read: $e');
+    }
+  }
+
+  /// Save notification to database
+  Future<void> saveNotification({
+    required String userId,
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+    String? type,
+    String? category,
+    String? imageUrl,
+    String? actionUrl,
+    DateTime? expiresAt,
+  }) async {
+    try {
+      await _client.from('notifications').insert({
+        'user_id': userId,
+        'title': title,
+        'body': body,
+        'data': data,
+        'type': type,
+        'category': category,
+        'image_url': imageUrl,
+        'action_url': actionUrl,
+        'expires_at': expiresAt?.toIso8601String(),
+        'is_read': false,
+      });
+    } catch (e) {
+      debugPrint('Error saving notification: $e');
+    }
+  }
+
+  /// Delete all notifications for current user
+  Future<void> deleteAllNotifications() async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return;
+
+      await _client.from('notifications').delete().eq('user_id', userId);
+    } catch (e) {
+      debugPrint('Error deleting all notifications: $e');
+      rethrow;
+    }
+  }
+
+  // ==================== NOTIFICATION PREFERENCES ====================
+
+  /// Get user notification preferences
+  Future<Map<String, bool>> getNotificationPreferences(String userId) async {
+    try {
+      final response = await _client
+          .from('notification_preferences')
+          .select()
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      if (response == null) {
+        // Return defaults if no record exists
+        return {
+          'email_marketing': true,
+          'push_learning': true,
+          'push_social': true,
+          'push_marketing': false,
+        };
+      }
+
+      return {
+        'email_marketing': response['email_marketing'] ?? true,
+        'push_learning': response['push_learning'] ?? true,
+        'push_social': response['push_social'] ?? true,
+        'push_marketing': response['push_marketing'] ?? false,
+      };
+    } catch (e) {
+      debugPrint('Error getting notification preferences: $e');
+      return {
+        'email_marketing': true,
+        'push_learning': true,
+        'push_social': true,
+        'push_marketing': false,
+      };
+    }
+  }
+
+  /// Update user notification preferences
+  Future<void> updateNotificationPreferences(
+      String userId, Map<String, bool> preferences) async {
+    try {
+      await _client.from('notification_preferences').upsert({
+        'user_id': userId,
+        ...preferences,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Error updating notification preferences: $e');
       rethrow;
     }
   }

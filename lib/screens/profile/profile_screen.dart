@@ -15,6 +15,9 @@ import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
 import 'order_history_screen.dart';
+import 'leaderboard_screen.dart';
+import '../../core/services/streak_service.dart';
+import 'analytics_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -38,6 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _fetchUserData();
+    StreakService().updateStreak(); // Update streak on visit
   }
 
   @override
@@ -132,14 +136,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 const SizedBox(height: 30),
 
-                // Statistics Cards
                 Row(
                   children: [
                     Expanded(
                       child: _buildStatCard(
-                        icon: Icons.book_outlined,
-                        value: '${_stats['completed_courses'] ?? 0}',
-                        label: _t('completed_courses_count_label'),
+                        icon: Icons.local_fire_department,
+                        value: '${_userProfile?['streak_count'] ?? 0}',
+                        label: 'سلسلة التعلم',
+                        color: Colors.orange,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -148,6 +152,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.access_time,
                         value: (_stats['learning_hours'] as num?)?.toStringAsFixed(1) ?? '0.0',
                         label: _t('learning_hours'),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildStatCard(
+                        icon: Icons.book_outlined,
+                        value: '${_stats['completed_courses'] ?? 0}',
+                        label: _t('completed_courses_count_label'),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -162,6 +180,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
 
                 const SizedBox(height: 30),
+
+                // Badges Section
+                if (_userProfile?['badges'] != null &&
+                    (_userProfile!['badges'] as List).isNotEmpty) ...[
+                  _buildSectionTitle('الأوسمة المحققة'),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 80,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      reverse: true,
+                      itemCount: (_userProfile!['badges'] as List).length,
+                      itemBuilder: (context, index) {
+                        final badge = _userProfile!['badges'][index];
+                        return _buildBadgeIcon(badge);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                ],
 
                 // My Courses Section
                 // My Courses Section
@@ -327,6 +365,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                   const SizedBox(height: 16),
                 ],
+
+                // Leaderboard Button
+                _buildActionButton(
+                  icon: Icons.emoji_events_outlined,
+                  label: 'لوحة المتصدرين',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LeaderboardScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+
+                // Analytics Button
+                _buildActionButton(
+                  icon: Icons.analytics_outlined,
+                  label: 'تحليلات التعلم',
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AnalyticsScreen(),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
 
                 // My Downloads & Orders Buttons
                 Row(
@@ -530,6 +598,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required IconData icon,
     required String value,
     required String label,
+    Color color = Colors.white,
   }) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -547,7 +616,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           child: Column(
             children: [
-              Icon(icon, color: Colors.white, size: 32),
+              Icon(icon, color: color, size: 32),
               const SizedBox(height: 8),
               Text(
                 value,
@@ -569,6 +638,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildBadgeIcon(String badgeId) {
+    IconData iconData = Icons.stars;
+    Color color = Colors.amber;
+    String name = 'وسام';
+
+    if (badgeId.contains('streak_3')) {
+      iconData = Icons.local_fire_department;
+      color = Colors.orange;
+      name = '3 أيام';
+    } else if (badgeId.contains('streak_7')) {
+      iconData = Icons.local_fire_department;
+      color = Colors.red;
+      name = 'أسبوع';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(left: 12),
+      width: 70,
+      child: Column(
+        children: [
+          CircleAvatar(
+            backgroundColor: AppColors.getGlassColor(context),
+            child: Icon(iconData, color: color),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            name,
+            style: const TextStyle(color: Colors.white70, fontSize: 10),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

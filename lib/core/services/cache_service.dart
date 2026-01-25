@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'offline_cache_service.dart';
 
 /// Service for caching data to reduce Supabase bandwidth usage
 /// 
@@ -142,27 +143,72 @@ class CacheService {
 ///   duration: Duration(minutes: 15),
 /// );
 /// ```
+/// دالة مساعدة لجلب البيانات مع Cache (Persistent & Memory)
+///
+/// [forceRefresh]: إذا كان true، سيتم تجاهل الـ Cache وجلب البيانات من المصدر مباشرة
+/// [staleWhileRevalidate]: إذا كان true، سيتم إرجاع البيانات المخزنة فوراً ثم تحديثها في الخلفية
 Future<T> fetchWithCache<T>({
   required String key,
   required Future<T> Function() fetcher,
   Duration? duration,
+  bool forceRefresh = false,
+  bool staleWhileRevalidate = true,
 }) async {
   final cache = CacheService();
+  final offlineCache = OfflineCacheService();
   
-  // تحقق من الـ Cache أولاً
-  final cached = cache.get(key, duration: duration);
-  if (cached != null) {
-    return cached as T;
+  // 1. Check Memory Cache first (fastest)
+  if (!forceRefresh) {
+    final memoryCached = cache.get(key, duration: duration);
+    if (memoryCached != null) {
+      debugPrint('🚀 Memory Cache hit: $key');
+      return memoryCached as T;
+    }
+
+    // 2. Check Persistent Cache (Hive)
+    try {
+      final persistentCached = await offlineCache.getCachedUserData(key);
+      if (persistentCached != null) {
+        debugPrint('📦 Persistent Cache hit: $key');
+
+        // If we found persistent data, we can return it and optionally refresh in background
+        if (staleWhileRevalidate) {
+          // Trigger background refresh
+          _backgroundFetch(key, fetcher, duration);
+        }
+
+        // Save to memory cache for next time
+        cache.set(key, persistentCached);
+        return persistentCached as T;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error reading persistent cache: $e');
+    }
   }
 
-  // إذا لم يكن في الـ Cache، حمّل من المصدر
+  // 3. Fetch from source if not found or forced
   debugPrint('🌐 Fetching from source: $key');
   final data = await fetcher();
   
-  // احفظ في الـ Cache
+  // 4. Update both caches
   cache.set(key, data, duration: duration);
+  await offlineCache.cacheUserData(key, data);
   
   return data;
+}
+
+/// Helper for background fetching without blocking the UI
+void _backgroundFetch<T>(
+    String key, Future<T> Function() fetcher, Duration? duration) async {
+  try {
+    debugPrint('🔄 Background refreshing: $key');
+    final data = await fetcher();
+    CacheService().set(key, data, duration: duration);
+    await OfflineCacheService().cacheUserData(key, data);
+    debugPrint('✅ Background refresh complete: $key');
+  } catch (e) {
+    debugPrint('❌ Background refresh failed: $key ($e)');
+  }
 }
 
 /// مفاتيح الـ Cache الشائعة
@@ -193,4 +239,5 @@ class CacheKeys {
   static String userProfile(String userId) => 'user_${userId}_profile';
   static String userCourses(String userId) => 'user_${userId}_courses';
   static String teachers = 'teachers_list';
+  static String featuredCourses = 'featured_courses_banner';
 }

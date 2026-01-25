@@ -55,14 +55,25 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _bannerController = PageController(viewportFraction: 0.85);
     _startBannerAutoPlay();
-    _loadUserData();
-    _loadCategories();
-    _loadFeaturedCourses();
-    _loadEnrolledCourses();
-    _loadFeaturedBanner();
-    _loadEnrolledCourses();
-    _loadTeachers();
-    _checkUnreadNotifications();
+    _refreshData();
+  }
+
+  Future<void> _refreshData({bool forceRefresh = false}) async {
+    if (forceRefresh) {
+      if (mounted) setState(() => _isLoading = true);
+    }
+
+    await Future.wait([
+      _loadUserData(forceRefresh: forceRefresh),
+      _loadCategories(forceRefresh: forceRefresh),
+      _loadFeaturedCourses(forceRefresh: forceRefresh),
+      _loadEnrolledCourses(), // Enrollments usually small and fast, can be kept simple
+      _loadFeaturedBanner(forceRefresh: forceRefresh),
+      _loadTeachers(forceRefresh: forceRefresh),
+      _checkUnreadNotifications(),
+    ]);
+
+    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
@@ -92,9 +103,10 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _loadTeachers() async {
+  Future<void> _loadTeachers({bool forceRefresh = false}) async {
     try {
-      final teachers = await _databaseService.getAllTeachers();
+      final teachers =
+          await _databaseService.getAllTeachers(forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
           _allTeachers = teachers;
@@ -106,9 +118,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadCategories() async {
+  Future<void> _loadCategories({bool forceRefresh = false}) async {
     try {
-      final categoriesData = await _databaseService.getCategories();
+      final categoriesData =
+          await _databaseService.getCategories(forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
           _categoryModels =
@@ -120,25 +133,18 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadUserData() async {
+  Future<void> _loadUserData({bool forceRefresh = false}) async {
     try {
       final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) {
-        return;
-      }
+      if (userId == null) return;
 
-      final userData = await SupabaseService.instance.client
-          .from('users')
-          .select() // Select all columns to avoid errors if specific columns don't exist
-          .eq('id', userId)
-          .maybeSingle();
+      final userData = await _databaseService.getUserById(userId,
+          forceRefresh: forceRefresh);
 
-      if (mounted) {
+      if (mounted && userData != null) {
         setState(() {
-          _userName = userData?['full_name'] as String?;
-          // Safely check for photo fields without crashing query
-          _userPhoto = (userData?['avatar_url'] as String?) ??
-              (userData?['photo_url'] as String?);
+          _userName = userData['full_name'] ?? userData['name'] ?? '';
+          _userPhoto = userData['avatar_url'] ?? userData['photo_url'];
           _filterCourses();
         });
       }
@@ -162,47 +168,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadFeaturedCourses() async {
+  Future<void> _loadFeaturedCourses({bool forceRefresh = false}) async {
     try {
-      final coursesData = await _databaseService.getCourses();
-
+      // getCourses internally caches to OfflineCacheService
+      final coursesData =
+          await _databaseService.getCourses(forceRefresh: forceRefresh);
+      
       if (mounted) {
         setState(() {
           _allCourses = coursesData
-              .map((data) => Course(
-                    id: data['id'],
-                    title: data['title'] ?? '',
-                    description: data['description'] ?? '',
-                    instructorId: data['instructor_id'],
-                    instructorName: data['instructor_name'] ?? '',
-                    instructorPhoto: data['instructor_photo'] ?? '',
-                    imageUrl: data['image_url'] ?? data['thumbnail'] ?? '',
-                    price: (data['price'] as num?)?.toDouble() ?? 0,
-                    rating: (data['rating'] as num?)?.toDouble() ?? 0,
-                    studentsCount: data['students_count'] ?? 0,
-                    lessonsCount: data['lessons_count'] ?? 0,
-                    durationHours:
-                        data['duration_hours']?.toString() ?? data['duration'],
-                    categories:
-                        List<String>.from(data['categories_names'] ?? []),
-                    categoryIds: List<String>.from(data['category_ids'] ?? []),
-                    subject: data['subject'] ?? '',
-                    subjectEn: data['subject_en'],
-                    curriculum: [],
-                    isEnrolled: false,
-                  ))
+              .map((data) => Course.fromJson(data))
               .toList();
           _filterCourses();
-          _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint('Error loading courses: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
     }
   }
 
@@ -260,34 +241,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _filteredTeachers = filteredTeachers;
   }
 
-  Future<void> _loadFeaturedBanner() async {
+  Future<void> _loadFeaturedBanner({bool forceRefresh = false}) async {
     try {
-      final featured = await _databaseService.getFeaturedCourses();
+      final featured =
+          await _databaseService.getFeaturedCourses(forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
           _featuredCoursesForBanner = featured
-              .map((data) => Course(
-                    id: data['id'],
-                    title: data['title'] ?? '',
-                    description: data['description'] ?? '',
-                    instructorId: data['instructor_id'],
-                    instructorName: data['instructor_name'] ?? '',
-                    instructorPhoto: data['instructor_photo'] ?? '',
-                    imageUrl: data['image_url'] ?? '',
-                    price: (data['price'] as num?)?.toDouble() ?? 0,
-                    rating: (data['rating'] as num?)?.toDouble() ?? 0,
-                    studentsCount: data['students_count'] ?? 0,
-                    lessonsCount: data['lessons_count'] ?? 0,
-                    durationHours: data['duration_hours']?.toString(),
-                    categories:
-                        List<String>.from(data['categories_names'] ?? []),
-                    categoryIds: List<String>.from(data['category_ids'] ?? []),
-                    subject: data['subject'] ?? '',
-                    subjectEn: data['subject_en'],
-                    curriculum: [],
-                    isFeatured: true,
-                    featuredOrder: data['featured_order'] ?? 0,
-                  ))
+              .map((data) => Course.fromJson(data))
               .toList();
         });
       }
@@ -335,9 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _checkUnreadNotifications() async {
     try {
-      final notifications = await _databaseService.getNotifications();
-      final unreadCount =
-          notifications.where((n) => n['is_read'] == false).length;
+      final unreadCount = await _databaseService.getUnreadNotificationsCount();
       if (mounted) {
         setState(() {
           _hasUnreadNotifications = unreadCount > 0;
@@ -351,20 +310,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: DynamicGradientBackground(
-        child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              await Future.wait([
-                _loadUserData(),
-                _loadFeaturedCourses(),
-                _loadEnrolledCourses(),
-                _loadTeachers(),
-                _checkUnreadNotifications(),
-              ]);
-            },
-            color: AppColors.primaryPurple,
-            backgroundColor: Colors.white,
+      body: RefreshIndicator(
+        onRefresh: () => _refreshData(forceRefresh: true),
+        color: AppColors.primaryPurple,
+        backgroundColor: AppColors.getGlassColor(context),
+        child: DynamicGradientBackground(
+          child: SafeArea(
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
@@ -917,78 +868,95 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: bannerCourses.length,
             itemBuilder: (context, index) {
               final course = bannerCourses[index];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Stack(
-                    children: [
-                      CachedNetworkImage(
-                        imageUrl: course.imageUrl ?? '',
-                        width: double.infinity,
-                        height: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) =>
-                            Container(color: Colors.white10),
+              return InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CourseDetailsScreen(
+                        course: course,
+                        heroTag: 'banner_course_image_${course.id}',
                       ),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.7),
+                    ),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 5.0),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Stack(
+                      children: [
+                        Hero(
+                          tag: 'banner_course_image_${course.id}',
+                          child: CachedNetworkImage(
+                            imageUrl: course.imageUrl ?? '',
+                            width: double.infinity,
+                            height: double.infinity,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) =>
+                                Container(color: Colors.white10),
+                          ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.7),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 20,
+                          left: 20,
+                          right: 20,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryPurple,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  _t('featured_course_badge'),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                course.getLocalizedTitle(
+                                    Provider.of<LocaleProvider>(context)
+                                        .locale),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ],
                           ),
                         ),
-                      ),
-                      Positioned(
-                        bottom: 20,
-                        left: 20,
-                        right: 20,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryPurple,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                _t('featured_course_badge'), // Replaced hardcoded string
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              course.getLocalizedTitle(
-                                  Provider.of<LocaleProvider>(context).locale),
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );

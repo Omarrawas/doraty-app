@@ -19,11 +19,14 @@ import '../exams/review_exam_screen.dart';
 import '../../core/services/database_service.dart';
 import '../notes/add_note_screen.dart';
 import '../../core/services/course_download_service.dart';
-
+import '../../models/download.dart' as dl;
 import '../../widgets/dynamic_gradient_background.dart';
 import 'dart:ui';
 import 'dart:io';
 import 'dart:math' as math; 
+import '../../models/flashcard.dart';
+import '../../core/services/ai_service.dart';
+import 'flashcards_screen.dart';
 
 import '../../core/services/supabase_service.dart';
 import '../../core/services/offline_storage_service.dart';
@@ -31,6 +34,7 @@ import '../../widgets/lesson/video_player_controls.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
+import 'ai_assistant_screen.dart';
 
 class LessonScreen extends StatefulWidget {
   final Lesson lesson;
@@ -72,6 +76,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   // Refactor: Futures for DB calls
   Future<List<Map<String, dynamic>>>? _notesFuture;
   Future<List<Map<String, dynamic>>>? _examsFuture;
+  Future<List<Flashcard>>? _flashcardsFuture;
   List<LessonQuestion>? _questionsList;
   final ScrollController _mainScrollController = ScrollController();
 
@@ -156,8 +161,27 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     }
   }
 
+  int _getCurrentVideoPosition() {
+    if (_isYoutube) {
+      return _youtubePlayerController?.value.position.inSeconds ?? 0;
+    } else {
+      return _videoPlayerController?.value.position.inSeconds ?? 0;
+    }
+  }
+
+  void _seekTo(int seconds) {
+    if (_isYoutube && _youtubePlayerController != null) {
+      _youtubePlayerController!.seekTo(Duration(seconds: seconds));
+    } else if (_videoPlayerController != null) {
+      _videoPlayerController!.seekTo(Duration(seconds: seconds));
+    }
+    _mainScrollController.animateTo(0,
+        duration: const Duration(milliseconds: 500), curve: Curves.easeOut);
+  }
+
   Future<void> _checkOfflineLesson() async {
     try {
+      // 1. Check OfflineStorageService (Old system)
       final offlineLesson = await _offlineStorage.getLesson(widget.lesson.id);
       if (offlineLesson != null && offlineLesson.isDownloaded) {
         if (mounted) {
@@ -167,6 +191,22 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               _videoUrl = offlineLesson.videoPath!;
             }
           });
+        }
+        return;
+      }
+
+      // 2. Check DownloadManager (New system)
+      final downloadManager = dl.DownloadManager();
+      if (downloadManager.isDownloaded(widget.lesson.id)) {
+        final playableUrl =
+            await downloadManager.getPlayableUrl(widget.lesson.id);
+        if (playableUrl != null) {
+          if (mounted) {
+            setState(() {
+              _isOffline = true;
+              _videoUrl = playableUrl;
+            });
+          }
         }
       }
     } catch (e) {
@@ -187,8 +227,22 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           }
         });
         _examsFuture = DatabaseService().getExamsForLesson(widget.lesson.id);
+        _flashcardsFuture = _getFlashcards();
       });
     }
+  }
+
+  Future<List<Flashcard>> _getFlashcards() async {
+    final userId = SupabaseService.instance.currentUserId;
+    if (userId == null) return [];
+
+    final response = await SupabaseService.instance.client
+        .from('flashcards')
+        .select()
+        .eq('lesson_id', widget.lesson.id)
+        .eq('user_id', userId);
+
+    return (response as List).map((json) => Flashcard.fromJson(json)).toList();
   }
 
   Future<void> _deleteNote(String noteId) async {
@@ -323,10 +377,18 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     final url = _videoUrl;
     if (url.isEmpty) return;
 
-    // Handle offline file
-    if (_isOffline && !url.startsWith('http')) {
+    // Handle local/offline file
+    if (_isOffline) {
       _isYoutube = false;
-      _videoPlayerController = VideoPlayerController.file(File(url));
+      
+      // If it's a localhost URL from LocalServerService, or a local file path
+      if (_videoUrl.startsWith('http')) {
+        _videoPlayerController =
+            VideoPlayerController.networkUrl(Uri.parse(_videoUrl));
+      } else {
+        _videoPlayerController = VideoPlayerController.file(File(_videoUrl));
+      }
+
       _videoPlayerController!.initialize().then((_) {
         setState(() {
           _chewieController = ChewieController(
@@ -440,13 +502,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     }
   }
 
-  int? _getCurrentVideoPosition() {
-    if (_isYoutube) {
-      return _youtubePlayerController?.value.position.inSeconds;
-    } else {
-      return _videoPlayerController!.value.position.inSeconds;
-    }
-  }
 
 
   int? _getVideoDuration() {
@@ -458,7 +513,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   bool _isLessonCompleted() {
-    final position = _getCurrentVideoPosition() ?? 0;
+    final position = _getCurrentVideoPosition();
     final duration = _getVideoDuration() ?? 1;
     if (duration <= 0) return false;
     // Mark as completed if watched > 80% of video
@@ -505,6 +560,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           isYoutube: _isYoutube,
           youtubeController: _youtubePlayerController,
           videoController: _videoPlayerController,
+          lesson: widget.lesson,
+          courseTitle: widget.courseTitle,
         ),
       ],
     );
@@ -715,6 +772,24 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           ),
         ),
         bottomNavigationBar: _buildNavigationButtons(),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            showModalBottomSheet(
+              context: context,
+              isScrollControlled: true,
+              backgroundColor: Colors.transparent,
+              builder: (context) => DraggableScrollableSheet(
+                initialChildSize: 0.9,
+                minChildSize: 0.5,
+                maxChildSize: 0.95,
+                builder: (_, controller) =>
+                    AIAssistantScreen(lesson: widget.lesson),
+              ),
+            );
+          },
+          backgroundColor: AppColors.primaryPurple,
+          child: const Icon(Icons.auto_awesome, color: Colors.white),
+        ),
       ),
     );
   }
@@ -993,41 +1068,96 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Widget _buildInteractiveTab() {
-    if (!_hasInteractiveContent()) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.science_outlined,
-                size: 64, color: Colors.white.withOpacity(0.2)),
-            const SizedBox(height: 16),
-            Text(
-              'لا يوجد تطبيق تفاعلي لهذا الدرس',
-              style: TextStyle(color: Colors.white.withOpacity(0.5)),
-            ),
-          ],
-        ),
-      );
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: double.infinity,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: Colors.white.withOpacity(0.2), width: 1.5),
+        if (_hasInteractiveContent()) ...[
+          _buildInteractiveCard(
+            title: 'المحتوى التفاعلي',
+            description:
+                'استمتع بتجربة تعليمية تفاعلية غنية تعزز فهمك للموضوع.',
+            icon: Icons.rocket_launch_outlined,
+            buttonLabel: 'بدء التجربة الآن',
+            onTap: _openInteractiveApp,
+          ),
+          const SizedBox(height: 20),
+        ],
+
+        // AI Flashcards Section
+        FutureBuilder<List<Flashcard>>(
+          future: _flashcardsFuture,
+          builder: (context, snapshot) {
+            final cards = snapshot.data ?? [];
+            final bool hasCards = cards.isNotEmpty;
+            final bool isLoading =
+                snapshot.connectionState == ConnectionState.waiting;
+
+            return _buildInteractiveCard(
+              title: _t('flashcards_tab'),
+              description: _t('flashcards_desc'),
+              icon: Icons.style_outlined,
+              buttonLabel: isLoading
+                  ? _t('loading')
+                  : (hasCards
+                      ? _t('review_flashcards')
+                      : _t('generate_flashcards')),
+              isLoading: isLoading,
+              onTap: isLoading
+                  ? null
+                  : (hasCards
+                      ? () => _openFlashcards(cards)
+                      : _generateFlashcards),
+              isAIGenerated: true,
+            );
+          },
+        ),
+
+        if (!_hasInteractiveContent() && (_flashcardsFuture == null))
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.science_outlined,
+                    size: 64, color: Colors.white.withOpacity(0.2)),
+                const SizedBox(height: 16),
+                Text(
+                  'لا يوجد محتوى تفاعلي حالياً',
+                  style: TextStyle(color: Colors.white.withOpacity(0.5)),
                 ),
-                child: Column(
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildInteractiveCard({
+    required String title,
+    required String description,
+    required IconData icon,
+    required String buttonLabel,
+    required VoidCallback? onTap,
+    bool isLoading = false,
+    bool isAIGenerated = false,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+              border:
+                  Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+            ),
+            child: Column(
+              children: [
+                Stack(
+                  alignment: Alignment.center,
                   children: [
                     Container(
                       padding: const EdgeInsets.all(16),
@@ -1035,58 +1165,124 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                         color: AppColors.primaryPurple.withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.rocket_launch_outlined,
+                      child: Icon(
+                        icon,
                         size: 48,
                         color: AppColors.primaryPurple,
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'المحتوى التفاعلي',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'استمتع بتجربة تعليمية تفاعلية غنية تعزز فهمك للموضوع.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        height: 1.6,
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _openInteractiveApp,
-                        icon: const Icon(Icons.play_arrow_rounded),
-                        label: const Text('بدء التجربة الآن'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryPurple,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                    if (isAIGenerated)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
                           ),
-                          elevation: 0,
+                          child: const Icon(Icons.auto_awesome,
+                              size: 12, color: Colors.white),
                         ),
                       ),
-                    ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 20),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  description,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    height: 1.6,
+                    fontSize: 15,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: onTap,
+                    icon: isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.play_arrow_rounded),
+                    label: Text(buttonLabel),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
+
+  void _openFlashcards(List<Flashcard> cards) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => FlashcardsScreen(
+          lesson: widget.lesson,
+          initialCards: cards,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _generateFlashcards() async {
+    try {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(_t('generating_flashcards'))),
+      );
+
+      final cards = await AIService().generateFlashcards(widget.lesson);
+      await AIService().saveFlashcards(cards);
+
+      setState(() {
+        _flashcardsFuture = _getFlashcards();
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('flashcards_generated_success'))),
+        );
+
+        // Wait a bit for DB sync then open
+        final loadedCards = await _flashcardsFuture;
+        if (loadedCards != null && loadedCards.isNotEmpty) {
+          _openFlashcards(loadedCards);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ أثناء إنشاء البطاقات: $e')),
+        );
+      }
+    }
+  }
+
 
   IconData _getResourceIcon(String fileName) {
     final ext = fileName.split('.').last.toLowerCase();
@@ -1434,32 +1630,67 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return Column(
       children: [
         // Add Note Button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AddNoteScreen(
-                    lessonId: widget.lesson.id,
-                    courseId: widget.lesson.courseId,
-                  ),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddNoteScreen(
+                        lessonId: widget.lesson.id,
+                        courseId: widget.lesson.courseId,
+                      ),
+                    ),
+                  );
+                  if (result == true) {
+                    _refreshFutures();
+                  }
+                },
+                icon: const Icon(Icons.add),
+                label: const Text('ملاحظة عادية'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.1),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(color: Colors.white.withOpacity(0.2))),
                 ),
-              );
-              if (result == true) {
-                _refreshFutures();
-              }
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('إضافة ملاحظة جديدة'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryPurple,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  final timestamp = _getCurrentVideoPosition();
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AddNoteScreen(
+                        lessonId: widget.lesson.id,
+                        courseId: widget.lesson.courseId,
+                        videoTimestamp: timestamp,
+                      ),
+                    ),
+                  );
+                  if (result == true) {
+                    _refreshFutures();
+                  }
+                },
+                icon: const Icon(Icons.timer_outlined),
+                label: const Text('ملاحظة ذكية'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryPurple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
         
@@ -1541,13 +1772,62 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
-                                      Text(
-                                        note.title,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 16,
-                                          color: Colors.white,
-                                        ),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            note.title,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                          if (note.videoTimestamp != null) ...[
+                                            const SizedBox(width: 8),
+                                            GestureDetector(
+                                              onTap: () =>
+                                                  _seekTo(note.videoTimestamp!),
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.primaryPurple
+                                                      .withOpacity(0.2),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                      color: AppColors
+                                                          .primaryPurple
+                                                          .withOpacity(0.5)),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(Icons.play_arrow,
+                                                        size: 14,
+                                                        color: AppColors
+                                                            .primaryPurple),
+                                                    Text(
+                                                      note.formattedTimestamp,
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        color: AppColors
+                                                            .primaryPurple,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                       Text(
                                         _formatDate(note.updatedAt),
