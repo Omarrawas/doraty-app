@@ -8,11 +8,13 @@ import 'exam_taking_screen.dart';
 class ExamResultScreen extends StatefulWidget {
   final Exam exam;
   final Map<int, int>? userAnswers;
+  final VoidCallback? onFinish;
 
   const ExamResultScreen({
     super.key,
     required this.exam,
     this.userAnswers,
+    this.onFinish,
   });
 
   @override
@@ -521,7 +523,11 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
             label: 'العودة للدرس',
             icon: Icons.play_lesson,
             onTap: () {
-              Navigator.pop(context);
+              if (widget.onFinish != null) {
+                widget.onFinish!();
+              } else {
+                Navigator.pop(context);
+              }
             },
           ),
         ),

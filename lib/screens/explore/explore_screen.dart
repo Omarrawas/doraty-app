@@ -114,7 +114,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     _t('explore_courses'),
                     style: const TextStyle(
                       fontSize: 28,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.normal,
                       color: Colors.white,
                     ),
                   ),

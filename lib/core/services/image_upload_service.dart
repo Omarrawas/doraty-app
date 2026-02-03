@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as path;
 import 'supabase_service.dart';
+import 'github_api_service.dart';
 
 class ImageUploadService {
   final SupabaseClient _client = SupabaseService.instance.client;
@@ -46,6 +47,29 @@ class ImageUploadService {
 
       final url = _client.storage.from(bucket).getPublicUrl(filePath);
       return url;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Upload image to GitHub
+  Future<String> uploadImageToGitHub(File imageFile, {String? folder}) async {
+    try {
+      final githubService = GitHubApiService();
+      final bytes = await imageFile.readAsBytes();
+      final fileName = path.basename(imageFile.path);
+
+      // Generate unique path
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final uniqueFileName = '${timestamp}_$fileName';
+      final remotePath =
+          folder != null ? '$folder/$uniqueFileName' : 'images/$uniqueFileName';
+
+      return await githubService.uploadFile(
+        bytes: bytes,
+        fileName: fileName,
+        remotePath: remotePath,
+      );
     } catch (e) {
       rethrow;
     }

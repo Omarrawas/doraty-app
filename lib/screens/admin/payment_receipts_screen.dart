@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
-import '../../models/payment_receipt.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 import 'payment_receipt_detail_screen.dart';
 
 class PaymentReceiptsScreen extends StatefulWidget {
@@ -13,107 +16,68 @@ class PaymentReceiptsScreen extends StatefulWidget {
 }
 
 class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
+  final DatabaseService _db = DatabaseService();
+  String _selectedStatus = 'all';
+  List<Map<String, dynamic>> _receipts = [];
+  Map<String, dynamic> _stats = {};
   bool _isLoading = true;
-  List<PaymentReceipt> _receipts = [];
-  PaymentReceiptStatus? _filterStatus;
-  
-  final List<String> _statusFilters = [
-    'الكل',
-    'قيد الانتظار',
-    'مقبول',
-    'مرفوض',
-    'قيد المراجعة',
-  ];
 
   @override
   void initState() {
     super.initState();
-    _loadReceipts();
+    _loadData();
   }
 
-  Future<void> _loadReceipts() async {
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _loadData() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
     try {
-      final dbService = DatabaseService();
-      final receiptsData = await dbService.getAllPaymentReceipts(
-        status: _filterStatus != null ? _statusToString(_filterStatus!) : null,
+      final receipts = await _db.getAllPaymentReceipts(
+        status: _selectedStatus == 'all' ? null : _selectedStatus,
       );
-
-      setState(() {
-        _receipts = receiptsData.map((json) => PaymentReceipt.fromJson(json)).toList();
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('Error loading receipts: $e');
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  String _statusToString(PaymentReceiptStatus status) {
-    switch (status) {
-      case PaymentReceiptStatus.pending:
-        return 'pending';
-      case PaymentReceiptStatus.approved:
-        return 'approved';
-      case PaymentReceiptStatus.rejected:
-        return 'rejected';
-      case PaymentReceiptStatus.underReview:
-        return 'under_review';
-    }
-  }
-
-  void _onFilterChanged(String filter) {
-    setState(() {
-      switch (filter) {
-        case 'قيد الانتظار':
-          _filterStatus = PaymentReceiptStatus.pending;
-          break;
-        case 'مقبول':
-          _filterStatus = PaymentReceiptStatus.approved;
-          break;
-        case 'مرفوض':
-          _filterStatus = PaymentReceiptStatus.rejected;
-          break;
-        case 'قيد المراجعة':
-          _filterStatus = PaymentReceiptStatus.underReview;
-          break;
-        default:
-          _filterStatus = null;
+      final stats = await _db.getPaymentStatistics();
+      if (mounted) {
+        setState(() {
+          _receipts = receipts;
+          _stats = stats;
+          _isLoading = false;
+        });
       }
-    });
-    _loadReceipts();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              _buildFilters(),
-              _buildStats(),
-              Expanded(
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      )
-                    : _receipts.isEmpty
-                        ? _buildEmptyState()
-                        : _buildReceiptsList(),
-              ),
-            ],
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
+    return Theme(
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
+      child: Scaffold(
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(),
+                _buildStatsSection(),
+                _buildFilters(),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white))
+                      : RefreshIndicator(
+                          onRefresh: _loadData,
+                          child: _buildReceiptsList(),
+                        ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -131,12 +95,11 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
-                  ),
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -145,14 +108,14 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
               ),
             ),
           ),
-          const Expanded(
+          const SizedBox(width: 16),
+          Expanded(
             child: Text(
-              'إدارة المدفوعات',
-              textAlign: TextAlign.center,
+              'إيصالات الدفع',
               style: TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+                fontWeight: FontWeight.normal,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
@@ -162,16 +125,15 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
-                  ),
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.refresh, color: Colors.white),
-                  onPressed: _loadReceipts,
+                  onPressed: _loadData,
                 ),
               ),
             ),
@@ -181,59 +143,103 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
     );
   }
 
-  Widget _buildFilters() {
-    return SizedBox(
-      height: 50,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+  Widget _buildStatsSection() {
+    return Container(
+      height: 100,
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: ListView(
         scrollDirection: Axis.horizontal,
-        itemCount: _statusFilters.length,
-        itemBuilder: (context, index) {
-          final filter = _statusFilters[index];
-          final isSelected = (filter == 'الكل' && _filterStatus == null) ||
-              (filter == 'قيد الانتظار' && _filterStatus == PaymentReceiptStatus.pending) ||
-              (filter == 'مقبول' && _filterStatus == PaymentReceiptStatus.approved) ||
-              (filter == 'مرفوض' && _filterStatus == PaymentReceiptStatus.rejected) ||
-              (filter == 'قيد المراجعة' && _filterStatus == PaymentReceiptStatus.underReview);
+        children: [
+          _buildStatCard('إجمالي الدخل', '${_stats['total_revenue'] ?? 0} ل.س',
+              Colors.greenAccent, Icons.payments),
+          _buildStatCard('قيد الانتظار', '${_stats['pending_receipts'] ?? 0}',
+              Colors.orangeAccent, Icons.hourglass_empty),
+          _buildStatCard('تم قبولها', '${_stats['approved_receipts'] ?? 0}',
+              Colors.blueAccent, Icons.check_circle),
+        ],
+      ),
+    );
+  }
 
+  Widget _buildStatCard(
+      String label, String value, Color color, IconData icon) {
+    return Container(
+      width: 160,
+      margin: const EdgeInsets.only(right: 12),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.getGlassColor(context, opacity: 0.15),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                  color: AppColors.getGlassColor(context, opacity: 0.3),
+                  width: 1),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: color, size: 20),
+                const SizedBox(height: 8),
+                Text(label,
+                    style: TextStyle(
+                        color: AppColors.getTextColor(context).withOpacity(0.6),
+                        fontSize: 11)),
+                Text(value,
+                    style: TextStyle(
+                        color: AppColors.getTextColor(context),
+                        fontSize: 15,
+                        fontWeight: FontWeight.normal)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilters() {
+    final filters = [
+      {'id': 'all', 'label': 'الكل'},
+      {'id': 'pending', 'label': 'قيد الانتظار'},
+      {'id': 'approved', 'label': 'مقبولة'},
+      {'id': 'rejected', 'label': 'مرفوضة'},
+    ];
+
+    return Container(
+      height: 45,
+      margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: filters.length,
+        itemBuilder: (context, index) {
+          final filter = filters[index];
+          final isSelected = _selectedStatus == filter['id'];
           return Padding(
             padding: const EdgeInsets.only(left: 8),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: isSelected ? AppColors.primaryGradient : null,
-                    color: isSelected ? null : Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(20),
-                      onTap: () => _onFilterChanged(filter),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
-                        ),
-                        child: Text(
-                          filter,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+            child: ChoiceChip(
+              label: Text(filter['label']!),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() => _selectedStatus = filter['id']!);
+                  _loadData();
+                }
+              },
+              backgroundColor: Colors.white.withOpacity(0.1),
+              selectedColor: AppColors.primaryPurple,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.white70,
+                fontWeight: isSelected ? FontWeight.normal : FontWeight.normal,
               ),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              side: BorderSide(
+                  color: isSelected ? Colors.transparent : Colors.white24),
             ),
           );
         },
@@ -241,275 +247,106 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
     );
   }
 
-  Widget _buildStats() {
-    final pending = _receipts.where((r) => r.status == PaymentReceiptStatus.pending).length;
-    final approved = _receipts.where((r) => r.status == PaymentReceiptStatus.approved).length;
-    final totalAmount = _receipts
-        .where((r) => r.status == PaymentReceiptStatus.approved)
-        .fold<double>(0, (sum, r) => sum + r.amount);
-
-    return Padding(
-      padding: const EdgeInsets.all(20),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildStatCard(
-              'قيد الانتظار',
-              pending.toString(),
-              Icons.schedule,
-              Colors.orange,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              'مقبول',
-              approved.toString(),
-              Icons.check_circle,
-              Colors.green,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _buildStatCard(
-              'الإيرادات',
-              '${totalAmount.toStringAsFixed(0)} ل.س',
-              Icons.attach_money,
-              Colors.blue,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: color, size: 24),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white.withOpacity(0.8),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.receipt_long,
-            size: 80,
-            color: Colors.white.withOpacity(0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'لا توجد إيصالات',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.white.withOpacity(0.8),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildReceiptsList() {
+    if (_receipts.isEmpty) return _buildEmptyState();
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       itemCount: _receipts.length,
-      itemBuilder: (context, index) {
-        final receipt = _receipts[index];
-        return _buildReceiptCard(receipt);
-      },
+      itemBuilder: (context, index) => _buildReceiptCard(_receipts[index]),
     );
   }
 
-  Widget _buildReceiptCard(PaymentReceipt receipt) {
-    Color statusColor;
-    IconData statusIcon;
+  Widget _buildReceiptCard(Map<String, dynamic> receipt) {
+    final status = receipt['status'];
+    final user = receipt['users'] as Map<String, dynamic>?;
+    final course = receipt['courses'] as Map<String, dynamic>?;
 
-    switch (receipt.status) {
-      case PaymentReceiptStatus.pending:
-        statusColor = Colors.orange;
-        statusIcon = Icons.schedule;
-        break;
-      case PaymentReceiptStatus.approved:
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle;
-        break;
-      case PaymentReceiptStatus.rejected:
-        statusColor = Colors.red;
-        statusIcon = Icons.cancel;
-        break;
-      case PaymentReceiptStatus.underReview:
-        statusColor = Colors.blue;
-        statusIcon = Icons.rate_review;
-        break;
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
+              color: AppColors.getGlassColor(context, opacity: 0.2),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1,
-              ),
+                  color: AppColors.getGlassColor(context, opacity: 0.3),
+                  width: 1.5),
             ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(16),
                 onTap: () async {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PaymentReceiptDetailScreen(
-                        receiptId: receipt.id,
-                      ),
+                      builder: (context) =>
+                          PaymentReceiptDetailScreen(receiptId: receipt['id']),
                     ),
                   );
-                  
-                  if (result == true) {
-                    _loadReceipts();
-                  }
+                  if (result == true) _loadData();
                 },
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(statusIcon, color: statusColor, size: 20),
-                          const SizedBox(width: 8),
-                          Text(
-                            receipt.statusDisplayName,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: statusColor,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user?['full_name'] ?? 'مستخدم مجهول',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.normal,
+                                    color: AppColors.getTextColor(context),
+                                  ),
+                                ),
+                                Text(
+                                  course?['title'] ?? 'دورة غير معروفة',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.getTextColor(context)
+                                        .withOpacity(0.6),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const Spacer(),
-                          Text(
-                            '${receipt.amount.toStringAsFixed(0)} ل.س',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
+                          _buildStatusBadge(status),
                         ],
                       ),
-                      if (receipt.courseTitle != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          receipt.courseTitle!,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
+                      const Divider(height: 24, color: Colors.white12),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Icon(Icons.payment, color: Colors.white, size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            receipt.paymentMethodDisplayName,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.white,
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('المبلغ',
+                                  style: TextStyle(
+                                      color: Colors.white54, fontSize: 11)),
+                              Text('${receipt['amount']} ل.س',
+                                  style: const TextStyle(
+                                      color: Colors.greenAccent,
+                                      fontWeight: FontWeight.normal)),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (receipt.phoneNumber != null) ...[
-                        Row(
-                          children: [
-                            const Icon(Icons.phone, color: Colors.white, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              receipt.phoneNumber!,
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      if (receipt.transactionId != null) ...[
-                        Row(
-                          children: [
-                            const Icon(Icons.receipt, color: Colors.white, size: 16),
-                            const SizedBox(width: 8),
-                            Text(
-                              'رقم العملية: ${receipt.transactionId}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                      ],
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time, color: Colors.white, size: 16),
-                          const SizedBox(width: 8),
-                          Text(
-                            _formatDateTime(receipt.createdAt),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.8),
-                            ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              const Text('التاريخ',
+                                  style: TextStyle(
+                                      color: Colors.white54, fontSize: 11)),
+                              Text(_formatDate(receipt['created_at']),
+                                  style: const TextStyle(
+                                      color: Colors.white, fontSize: 12)),
+                            ],
                           ),
                         ],
                       ),
@@ -524,7 +361,59 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
     );
   }
 
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  Widget _buildStatusBadge(String status) {
+    Color color;
+    String label;
+    switch (status) {
+      case 'pending':
+        color = Colors.orange;
+        label = 'انتظار';
+        break;
+      case 'approved':
+        color = Colors.green;
+        label = 'مقبول';
+        break;
+      case 'rejected':
+        color = Colors.red;
+        label = 'مرفوض';
+        break;
+      default:
+        color = Colors.grey;
+        label = status;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Text(label,
+          style: TextStyle(
+              color: color, fontSize: 11, fontWeight: FontWeight.normal)),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inbox, size: 64, color: Colors.white.withOpacity(0.2)),
+          const SizedBox(height: 16),
+          Text('لا توجد إيصالات متاحة',
+              style: TextStyle(color: Colors.white.withOpacity(0.5))),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(String dateStr) {
+    try {
+      final date = DateTime.parse(dateStr);
+      return '${date.year}-${date.month}-${date.day}';
+    } catch (e) {
+      return dateStr;
+    }
   }
 }

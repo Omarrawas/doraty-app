@@ -116,7 +116,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
           _t('confirm_delete_title'), // Replaced 'تأكيد الحذف'
           style: TextStyle(
             color: AppColors.getTextColor(context),
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.normal,
           ),
           textAlign:
               TextAlign.center, // Changed from right for LTR/RTL consistency
@@ -345,7 +345,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.normal,
                 color: Colors.white,
               ),
             ),
@@ -374,7 +374,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
             style: TextStyle(
               fontSize: 18,
               color: Colors.white.withOpacity(0.8),
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.normal,
             ),
           ),
           const SizedBox(height: 10),
@@ -483,14 +483,14 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                           Text(
                             course.getLocalizedTitle(
                                 Provider.of<LocaleProvider>(context).locale),
-                            textAlign: TextAlign.values[
+                            textAlign:
                                 Provider.of<LocaleProvider>(context).locale ==
                                         'ar'
-                                    ? 4
-                                    : 3], // Adjust for LTR/RTL if needed
+                                    ? TextAlign.right
+                                    : TextAlign.left,
                             style: const TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.normal,
                               color: Colors.white,
                             ),
                           ),
@@ -512,7 +512,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                     style: TextStyle(
                                       color: Colors.greenAccent.shade400,
                                       fontSize: 11,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.normal,
                                     ),
                                   ),
                                 ],
@@ -531,8 +531,19 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                     color: Colors.red.withOpacity(0.3)),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
                                 children: [
+                                  const Icon(Icons.info_outline,
+                                      color: Colors.white70, size: 16),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _t('course_unavailable_label'),
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
                                   // Delete Button
                                   TextButton.icon(
                                     onPressed: () async {
@@ -545,11 +556,11 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                     icon: const Icon(Icons.delete_outline,
                                         color: Colors.redAccent, size: 18),
                                     label: Text(
-                                      _t('unenroll_button_label'), // Replaced 'حذف من قائمتي'
+                                      _t('unenroll_button_label'),
                                       style: const TextStyle(
                                         color: Colors.redAccent,
                                         fontSize: 12,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.normal,
                                       ),
                                     ),
                                     style: TextButton.styleFrom(
@@ -562,17 +573,6 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                       ),
                                     ),
                                   ),
-                                  const Spacer(),
-                                  Text(
-                                    _t('course_unavailable_label'), // Replaced 'هذه الدورة غير متاحة حالياً'
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Icon(Icons.info_outline,
-                                      color: Colors.white70, size: 16),
                                 ],
                               ),
                             ),
@@ -583,11 +583,11 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                           Text(
                             course.getLocalizedInstructorName(
                                 Provider.of<LocaleProvider>(context).locale),
-                            textAlign: TextAlign.values[
+                            textAlign:
                                 Provider.of<LocaleProvider>(context).locale ==
                                         'ar'
-                                    ? 4
-                                    : 3],
+                                    ? TextAlign.right
+                                    : TextAlign.left,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white.withOpacity(0.8),
@@ -605,18 +605,18 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                     MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
+                                    _t('progress_label'),
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                  Text(
                                     '${progress.toInt()}%',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Text(
-                                    _t('progress_label'), // Replaced 'التقدم'
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
+                                      fontWeight: FontWeight.normal,
                                     ),
                                   ),
                                 ],

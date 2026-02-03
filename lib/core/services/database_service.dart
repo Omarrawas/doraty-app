@@ -1686,32 +1686,50 @@ class DatabaseService {
       final userId = SupabaseService.instance.currentUserId;
       if (userId == null) return {};
 
-      final response = await _client
-          .from('enrollments')
-          .select('course_id')
-          .eq('user_id', userId);
+      final idsList = await fetchWithCache<List<String>>(
+        key: 'user_${userId}_enrolled_ids',
+        duration: const Duration(hours: 1),
+        fetcher: () async {
+          final response = await _client
+              .from('enrollments')
+              .select('course_id')
+              .eq('user_id', userId);
 
-      return response.map((e) => e['course_id'] as String).toSet();
+          return (response as List)
+              .map((e) => e['course_id'] as String)
+              .toList();
+        },
+      );
+
+      return idsList.toSet();
     } catch (e) {
+      debugPrint('Error getting enrolled course IDs: $e');
       return {};
     }
   }
 
   /// Get user's enrolled courses (without progress)
   Future<List<Map<String, dynamic>>> getEnrolledCourses() async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) return [];
+    final userId = SupabaseService.instance.currentUserId;
+    if (userId == null) return [];
 
-      final response = await _client
-          .from('enrollments')
-          .select('*, courses(*)')
-          .eq('user_id', userId);
+    return fetchWithCache(
+      key: 'user_${userId}_enrolled_list',
+      duration: const Duration(hours: 1),
+      fetcher: () async {
+        try {
+          final response = await _client
+              .from('enrollments')
+              .select('*, courses(*)')
+              .eq('user_id', userId);
 
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      rethrow;
-    }
+          return List<Map<String, dynamic>>.from(response);
+        } catch (e) {
+          debugPrint('Error getting enrolled courses: $e');
+          rethrow;
+        }
+      },
+    );
   }
 
   // ==================== EXAMS ====================
@@ -2816,11 +2834,23 @@ class DatabaseService {
               .select('id')
               .inFilter('course_id', courseIds);
 
+          // Total revenue for teacher's courses
+          final revenueResponse = await _client
+              .from('admin_enrollments_view')
+              .select('course_price')
+              .eq('instructor_id', teacherId);
+
+          double totalRevenue = 0;
+          for (var row in revenueResponse) {
+            totalRevenue += (row['course_price'] as num? ?? 0).toDouble();
+          }
+
           return {
             'total_users': distinctUserIds.length,
             'total_courses': courseIds.length,
             'total_exams': exams.length,
             'total_attempts': attempts.length,
+            'total_revenue': totalRevenue,
           };
         } catch (e) {
           debugPrint('Error getting teacher statistics: $e');
@@ -2865,16 +2895,24 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getAllEnrollments({
     String? status,
     String? searchQuery,
+    String? courseId,
   }) async {
     try {
       // Use the administrative view for reliable flattened data
-      var query = _client.from('admin_enrollments_view').select();
+      final PostgrestFilterBuilder<List<Map<String, dynamic>>> query =
+          _client.from('admin_enrollments_view').select();
+
+      PostgrestFilterBuilder<List<Map<String, dynamic>>> filterQuery = query;
 
       if (status != null && status != 'all') {
-        query = query.eq('status', status);
+        filterQuery = filterQuery.eq('status', status);
       }
 
-      final response = await query.order('enrolled_at', ascending: false);
+      if (courseId != null) {
+        filterQuery = filterQuery.eq('course_id', courseId);
+      }
+
+      final response = await filterQuery.order('enrolled_at', ascending: false);
       final rawData = List<Map<String, dynamic>>.from(response);
 
       // Reconstruct UI compatible structure
@@ -3132,6 +3170,52 @@ class DatabaseService {
     }
   }
 
+  /// Get detailed stats for a specific teacher
+  Future<Map<String, dynamic>> getTeacherDetailedStats(String teacherId) async {
+    try {
+      final response = await _client
+          .from('admin_enrollments_view')
+          .select()
+          .eq('instructor_id', teacherId);
+
+      final rawData = List<Map<String, dynamic>>.from(response);
+
+      double totalRevenue = 0;
+      int totalStudents = rawData.length;
+      Map<String, Map<String, dynamic>> coursesStats = {};
+
+      for (var row in rawData) {
+        final price = row['course_price'] as num? ?? 0;
+        totalRevenue += price.toDouble();
+
+        final courseId = row['course_id']?.toString() ?? 'unknown';
+        if (!coursesStats.containsKey(courseId)) {
+          coursesStats[courseId] = {
+            'title': row['course_title'] ?? 'دورة غير معروفة',
+            'student_count': 0,
+            'revenue': 0.0,
+            'image_url': row['course_image_url'],
+          };
+        }
+        coursesStats[courseId]!['student_count']++;
+        coursesStats[courseId]!['revenue'] += price.toDouble();
+      }
+
+      return {
+        'total_revenue': totalRevenue,
+        'student_count': totalStudents,
+        'course_count': coursesStats.length,
+        'courses_breakdown': coursesStats.values.toList()
+          ..sort((a, b) =>
+              (b['revenue'] as double).compareTo(a['revenue'] as double)),
+        'recent_enrollments': rawData.take(10).toList(),
+      };
+    } catch (e) {
+      debugPrint('Error getting teacher detailed stats: $e');
+      return {};
+    }
+  }
+
   /// Update enrollment status (Admin only)
   Future<void> updateEnrollmentStatus(
       String enrollmentId, String status) async {
@@ -3257,48 +3341,49 @@ class DatabaseService {
   /// Get course statistics
   Future<Map<String, dynamic>> getCourseStatistics(String courseId) async {
     try {
-      // Total enrollments
-      final enrollments = await _client
+      // Fetch enrollments for the course
+      final response = await _client
           .from('enrollments')
+          .select('id, progress, status')
+          .eq('course_id', courseId);
+      
+      final enrollments = List<Map<String, dynamic>>.from(response);
+
+      // Total lessons in the course
+      final lessonsResponse =
+          await _client.from('lessons')
           .select('id')
           .eq('course_id', courseId);
+      final totalLessons = (lessonsResponse as List).length;
 
-      // Completed enrollments
-      final completed = await _client
-          .from('enrollments')
-          .select('id')
-          .eq('course_id', courseId)
-          .eq('status', 'completed');
+      // Calculate completed enrollments and average progress
+      int completedCount = 0;
+      double totalProgress = 0;
 
-      // Total lessons
-      final lessons =
-          await _client.from('lessons').select('id').eq('course_id', courseId);
-
-      // Average progress
-      final progressData = await _client
-          .from('lesson_progress')
-          .select('progress')
-          .eq('course_id', courseId);
-
-      double avgProgress = 0;
-      if (progressData.isNotEmpty) {
-        final total = progressData.fold<double>(
-          0,
-          (sum, item) => sum + (item['progress'] as num? ?? 0),
-        );
-        avgProgress = total / progressData.length;
+      for (var e in enrollments) {
+        final progress = (e['progress'] as num?)?.toDouble() ?? 0.0;
+        final status = e['status'] as String?;
+        
+        if (progress >= 100 || status == 'completed') {
+          completedCount++;
+        }
+        totalProgress += progress;
       }
+
+      double avgProgress =
+          enrollments.isEmpty ? 0 : totalProgress / enrollments.length;
 
       return {
         'total_enrollments': enrollments.length,
-        'completed_enrollments': completed.length,
-        'total_lessons': lessons.length,
+        'completed_enrollments': completedCount,
+        'total_lessons': totalLessons,
         'average_progress': avgProgress.round(),
         'completion_rate': enrollments.isEmpty
             ? 0
-            : ((completed.length / enrollments.length) * 100).round(),
+            : ((completedCount / enrollments.length) * 100).round(),
       };
     } catch (e) {
+      debugPrint('Error getting course statistics: $e');
       return {
         'total_enrollments': 0,
         'completed_enrollments': 0,
@@ -3968,18 +4053,24 @@ class DatabaseService {
   /// Get user enrollments with progress data
   Future<List<Map<String, dynamic>>> getUserEnrollmentsWithProgress(
       String userId) async {
-    try {
-      final response = await _client.from('enrollments').select('''
-            *,
-            courses(*),
-            last_accessed_lesson:lessons!last_accessed_lesson_id(*)
-          ''').eq('user_id', userId).order('updated_at', ascending: false);
+    return fetchWithCache(
+      key: 'user_${userId}_enrollments_v2',
+      duration: const Duration(minutes: 15),
+      fetcher: () async {
+        try {
+          final response = await _client.from('enrollments').select('''
+                *,
+                courses(*),
+                last_accessed_lesson:lessons!last_accessed_lesson_id(*)
+              ''').eq('user_id', userId).order('updated_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      debugPrint('Error fetching enrollments with progress: $e');
-      rethrow;
-    }
+          return List<Map<String, dynamic>>.from(response);
+        } catch (e) {
+          debugPrint('Error fetching enrollments with progress: $e');
+          rethrow;
+        }
+      },
+    );
   }
 
   Future<List<Map<String, dynamic>>> getFeaturedCourses(

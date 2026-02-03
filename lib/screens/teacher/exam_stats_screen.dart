@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 
 class ExamStatsScreen extends StatefulWidget {
   final String examId;
@@ -48,43 +53,110 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('تحليلات: ${widget.examTitle}'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      extendBodyBehindAppBar: true,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
-        child: SafeArea(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _stats == null || (_stats!['attempts'] as List).isEmpty
-                  ? const Center(child: Text('لا توجد بيانات كافية للتحليل', style: TextStyle(color: Colors.white)))
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSummaryCards(),
-                          const SizedBox(height: 24),
-                          const Text(
-                            'أداء الأسئلة',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
+    return Theme(
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
+      child: Scaffold(
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white))
+                      : _stats == null || (_stats!['attempts'] as List).isEmpty
+                          ? Center(
+                              child: Text(
+                                'لا توجد بيانات كافية للتحليل',
+                                style: TextStyle(
+                                  color: AppColors.getTextColor(context)
+                                      .withOpacity(0.7),
+                                  fontSize: 16,
+                                ),
+                              ),
+                            )
+                          : SingleChildScrollView(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 10),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildSummaryCards(),
+                                  const SizedBox(height: 24),
+                                  Text(
+                                    'أداء الأسئلة',
+                                    style: TextStyle(
+                                      color: AppColors.getTextColor(context),
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _buildQuestionsList(),
+                                  const SizedBox(height: 32),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildQuestionsList(),
-                        ],
-                      ),
-                    ),
+                ),
+              ],
+            ),
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'تحليلات الاختبار',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.getTextColor(context),
+                  ),
+                ),
+                Text(
+                  widget.examTitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.getTextColor(context).withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -117,34 +189,49 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
   }
 
   Widget _buildStatCard(String title, String value, IconData icon, Color color) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 32),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+                color: AppColors.getGlassColor(context, opacity: 0.2)),
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 14,
-            ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: color, size: 28),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: TextStyle(
+                  color: AppColors.getTextColor(context),
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.getTextColor(context).withOpacity(0.6),
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -164,63 +251,131 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
         final wrong = q['wrongCount'] as int;
         final correctPercentage = total > 0 ? (correct / total) : 0.0;
         
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'س ${index + 1}: ${q['questionText']}',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                ),
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.getGlassColor(context, opacity: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: AppColors.getGlassColor(context, opacity: 0.2)),
               ),
-              const SizedBox(height: 12),
-              Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    flex: (correctPercentage * 100).toInt(),
-                    child: Container(
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.horizontal(left: Radius.circular(4)),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPurple.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          'س ${index + 1}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          q['questionText'],
+                          style: TextStyle(
+                            color: AppColors.getTextColor(context),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Expanded(
-                    flex: ((1 - correctPercentage) * 100).toInt(),
-                    child: Container(
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        borderRadius: BorderRadius.horizontal(right: Radius.circular(4)),
+                  const SizedBox(height: 20),
+                  Stack(
+                    children: [
+                      Container(
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.05),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
-                    ),
+                      FractionallySizedBox(
+                        widthFactor: correctPercentage,
+                        child: Container(
+                          height: 8,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Colors.greenAccent, Colors.tealAccent],
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.greenAccent.withOpacity(0.3),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Colors.greenAccent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'إجابات صحيحة: $correct (${(correctPercentage * 100).toStringAsFixed(0)}%)',
+                            style: TextStyle(
+                                color: Colors.greenAccent.withOpacity(0.9),
+                                fontSize: 12),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: const BoxDecoration(
+                              color: Colors.redAccent,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'خاطئة: $wrong',
+                            style: TextStyle(
+                                color: Colors.redAccent.withOpacity(0.9),
+                                fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'صح: $correct (${(correctPercentage * 100).toStringAsFixed(0)}%)',
-                    style: const TextStyle(color: Colors.green, fontSize: 12),
-                  ),
-                  Text(
-                    'خطأ: $wrong',
-                    style: const TextStyle(color: Colors.red, fontSize: 12),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         );
       },

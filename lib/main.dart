@@ -26,6 +26,7 @@ import 'models/offline_lesson.dart';
 import 'core/services/sync_service.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/app_update_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,42 +69,13 @@ void main() async {
 
     debugPrint('✅ Supabase initialized successfully');
     debugPrint('🔌 Client connected successfully');
-  } catch (e, stackTrace) {
-    debugPrint('❌ CRITICAL ERROR: Failed to initialize Supabase');
+  } catch (e) {
+    debugPrint(
+        '⚠️ WARNING: Failed to initialize Supabase. The app will continue in OFFLINE mode.');
     debugPrint('Error: $e');
-    debugPrint('StackTrace: $stackTrace');
-
-    // Show error dialog and exit
-    runApp(
-      MaterialApp(
-        home: Scaffold(
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: Colors.red),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'فشل في تهيئة التطبيق',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'خطأ: $e',
-                    style: const TextStyle(fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-    return; // Exit early
+    // debugPrint('StackTrace: $stackTrace');
+    
+    // We don't return early here anymore, allowing the app to run in offline mode
   }
 
   // Initialize SyncService (Background) - AFTER Supabase
@@ -184,6 +156,15 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check for updates after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppUpdateService().checkForUpdates(context);
+    });
+  }
 
   // Keys to force rebuild when switching tabs
   Key _coursesKey = UniqueKey();

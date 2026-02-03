@@ -363,7 +363,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               _t('top_teachers'),
                               style: const TextStyle(
                                 fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.normal,
                                 color: Colors.white,
                               ),
                             ),
@@ -381,7 +381,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 _t('explore_more'), // Using 'explore_more' or 'all' depending on preference
                                 style: TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.normal,
                                   color: AppColors.primaryPurple.withOpacity(
                                       0.9), // Lighter purple or accent
                                 ),
@@ -414,7 +414,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         _t('featured_courses'), // Replaced hardcoded string
                         style: const TextStyle(
                           fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.normal,
                           color: Colors.white,
                         ),
                       ),
@@ -531,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.normal,
               ),
             ),
           ],
@@ -610,7 +610,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       : '${_t('welcome')} 👋', // Replaced hardcoded string
                   style: const TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.normal,
                     color: Colors.white,
                   ),
                 ),
@@ -677,7 +677,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 cat['name']!, // Display localized name
                 style: TextStyle(
                   color: isSelected ? Colors.white : Colors.white70,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  fontWeight:
+                      isSelected ? FontWeight.normal : FontWeight.normal,
                 ),
               ),
               selected: isSelected,
@@ -720,12 +721,14 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           child: TextField(
-            textAlign: TextAlign.right,
-            style: const TextStyle(color: Color.fromARGB(255, 15, 12, 12)),
+            textAlign: Provider.of<LocaleProvider>(context).locale == 'ar'
+                ? TextAlign.right
+                : TextAlign.left,
+            style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: _t('search_course_hint'), // Replaced hardcoded string
+              hintText: _t('search_course_hint'),
               hintStyle: TextStyle(
-                color: const Color.fromARGB(255, 2, 1, 1).withOpacity(0.6),
+                color: Colors.white.withOpacity(0.6),
               ),
               prefixIcon: Icon(
                 Icons.search,
@@ -760,7 +763,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _t('continue_learning'), // Replaced hardcoded string
             style: const TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.normal,
               color: Colors.white,
             ),
           ),
@@ -800,7 +803,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.normal,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -938,7 +941,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
-                                      fontWeight: FontWeight.bold),
+                                      fontWeight: FontWeight.normal),
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -949,7 +952,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.normal,
                                 ),
                               ),
                             ],
@@ -1067,7 +1070,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: const TextStyle(
                     color: Colors.white,
                     fontSize: 10,
-                    fontWeight: FontWeight.bold),
+                    fontWeight: FontWeight.normal),
               ),
             ],
           ),
@@ -1128,7 +1131,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontSize: 18,
-                                fontWeight: FontWeight.bold,
+                                fontWeight: FontWeight.normal,
                                 color: Colors.white,
                               ),
                             ),
@@ -1158,7 +1161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.normal,
                                   ),
                                 ),
                                 Row(
@@ -1168,7 +1171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.9),
                                         fontSize: 14,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.normal,
                                       ),
                                     ),
                                     const SizedBox(width: 4),
@@ -1271,7 +1274,7 @@ class _HomeScreenState extends State<HomeScreen> {
               isEnrolled ? 'مضافة' : 'اطلاع',
               style: const TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.normal,
               ),
             ),
           ],

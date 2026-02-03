@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:provider/provider.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../models/category_model.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 
 class CategoriesManagementScreen extends StatefulWidget {
   const CategoriesManagementScreen({super.key});
@@ -31,49 +37,164 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
-      // Show error
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ في تحميل التصنيفات: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('إدارة التصنيفات')),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final cat = _categories[index];
-                return Card(
-                  child: ListTile(
-                    leading: cat.iconUrl != null 
-                        ? Image.network(cat.iconUrl!, width: 40, height: 40, errorBuilder: (_,__,___) => const Icon(Icons.category))
-                        : const Icon(Icons.category),
-                    title: Text(cat.name),
-                    subtitle: Text(cat.slug),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _showAddEditDialog(category: cat),
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
+    return Theme(
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
+      child: Scaffold(
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white))
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(20),
+                          itemCount: _categories.length,
+                          itemBuilder: (context, index) {
+                            final cat = _categories[index];
+                            return _buildCategoryCard(cat);
+                          },
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _deleteCategory(cat.id),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                ),
+              ],
             ),
-       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddEditDialog(),
-        child: const Icon(Icons.add),
+          ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () => _showAddEditDialog(),
+          icon: const Icon(Icons.add),
+          label: const Text('إضافة تصنيف'),
+          backgroundColor: AppColors.primaryPurple,
+          foregroundColor: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              'إدارة التصنيفات',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.normal,
+                color: AppColors.getTextColor(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard(CategoryModel cat) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.getGlassColor(context, opacity: 0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.getGlassColor(context, opacity: 0.3),
+                width: 1.5,
+              ),
+            ),
+            child: ListTile(
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              leading: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryPurple.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: cat.iconUrl != null
+                    ? Image.network(cat.iconUrl!,
+                        width: 24,
+                        height: 24,
+                        errorBuilder: (_, __, ___) =>
+                            const Icon(Icons.category, color: Colors.white))
+                    : const Icon(Icons.category, color: Colors.white),
+              ),
+              title: Text(
+                cat.name,
+                style: TextStyle(
+                  fontWeight: FontWeight.normal,
+                  color: AppColors.getTextColor(context),
+                  fontSize: 16,
+                ),
+              ),
+              subtitle: Text(
+                cat.slug,
+                style: TextStyle(
+                  color: AppColors.getTextColor(context).withOpacity(0.6),
+                  fontSize: 12,
+                ),
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_rounded,
+                        color: Colors.blueAccent),
+                    onPressed: () => _showAddEditDialog(category: cat),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline_rounded,
+                        color: Colors.redAccent),
+                    onPressed: () => _deleteCategory(cat.id),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

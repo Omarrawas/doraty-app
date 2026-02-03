@@ -66,7 +66,7 @@ class CategoryCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  fontWeight: isSelected ? FontWeight.normal : FontWeight.w500,
                   color: isSelected ? AppColors.primaryPurple : null,
                 ),
               ),

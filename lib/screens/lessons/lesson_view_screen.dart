@@ -260,7 +260,15 @@ class _LessonViewScreenState extends State<LessonViewScreen>
     try {
       final yt = YoutubeExplode();
       final videoId = VideoId(widget.lesson.videoUrl);
-      final manifest = await yt.videos.streamsClient.getManifest(videoId);
+      
+      // Add timeout to prevent infinite loading
+      final manifest =
+          await yt.videos.streamsClient.getManifest(videoId).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('انتهت مهلة الاتصال. يرجى المحاولة لاحقاً');
+        },
+      );
       yt.close();
 
       if (!mounted) return;
@@ -269,6 +277,10 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       final muxedStreams = manifest.muxed.toList()
         ..sort((a, b) =>
             b.bitrate.compareTo(a.bitrate)); // Sort by bitrate descending
+
+      if (muxedStreams.isEmpty) {
+        throw Exception('لا توجد خيارات جودة متاحة لهذا الفيديو');
+      }
 
       showDialog(
         context: context,

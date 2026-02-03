@@ -15,45 +15,63 @@ class AppTheme {
           GoogleFonts.cairoTextTheme(ThemeData.light().textTheme).copyWith(
         displayLarge: GoogleFonts.cairo(
           fontSize: 32,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         displayMedium: GoogleFonts.cairo(
           fontSize: 28,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         displaySmall: GoogleFonts.cairo(
           fontSize: 24,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         headlineMedium: GoogleFonts.cairo(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         headlineSmall: GoogleFonts.cairo(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         titleLarge: GoogleFonts.cairo(
           fontSize: 16,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         bodyLarge: GoogleFonts.cairo(
           fontSize: 16,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         bodyMedium: GoogleFonts.cairo(
           fontSize: 14,
+          fontWeight: FontWeight.normal,
           color: AppColors.textSecondary,
         ),
         bodySmall: GoogleFonts.cairo(
           fontSize: 12,
+          fontWeight: FontWeight.normal,
           color: AppColors.textLight,
+        ),
+        titleMedium: GoogleFonts.cairo(
+          fontSize: 16,
+          fontWeight: FontWeight.normal,
+          color: AppColors.textPrimary,
+        ),
+        titleSmall: GoogleFonts.cairo(
+          fontSize: 14,
+          fontWeight: FontWeight.normal,
+          color: AppColors.textPrimary,
+        ),
+        labelLarge: GoogleFonts.cairo(
+          fontSize: 14,
+          fontWeight: FontWeight.normal,
+          color: AppColors.textPrimary,
         ),
       ),
 
@@ -65,7 +83,7 @@ class AppTheme {
         centerTitle: true,
         titleTextStyle: GoogleFonts.cairo(
           fontSize: 20,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
       ),
@@ -121,7 +139,7 @@ class AppTheme {
           ),
           textStyle: GoogleFonts.cairo(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.normal,
           ),
         ),
       ),
@@ -133,7 +151,148 @@ class AppTheme {
         unselectedItemColor: AppColors.textLight,
         selectedLabelStyle: GoogleFonts.cairo(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
+        ),
+        unselectedLabelStyle: GoogleFonts.cairo(
+          fontSize: 12,
+        ),
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+    );
+  }
+
+  // Admin Theme - Dark background
+  static ThemeData get adminDarkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: const Color(0xFF13131D),
+
+      fontFamily: 'Cairo',
+      textTheme:
+          GoogleFonts.cairoTextTheme(ThemeData.dark().textTheme).copyWith(
+        displayLarge: GoogleFonts.cairo(
+          fontSize: 32,
+          fontWeight: FontWeight.normal,
+          color: Colors.white,
+        ),
+        displayMedium: GoogleFonts.cairo(
+          fontSize: 28,
+          fontWeight: FontWeight.normal,
+          color: Colors.white,
+        ),
+        displaySmall: GoogleFonts.cairo(
+          fontSize: 24,
+          fontWeight: FontWeight.normal,
+          color: Colors.white,
+        ),
+        headlineMedium: GoogleFonts.cairo(
+          fontSize: 20,
+          fontWeight: FontWeight.normal,
+          color: Colors.white,
+        ),
+        headlineSmall: GoogleFonts.cairo(
+          fontSize: 18,
+          fontWeight: FontWeight.normal,
+          color: Colors.white,
+        ),
+        titleLarge: GoogleFonts.cairo(
+          fontSize: 16,
+          fontWeight: FontWeight.normal,
+          color: Colors.white,
+        ),
+        bodyLarge: GoogleFonts.cairo(
+          fontSize: 16,
+          color: Colors.white,
+        ),
+        bodyMedium: GoogleFonts.cairo(
+          fontSize: 14,
+          color: Colors.white70,
+        ),
+        bodySmall: GoogleFonts.cairo(
+          fontSize: 12,
+          color: Colors.white54,
+        ),
+      ),
+
+      // AppBar Theme
+      appBarTheme: AppBarTheme(
+        elevation: 2,
+        backgroundColor: const Color(0xFF1E1E2E),
+        foregroundColor: Colors.white,
+        centerTitle: true,
+        titleTextStyle: GoogleFonts.cairo(
+          fontSize: 20,
+          fontWeight: FontWeight.normal,
+          color: Colors.white,
+        ),
+      ),
+
+      // Card Theme
+      cardTheme: CardTheme(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        color: const Color(0xFF1E1E2E),
+        shadowColor: Colors.black.withOpacity(0.3),
+      ),
+
+      // Input Decoration Theme
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFF252535),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide:
+              const BorderSide(color: AppColors.primaryPurple, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.error),
+        ),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        hintStyle: GoogleFonts.cairo(
+          color: Colors.white38,
+          fontSize: 14,
+        ),
+      ),
+
+      // Elevated Button Theme
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          elevation: 2,
+          backgroundColor: AppColors.primaryPurple,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          textStyle: GoogleFonts.cairo(
+            fontSize: 16,
+            fontWeight: FontWeight.normal,
+          ),
+        ),
+      ),
+
+      // Bottom Navigation Bar Theme
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: const Color(0xFF1E1E2E),
+        selectedItemColor: AppColors.primaryPurple,
+        unselectedItemColor: Colors.white38,
+        selectedLabelStyle: GoogleFonts.cairo(
+          fontSize: 12,
+          fontWeight: FontWeight.normal,
         ),
         unselectedLabelStyle: GoogleFonts.cairo(
           fontSize: 12,
@@ -159,45 +318,63 @@ class AppTheme {
           GoogleFonts.cairoTextTheme(ThemeData.light().textTheme).copyWith(
         displayLarge: GoogleFonts.cairo(
           fontSize: 32,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         displayMedium: GoogleFonts.cairo(
           fontSize: 28,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         displaySmall: GoogleFonts.cairo(
           fontSize: 24,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         headlineMedium: GoogleFonts.cairo(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         headlineSmall: GoogleFonts.cairo(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         titleLarge: GoogleFonts.cairo(
           fontSize: 16,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         bodyLarge: GoogleFonts.cairo(
           fontSize: 16,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         bodyMedium: GoogleFonts.cairo(
           fontSize: 14,
+          fontWeight: FontWeight.normal,
           color: AppColors.textSecondary,
         ),
         bodySmall: GoogleFonts.cairo(
           fontSize: 12,
+          fontWeight: FontWeight.normal,
           color: AppColors.textLight,
+        ),
+        titleMedium: GoogleFonts.cairo(
+          fontSize: 16,
+          fontWeight: FontWeight.normal,
+          color: AppColors.textPrimary,
+        ),
+        titleSmall: GoogleFonts.cairo(
+          fontSize: 14,
+          fontWeight: FontWeight.normal,
+          color: AppColors.textPrimary,
+        ),
+        labelLarge: GoogleFonts.cairo(
+          fontSize: 14,
+          fontWeight: FontWeight.normal,
+          color: AppColors.textPrimary,
         ),
       ),
 
@@ -209,7 +386,7 @@ class AppTheme {
         centerTitle: true,
         titleTextStyle: GoogleFonts.cairo(
           fontSize: 20,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
       ),
@@ -231,7 +408,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titleTextStyle: GoogleFonts.cairo(
           fontSize: 18,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
         contentTextStyle: GoogleFonts.cairo(
@@ -281,7 +458,7 @@ class AppTheme {
           ),
           textStyle: GoogleFonts.cairo(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.normal,
           ),
         ),
       ),
@@ -303,32 +480,32 @@ class AppTheme {
           GoogleFonts.cairoTextTheme(ThemeData.dark().textTheme).copyWith(
         displayLarge: GoogleFonts.cairo(
           fontSize: 32,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
         displayMedium: GoogleFonts.cairo(
           fontSize: 28,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
         displaySmall: GoogleFonts.cairo(
           fontSize: 24,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
         headlineMedium: GoogleFonts.cairo(
           fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
         headlineSmall: GoogleFonts.cairo(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
         titleLarge: GoogleFonts.cairo(
           fontSize: 16,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
         bodyLarge: GoogleFonts.cairo(
@@ -353,7 +530,7 @@ class AppTheme {
         centerTitle: true,
         titleTextStyle: GoogleFonts.cairo(
           fontSize: 20,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
       ),
@@ -375,7 +552,7 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titleTextStyle: GoogleFonts.cairo(
           fontSize: 18,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
         contentTextStyle: GoogleFonts.cairo(
@@ -425,7 +602,7 @@ class AppTheme {
           ),
           textStyle: GoogleFonts.cairo(
             fontSize: 16,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.normal,
           ),
         ),
       ),

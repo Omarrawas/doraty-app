@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 import 'add_question_screen.dart';
+import 'dart:ui';
 
 class ManageQuestionsScreen extends StatefulWidget {
   final String examId;
@@ -50,60 +54,45 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
     return Theme(
-      data: AppTheme.adminLightTheme,
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
       child: Scaffold(
-        appBar: AppBar(
-          title: Column(
-            children: [
-              const Text('إدارة الأسئلة'),
-              Text(
-                widget.examTitle,
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.normal),
-              ),
-            ],
-          ),
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.primaryPurple.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${_questions.length} سؤال',
-                style: const TextStyle(
-                  color: AppColors.primaryPurple,
-                  fontWeight: FontWeight.bold,
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _loadQuestions,
+                          child: _questions.isEmpty
+                              ? _buildEmptyState()
+                              : ReorderableListView.builder(
+                                  padding: const EdgeInsets.all(20),
+                                  itemCount: _questions.length,
+                                  onReorder: _reorderQuestions,
+                                  itemBuilder: (context, index) {
+                                    return Padding(
+                                      key: ValueKey(_questions[index]['id']),
+                                      padding:
+                                          const EdgeInsets.only(bottom: 16),
+                                      child: _buildQuestionCard(
+                                          _questions[index], index),
+                                    );
+                                  },
+                                ),
+                        ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
         ),
-        body: _isLoading
-            ? const Center(
-                child:
-                    CircularProgressIndicator(color: AppColors.primaryPurple),
-              )
-            : _questions.isEmpty
-                ? _buildEmptyState()
-                : RefreshIndicator(
-                    onRefresh: _loadQuestions,
-                    child: ReorderableListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _questions.length,
-                      onReorder: _reorderQuestions,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          key: ValueKey(_questions[index]['id']),
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _buildQuestionCard(_questions[index], index),
-                        );
-                      },
-                    ),
-                  ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
             final result = await Navigator.push(
@@ -118,9 +107,79 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
             if (result == true) _loadQuestions();
           },
           backgroundColor: AppColors.primaryPurple,
-          icon: const Icon(Icons.add),
-          label: const Text('إضافة سؤال'),
+          icon: const Icon(Icons.add, color: Colors.white),
+          label:
+              const Text('إضافة سؤال', style: TextStyle(color: Colors.white)),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'إدارة الأسئلة',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.normal,
+                    color: AppColors.getTextColor(context),
+                  ),
+                ),
+                Text(
+                  widget.examTitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.getTextColor(context).withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: AppColors.primaryPurple.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                  color: AppColors.primaryPurple.withOpacity(0.3), width: 1),
+            ),
+            child: Text(
+              '${_questions.length} سؤال',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -129,30 +188,41 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
     final questionType = question['question_type'] ?? 'multiple_choice';
     final points = question['points'] ?? 1;
 
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.getGlassColor(context, opacity: 0.3),
+              width: 1.5,
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                const Icon(Icons.drag_handle, color: AppColors.textLight),
+                  const Icon(Icons.drag_handle, color: Colors.white54),
                 const SizedBox(width: 8),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryPurple.withOpacity(0.1),
+                      color: AppColors.primaryPurple.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                          color: AppColors.primaryPurple.withOpacity(0.3)),
                   ),
                   child: Text(
                     'سؤال ${index + 1}',
                     style: const TextStyle(
-                      color: AppColors.primaryPurple,
-                      fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontWeight: FontWeight.normal,
                     ),
                   ),
                 ),
@@ -161,14 +231,16 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blueAccent.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
+                      border:
+                          Border.all(color: Colors.blueAccent.withOpacity(0.3)),
                   ),
                   child: Text(
                     '$points نقطة',
                     style: const TextStyle(
-                      color: Colors.blue,
-                      fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
+                        fontWeight: FontWeight.normal,
                       fontSize: 12,
                     ),
                   ),
@@ -178,10 +250,10 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
             const SizedBox(height: 12),
             Text(
               question['question_text'] ?? '',
-              style: const TextStyle(
+                style: TextStyle(
                 fontSize: 16,
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w600,
+                  color: AppColors.getTextColor(context),
+                  fontWeight: FontWeight.normal,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -225,6 +297,12 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                     },
                     icon: const Icon(Icons.edit, size: 18),
                     label: const Text('تعديل'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -233,12 +311,15 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                   icon: const Icon(Icons.delete, color: Colors.red),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.red.withOpacity(0.1),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
               ],
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -287,7 +368,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
             style: TextStyle(
               color: color,
               fontSize: 12,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.normal,
             ),
           ),
         ],
@@ -296,18 +377,18 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.quiz, color: AppColors.textLight, size: 64),
+          Icon(Icons.quiz, color: Colors.white.withOpacity(0.3), size: 64),
           SizedBox(height: 16),
           Text(
             'لا توجد أسئلة',
             style: TextStyle(
               fontSize: 18,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(context),
+              fontWeight: FontWeight.normal,
             ),
           ),
           SizedBox(height: 8),
@@ -315,7 +396,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
             'اضغط على الزر أدناه لإضافة سؤال',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textLight,
+              color: AppColors.getTextColor(context).withOpacity(0.6),
             ),
           ),
         ],

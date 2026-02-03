@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 
 class PaymentReceiptDetailScreen extends StatefulWidget {
   final String receiptId;
@@ -61,7 +65,7 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
     final confirmed = await _showConfirmDialog(
       'الموافقة على الدفع',
       'هل أنت متأكد من قبول هذا الطلب؟ سيتم تفعيل الاشتراك تلقائياً.',
-      Colors.green,
+      Colors.greenAccent,
     );
 
     if (confirmed != true) return;
@@ -108,7 +112,7 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
     final confirmed = await _showConfirmDialog(
       'رفض الدفع',
       'هل أنت متأكد من رفض هذا الطلب؟',
-      Colors.red,
+      Colors.redAccent,
     );
 
     if (confirmed != true) return;
@@ -163,17 +167,10 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(0.3),
-                    Colors.white.withOpacity(0.2),
-                  ],
-                ),
+                color: AppColors.getGlassColor(context, opacity: 0.2),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: AppColors.getGlassColor(context, opacity: 0.3),
                   width: 1.5,
                 ),
               ),
@@ -186,7 +183,7 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
                     title,
                     style: const TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.normal,
                       color: Colors.white,
                     ),
                   ),
@@ -207,7 +204,7 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
                           onPressed: () => Navigator.pop(context, false),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: const BorderSide(color: Colors.white),
+                            side: const BorderSide(color: Colors.white38),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -222,7 +219,8 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
                       Expanded(
                         child: Container(
                           decoration: BoxDecoration(
-                            color: color,
+                            gradient: LinearGradient(
+                                colors: [color, color.withOpacity(0.8)]),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Material(
@@ -237,7 +235,7 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                                    fontWeight: FontWeight.normal,
                                   ),
                                 ),
                               ),
@@ -258,27 +256,26 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      )
-                    : _receiptData == null
-                        ? _buildErrorState()
-                        : _buildContent(),
-              ),
-            ],
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
+    return Theme(
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
+      child: Scaffold(
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white))
+                      : _receiptData == null
+                          ? _buildErrorState()
+                          : _buildContent(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -296,10 +293,10 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getGlassColor(context, opacity: 0.3),
                     width: 1,
                   ),
                 ),
@@ -310,18 +307,17 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
               ),
             ),
           ),
-          const Expanded(
+          const SizedBox(width: 16),
+          Expanded(
             child: Text(
               'تفاصيل الإيصال',
-              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+                fontWeight: FontWeight.normal,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
-          const SizedBox(width: 48),
         ],
       ),
     );
@@ -332,18 +328,13 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.error_outline,
-            size: 80,
-            color: Colors.white.withOpacity(0.5),
-          ),
+          Icon(Icons.error_outline,
+              size: 80, color: Colors.white.withOpacity(0.5)),
           const SizedBox(height: 16),
           Text(
             'فشل في تحميل البيانات',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.white.withOpacity(0.8),
-            ),
+            style:
+                TextStyle(fontSize: 18, color: Colors.white.withOpacity(0.8)),
           ),
           const SizedBox(height: 16),
           ElevatedButton(
@@ -370,8 +361,9 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
           _buildInfoSection(receipt),
           const SizedBox(height: 20),
           _buildNotesSection(),
-          const SizedBox(height: 20),
+          const SizedBox(height: 32),
           if (isPending) _buildActionButtons(),
+          const SizedBox(height: 40),
         ],
       ),
     );
@@ -384,24 +376,19 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
 
     switch (status) {
       case 'pending':
-        color = Colors.orange;
+        color = Colors.orangeAccent;
         label = 'قيد الانتظار';
         icon = Icons.schedule;
         break;
       case 'approved':
-        color = Colors.green;
+        color = Colors.greenAccent;
         label = 'مقبول';
         icon = Icons.check_circle;
         break;
       case 'rejected':
-        color = Colors.red;
+        color = Colors.redAccent;
         label = 'مرفوض';
         icon = Icons.cancel;
-        break;
-      case 'under_review':
-        color = Colors.blue;
-        label = 'قيد المراجعة';
-        icon = Icons.rate_review;
         break;
       default:
         color = Colors.grey;
@@ -414,14 +401,11 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.3),
+            color: color.withOpacity(0.2),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withOpacity(0.5),
-              width: 1.5,
-            ),
+            border: Border.all(color: color.withOpacity(0.4), width: 1.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -431,10 +415,7 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+                    fontSize: 18, fontWeight: FontWeight.normal, color: color),
               ),
             ],
           ),
@@ -453,36 +434,37 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getGlassColor(context, opacity: 0.2),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1.5,
-            ),
+                color: AppColors.getGlassColor(context, opacity: 0.3),
+                width: 1.5),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'معلومات الطلب',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                    fontSize: 18,
+                    fontWeight: FontWeight.normal,
+                    color: AppColors.getTextColor(context)),
               ),
-              const SizedBox(height: 16),
-              _buildInfoRow('المبلغ', '${receipt['amount']} ل.س'),
+              const SizedBox(height: 20),
+              _buildInfoRow('المبلغ', '${receipt['amount']} ل.س',
+                  valueColor: Colors.greenAccent),
               _buildInfoRow('طريقة الدفع', _getPaymentMethodName(receipt['payment_method'])),
               if (receipt['phone_number'] != null)
                 _buildInfoRow('رقم الهاتف', receipt['phone_number']),
               if (receipt['transaction_id'] != null)
                 _buildInfoRow('رقم العملية', receipt['transaction_id']),
+              const Divider(color: Colors.white12, height: 24),
               if (user != null) _buildInfoRow('اسم المستخدم', user['full_name'] ?? 'غير متوفر'),
               if (user != null) _buildInfoRow('البريد الإلكتروني', user['email'] ?? 'غير متوفر'),
               if (receipt['courses'] != null)
                 _buildInfoRow('المادة المستهدفة',
                     receipt['courses']['title'] ?? 'غير متوفر'),
+              const Divider(color: Colors.white12, height: 24),
               _buildInfoRow('تاريخ الطلب', _formatDateTime(receipt['created_at'])),
               if (receipt['reviewed_at'] != null)
                 _buildInfoRow('تاريخ المراجعة', _formatDateTime(receipt['reviewed_at'])),
@@ -493,7 +475,7 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, {Color? valueColor}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -504,18 +486,17 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
             child: Text(
               label,
               style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withOpacity(0.8),
-              ),
+                  fontSize: 14,
+                  color: AppColors.getTextColor(context).withOpacity(0.6)),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
+                fontWeight: FontWeight.normal,
+                color: valueColor ?? AppColors.getTextColor(context),
               ),
             ),
           ),
@@ -532,23 +513,21 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getGlassColor(context, opacity: 0.2),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1.5,
-            ),
+                color: AppColors.getGlassColor(context, opacity: 0.3),
+                width: 1.5),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'ملاحظات المشرف',
                 style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                    fontSize: 18,
+                    fontWeight: FontWeight.normal,
+                    color: AppColors.getTextColor(context)),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -559,18 +538,21 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
                   hintText: 'أضف ملاحظات (اختياري)...',
                   hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
                   filled: true,
-                  fillColor: Colors.white.withOpacity(0.1),
+                  fillColor: Colors.white.withOpacity(0.05),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.1)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                    borderSide:
+                        BorderSide(color: Colors.white.withOpacity(0.1)),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Colors.white, width: 2),
+                    borderSide:
+                        const BorderSide(color: Colors.blueAccent, width: 2),
                   ),
                 ),
               ),
@@ -587,17 +569,17 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
         Expanded(
           child: OutlinedButton.icon(
             onPressed: _isProcessing ? null : _rejectReceipt,
-            icon: const Icon(Icons.cancel, color: Colors.red),
+            icon: const Icon(Icons.cancel, color: Colors.redAccent),
             label: const Text(
               'رفض',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  color: Colors.redAccent, fontWeight: FontWeight.normal),
             ),
             style: OutlinedButton.styleFrom(
               padding: const EdgeInsets.all(16),
-              side: const BorderSide(color: Colors.red, width: 2),
+              side: const BorderSide(color: Colors.redAccent, width: 2),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+                  borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
@@ -605,8 +587,15 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.green,
+              gradient:
+                  const LinearGradient(colors: [Colors.green, Colors.teal]),
               borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.green.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4)),
+              ],
             ),
             child: Material(
               color: Colors.transparent,
@@ -618,26 +607,20 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
                   child: _isProcessing
                       ? const Center(
                           child: SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        )
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2)))
                       : const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.check_circle, color: Colors.white),
                             SizedBox(width: 8),
-                            Text(
-                              'قبول',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            Text('قبول',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.normal,
+                                    fontSize: 16)),
                           ],
                         ),
                 ),

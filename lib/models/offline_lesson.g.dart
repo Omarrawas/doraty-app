@@ -25,13 +25,14 @@ class OfflineLessonAdapter extends TypeAdapter<OfflineLesson> {
       isDownloaded: fields[5] as bool,
       duration: fields[6] as String,
       orderIndex: fields[7] as int,
+      downloadedResources: (fields[8] as Map?)?.cast<String, String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, OfflineLesson obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -47,7 +48,9 @@ class OfflineLessonAdapter extends TypeAdapter<OfflineLesson> {
       ..writeByte(6)
       ..write(obj.duration)
       ..writeByte(7)
-      ..write(obj.orderIndex);
+      ..write(obj.orderIndex)
+      ..writeByte(8)
+      ..write(obj.downloadedResources);
   }
 
   @override

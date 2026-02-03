@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 import 'users_management_screen.dart';
@@ -10,6 +13,7 @@ import 'subscriptions_management_screen.dart';
 import 'payment_receipts_screen.dart';
 import 'categories_management_screen.dart';
 import 'notifications_management_screen.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -71,8 +75,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
         );
@@ -82,68 +86,112 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
     return Theme(
-      data: AppTheme.adminLightTheme,
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          title: Column(
-            children: [
-              Text(_userRole == 'teacher'
-                  ? 'لوحة تحكم المدرس'
-                  : _userRole == 'super_admin'
-                      ? 'لوحة تحكم المدير العام'
-                      : 'لوحة تحكم الأدمن'),
-              Text(
-                _userRole == 'teacher'
-                    ? 'إدارة دوراتك ومحتواك'
-                    : _userRole == 'super_admin'
-                        ? 'إدارة النظام الشاملة والرقابة'
-                        : 'إدارة العمليات اليومية',
-                style: const TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.normal),
-              ),
-            ],
-          ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _loadStats,
-            ),
-          ],
-        ),
-        body: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.primaryPurple,
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: _loadStats,
+                          displacement: 20,
+                          color: AppColors.primaryPurple,
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 10),
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildStatsGrid(),
+                                const SizedBox(height: 24),
+                                if (_userRole == 'teacher') ...[
+                                  _buildRecentAttempts(),
+                                  const SizedBox(height: 24),
+                                ],
+                                _buildQuickActions(),
+                                const SizedBox(height: 24),
+                                _buildSystemInfo(),
+                                const SizedBox(height: 40),
+                              ],
+                            ),
+                          ),
+                        ),
                 ),
-              )
-            : RefreshIndicator(
-                onRefresh: _loadStats,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildStatsGrid(),
-                      const SizedBox(height: 24),
-                      if (_userRole == 'teacher') ...[
-                        _buildRecentAttempts(),
-                        const SizedBox(height: 24),
-                      ],
-                      const SizedBox(height: 24),
-                      if (_userRole == 'teacher') ...[
-                        _buildRecentAttempts(),
-                        const SizedBox(height: 24),
-                      ],
-                      _buildQuickActions(),
-                      const SizedBox(height: 24),
-                      _buildSystemInfo(),
-                    ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _userRole == 'teacher'
+                      ? 'لوحة تحكم المدرس'
+                      : _userRole == 'super_admin'
+                          ? 'لوحة تحكم المدير العام'
+                          : 'لوحة تحكم الأدمن',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.normal,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
+                Text(
+                  _userRole == 'teacher'
+                      ? 'إدارة دوراتك ومحتواك التعليمي'
+                      : _userRole == 'super_admin'
+                          ? 'إدارة النظام والرقابة الشاملة'
+                          : 'إدارة العمليات اليومية للمنصة',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.getTextColor(context).withOpacity(0.7),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  onPressed: _loadStats,
+                ),
               ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -191,41 +239,59 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required String value,
     required Color color,
   }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 28),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.getGlassColor(context, opacity: 0.2),
+              width: 1.5,
             ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
+                ),
+                child: Icon(icon, color: color, size: 24),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-                fontWeight: FontWeight.w500,
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.normal,
+                  color: AppColors.getTextColor(context),
+                  letterSpacing: 0.5,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: AppColors.getTextColor(context).withOpacity(0.6),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -235,21 +301,24 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'إجراءات سريعة',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+        Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Text(
+            'الإجراءات السريعة',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.normal,
+              color: AppColors.getTextColor(context),
+            ),
           ),
         ),
         const SizedBox(height: 16),
         if (_userRole != 'teacher') ...[
           _buildActionCard(
-            icon: Icons.people_alt,
+            icon: Icons.people_alt_rounded,
             title: 'إدارة المستخدمين',
-            subtitle: 'عرض وإدارة جميع المستخدمين',
-            color: Colors.blue,
+            subtitle: 'عرض وإدارة جميع المستخدمين والطلاب',
+            color: Colors.blueAccent,
             onTap: () {
               Navigator.push(
                 context,
@@ -259,11 +328,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               );
             },
           ),
+          const SizedBox(height: 12),
           _buildActionCard(
-            icon: Icons.category,
+            icon: Icons.category_rounded,
             title: 'إدارة التصنيفات',
-            subtitle: 'إضافة وتعديل تصنيفات الدورات',
-            color: Colors.pink,
+            subtitle: 'إعداد وتعديل تصنيفات الدورات التعليمية',
+            color: Colors.pinkAccent,
             onTap: () {
               Navigator.push(
                 context,
@@ -275,10 +345,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(height: 12),
           _buildActionCard(
-            icon: Icons.school,
+            icon: Icons.school_rounded,
             title: 'إدارة المدرسين',
-            subtitle: 'ربط المدرسين بالدورات',
-            color: Colors.purple,
+            subtitle: 'تعيين المدرسين للدورات وإدارة صلاحياتهم',
+            color: Colors.deepPurpleAccent,
             onTap: () {
               Navigator.push(
                 context,
@@ -291,10 +361,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           const SizedBox(height: 12),
         ],
         _buildActionCard(
-          icon: Icons.library_books,
+          icon: Icons.library_books_rounded,
           title: _userRole == 'teacher' ? 'إدارة دوراتي' : 'إدارة الدورات',
-          subtitle: 'إنشاء وتعديل الدورات والدروس',
-          color: Colors.teal,
+          subtitle: 'إنشاء وتعديل محتوى الدورات والدروس',
+          color: Colors.tealAccent,
           onTap: () {
             Navigator.push(
               context,
@@ -309,10 +379,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         const SizedBox(height: 12),
         if (_userRole != 'teacher') ...[
           _buildActionCard(
-            icon: Icons.card_membership,
+            icon: Icons.card_membership_rounded,
             title: 'إدارة الاشتراكات',
-            subtitle: 'عرض وإدارة جميع اشتراكات الطلاب',
-            color: Colors.amber,
+            subtitle: 'متابعة اشتراكات الطلاب الفعالة والمنتهية',
+            color: Colors.amberAccent,
             onTap: () {
               Navigator.push(
                 context,
@@ -324,10 +394,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(height: 12),
           _buildActionCard(
-            icon: Icons.receipt_long,
-            title: 'طلبات الدفع لإيصالات',
-            subtitle: 'مراجعة وتأكيد إيصالات دفع الطلاب',
-            color: Colors.orange,
+            icon: Icons.receipt_long_rounded,
+            title: 'طلبات الدفع',
+            subtitle: 'مراجعة وتأكيد إيصالات التحويل البنكي',
+            color: Colors.orangeAccent,
             onTap: () {
               Navigator.push(
                 context,
@@ -339,9 +409,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ),
           const SizedBox(height: 12),
           _buildActionCard(
-            icon: Icons.notifications_active,
+            icon: Icons.notifications_active_rounded,
             title: 'إدارة الإشعارات',
-            subtitle: 'إرسال إشعارات وتنبيهات',
+            subtitle: 'إرسال تنبيهات عامة أو خاصة للمستخدمين',
             color: Colors.redAccent,
             onTap: () {
               Navigator.push(
@@ -364,62 +434,67 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 0,
-      color: Colors.grey[50],
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey[200]!),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: AppColors.getGlassColor(context, opacity: 0.2),
+            ),
+          ),
+          child: InkWell(
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.normal,
+                            color: AppColors.getTextColor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          subtitle,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.getTextColor(context)
+                                .withOpacity(0.5),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    color: Colors.white.withOpacity(0.3),
+                    size: 14,
+                  ),
+                ],
               ),
-              const Icon(
-                Icons.arrow_forward_ios,
-                color: AppColors.textLight,
-                size: 16,
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -430,32 +505,44 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'معلومات النظام',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+        Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Text(
+            'معلومات النظام',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.normal,
+              color: AppColors.getTextColor(context),
+            ),
           ),
         ),
         const SizedBox(height: 16),
-        Card(
-          elevation: 0,
-          color: Colors.grey[50],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey[200]!),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                _buildInfoRow('الإصدار', '2.0.0'),
-                const Divider(),
-                _buildInfoRow('قاعدة البيانات', 'Supabase'),
-                const Divider(),
-                _buildInfoRow('الحالة', 'نشط', color: Colors.green),
-              ],
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.getGlassColor(context, opacity: 0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                ),
+              ),
+              child: Column(
+                children: [
+                  _buildInfoRow('إصدار التطبيق', '2.1.0 (BETA)',
+                      icon: Icons.info_outline_rounded),
+                  const Divider(color: Colors.white10),
+                  _buildInfoRow('محرك البيانات', 'Supabase Realtime',
+                      icon: Icons.storage_rounded),
+                  const Divider(color: Colors.white10),
+                  _buildInfoRow('حالة الخادم', 'متصل ويعمل',
+                      color: Colors.greenAccent,
+                      icon: Icons.check_circle_outline_rounded),
+                ],
+              ),
             ),
           ),
         ),
@@ -463,30 +550,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value, {Color? color}) {
+  Widget _buildInfoRow(String label, String value,
+      {Color? color, IconData? icon}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColors.textSecondary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 16, color: Colors.white.withOpacity(0.4)),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.getTextColor(context).withOpacity(0.6),
+                ),
+              ),
+            ],
           ),
           Text(
             value,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: color ?? AppColors.textPrimary,
+              fontWeight: FontWeight.normal,
+              color: color ?? AppColors.getTextColor(context),
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -497,29 +589,51 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'أحدث محاولات الطلاب',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'أحدث محاولات الطلاب',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.normal,
+                  color: AppColors.getTextColor(context),
+                ),
+              ),
+              Text(
+                'عرض الكل',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blueAccent.withOpacity(0.8),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 16),
         if (_recentAttempts.isEmpty)
-          Card(
-            elevation: 0,
-            color: Colors.grey[50],
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: Colors.grey[200]!),
-            ),
-            child: const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(
-                child: Text(
-                  'لا يوجد محاولات حديثة',
-                  style: TextStyle(color: AppColors.textSecondary),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.all(30),
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.getGlassColor(context, opacity: 0.2),
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    'لا توجد محاولات حديثة في سجل النظام',
+                    style: TextStyle(
+                        color: AppColors.getTextColor(context).withOpacity(0.5),
+                        fontSize: 14),
+                  ),
                 ),
               ),
             ),
@@ -539,58 +653,99 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               final isPassed = attempt['is_passed'] == true;
               final date = DateTime.parse(attempt['submitted_at']).toLocal();
 
-              return Card(
-                elevation: 0,
-                color: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(color: Colors.grey[200]!),
-                ),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: user?['avatar_url'] != null
-                        ? NetworkImage(user!['avatar_url'])
-                        : null,
-                    backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
-                    child: user?['avatar_url'] == null
-                        ? const Icon(Icons.person,
-                            color: AppColors.primaryPurple)
-                        : null,
-                  ),
-                  title: Text(
-                    user?['full_name'] ?? 'مستخدم',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(exam?['title'] ?? 'اختبار'),
-                      Text(
-                        '${date.year}-${date.month}-${date.day} ${date.hour}:${date.minute}',
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.getGlassColor(context, opacity: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.getGlassColor(context, opacity: 0.2),
                       ),
-                    ],
-                  ),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '$score / $total',
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      leading: CircleAvatar(
+                        radius: 24,
+                        backgroundImage: user?['avatar_url'] != null
+                            ? NetworkImage(user!['avatar_url'])
+                            : null,
+                        backgroundColor:
+                            AppColors.primaryPurple.withOpacity(0.2),
+                        child: user?['avatar_url'] == null
+                            ? const Icon(Icons.person,
+                                color: Colors.white, size: 24)
+                            : null,
+                      ),
+                      title: Text(
+                        user?['full_name'] ?? 'طالب مجهول',
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isPassed ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.normal,
+                          color: AppColors.getTextColor(context),
                         ),
                       ),
-                      Text(
-                        isPassed ? 'ناجح' : 'راسب',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isPassed ? Colors.green : Colors.red,
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Text(
+                            exam?['title'] ?? 'اختبار غير معروف',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.getTextColor(context)
+                                  .withOpacity(0.6),
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${date.day}/${date.month} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: AppColors.getTextColor(context)
+                                  .withOpacity(0.4),
+                            ),
+                          ),
+                        ],
+                      ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color:
+                              (isPassed ? Colors.greenAccent : Colors.redAccent)
+                                  .withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '$score/$total',
+                              style: TextStyle(
+                                fontWeight: FontWeight.normal,
+                                color: isPassed
+                                    ? Colors.greenAccent
+                                    : Colors.redAccent,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              isPassed ? 'ناجح' : 'راسب',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.normal,
+                                color: isPassed
+                                    ? Colors.greenAccent
+                                    : Colors.redAccent,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               );

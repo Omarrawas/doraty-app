@@ -196,6 +196,16 @@ class AppStrings {
           'تم إنشاء البطاقات بنجاح! يمكنك الآن البدء في المراجعة.',
       'recent_exam_attempts': 'أحدث محاولات الطلاب',
       'no_recent_attempts': 'لا توجد محاولات حديثة',
+      'must_subscribe': 'يجب الاشتراك في المادة لمشاهدة هذا الدرس',
+      'no_exam_at_all': 'لا يوجد اختبار لهذا الدرس. الانتقال للدرس التالي...',
+      'must_take_exam': 'يجب اجتياز اختبار هذا الدرس أولاً',
+      'start_exam': 'بدء الاختبار',
+      'discussions': 'المناقشات',
+      'discussions_coming_soon': 'ستتاح الميزة في تحديث قادم',
+      'ai_assistant': 'المساعد الذكي',
+      'ai_assistant_coming_soon': 'ستتاح ميزة الذكاء الاصطناعي في تحديث قادم',
+      'ai_features_notice':
+          'نحن نعمل على دمج تقنيات الذكاء الاصطناعي لتعزيز تجربتك التعليمية.',
     },
     'en': {
       'settings': 'Settings',
@@ -391,6 +401,17 @@ class AppStrings {
           'Flashcards generated successfully! You can now start reviewing.',
       'recent_exam_attempts': 'Recent Student Attempts',
       'no_recent_attempts': 'No recent attempts',
+      'must_subscribe': 'You must subscribe to the course to watch this lesson',
+      'no_exam_at_all': 'No exam for this lesson. Moving to next...',
+      'must_take_exam': 'You must pass the exam for this lesson first',
+      'start_exam': 'Start Exam',
+      'discussions': 'Discussions',
+      'discussions_coming_soon': 'Feature available in a future update',
+      'ai_assistant': 'AI Assistant',
+      'ai_assistant_coming_soon':
+          'AI features will be available in a future update',
+      'ai_features_notice':
+          'We are working on integrating AI technologies to enhance your learning experience.',
     },
   };
 

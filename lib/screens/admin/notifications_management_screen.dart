@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../models/course.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 
 class NotificationsManagementScreen extends StatefulWidget {
   const NotificationsManagementScreen({super.key});
@@ -132,6 +137,8 @@ class _NotificationsManagementScreenState
         setState(() {
           _targetType = 'all';
           _selectedTargetId = null;
+          _title = '';
+          _body = '';
         });
         _loadHistory(); // Reload history
       }
@@ -151,227 +158,345 @@ class _NotificationsManagementScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('إدارة الإشعارات'),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
-        titleTextStyle: const TextStyle(
-            color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Compose Section
-            _buildComposeSection(),
-            const SizedBox(height: 24),
-            const Divider(),
-            const SizedBox(height: 24),
-            // History Section
-            const Text(
-              'سجل الإشعارات المرسلة',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            _buildHistoryList(),
-          ],
-        ),
-      ),
-    );
-  }
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
 
-  Widget _buildComposeSection() {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'إرسال إشعار جديد',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              // Target Type Dropdown
-              DropdownButtonFormField<String>(
-                value: _targetType,
-                decoration: const InputDecoration(
-                  labelText: 'إرسال إلى',
-                  border: OutlineInputBorder(),
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'all', child: Text('جميع المستخدمين')),
-                  DropdownMenuItem(value: 'course', child: Text('طلاب دورة محددة')),
-                  DropdownMenuItem(value: 'user', child: Text('مستخدم محدد')),
-                ],
-                onChanged: (val) {
-                  setState(() {
-                    _targetType = val!;
-                    _selectedTargetId = null;
-                  });
-                },
-              ),
-              const SizedBox(height: 12),
-
-              // Conditional Selection Fields
-              if (_targetType == 'course')
-                DropdownButtonFormField<String>(
-                  value: _selectedTargetId,
-                  decoration: const InputDecoration(
-                    labelText: 'اختر الدورة',
-                    border: OutlineInputBorder(),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  items: _courses.map((course) {
-                    return DropdownMenuItem(
-                      value: course.id,
-                      child: Text(
-                        course.title,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (val) => setState(() => _selectedTargetId = val),
-                  validator: (val) =>
-                      val == null ? 'يرجى اختيار الدورة' : null,
-                ),
-
-              if (_targetType == 'user')
-                Column(
-                  children: [
-                    TextField(
-                      decoration: InputDecoration(
-                        labelText: 'بحث عن مستخدم (الاسم أو البريد)',
-                        suffixIcon: _isLoadingData
-                            ? Transform.scale(
-                                scale: 0.5, child: const CircularProgressIndicator())
-                            : const Icon(Icons.search),
-                        border: const OutlineInputBorder(),
-                      ),
-                      onChanged: (val) {
-                        // Debounce logic could be added here
-                        if (val.length > 2) _searchUsers(val);
-                      },
+    return Theme(
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
+      child: Scaffold(
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildComposeSection(),
+                        const SizedBox(height: 32),
+                        Text(
+                          'سجل الإشعارات المرسلة',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.normal,
+                            color: AppColors.getTextColor(context),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildHistoryList(),
+                        const SizedBox(height: 40),
+                      ],
                     ),
-                    if (_users.isNotEmpty)
-                      Container(
-                        margin: const EdgeInsets.only(top: 8),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        constraints: const BoxConstraints(maxHeight: 150),
-                        child: ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: _users.length,
-                          itemBuilder: (context, index) {
-                            final user = _users[index];
-                            final isSelected =
-                                _selectedTargetId == user['id'];
-                            return ListTile(
-                              title: Text(user['full_name'] ?? 'بدون اسم'),
-                              subtitle: Text(user['email'] ?? ''),
-                              selected: isSelected,
-                              selectedTileColor:
-                                  AppColors.primaryPurple.withOpacity(0.1),
-                              onTap: () {
-                                setState(() {
-                                  _selectedTargetId = user['id'];
-                                  _users = []; // Clear list after selection
-                                });
-                              },
-                              trailing: isSelected
-                                  ? const Icon(Icons.check,
-                                      color: AppColors.primaryPurple)
-                                  : null,
-                            );
-                          },
-                        ),
-                      ),
-                    if (_selectedTargetId != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          'المستخدم المختار: $_selectedTargetId',
-                          style: const TextStyle(
-                              color: Colors.green, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                  ],
+                  ),
                 ),
-
-              const SizedBox(height: 12),
-              // Title
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'عنوان الإشعار',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (val) =>
-                    val == null || val.isEmpty ? 'مطلوب' : null,
-                onSaved: (val) => _title = val!,
-                onChanged: (val) => _title = val,
-              ),
-              const SizedBox(height: 12),
-              // Body
-              TextFormField(
-                decoration: const InputDecoration(
-                  labelText: 'نص الإشعار',
-                  border: OutlineInputBorder(),
-                  alignLabelWithHint: true,
-                ),
-                maxLines: 3,
-                validator: (val) =>
-                    val == null || val.isEmpty ? 'مطلوب' : null,
-                onSaved: (val) => _body = val!,
-                onChanged: (val) => _body = val,
-              ),
-              const SizedBox(height: 20),
-              // Send Button
-              ElevatedButton(
-                onPressed: _isSending ? null : _sendNotification,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryPurple,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-                child: _isSending
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.send),
-                          SizedBox(width: 8),
-                          Text('إرسال الإشعار',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              'إدارة الإشعارات',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.normal,
+                color: AppColors.getTextColor(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildComposeSection() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+                color: AppColors.getGlassColor(context, opacity: 0.3),
+                width: 1.5),
+          ),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'إرسال إشعار جديد',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.normal,
+                    color: AppColors.getTextColor(context),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Target Type Dropdown
+                _buildDropdown(
+                  label: 'إرسال إلى',
+                  value: _targetType,
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'all', child: Text('جميع المستخدمين')),
+                    DropdownMenuItem(
+                        value: 'course', child: Text('طلاب دورة محددة')),
+                    DropdownMenuItem(value: 'user', child: Text('مستخدم محدد')),
+                  ],
+                  onChanged: (val) {
+                    setState(() {
+                      _targetType = val!;
+                      _selectedTargetId = null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 16),
+
+                // Conditional Selection Fields
+                if (_targetType == 'course')
+                  _buildDropdown(
+                    label: 'اختر الدورة',
+                    value: _selectedTargetId,
+                    items: _courses.map((course) {
+                      return DropdownMenuItem(
+                        value: course.id,
+                        child:
+                            Text(course.title, overflow: TextOverflow.ellipsis),
+                      );
+                    }).toList(),
+                    onChanged: (val) => setState(() => _selectedTargetId = val),
+                    validator: (val) =>
+                        val == null ? 'يرجى اختيار الدورة' : null,
+                  ),
+
+                if (_targetType == 'user')
+                  Column(
+                    children: [
+                      TextFormField(
+                        style:
+                            TextStyle(color: AppColors.getTextColor(context)),
+                        decoration: _inputDecoration(
+                          label: 'بحث عن مستخدم',
+                          icon: Icons.search,
+                          suffix: _isLoadingData
+                              ? Transform.scale(
+                                  scale: 0.5,
+                                  child: const CircularProgressIndicator(
+                                      color: Colors.white))
+                              : null,
+                        ),
+                        onChanged: (val) {
+                          if (val.length > 2) _searchUsers(val);
+                        },
+                      ),
+                      if (_users.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color: Colors.white.withOpacity(0.1)),
+                          ),
+                          constraints: const BoxConstraints(maxHeight: 150),
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: _users.length,
+                            itemBuilder: (context, index) {
+                              final user = _users[index];
+                              final isSelected =
+                                  _selectedTargetId == user['id'];
+                              return ListTile(
+                                title: Text(user['full_name'] ?? 'بدون اسم',
+                                    style: TextStyle(
+                                        color:
+                                            AppColors.getTextColor(context))),
+                                subtitle: Text(user['email'] ?? '',
+                                    style: TextStyle(
+                                        color: AppColors.getTextColor(context)
+                                            .withOpacity(0.5))),
+                                selected: isSelected,
+                                selectedTileColor:
+                                    Colors.white.withOpacity(0.1),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedTargetId = user['id'];
+                                    _users = [];
+                                  });
+                                },
+                                trailing: isSelected
+                                    ? const Icon(Icons.check,
+                                        color: Colors.greenAccent)
+                                    : null,
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+
+                const SizedBox(height: 16),
+                TextFormField(
+                  style: TextStyle(color: AppColors.getTextColor(context)),
+                  decoration: _inputDecoration(
+                      label: 'عنوان الإشعار', icon: Icons.title),
+                  validator: (val) =>
+                      val == null || val.isEmpty ? 'مطلوب' : null,
+                  onSaved: (val) => _title = val!,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  style: TextStyle(color: AppColors.getTextColor(context)),
+                  decoration: _inputDecoration(
+                      label: 'نص الإشعار', icon: Icons.message),
+                  maxLines: 3,
+                  validator: (val) =>
+                      val == null || val.isEmpty ? 'مطلوب' : null,
+                  onSaved: (val) => _body = val!,
+                ),
+                const SizedBox(height: 32),
+
+                // Send Button
+                _buildSubmitButton(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdown({
+    required String label,
+    required String? value,
+    required List<DropdownMenuItem<String>> items,
+    required Function(String?) onChanged,
+    String? Function(String?)? validator,
+  }) {
+    return DropdownButtonFormField<String>(
+      value: value,
+      dropdownColor: Colors.grey[900],
+      style: TextStyle(color: AppColors.getTextColor(context)),
+      decoration: _inputDecoration(label: label, icon: Icons.layers),
+      items: items,
+      onChanged: onChanged,
+      validator: validator,
+    );
+  }
+
+  InputDecoration _inputDecoration(
+      {required String label, required IconData icon, Widget? suffix}) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle:
+          TextStyle(color: AppColors.getTextColor(context).withOpacity(0.6)),
+      prefixIcon: Icon(icon, color: Colors.white70),
+      suffixIcon: suffix,
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.05),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.blueAccent, width: 2)),
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+            colors: [AppColors.primaryPurple, Colors.blueAccent]),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryPurple.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: _isSending ? null : _sendNotification,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: _isSending
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                    color: Colors.white, strokeWidth: 2))
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.send, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text('إرسال الإشعار',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.normal)),
+                ],
+              ),
+      ),
+    );
+  }
+
   Widget _buildHistoryList() {
     if (_isLoadingHistory) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+          child: CircularProgressIndicator(color: Colors.white));
     }
     if (_history.isEmpty) {
-      return const Center(child: Text('لا يوجد سجل للإشعارات'));
+      return Center(
+        child: Text('لا يوجد سجل للإشعارات',
+            style: TextStyle(
+                color: AppColors.getTextColor(context).withOpacity(0.5))),
+      );
     }
     return ListView.builder(
       shrinkWrap: true,
@@ -379,24 +504,65 @@ class _NotificationsManagementScreenState
       itemCount: _history.length,
       itemBuilder: (context, index) {
         final item = _history[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: _getTypeColor(item['notification_type']),
-              child: Icon(_getTypeIcon(item['notification_type']),
-                  color: Colors.white, size: 20),
-            ),
-            title: Text(item['title'] ?? ''),
-            subtitle: Text(
-                '${item['body']}\n${_formatDate(item['created_at'])}',
-                maxLines: 2, overflow: TextOverflow.ellipsis),
-            isThreeLine: true,
-            trailing: Chip(
-              label: Text(_getTypeLabel(item['notification_type']),
-                  style: const TextStyle(fontSize: 10, color: Colors.white)),
-              backgroundColor: _getTypeColor(item['notification_type']),
-              padding: EdgeInsets.zero,
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.2)),
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.all(16),
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: _getTypeColor(item['notification_type'])
+                          .withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(_getTypeIcon(item['notification_type']),
+                        color: _getTypeColor(item['notification_type']),
+                        size: 20),
+                  ),
+                  title: Text(
+                    item['title'] ?? '',
+                    style: TextStyle(
+                        fontWeight: FontWeight.normal,
+                        color: AppColors.getTextColor(context)),
+                  ),
+                  subtitle: Text(
+                    '${item['body']}\n${_formatDate(item['created_at'])}',
+                    style: TextStyle(
+                        color: AppColors.getTextColor(context).withOpacity(0.6),
+                        fontSize: 13),
+                  ),
+                  trailing: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _getTypeColor(item['notification_type'])
+                          .withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                          color: _getTypeColor(item['notification_type'])
+                              .withOpacity(0.4)),
+                    ),
+                    child: Text(
+                      _getTypeLabel(item['notification_type']),
+                      style: TextStyle(
+                          fontSize: 10,
+                          color: _getTypeColor(item['notification_type']),
+                          fontWeight: FontWeight.normal),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         );
@@ -407,11 +573,11 @@ class _NotificationsManagementScreenState
   Color _getTypeColor(String? type) {
     switch (type) {
       case 'all':
-        return Colors.blue;
+        return Colors.blueAccent;
       case 'course':
-        return Colors.orange;
+        return Colors.orangeAccent;
       case 'user':
-        return Colors.green;
+        return Colors.greenAccent;
       default:
         return Colors.grey;
     }
@@ -422,7 +588,7 @@ class _NotificationsManagementScreenState
       case 'all':
         return Icons.campaign;
       case 'course':
-        return Icons.class_;
+        return Icons.school;
       case 'user':
         return Icons.person;
       default:
@@ -447,7 +613,7 @@ class _NotificationsManagementScreenState
     if (dateStr == null) return '';
     try {
       final date = DateTime.parse(dateStr).toLocal();
-      return '${date.year}-${date.month}-${date.day} ${date.hour}:${date.minute}';
+      return '${date.year}-${date.month}-${date.day} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
     } catch (e) {
       return dateStr;
     }

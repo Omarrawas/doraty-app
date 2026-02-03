@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/file_upload_service.dart';
 import '../../core/services/github_storage_service.dart';
 import '../../core/services/github_api_service.dart';
 import '../../core/config/github_config.dart';
 import '../../widgets/video_preview_widget.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 import '../../models/chapter.dart';
 
 class CreateLessonScreen extends StatefulWidget {
@@ -152,191 +156,193 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.lessonId != null;
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
 
     return Theme(
-      data: AppTheme.adminLightTheme,
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(isEditing ? 'تعديل الدرس' : 'إضافة درس جديد'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Chapter Selection
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'الفصل',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            TextButton.icon(
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context, isEditing),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Chapter Selection
+                          _buildGlassContainer(
+                            title: 'الفصل',
+                            action: TextButton.icon(
                               onPressed: _createNewChapter,
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('فصل جديد'),
+                              icon: const Icon(Icons.add,
+                                  size: 18, color: Colors.blueAccent),
+                              label: const Text('فصل جديد',
+                                  style: TextStyle(color: Colors.blueAccent)),
                             ),
-                          ],
-                        ),
-                        if (_isLoadingChapters)
-                          const Center(child: LinearProgressIndicator())
-                        else if (_chapters.isEmpty)
-                          const Text(
-                              'لا توجد فصول. اضغط "فصل جديد" لإنشاء فصل.',
-                              style: TextStyle(color: Colors.grey))
-                        else
-                          DropdownButtonFormField<String>(
-                            value: _selectedChapterId,
-                            decoration: const InputDecoration(
-                              hintText: 'اختر الفصل',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 8),
-                            ),
-                            items: [
-                              const DropdownMenuItem<String>(
-                                value: null,
-                                child: Text('بدون فصل (عام)'),
-                              ),
-                              ..._chapters.map((chapter) {
-                                return DropdownMenuItem<String>(
-                                  value: chapter.id,
-                                  child: Text(chapter.title),
-                                );
-                              }),
-                            ],
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedChapterId = value;
-                              });
-                            },
+                            child: _isLoadingChapters
+                                ? const Center(child: LinearProgressIndicator())
+                                : DropdownButtonFormField<String>(
+                                    dropdownColor: isDark
+                                        ? AppColors.primaryPurple
+                                        : Colors.white,
+                                    value: _selectedChapterId,
+                                    decoration: _inputDecoration(
+                                      hint: 'اختر الفصل',
+                                      icon: Icons.category_outlined,
+                                    ),
+                                    style: TextStyle(
+                                        color: AppColors.getTextColor(context)),
+                                    items: [
+                                      const DropdownMenuItem<String>(
+                                        value: null,
+                                        child: Text('بدون فصل (عام)'),
+                                      ),
+                                      ..._chapters.map((chapter) {
+                                        return DropdownMenuItem<String>(
+                                          value: chapter.id,
+                                          child: Text(chapter.title),
+                                        );
+                                      }),
+                                    ],
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _selectedChapterId = value;
+                                      });
+                                    },
+                                  ),
                           ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'عنوان الدرس',
-                      hintText: 'مثال: الدرس الأول - مقدمة',
-                      prefixIcon: Icon(Icons.title),
+                          _buildGlassContainer(
+                            title: 'معلومات الدرس',
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _titleController,
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context)),
+                                  decoration: _inputDecoration(
+                                    label: 'عنوان الدرس',
+                                    hint: 'مثال: الدرس الأول - مقدمة',
+                                    icon: Icons.title,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'الرجاء إدخال عنوان الدرس';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _descriptionController,
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context)),
+                                  decoration: _inputDecoration(
+                                    label: 'وصف الدرس',
+                                    hint: 'وصف مختصر عن محتوى الدرس',
+                                    icon: Icons.description_outlined,
+                                  ),
+                                  maxLines: 3,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildGlassContainer(
+                            title: 'الفيديو والمحتوى',
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _videoUrlController,
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context)),
+                                  decoration: _inputDecoration(
+                                    label: 'رابط الفيديو',
+                                    hint: 'https://youtube.com/watch?v=...',
+                                    icon: Icons.video_library_outlined,
+                                  ),
+                                  onChanged: (_) => setState(() {}),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'الرجاء إدخال رابط الفيديو';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                if (_videoUrlController.text.isNotEmpty) ...[
+                                  const SizedBox(height: 16),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: VideoPreviewWidget(
+                                      videoUrl: _videoUrlController.text,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _durationController,
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context)),
+                                  decoration: _inputDecoration(
+                                    label: 'مدة الفيديو (بالثواني)',
+                                    hint: '1800 (30 دقيقة)',
+                                    icon: Icons.access_time,
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'الرجاء إدخال مدة الفيديو';
+                                    }
+                                    if (int.tryParse(value) == null &&
+                                        !RegExp(r'^\d+:\d{2}(:\d{2})?$')
+                                            .hasMatch(value)) {
+                                      return 'أدخل رقم (ثواني) أو تنسيق MM:SS';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _contentController,
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context)),
+                                  decoration: _inputDecoration(
+                                    label: 'محتوى الدرس (اختياري)',
+                                    hint: 'شرح نصي، أمثلة، تمارين...',
+                                    icon: Icons.article_outlined,
+                                  ),
+                                  maxLines: 6,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildAttachmentsSection(context),
+                          const SizedBox(height: 16),
+
+                          _buildFreeSwitchGlass(context),
+                          const SizedBox(height: 32),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 55,
+                            child: _buildSubmitButton(isEditing),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'الرجاء إدخال عنوان الدرس';
-                      }
-                      return null;
-                    },
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'وصف الدرس',
-                      hintText: 'وصف مختصر عن محتوى الدرس',
-                      prefixIcon: Icon(Icons.description),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _videoUrlController,
-                    decoration: const InputDecoration(
-                      labelText: 'رابط الفيديو',
-                      hintText: 'https://youtube.com/watch?v=...',
-                      prefixIcon: Icon(Icons.video_library),
-                    ),
-                    onChanged: (_) => setState(() {}),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'الرجاء إدخال رابط الفيديو';
-                      }
-                      return null;
-                    },
-                  ),
-                  if (_videoUrlController.text.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    VideoPreviewWidget(
-                      videoUrl: _videoUrlController.text,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _durationController,
-                    decoration: const InputDecoration(
-                      labelText: 'مدة الفيديو (بالثواني)',
-                      hintText: '1800 (30 دقيقة)',
-                      prefixIcon: Icon(Icons.access_time),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'الرجاء إدخال مدة الفيديو';
-                      }
-                      if (int.tryParse(value) == null &&
-                          !RegExp(r'^\d+:\d{2}(:\d{2})?$').hasMatch(value)) {
-                        return 'أدخل رقم (ثواني) أو تنسيق MM:SS';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _contentController,
-                    decoration: const InputDecoration(
-                      labelText: 'محتوى الدرس (اختياري)',
-                      hintText: 'شرح نصي، أمثلة، تمارين...',
-                      prefixIcon: Icon(Icons.article),
-                    ),
-                    maxLines: 8,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildAttachmentsSection(),
-                  const SizedBox(height: 24),
-                  _buildFreeSwitch(),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isSaving ? null : _saveLesson,
-                      icon: _isSaving
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Icon(isEditing ? Icons.save : Icons.add),
-                      label: Text(isEditing ? 'حفظ التعديلات' : 'إضافة الدرس'),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -344,146 +350,343 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     );
   }
 
-  Widget _buildAttachmentsSection() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildHeader(BuildContext context, bool isEditing) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              isEditing ? 'تعديل الدرس' : 'إضافة درس جديد',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.normal,
+                color: AppColors.getTextColor(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassContainer({
+    required String title,
+    required Widget child,
+    Widget? action,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.getGlassColor(context, opacity: 0.3),
+              width: 1.5,
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.normal,
+                      color: AppColors.getTextColor(context),
+                    ),
+                  ),
+                  if (action != null) action,
+                ],
+              ),
+              const SizedBox(height: 16),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    String? label,
+    String? hint,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon, color: Colors.white70),
+      labelStyle: const TextStyle(color: Colors.white70),
+      hintStyle: const TextStyle(color: Colors.white38),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.05),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton(bool isEditing) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+          colors: [AppColors.primaryPurple, Colors.blueAccent],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryPurple.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: _isSaving ? null : _saveLesson,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: _isSaving
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: Colors.white,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(isEditing ? Icons.save : Icons.add, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    isEditing ? 'حفظ التعديلات' : 'إضافة الدرس',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildFreeSwitchGlass(BuildContext context) {
+    return _buildGlassContainer(
+      title: 'إعدادات الوصول',
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: _isFree
+                  ? Colors.green.withOpacity(0.2)
+                  : Colors.orange.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              _isFree ? Icons.lock_open : Icons.lock,
+              color: _isFree ? Colors.greenAccent : Colors.orangeAccent,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'درس مجاني',
+                  style: TextStyle(
+                    fontWeight: FontWeight.normal,
+                    color: AppColors.getTextColor(context),
+                  ),
+                ),
+                Text(
+                  'متاح لجميع الطلاب بدون اشتراك',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColors.getTextColor(context).withOpacity(0.6),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _isFree,
+            onChanged: (value) => setState(() => _isFree = value),
+            activeColor: Colors.greenAccent,
+            activeTrackColor: Colors.green.withOpacity(0.5),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttachmentsSection(BuildContext context) {
+    return _buildGlassContainer(
+      title: 'المرفقات (GitHub)',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
+            ),
+            child: Column(
               children: [
                 Row(
                   children: [
-                    Icon(Icons.attach_file, color: AppColors.textSecondary),
-                    SizedBox(width: 8),
-                    Text(
-                      'المرفقات (GitHub)',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    const Icon(Icons.cloud_upload, color: Colors.blueAccent),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'رفع تلقائي إلى GitHub',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.normal,
+                          color: AppColors.getTextColor(context),
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            // GitHub automatic upload
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey.shade300),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.cloud_upload, color: Colors.grey.shade700),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'رفع تلقائي إلى GitHub',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey.shade800,
+                const SizedBox(height: 12),
+                if (!GitHubConfig.isConfigured)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.withOpacity(0.2)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.warning,
+                            color: Colors.orangeAccent, size: 20),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'يجب تعيين GITHUB_TOKEN في ملف .env',
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.orangeAccent),
                           ),
                         ),
+                      ],
+                    ),
+                  )
+                else
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _isUploadingToGitHub ? null : _uploadToGitHub,
+                      icon: _isUploadingToGitHub
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.upload_file),
+                      label: Text(
+                        _isUploadingToGitHub
+                            ? 'جاري الرفع...'
+                            : 'اختر ملفات للرفع',
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (!GitHubConfig.isConfigured)
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade50,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: Colors.orange.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.warning, color: Colors.orange.shade700, size: 20),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'يجب تعيين GITHUB_TOKEN في ملف .env',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: _isUploadingToGitHub ? null : _uploadToGitHub,
-                        icon: _isUploadingToGitHub
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Icon(Icons.upload_file),
-                        label: Text(
-                          _isUploadingToGitHub ? 'جاري الرفع...' : 'اختر ملفات للرفع',
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
-                          foregroundColor: Colors.white,
-                        ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white.withOpacity(0.1),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-            if (_attachments.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              ..._attachments.map((attachment) => ListTile(
-                    leading: const Icon(Icons.insert_drive_file),
+          ),
+          if (_attachments.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            ..._attachments.map((attachment) => Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: ListTile(
+                    leading: const Icon(Icons.insert_drive_file,
+                        color: Colors.white70),
                     title: Text(
                       attachment['name'] ?? '',
-                      style: const TextStyle(color: AppColors.textPrimary),
+                      style: TextStyle(
+                          color: AppColors.getTextColor(context), fontSize: 13),
                     ),
                     subtitle: Text(
                       attachment['size'] ?? '',
-                      style: const TextStyle(fontSize: 12),
+                      style:
+                          const TextStyle(fontSize: 11, color: Colors.white54),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
+                      icon: const Icon(Icons.delete,
+                          color: Colors.redAccent, size: 20),
                       onPressed: () {
                         setState(() {
                           _attachments.remove(attachment);
                         });
                       },
                     ),
-                  )),
-            ],
+                  ),
+                )),
           ],
-        ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildFreeSwitch() {
-    return SwitchListTile(
-      title: const Text(
-        'درس مجاني',
-        style: TextStyle(fontWeight: FontWeight.bold),
-      ),
-      subtitle: const Text('متاح لجميع الطلاب بدون اشتراك'),
-      secondary: const Icon(Icons.lock_open),
-      value: _isFree,
-      onChanged: (value) => setState(() => _isFree = value),
-      activeColor: AppColors.success,
     );
   }
 

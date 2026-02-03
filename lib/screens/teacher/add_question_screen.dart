@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
+import '../../widgets/dynamic_gradient_background.dart';
+import 'dart:ui';
 
 class AddQuestionScreen extends StatefulWidget {
   final String examId;
@@ -71,88 +75,255 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
     return Theme(
-      data: AppTheme.adminLightTheme,
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(_isEditing ? 'تعديل السؤال' : 'إضافة سؤال'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildQuestionTypeSelector(),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _questionController,
-                    decoration: const InputDecoration(
-                      labelText: 'نص السؤال',
-                      hintText: 'اكتب السؤال هنا',
-                      prefixIcon: Icon(Icons.quiz),
-                    ),
-                    maxLines: 3,
-                    validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  if (_questionType != 'essay') ...[
-                    _buildOptionsSection(),
-                    const SizedBox(height: 16),
-                  ],
-                  TextFormField(
-                    controller: _pointsController,
-                    decoration: const InputDecoration(
-                      labelText: 'النقاط',
-                      hintText: '1',
-                      prefixIcon: Icon(Icons.grade),
-                    ),
-                    keyboardType: TextInputType.number,
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'مطلوب';
-                      if (int.tryParse(v) == null) return 'رقم غير صحيح';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _explanationController,
-                    decoration: const InputDecoration(
-                      labelText: 'الشرح (اختياري)',
-                      hintText: 'شرح الإجابة الصحيحة',
-                      prefixIcon: Icon(Icons.lightbulb),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _saveQuestion,
-                      icon: _isLoading
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Icon(Icons.check),
-                      label: Text(
-                        _isEditing ? 'حفظ التعديلات' : 'إضافة السؤال',
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildGlassContainer(
+                            title: 'إعدادات السؤال',
+                            child: Column(
+                              children: [
+                                _buildQuestionTypeSelector(),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _questionController,
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context)),
+                                  decoration: _inputDecoration(
+                                    label: 'نص السؤال',
+                                    hint: 'اكتب السؤال هنا',
+                                    icon: Icons.quiz,
+                                  ),
+                                  maxLines: 3,
+                                  validator: (v) =>
+                                      v == null || v.isEmpty ? 'مطلوب' : null,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          if (_questionType != 'essay') ...[
+                            _buildGlassContainer(
+                              title: 'الخيارات والإجابة',
+                              child: _buildOptionsSection(),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          _buildGlassContainer(
+                            title: 'معلومات إضافية',
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _pointsController,
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context)),
+                                  decoration: _inputDecoration(
+                                    label: 'النقاط',
+                                    hint: '1',
+                                    icon: Icons.grade,
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  validator: (v) {
+                                    if (v == null || v.isEmpty) return 'مطلوب';
+                                    if (int.tryParse(v) == null) {
+                                      return 'رقم غير صحيح';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _explanationController,
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context)),
+                                  decoration: _inputDecoration(
+                                    label: 'الشرح (اختياري)',
+                                    hint: 'شرح الإجابة الصحيحة',
+                                    icon: Icons.lightbulb,
+                                  ),
+                                  maxLines: 3,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+                          _buildSubmitButton(),
+                          const SizedBox(height: 40),
+                        ],
                       ),
                     ),
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
               ),
             ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              _isEditing ? 'تعديل السؤال' : 'إضافة سؤال جديد',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.normal,
+                color: AppColors.getTextColor(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlassContainer({
+    required String title,
+    required Widget child,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.getGlassColor(context, opacity: 0.3),
+              width: 1.5,
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.normal,
+                  color: AppColors.getTextColor(context),
+                ),
+              ),
+              const SizedBox(height: 16),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    String? label,
+    String? hint,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon, color: Colors.white70),
+      labelStyle: const TextStyle(color: Colors.white70),
+      hintStyle: const TextStyle(color: Colors.white38),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.05),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+      ),
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    return Container(
+      width: double.infinity,
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [AppColors.primaryPurple, Colors.blueAccent],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryPurple.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ElevatedButton.icon(
+        onPressed: _isLoading ? null : _saveQuestion,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          shadowColor: Colors.transparent,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        icon: _isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3,
+                  color: Colors.white,
+                ),
+              )
+            : const Icon(Icons.check, color: Colors.white),
+        label: Text(
+          _isEditing ? 'حفظ التعديلات' : 'إضافة السؤال',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.normal,
           ),
         ),
       ),
@@ -163,12 +334,12 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'نوع السؤال',
           style: TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+            fontWeight: FontWeight.normal,
+            color: AppColors.getTextColor(context),
           ),
         ),
         const SizedBox(height: 12),
@@ -219,10 +390,14 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryPurple : Colors.grey[100],
+          color: isSelected
+              ? AppColors.primaryPurple
+              : Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primaryPurple : Colors.grey[300]!,
+            color: isSelected
+                ? AppColors.primaryPurple
+                : Colors.white.withOpacity(0.1),
           ),
         ),
         child: Column(
@@ -235,9 +410,9 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
               label,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: isSelected ? Colors.white : AppColors.textSecondary,
+                color: isSelected ? Colors.white : Colors.white70,
                 fontSize: 11,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.normal,
               ),
             ),
           ],
@@ -253,12 +428,12 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'الخيارات',
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
+                fontWeight: FontWeight.normal,
+                color: AppColors.getTextColor(context),
               ),
             ),
             if (_questionType == 'multiple_choice')
@@ -290,10 +465,12 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
     final isCorrect = _correctAnswer == index;
     return Container(
       decoration: BoxDecoration(
-        color: isCorrect ? Colors.green.withOpacity(0.1) : Colors.white,
+        color: isCorrect
+            ? Colors.green.withOpacity(0.2)
+            : Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCorrect ? Colors.green : Colors.grey[300]!,
+          color: isCorrect ? Colors.green : Colors.white.withOpacity(0.1),
           width: isCorrect ? 2 : 1,
         ),
       ),
@@ -310,8 +487,10 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
           Expanded(
             child: TextFormField(
               controller: controller,
+              style: TextStyle(color: AppColors.getTextColor(context)),
               decoration: InputDecoration(
                 hintText: 'الخيار ${index + 1}',
+                hintStyle: const TextStyle(color: Colors.white38),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(horizontal: 8),
               ),

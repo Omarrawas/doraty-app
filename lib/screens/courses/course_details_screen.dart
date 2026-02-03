@@ -367,7 +367,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 26,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: FontWeight.normal,
                             color: Colors.white,
                           ),
                         ),
@@ -536,7 +536,12 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_forward, color: Colors.white),
+                  icon: Icon(
+                    Provider.of<LocaleProvider>(context).locale == 'ar'
+                        ? Icons.arrow_forward
+                        : Icons.arrow_back,
+                    color: Colors.white,
+                  ),
                   onPressed: () {
                     if (Navigator.canPop(context)) {
                       Navigator.pop(context);
@@ -1043,7 +1048,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 Tab(text: _t('about')),
                 Tab(text: _t('lessons')),
                 Tab(text: _t('reviews')),
-                const Tab(text: 'المناقشات'),
+                Tab(text: _t('discussions')),
               ],
             ),
           ),
@@ -1549,7 +1554,12 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
     // Check if this lesson is locked
     bool isLocked = false;
-    if (orderIndex > 1 && !isFree) {
+    String lockReason = '';
+
+    if (!isFree && !_isEnrolled) {
+      isLocked = true;
+      lockReason = _t('must_subscribe');
+    } else if (orderIndex > 1 && !isFree) {
       // Find the previous lesson
       final previousLesson = _lessons.firstWhere(
         (l) => (l['order_index'] ?? 0) == orderIndex - 1,
@@ -1558,7 +1568,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
       // Lock if previous lesson is not completed
       if (previousLesson.isNotEmpty) {
-        isLocked = !(previousLesson['is_completed'] ?? false);
+        if (!(previousLesson['is_completed'] ?? false)) {
+          isLocked = true;
+          lockReason = _t('must_complete_previous');
+        }
       }
     }
 
@@ -1571,7 +1584,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      _t('must_complete_previous'),
+                      lockReason,
                       textAlign: TextAlign.right,
                       style: const TextStyle(fontFamily: 'Cairo'),
                     ),
@@ -1599,6 +1612,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                       lesson: lessonObj,
                       allLessons: allLessons,
                       courseTitle: widget.course.getLocalizedTitle(locale),
+                      isEnrolled: _isEnrolled,
                     ),
                   ),
                 );

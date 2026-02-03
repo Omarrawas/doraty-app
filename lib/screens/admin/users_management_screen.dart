@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/string_utils.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 
 class UsersManagementScreen extends StatefulWidget {
   const UsersManagementScreen({super.key});
@@ -67,48 +71,51 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              _buildSearchBar(),
-              Expanded(
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : _filteredUsers.isEmpty
-                        ? _buildEmptyState()
-                        : RefreshIndicator(
-                            onRefresh: _loadData,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(20),
-                              itemCount: _filteredUsers.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: _buildUserCard(_filteredUsers[index]),
-                                );
-                              },
-                            ),
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
+    return Theme(
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
+      child: Scaffold(
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                _buildSearchBar(context),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
-              ),
-            ],
+                        )
+                      : _filteredUsers.isEmpty
+                          ? _buildEmptyState(context)
+                          : RefreshIndicator(
+                              onRefresh: _loadData,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.all(20),
+                                itemCount: _filteredUsers.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _buildUserCard(
+                                        context, _filteredUsers[index]),
+                                  );
+                                },
+                              ),
+                            ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -119,10 +126,11 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: Colors.white.withOpacity(0.3), width: 1),
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -132,27 +140,27 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Text(
               'إدارة المستخدمين',
               style: TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+                fontWeight: FontWeight.normal,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppColors.getGlassColor(context, opacity: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               '${_users.length} مستخدم',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+              style: TextStyle(
+                color: AppColors.getTextColor(context),
+                fontWeight: FontWeight.normal,
               ),
             ),
           ),
@@ -161,7 +169,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
+  Widget _buildSearchBar(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: ClipRRect(
@@ -170,20 +178,21 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppColors.getGlassColor(context, opacity: 0.2),
               borderRadius: BorderRadius.circular(16),
-              border:
-                  Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+              border: Border.all(
+                  color: AppColors.getGlassColor(context, opacity: 0.3),
+                  width: 1),
             ),
             child: TextField(
               onChanged: (value) => setState(() => _searchQuery = value),
-              style: const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+              style: TextStyle(color: AppColors.getTextColor(context)),
               decoration: InputDecoration(
                 hintText: 'بحث عن مستخدم...',
                 hintStyle: TextStyle(
-                    color: const Color.fromARGB(255, 0, 0, 0).withOpacity(0.5)),
-                prefixIcon:
-                    Icon(Icons.search, color: Colors.white.withOpacity(0.7)),
+                    color: AppColors.getTextColor(context).withOpacity(0.5)),
+                prefixIcon: Icon(Icons.search,
+                    color: AppColors.getTextColor(context).withOpacity(0.7)),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.all(16),
               ),
@@ -194,7 +203,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     );
   }
 
-  Widget _buildUserCard(Map<String, dynamic> user) {
+  Widget _buildUserCard(BuildContext context, Map<String, dynamic> user) {
     final userRoles = user['user_roles'] as List? ?? [];
     final roleName = userRoles.isNotEmpty
         ? (userRoles.first['roles']?['display_name'] ?? 'طالب')
@@ -206,17 +215,11 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.25),
-                Colors.white.withOpacity(0.15),
-              ],
-            ),
+            color: AppColors.getGlassColor(context, opacity: 0.2),
             borderRadius: BorderRadius.circular(20),
-            border:
-                Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+            border: Border.all(
+                color: AppColors.getGlassColor(context, opacity: 0.3),
+                width: 1.5),
           ),
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -233,7 +236,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.normal,
                         ),
                       ),
                     ),
@@ -245,17 +248,18 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                           Text(
                             StringUtils.cleanTeacherName(
                                 user['full_name'] ?? 'مستخدم'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              fontWeight: FontWeight.normal,
+                              color: AppColors.getTextColor(context),
                             ),
                           ),
                           Text(
                             user['email'] ?? '',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.white.withOpacity(0.7),
+                              color: AppColors.getTextColor(context)
+                                  .withOpacity(0.7),
                             ),
                           ),
                         ],
@@ -275,7 +279,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                         style: TextStyle(
                           color: _getRoleColor(roleName),
                           fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.normal,
                         ),
                       ),
                     ),
@@ -287,18 +291,20 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                     if (_canManageRole(user)) // Added condition
                       Expanded(
                         child: _buildActionButton(
+                          context: context,
                           icon: Icons.admin_panel_settings,
                           label: 'تعيين دور',
                           onTap: () => _showRoleDialog(user),
                         ),
                       )
                     else
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'لا يمكن تعديل أدوار المديرين',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white70,
+                            color: AppColors.getTextColor(context,
+                                secondary: true),
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
                           ),
@@ -343,6 +349,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   }
 
   Widget _buildActionButton({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required VoidCallback onTap,
@@ -353,9 +360,11 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getGlassColor(context, opacity: 0.2),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+            border: Border.all(
+                color: AppColors.getGlassColor(context, opacity: 0.3),
+                width: 1),
           ),
           child: Material(
             color: Colors.transparent,
@@ -367,14 +376,15 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, color: Colors.white, size: 18),
+                    Icon(icon,
+                        color: AppColors.getTextColor(context), size: 18),
                     const SizedBox(width: 6),
                     Text(
                       label,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context),
                         fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.normal,
                       ),
                     ),
                   ],
@@ -387,7 +397,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -398,22 +408,24 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             child: Container(
               padding: const EdgeInsets.all(30),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: AppColors.getGlassColor(context, opacity: 0.15),
                 borderRadius: BorderRadius.circular(16),
-                border:
-                    Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                border: Border.all(
+                    color: AppColors.getGlassColor(context, opacity: 0.3),
+                    width: 1),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.people, color: Colors.white, size: 64),
+                  Icon(Icons.people,
+                      color: AppColors.getTextColor(context), size: 64),
                   const SizedBox(height: 16),
                   Text(
                     'لا توجد نتائج',
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.white.withOpacity(0.8),
-                      fontWeight: FontWeight.bold,
+                      color: AppColors.getTextColor(context).withOpacity(0.8),
+                      fontWeight: FontWeight.normal,
                     ),
                   ),
                 ],

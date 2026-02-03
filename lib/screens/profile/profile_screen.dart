@@ -9,7 +9,7 @@ import '../admin/admin_dashboard_screen.dart';
 import '../teacher/teacher_dashboard_screen.dart';
 import '../courses/my_downloads_screen.dart';
 import '../auth/login_screen.dart';
-import '../../widgets/empty_state.dart';
+
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
@@ -28,11 +28,11 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final DatabaseService _databaseService = DatabaseService();
-  int _selectedCoursesTab = 0; // 0: Current, 1: Completed
+
   String _userRole = 'student';
   Map<String, dynamic>? _userProfile;
   Map<String, dynamic> _stats = {};
-  List<Map<String, dynamic>> _enrolledCourses = [];
+
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -66,8 +66,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .maybeSingle();
 
       final stats = await _databaseService.getUserStats();
-      final enrollments =
-          await _databaseService.getEnrolledCoursesWithProgress();
+
       String role = 'student';
       try {
         role = await _databaseService.getUserRole();
@@ -88,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       setState(() {
         _userProfile = userData ?? {};
         _stats = stats;
-        _enrolledCourses = enrollments;
+
         _userRole = role;
       });
     } catch (e) {
@@ -125,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _userProfile?['full_name'] ?? _t('user')),
                   style: const TextStyle(
                     fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.normal,
                     color: Colors.white,
                   ),
                 ),
@@ -201,97 +200,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 30),
                 ],
 
-                // My Courses Section
-                // My Courses Section
-                _buildSectionTitle(_t('my_courses')),
-
-                const SizedBox(height: 16),
-
-                // Course Tabs
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.getGlassColor(context, opacity: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.getGlassColor(context, opacity: 0.2),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildCourseTab(
-                          title: _t('current'),
-                          isSelected: _selectedCoursesTab == 0,
-                          onTap: () => setState(() => _selectedCoursesTab = 0),
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildCourseTab(
-                          title: _t('completed'),
-                          isSelected: _selectedCoursesTab == 1,
-                          onTap: () => setState(() => _selectedCoursesTab = 1),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // Display filtered courses
-                Builder(
-                  builder: (context) {
-                    final filteredCourses =
-                        _enrolledCourses.where((enrollment) {
-                      final progress =
-                          (enrollment['progress_percentage'] as num?)
-                                  ?.toDouble() ??
-                              0.0;
-                      final isCompleted = progress >= 100.0;
-                      return _selectedCoursesTab == 0
-                          ? !isCompleted
-                          : isCompleted;
-                    }).toList();
-
-                    if (filteredCourses.isEmpty) {
-                      return ProfessionalEmptyState(
-                        title: _t(_selectedCoursesTab == 0
-                            ? 'no_current_courses'
-                            : 'no_completed_courses'),
-                        message: _t(_selectedCoursesTab == 0
-                            ? 'enrolled_courses_desc'
-                            : 'courses_not_completed_desc'),
-                        icon: _selectedCoursesTab == 0
-                            ? Icons.book_rounded
-                            : Icons.assignment_turned_in_rounded,
-                      );
-                    }
-
-                    return Column(
-                      children: filteredCourses.map((enrollment) {
-                        final courseData = enrollment['courses'];
-                        if (courseData == null) return const SizedBox();
-
-                        final progress =
-                            (enrollment['progress_percentage'] as num?)
-                                    ?.toDouble() ??
-                                0.0;
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _buildCourseCard(
-                            title: courseData['title'] ?? '',
-                            teacher: courseData['instructor_name'] ?? '',
-                            progress: progress / 100,
-                            image: courseData['image_url'] ?? '',
-                            isPublished: courseData['is_published'] ?? true,
-                          ),
-                        );
-                      }).toList(),
-                    );
-                  },
-                ),
 
                 const SizedBox(height: 30),
 
@@ -352,7 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.normal,
                                     ),
                                   ),
                                 ],
@@ -509,7 +417,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.normal,
                 color: Colors.white,
               ),
             ),
@@ -622,7 +530,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 value,
                 style: const TextStyle(
                   fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.normal,
                   color: Colors.white,
                 ),
               ),
@@ -684,110 +592,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         title,
         style: const TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.normal,
           color: Colors.white,
         ),
       ),
     );
   }
 
-  Widget _buildCourseCard({
-    required String title,
-    required String teacher,
-    required double progress,
-    required String image,
-    bool isPublished = true,
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.getGlassColor(context),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.getGlassColor(context, opacity: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-                child: Hero(
-                  tag:
-                      'profile_course_image_${title}_$teacher', // Unique enough fallback or better use course ID if available
-                  child: Image.network(
-                    image,
-                    width: 80,
-                    height: 80,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        title,
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        teacher,
-                        textAlign: TextAlign.right,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.7),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: Colors.white.withOpacity(0.2),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            AppColors.primaryPurple,
-                          ),
-                          minHeight: 6,
-                        ),
-                      ),
-                      if (!isPublished)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            'هذه الدورة غير متاحة حاليا',
-                            textAlign: TextAlign.right,
-                            style: TextStyle(
-                              color: Colors.redAccent.withOpacity(0.9),
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildActionButton({
     required IconData icon,
@@ -824,39 +636,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.normal,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCourseTab({
-    required String title,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryPurple : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.white70,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            fontSize: 14,
           ),
         ),
       ),

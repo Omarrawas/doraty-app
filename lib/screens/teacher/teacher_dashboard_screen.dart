@@ -3,9 +3,11 @@ import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 import '../admin/courses_management_screen.dart';
 import 'manage_exams_screen.dart';
 import 'students_results_screen.dart';
+import 'package:intl/intl.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -21,6 +23,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Map<String, dynamic> _stats = {};
   List<Map<String, dynamic>> _recentExams = [];
   List<Map<String, dynamic>> _teacherCourses = [];
+
+  final NumberFormat _currencyFormat =
+      NumberFormat.currency(symbol: 'ل.س ', decimalDigits: 0);
 
   @override
   void initState() {
@@ -43,6 +48,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           exams.where((e) => e['is_published'] == true).length;
       final draftExams = exams.where((e) => e['is_published'] == false).length;
 
+      // Load teacher's statistics
+      final userId = SupabaseService.instance.currentUserId;
+      Map<String, dynamic> teacherStats = {};
+      if (userId != null) {
+        teacherStats = await _db.getTeacherStatistics(userId);
+      }
+
       setState(() {
         _teacherCourses = courses;
         _recentExams = exams.take(5).toList();
@@ -51,6 +63,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           'total_exams': exams.length,
           'published_exams': publishedExams,
           'draft_exams': draftExams,
+          'total_revenue': teacherStats['total_revenue'] ?? 0.0,
+          'total_students': teacherStats['total_users'] ?? 0,
+          'total_attempts': teacherStats['total_attempts'] ?? 0,
         };
         _isLoading = false;
       });
@@ -70,12 +85,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
+      body: DynamicGradientBackground(
         child: SafeArea(
           child: _isLoading
               ? const Center(
@@ -94,27 +104,27 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Header
-                        _buildHeader(),
+                        _buildHeader(context),
 
                         const SizedBox(height: 24),
 
                         // Stats Cards
-                        _buildStatsCards(),
+                        _buildStatsCards(context),
 
                         const SizedBox(height: 24),
 
                         // Quick Actions
-                        _buildQuickActions(),
+                        _buildQuickActions(context),
 
                         const SizedBox(height: 24),
 
                         // Recent Exams
-                        _buildRecentExams(),
+                        _buildRecentExams(context),
 
                         const SizedBox(height: 24),
 
                         // My Courses
-                        _buildMyCourses(),
+                        _buildMyCourses(context),
                       ],
                     ),
                   ),
@@ -124,7 +134,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -136,10 +146,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: AppColors.getGlassColor(context, opacity: 0.2),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
                       width: 1,
                     ),
                   ),
@@ -174,12 +184,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           ],
         ),
         const SizedBox(height: 20),
-        const Text(
+        Text(
           'لوحة تحكم المدرس',
           style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
           ),
         ),
         const SizedBox(height: 8),
@@ -187,38 +197,69 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           'مرحباً بك في لوحة التحكم',
           style: TextStyle(
             fontSize: 16,
-            color: Colors.white.withOpacity(0.95),
+            color: AppColors.getTextColor(context).withOpacity(0.95),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildStatsCards() {
-    return Row(
+  Widget _buildStatsCards(BuildContext context) {
+    return Column(
       children: [
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.school,
-            label: 'الدورات',
-            value: '${_stats['total_courses'] ?? 0}',
-            color: Colors.blue,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                context: context,
+                icon: Icons.payments,
+                label: 'إجمالي الدخل',
+                value: _currencyFormat.format(_stats['total_revenue'] ?? 0),
+                color: Colors.greenAccent,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                context: context,
+                icon: Icons.people,
+                label: 'إجمالي الطلاب',
+                value: '${_stats['total_students'] ?? 0}',
+                color: Colors.orangeAccent,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            icon: Icons.assignment,
-            label: 'الاختبارات',
-            value: '${_stats['total_exams'] ?? 0}',
-            color: Colors.purple,
-          ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                context: context,
+                icon: Icons.school,
+                label: 'الدورات',
+                value: '${_stats['total_courses'] ?? 0}',
+                color: Colors.blue,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                context: context,
+                icon: Icons.assignment,
+                label: 'الاختبارات',
+                value: '${_stats['total_exams'] ?? 0}',
+                color: Colors.purple,
+              ),
+            ),
+          ],
         ),
       ],
     );
   }
 
   Widget _buildStatCard({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required String value,
@@ -231,17 +272,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         child: Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.25),
-                Colors.white.withOpacity(0.15),
-              ],
-            ),
+            color: AppColors.getGlassColor(context, opacity: 0.2),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getGlassColor(context, opacity: 0.3),
               width: 1.5,
             ),
           ),
@@ -258,18 +292,18 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               const SizedBox(height: 12),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
             ],
@@ -279,16 +313,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'إجراءات سريعة',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
           ),
         ),
         const SizedBox(height: 16),
@@ -296,6 +330,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           children: [
             Expanded(
               child: _buildActionCard(
+                context: context,
                 icon: Icons.add_circle,
                 label: 'إنشاء اختبار',
                 color: Colors.green,
@@ -312,6 +347,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
+                context: context,
                 icon: Icons.people,
                 label: 'نتائج الطلاب',
                 color: Colors.orange,
@@ -329,6 +365,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         ),
         const SizedBox(height: 12),
         _buildActionCard(
+          context: context,
           icon: Icons.school,
           label: 'إدارة دوراتي',
           color: Colors.blue,
@@ -349,6 +386,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _buildActionCard({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required Color color,
@@ -381,8 +419,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     Text(
                       label,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -397,19 +435,19 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _buildRecentExams() {
+  Widget _buildRecentExams(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'الاختبارات الأخيرة',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
             TextButton(
@@ -421,26 +459,26 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   ),
                 );
               },
-              child: const Text(
+              child: Text(
                 'عرض الكل',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.getTextColor(context)),
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         if (_recentExams.isEmpty)
-          _buildEmptyState('لا توجد اختبارات')
+          _buildEmptyState(context, 'لا توجد اختبارات')
         else
           ..._recentExams.map((exam) => Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: _buildExamCard(exam),
+                child: _buildExamCard(context, exam),
               )),
       ],
     );
   }
 
-  Widget _buildExamCard(Map<String, dynamic> exam) {
+  Widget _buildExamCard(BuildContext context, Map<String, dynamic> exam) {
     final isPublished = exam['is_published'] as bool? ?? false;
     final courseName = exam['courses']?['title'] ?? 'دورة';
 
@@ -479,8 +517,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   children: [
                     Text(
                       exam['title'] ?? 'اختبار',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context),
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
@@ -489,7 +527,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     Text(
                       courseName,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: AppColors.getTextColor(context).withOpacity(0.9),
                         fontSize: 14,
                       ),
                     ),
@@ -522,21 +560,21 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _buildMyCourses() {
+  Widget _buildMyCourses(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'دوراتي',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
           ),
         ),
         const SizedBox(height: 12),
         if (_teacherCourses.isEmpty)
-          _buildEmptyState('لا توجد دورات مسندة')
+          _buildEmptyState(context, 'لا توجد دورات مسندة')
         else
           ..._teacherCourses.map((tc) {
             final course = tc['courses'] as Map<String, dynamic>?;
@@ -544,14 +582,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: _buildCourseCard(course),
+              child: _buildCourseCard(context, course),
             );
           }),
       ],
     );
   }
 
-  Widget _buildCourseCard(Map<String, dynamic> course) {
+  Widget _buildCourseCard(BuildContext context, Map<String, dynamic> course) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -580,8 +618,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               Expanded(
                 child: Text(
                   course['title'] ?? 'دورة',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context),
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                   ),
@@ -594,7 +632,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _buildEmptyState(String message) {
+  Widget _buildEmptyState(BuildContext context, String message) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -602,10 +640,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         child: Container(
           padding: const EdgeInsets.all(30),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            color: AppColors.getGlassColor(context, opacity: 0.15),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getGlassColor(context, opacity: 0.3),
               width: 1,
             ),
           ),
@@ -614,7 +652,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               message,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.white.withOpacity(0.9),
+                color: AppColors.getTextColor(context).withOpacity(0.9),
               ),
             ),
           ),

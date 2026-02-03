@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 
 class CreateExamScreen extends StatefulWidget {
   final String? examId;
@@ -121,176 +125,207 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
     return Theme(
-      data: AppTheme.adminLightTheme,
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
       child: Scaffold(
-        appBar: AppBar(
-          title: Text(_isEditing ? 'تعديل الاختبار' : 'إنشاء اختبار جديد'),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => Navigator.pop(context),
-          ),
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSectionTitle('معلومات أساسية'),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _titleController,
-                    decoration: const InputDecoration(
-                      labelText: 'عنوان الاختبار',
-                      hintText: 'مثال: اختبار الفصل الأول',
-                      prefixIcon: Icon(Icons.title),
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildGlassContainer(
+                            title: 'معلومات أساسية',
+                            child: Column(
+                              children: [
+                                TextFormField(
+                                  controller: _titleController,
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context)),
+                                  decoration: _inputDecoration(
+                                    label: 'عنوان الاختبار',
+                                    hint: 'مثال: اختبار الفصل الأول',
+                                    icon: Icons.title,
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'الرجاء إدخال عنوان الاختبار';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _descriptionController,
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context)),
+                                  decoration: _inputDecoration(
+                                    label: 'الوصف',
+                                    hint: 'وصف مختصر للاختبار',
+                                    icon: Icons.description_outlined,
+                                  ),
+                                  maxLines: 3,
+                                ),
+                                const SizedBox(height: 16),
+                                _buildCourseDropdown(),
+                                const SizedBox(height: 16),
+                                _buildLessonDropdown(),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildGlassContainer(
+                            title: 'إعدادات الاختبار',
+                            child: Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _durationController,
+                                        style: TextStyle(
+                                            color: AppColors.getTextColor(
+                                                context)),
+                                        decoration: _inputDecoration(
+                                          label: 'المدة (بالدقائق)',
+                                          hint: '60',
+                                          icon: Icons.access_time,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'مطلوب';
+                                          }
+                                          if (int.tryParse(value) == null) {
+                                            return 'رقم غير صحيح';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _totalPointsController,
+                                        style: TextStyle(
+                                            color: AppColors.getTextColor(
+                                                context)),
+                                        decoration: _inputDecoration(
+                                          label: 'إجمالي النقاط',
+                                          hint: '100',
+                                          icon: Icons.grade_outlined,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'مطلوب';
+                                          }
+                                          if (int.tryParse(value) == null) {
+                                            return 'رقم غير صحيح';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _passingScoreController,
+                                        style: TextStyle(
+                                            color: AppColors.getTextColor(
+                                                context)),
+                                        decoration: _inputDecoration(
+                                          label: 'درجة النجاح (%)',
+                                          hint: '60',
+                                          icon: Icons.check_circle_outline,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'مطلوب';
+                                          }
+                                          final score = int.tryParse(value);
+                                          if (score == null ||
+                                              score < 0 ||
+                                              score > 100) {
+                                            return 'من 0 إلى 100';
+                                          }
+                                          return null;
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: TextFormField(
+                                        controller: _maxAttemptsController,
+                                        style: TextStyle(
+                                            color: AppColors.getTextColor(
+                                                context)),
+                                        decoration: _inputDecoration(
+                                          label: 'عدد المحاولات',
+                                          hint: '3',
+                                          icon: Icons.repeat,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          _buildGlassContainer(
+                            title: 'خيارات متقدمة',
+                            child: Column(
+                              children: [
+                                _buildSwitchTile(
+                                  title: 'خلط الأسئلة',
+                                  subtitle: 'عرض الأسئلة بترتيب عشوائي',
+                                  icon: Icons.shuffle,
+                                  value: _shuffleQuestions,
+                                  onChanged: (value) {
+                                    setState(() => _shuffleQuestions = value);
+                                  },
+                                ),
+                                const Divider(color: Colors.white10),
+                                _buildSwitchTile(
+                                  title: 'خلط الخيارات',
+                                  subtitle: 'عرض خيارات الإجابة بترتيب عشوائي',
+                                  icon: Icons.alt_route,
+                                  value: _shuffleOptions,
+                                  onChanged: (value) {
+                                    setState(() => _shuffleOptions = value);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 32),
+
+                          _buildActionButtons(context),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'الرجاء إدخال عنوان الاختبار';
-                      }
-                      return null;
-                    },
                   ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _descriptionController,
-                    decoration: const InputDecoration(
-                      labelText: 'الوصف',
-                      hintText: 'وصف مختصر للاختبار',
-                      prefixIcon: Icon(Icons.description),
-                    ),
-                    maxLines: 3,
-                  ),
-                  const SizedBox(height: 12),
-                  _buildCourseDropdown(),
-                  const SizedBox(height: 12),
-                  _buildLessonDropdown(),
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('إعدادات الاختبار'),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _durationController,
-                          decoration: const InputDecoration(
-                            labelText: 'المدة (بالدقائق)',
-                            hintText: '60',
-                            prefixIcon: Icon(Icons.access_time),
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'مطلوب';
-                            }
-                            if (int.tryParse(value) == null) {
-                              return 'رقم غير صحيح';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _totalPointsController,
-                          decoration: const InputDecoration(
-                            labelText: 'إجمالي النقاط',
-                            hintText: '100',
-                            prefixIcon: Icon(Icons.grade),
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'مطلوب';
-                            }
-                            if (int.tryParse(value) == null) {
-                              return 'رقم غير صحيح';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _passingScoreController,
-                          decoration: const InputDecoration(
-                            labelText: 'درجة النجاح (%)',
-                            hintText: '60',
-                            prefixIcon: Icon(Icons.check_circle),
-                          ),
-                          keyboardType: TextInputType.number,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'مطلوب';
-                            }
-                            final score = int.tryParse(value);
-                            if (score == null || score < 0 || score > 100) {
-                              return 'من 0 إلى 100';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _maxAttemptsController,
-                          decoration: const InputDecoration(
-                            labelText: 'عدد المحاولات',
-                            hintText: '3',
-                            prefixIcon: Icon(Icons.repeat),
-                          ),
-                          keyboardType: TextInputType.number,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _buildSectionTitle('خيارات متقدمة'),
-                  const SizedBox(height: 16),
-                  Card(
-                    child: Column(
-                      children: [
-                        SwitchListTile(
-                          title: const Text('خلط الأسئلة',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: const Text('عرض الأسئلة بترتيب عشوائي'),
-                          value: _shuffleQuestions,
-                          onChanged: (value) {
-                            setState(() => _shuffleQuestions = value);
-                          },
-                          activeColor: AppColors.primaryPurple,
-                        ),
-                        const Divider(height: 1),
-                        SwitchListTile(
-                          title: const Text('خلط الخيارات',
-                              style: TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle:
-                              const Text('عرض خيارات الإجابة بترتيب عشوائي'),
-                          value: _shuffleOptions,
-                          onChanged: (value) {
-                            setState(() => _shuffleOptions = value);
-                          },
-                          activeColor: AppColors.primaryPurple,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  _buildActionButtons(),
-                  const SizedBox(height: 20),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -298,31 +333,154 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
-    return Text(
-      title,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              _isEditing ? 'تعديل الاختبار' : 'إنشاء اختبار جديد',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.normal,
+                color: AppColors.getTextColor(context),
+              ),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  Widget _buildGlassContainer({
+    required String title,
+    required Widget child,
+  }) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.getGlassColor(context, opacity: 0.3),
+              width: 1.5,
+            ),
+          ),
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.normal,
+                  color: AppColors.getTextColor(context),
+                ),
+              ),
+              const SizedBox(height: 16),
+              child,
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({
+    String? label,
+    String? hint,
+    required IconData icon,
+  }) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      prefixIcon: Icon(icon, color: Colors.white70),
+      labelStyle: const TextStyle(color: Colors.white70),
+      hintStyle: const TextStyle(color: Colors.white38),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.05),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+      ),
+    );
+  }
+
+  Widget _buildSwitchTile({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return SwitchListTile(
+      title: Text(title,
+          style: TextStyle(
+              fontWeight: FontWeight.normal,
+              color: AppColors.getTextColor(context))),
+      subtitle: Text(subtitle,
+          style: TextStyle(
+              fontSize: 12,
+              color: AppColors.getTextColor(context).withOpacity(0.6))),
+      secondary: Icon(icon, color: Colors.blueAccent),
+      value: value,
+      onChanged: onChanged,
+      activeColor: Colors.blueAccent,
+      contentPadding: EdgeInsets.zero,
     );
   }
 
   Widget _buildCourseDropdown() {
     return DropdownButtonFormField<String>(
-      value: _selectedCourseId,
-      decoration: const InputDecoration(
-        labelText: 'الدورة',
-        prefixIcon: Icon(Icons.school),
+      dropdownColor: AppColors.primaryPurple,
+      style: TextStyle(color: AppColors.getTextColor(context)),
+      decoration: _inputDecoration(
+        label: 'الدورة',
+        icon: Icons.school_outlined,
       ),
       items: _courses.map((tc) {
-        final course = tc['courses'] as Map<String, dynamic>?;
+        final courseMap = (tc['courses'] as Map<String, dynamic>?) ?? tc;
+        final id = widget.loadAllCourses ? tc['id'] : courseMap['id'];
+        final title = widget.loadAllCourses
+            ? tc['title']
+            : (courseMap['title'] ?? 'دورة');
         return DropdownMenuItem<String>(
-          value: widget.loadAllCourses ? tc['id'] : course?['id'],
-          child: Text(
-            widget.loadAllCourses ? tc['title'] : course?['title'] ?? 'دورة',
-          ),
+          value: id,
+          child: Text(title),
         );
       }).toList(),
       onChanged: (value) {
@@ -334,6 +492,13 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
           _loadLessons(value);
         }
       },
+      value: _courses.any((tc) {
+        final courseMap = (tc['courses'] as Map<String, dynamic>?) ?? tc;
+        final id = widget.loadAllCourses ? tc['id'] : courseMap['id'];
+        return id == _selectedCourseId;
+      })
+          ? _selectedCourseId
+          : null,
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'الرجاء اختيار الدورة';
@@ -347,18 +512,19 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
     if (_selectedCourseId == null) return const SizedBox.shrink();
 
     return DropdownButtonFormField<String>(
-      value: _selectedLessonId,
-      decoration: InputDecoration(
-        labelText: 'الدرس (اختياري)',
-        prefixIcon: const Icon(Icons.book),
+      dropdownColor: AppColors.primaryPurple,
+      style: TextStyle(color: AppColors.getTextColor(context)),
+      decoration: _inputDecoration(
+        label: 'الدرس (اختياري)',
+        icon: Icons.book_outlined,
+      ).copyWith(
         suffixIcon: _isLoadingLessons
-            ? const SizedBox(
+            ? Container(
                 width: 20,
                 height: 20,
-                child: Padding(
-                  padding: EdgeInsets.all(12),
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+                padding: const EdgeInsets.all(12),
+                child: const CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.blueAccent),
               )
             : null,
       ),
@@ -374,46 +540,75 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
           );
         }),
       ],
+      value: (_selectedLessonId == null ||
+              _lessons.any((l) => l['id'] == _selectedLessonId))
+          ? _selectedLessonId
+          : null,
       onChanged: (value) {
         setState(() => _selectedLessonId = value);
       },
     );
   }
 
-  Widget _buildActionButtons() {
+  Widget _buildActionButtons(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => _saveExam(publish: false),
-            icon: const Icon(Icons.save),
-            label: const Text('حفظ كمسودة'),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              foregroundColor: Colors.orange,
-              side: const BorderSide(color: Colors.orange),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.orange.withOpacity(0.5)),
+            ),
+            child: TextButton.icon(
+              onPressed: () => _saveExam(publish: false),
+              icon: const Icon(Icons.save, color: Colors.orangeAccent),
+              label: const Text('حفظ كمسودة',
+                  style: TextStyle(color: Colors.orangeAccent)),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
             ),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: ElevatedButton.icon(
-            onPressed: _isLoading ? null : () => _saveExam(publish: true),
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : Icon(_isEditing ? Icons.check : Icons.publish),
-            label: Text(_isEditing ? 'حفظ التغييرات' : 'حفظ ونشر'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              gradient: const LinearGradient(
+                colors: [Colors.green, Colors.teal],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ElevatedButton.icon(
+              onPressed: _isLoading ? null : () => _saveExam(publish: true),
+              icon: _isLoading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Icon(_isEditing ? Icons.check : Icons.publish,
+                      color: Colors.white),
+              label: Text(_isEditing ? 'حفظ التغييرات' : 'حفظ ونشر',
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.normal)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
             ),
           ),
         ),

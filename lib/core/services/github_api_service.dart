@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
+import '../env/multi_env.dart';
 
 /// Service for interacting with GitHub API to upload files
 class GitHubApiService {
@@ -16,7 +17,7 @@ class GitHubApiService {
   // GitHub token (should be loaded from environment or secure storage)
   final String? _token;
   
-  GitHubApiService({String? token}) : _token = token;
+  GitHubApiService({String? token}) : _token = token ?? Env.githubToken;
   
   /// Upload a file to GitHub repository
   /// 

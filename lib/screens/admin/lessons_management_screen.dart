@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 import 'create_lesson_screen.dart';
 import '../../models/chapter.dart';
 import '../teacher/create_exam_screen.dart';
@@ -92,93 +96,78 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
     return Theme(
-      data: AppTheme.adminLightTheme,
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          title: Column(
-            children: [
-              const Text('دروس الدورة'),
-              Text(
-                widget.courseTitle,
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.normal),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-          actions: [
-            Container(
-              margin: const EdgeInsets.only(right: 16),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.primaryPurple.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${_lessons.length} درس',
-                style: const TextStyle(
-                  color: AppColors.primaryPurple,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: _manageChapters,
-              icon: const Icon(Icons.category, color: AppColors.primaryPurple),
-              tooltip: 'إدارة الفصول',
-            ),
-          ],
-        ),
-        body: _isLoading
-            ? const Center(
-                child:
-                    CircularProgressIndicator(color: AppColors.primaryPurple),
-              )
-            : _lessons.isEmpty
-                ? _buildEmptyState()
-                : RefreshIndicator(
-                    onRefresh: _loadLessons,
-                    child: ReorderableListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _lessons.length,
-                      onReorder: _reorderLessons,
-                      itemBuilder: (context, index) {
-                        final lesson = _lessons[index];
-                        final prevLesson =
-                            index > 0 ? _lessons[index - 1] : null;
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : _lessons.isEmpty
+                          ? _buildEmptyState(context)
+                          : RefreshIndicator(
+                              onRefresh: _loadLessons,
+                              child: ReorderableListView.builder(
+                                padding: const EdgeInsets.all(20),
+                                itemCount: _lessons.length,
+                                onReorder: _reorderLessons,
+                                itemBuilder: (context, index) {
+                                  final lesson = _lessons[index];
+                                  final prevLesson =
+                                      index > 0 ? _lessons[index - 1] : null;
 
-                        // Check if chapter changed to show header
-                        final bool showHeader = index == 0 ||
-                            lesson['chapter_id'] != prevLesson?['chapter_id'];
+                                  // Check if chapter changed to show header
+                                  final bool showHeader = index == 0 ||
+                                      lesson['chapter_id'] !=
+                                          prevLesson?['chapter_id'];
 
-                        // Find chapter info
-                        final chapterId = lesson['chapter_id'];
-                        final chapter = _chapters.firstWhere(
-                          (c) => c.id == chapterId,
-                          orElse: () => Chapter(
-                              id: '',
-                              courseId: widget.courseId,
-                              title: 'دروس أخرى',
-                              orderIndex: 999),
-                        );
+                                  // Find chapter info
+                                  final chapterId = lesson['chapter_id'];
+                                  final chapter = _chapters.firstWhere(
+                                    (c) => c.id == chapterId,
+                                    orElse: () => Chapter(
+                                        id: '',
+                                        courseId: widget.courseId,
+                                        title: 'دروس أخرى',
+                                        orderIndex: 999),
+                                  );
 
-                        return Column(
-                          key: ValueKey(lesson['id']),
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (showHeader) _buildChapterHeader(chapter.title),
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: _buildLessonCard(lesson, index),
+                                  return Column(
+                                    key: ValueKey(lesson['id']),
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      if (showHeader)
+                                        _buildChapterHeader(
+                                            context, chapter.title),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(bottom: 12),
+                                        child: _buildLessonCard(
+                                            context, lesson, index),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
                             ),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
             final result = await Navigator.push(
@@ -192,14 +181,92 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
             if (result == true) _loadLessons();
           },
           backgroundColor: AppColors.primaryPurple,
-          icon: const Icon(Icons.add),
-          label: const Text('إضافة درس'),
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text('إضافة درس',
+              style: TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.normal)),
         ),
       ),
     );
   }
 
-  Widget _buildLessonCard(Map<String, dynamic> lesson, int index) {
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'دروس الدورة',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.normal,
+                    color: AppColors.getTextColor(context),
+                  ),
+                ),
+                Text(
+                  widget.courseTitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.getTextColor(context).withOpacity(0.7),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
+                  onPressed: _manageChapters,
+                  icon: const Icon(Icons.category, color: Colors.white),
+                  tooltip: 'إدارة الفصول',
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLessonCard(
+      BuildContext context, Map<String, dynamic> lesson, int index) {
     final isFree = lesson['is_free'] as bool? ?? false;
     int durationInSeconds = 0;
     final durationData = lesson['duration'];
@@ -220,213 +287,269 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     }
     final minutes = (durationInSeconds / 60).round();
 
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryPurple.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(
-                      color: AppColors.primaryPurple,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        lesson['title'] ?? 'درس',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time,
-                              color: AppColors.textSecondary, size: 14),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$minutes دقيقة',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                if (isFree)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green, width: 1),
-                    ),
-                    child: const Text(
-                      'مجاني',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-              ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.getGlassColor(context, opacity: 0.3),
+              width: 1.5,
             ),
-            if (lesson['description'] != null &&
-                lesson['description'].toString().isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                lesson['description'],
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-            ],
-            const SizedBox(height: 12),
-
-            // Exams Section
-            if (_exams.any((e) => e['lesson_id'] == lesson['id'])) ...[
-              const Divider(),
-              const Text(
-                'الاختبارات:',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ..._exams
-                  .where((e) => e['lesson_id'] == lesson['id'])
-                  .map((exam) {
-                return InkWell(
-                  onTap: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ManageQuestionsScreen(
-                          examId: exam['id'],
-                          examTitle: exam['title'],
-                        ),
-                      ),
-                    );
-                    if (result == true) _loadLessons();
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(8),
+          ),
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.orange.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.withOpacity(0.2)),
+                      color: AppColors.primaryPurple.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Row(
+                    child: Text(
+                      '${index + 1}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(Icons.assignment,
-                            size: 16, color: Colors.orange),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            exam['title'] ?? 'اختبار',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
+                        Text(
+                          lesson['title'] ?? 'درس',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.normal,
+                            color: AppColors.getTextColor(context),
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const Icon(Icons.chevron_right,
-                            size: 16, color: AppColors.textLight),
+                        Row(
+                          children: [
+                            Icon(Icons.access_time,
+                                color: AppColors.getTextColor(context)
+                                    .withOpacity(0.7),
+                                size: 14),
+                            const SizedBox(width: 4),
+                            Text(
+                              '$minutes دقيقة',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.getTextColor(context)
+                                    .withOpacity(0.7),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
-                );
-              }),
-            ],
-
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CreateLessonScreen(
-                            courseId: widget.courseId,
-                            lessonId: lesson['id'],
-                            lessonData: lesson,
-                          ),
+                  if (isFree)
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: Colors.green.withOpacity(0.5), width: 1),
+                      ),
+                      child: const Text(
+                        'مجاني',
+                        style: TextStyle(
+                          color: Colors.greenAccent,
+                          fontSize: 11,
+                          fontWeight: FontWeight.normal,
                         ),
-                      );
-                      if (result == true) _loadLessons();
-                    },
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('تعديل'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CreateExamScreen(
-                            initialCourseId: widget.courseId,
-                            lessonId: lesson['id'],
-                            loadAllCourses: true,
-                          ),
-                        ),
-                      );
-                      if (result == true) _loadLessons();
-                    },
-                    icon: const Icon(Icons.add_task,
-                        size: 18, color: Colors.orange),
-                    label: const Text('إضافة اختبار',
-                        style: TextStyle(color: Colors.orange)),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.orange),
+                      ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  onPressed: () => _deleteLesson(lesson),
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.red.withOpacity(0.1),
+                ],
+              ),
+              if (lesson['description'] != null &&
+                  lesson['description'].toString().isNotEmpty) ...[
+                const SizedBox(height: 12),
+                Text(
+                  lesson['description'],
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: AppColors.getTextColor(context).withOpacity(0.85),
                   ),
                 ),
               ],
+              const SizedBox(height: 16),
+
+              // Exams Section
+              if (_exams.any((e) => e['lesson_id'] == lesson['id'])) ...[
+                const Divider(color: Colors.white12),
+                const Text(
+                  'الاختبارات:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.normal,
+                    color: Colors.orangeAccent,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ..._exams
+                    .where((e) => e['lesson_id'] == lesson['id'])
+                    .map((exam) {
+                  return InkWell(
+                    onTap: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ManageQuestionsScreen(
+                            examId: exam['id'],
+                            examTitle: exam['title'],
+                          ),
+                        ),
+                      );
+                      if (result == true) _loadLessons();
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border:
+                            Border.all(color: Colors.orange.withOpacity(0.2)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.assignment,
+                              size: 16, color: Colors.orangeAccent),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              exam['title'] ?? 'اختبار',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.white,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right,
+                              size: 16, color: Colors.white54),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              ],
+
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildActionButton(
+                      context: context,
+                      icon: Icons.edit,
+                      label: 'تعديل',
+                      color: Colors.blue,
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CreateLessonScreen(
+                              courseId: widget.courseId,
+                              lessonId: lesson['id'],
+                              lessonData: lesson,
+                            ),
+                          ),
+                        );
+                        if (result == true) _loadLessons();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _buildActionButton(
+                      context: context,
+                      icon: Icons.add_task,
+                      label: 'إضافة اختبار',
+                      color: Colors.orange,
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CreateExamScreen(
+                              initialCourseId: widget.courseId,
+                              lessonId: lesson['id'],
+                              loadAllCourses: true,
+                            ),
+                          ),
+                        );
+                        if (result == true) _loadLessons();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => _deleteLesson(lesson),
+                    icon: const Icon(Icons.delete, color: Colors.redAccent),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.red.withOpacity(0.15),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        decoration: BoxDecoration(
+          color: (color ?? AppColors.primaryPurple).withOpacity(0.2),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: (color ?? AppColors.primaryPurple).withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: color ?? Colors.white),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                label,
+                style: TextStyle(
+                  color: color ?? Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),
@@ -434,35 +557,55 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.video_library, color: AppColors.textLight, size: 64),
-          SizedBox(height: 16),
-          Text(
-            'لا توجد دروس',
-            style: TextStyle(
-              fontSize: 18,
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.bold,
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(30),
+              decoration: BoxDecoration(
+                color: AppColors.getGlassColor(context, opacity: 0.15),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                    color: AppColors.getGlassColor(context, opacity: 0.3),
+                    width: 1),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.video_library,
+                      color: AppColors.getTextColor(context), size: 64),
+                  const SizedBox(height: 16),
+                  Text(
+                    'لا توجد دروس',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: AppColors.getTextColor(context).withOpacity(0.8),
+                      fontWeight: FontWeight.normal,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'ابدأ بإضافة الدرس الأول',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: AppColors.getTextColor(context).withOpacity(0.6),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          SizedBox(height: 8),
-          Text(
-            'ابدأ بإضافة الدرس الأول',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textLight,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildChapterHeader(String title) {
+  Widget _buildChapterHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       child: Row(
@@ -471,8 +614,15 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
             width: 4,
             height: 24,
             decoration: BoxDecoration(
-              color: AppColors.primaryPurple,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: 1,
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 12),
@@ -480,8 +630,8 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
             title,
             style: const TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryPurple,
+              fontWeight: FontWeight.normal,
+              color: Colors.white,
             ),
           ),
         ],

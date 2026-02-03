@@ -106,7 +106,7 @@ class _CourseCardState extends State<CourseCard>
                             widget.course.getLocalizedTitle(locale),
                             style: const TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.normal,
                               color: Colors.white,
                             ),
                             maxLines: 2,
@@ -141,7 +141,7 @@ class _CourseCardState extends State<CourseCard>
                                           style: const TextStyle(
                                             fontSize: 11,
                                             color: Colors.white,
-                                            fontWeight: FontWeight.w600,
+                                            fontWeight: FontWeight.normal,
                                           ),
                                         ),
                                       ))

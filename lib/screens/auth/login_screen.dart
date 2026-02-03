@@ -193,11 +193,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   icon: Icons.g_mobiledata,
                                   onTap: _handleGoogleLogin,
                                 ),
-                                const SizedBox(width: 20),
-                                _buildSocialButton(
-                                  icon: Icons.facebook,
-                                  onTap: () {},
-                                ),
                               ],
                             ),
 

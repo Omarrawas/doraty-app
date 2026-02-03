@@ -9,10 +9,12 @@ import 'package:audioplayers/audioplayers.dart';
 
 class ExamTakingScreen extends StatefulWidget {
   final Exam exam;
+  final VoidCallback? onCompleted;
 
   const ExamTakingScreen({
     super.key,
     required this.exam,
+    this.onCompleted,
   });
 
   @override
@@ -263,6 +265,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
             builder: (context) => ExamResultScreen(
               exam: completedExam,
               userAnswers: _answers,
+              onFinish: widget.onCompleted,
             ),
           ),
         );

@@ -24,9 +24,6 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'dart:ui';
 import 'dart:io';
 import 'dart:math' as math; 
-import '../../models/flashcard.dart';
-import '../../core/services/ai_service.dart';
-import 'flashcards_screen.dart';
 
 import '../../core/services/supabase_service.dart';
 import '../../core/services/offline_storage_service.dart';
@@ -34,18 +31,19 @@ import '../../widgets/lesson/video_player_controls.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
-import 'ai_assistant_screen.dart';
 
 class LessonScreen extends StatefulWidget {
   final Lesson lesson;
   final List<Lesson> allLessons;
   final String courseTitle;
+  final bool isEnrolled;
 
   const LessonScreen({
     super.key,
     required this.lesson,
     this.allLessons = const [],
     this.courseTitle = '',
+    this.isEnrolled = false,
   });
 
   @override
@@ -59,6 +57,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
   
   final TextEditingController _questionController = TextEditingController();
+  final DatabaseService _db = DatabaseService.instance;
 
   // Video
   bool _isYoutube = false;
@@ -76,7 +75,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   // Refactor: Futures for DB calls
   Future<List<Map<String, dynamic>>>? _notesFuture;
   Future<List<Map<String, dynamic>>>? _examsFuture;
-  Future<List<Flashcard>>? _flashcardsFuture;
   List<LessonQuestion>? _questionsList;
   final ScrollController _mainScrollController = ScrollController();
 
@@ -227,23 +225,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           }
         });
         _examsFuture = DatabaseService().getExamsForLesson(widget.lesson.id);
-        _flashcardsFuture = _getFlashcards();
       });
     }
   }
 
-  Future<List<Flashcard>> _getFlashcards() async {
-    final userId = SupabaseService.instance.currentUserId;
-    if (userId == null) return [];
-
-    final response = await SupabaseService.instance.client
-        .from('flashcards')
-        .select()
-        .eq('lesson_id', widget.lesson.id)
-        .eq('user_id', userId);
-
-    return (response as List).map((json) => Flashcard.fromJson(json)).toList();
-  }
 
   Future<void> _deleteNote(String noteId) async {
     final confirmed = await showDialog<bool>(
@@ -677,7 +662,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                             ),
                             indicatorSize: TabBarIndicatorSize.tab,
                             labelColor: Colors.white,
-                            unselectedLabelColor: Colors.white60,
+                            unselectedLabelColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white60
+                                    : Colors.black54,
                             labelStyle: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
@@ -774,16 +762,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         bottomNavigationBar: _buildNavigationButtons(),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            showModalBottomSheet(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (context) => DraggableScrollableSheet(
-                initialChildSize: 0.9,
-                minChildSize: 0.5,
-                maxChildSize: 0.95,
-                builder: (_, controller) =>
-                    AIAssistantScreen(lesson: widget.lesson),
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(_t('ai_assistant_coming_soon'),
+                    textAlign: TextAlign.right),
+                backgroundColor: AppColors.primaryPurple,
               ),
             );
           },
@@ -1083,36 +1066,25 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           const SizedBox(height: 20),
         ],
 
-        // AI Flashcards Section
-        FutureBuilder<List<Flashcard>>(
-          future: _flashcardsFuture,
-          builder: (context, snapshot) {
-            final cards = snapshot.data ?? [];
-            final bool hasCards = cards.isNotEmpty;
-            final bool isLoading =
-                snapshot.connectionState == ConnectionState.waiting;
-
-            return _buildInteractiveCard(
-              title: _t('flashcards_tab'),
-              description: _t('flashcards_desc'),
-              icon: Icons.style_outlined,
-              buttonLabel: isLoading
-                  ? _t('loading')
-                  : (hasCards
-                      ? _t('review_flashcards')
-                      : _t('generate_flashcards')),
-              isLoading: isLoading,
-              onTap: isLoading
-                  ? null
-                  : (hasCards
-                      ? () => _openFlashcards(cards)
-                      : _generateFlashcards),
-              isAIGenerated: true,
+        // AI Flashcards Section (Placeholder)
+        _buildInteractiveCard(
+          title: _t('flashcards_tab'),
+          description: _t('ai_assistant_coming_soon'),
+          icon: Icons.style_outlined,
+          buttonLabel: _t('discussions_coming_soon'),
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(_t('ai_assistant_coming_soon'),
+                    textAlign: TextAlign.right),
+                backgroundColor: AppColors.primaryPurple,
+              ),
             );
           },
+          isAIGenerated: true,
         ),
 
-        if (!_hasInteractiveContent() && (_flashcardsFuture == null))
+        if (!_hasInteractiveContent())
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1238,50 +1210,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     );
   }
 
-  void _openFlashcards(List<Flashcard> cards) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => FlashcardsScreen(
-          lesson: widget.lesson,
-          initialCards: cards,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _generateFlashcards() async {
-    try {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_t('generating_flashcards'))),
-      );
-
-      final cards = await AIService().generateFlashcards(widget.lesson);
-      await AIService().saveFlashcards(cards);
-
-      setState(() {
-        _flashcardsFuture = _getFlashcards();
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_t('flashcards_generated_success'))),
-        );
-
-        // Wait a bit for DB sync then open
-        final loadedCards = await _flashcardsFuture;
-        if (loadedCards != null && loadedCards.isNotEmpty) {
-          _openFlashcards(loadedCards);
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ أثناء إنشاء البطاقات: $e')),
-        );
-      }
-    }
-  }
 
 
   IconData _getResourceIcon(String fileName) {
@@ -2563,6 +2491,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                             lesson: widget.allLessons[currentIndex - 1],
                             allLessons: widget.allLessons,
                             courseTitle: widget.courseTitle,
+                            isEnrolled: widget.isEnrolled,
                           ),
                         ),
                       );
@@ -2578,24 +2507,133 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                   icon: Icons.arrow_forward_ios,
                   isPrimary: true,
                   onTap: () async {
-                    await _saveProgressBeforeExit();
-                    if (mounted) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => LessonScreen(
-                            lesson: widget.allLessons[currentIndex + 1],
-                            allLessons: widget.allLessons,
-                            courseTitle: widget.courseTitle,
+                    final nextLesson = widget.allLessons[currentIndex + 1];
+
+                    // Check if user has access to next lesson
+                    if (!widget.isEnrolled && !nextLesson.isFree) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(_t('must_subscribe'),
+                                textAlign: TextAlign.right),
+                            backgroundColor: Colors.orange,
                           ),
-                        ),
-                      );
+                        );
+                      }
+                      return;
+                    }
+
+                    await _saveProgressBeforeExit();
+                    if (!mounted) return;
+
+                    // CHECK FOR EXAMS GATING
+                    final examsResult =
+                        await _db.getExamsForLesson(widget.lesson.id);
+
+                    if (examsResult.isNotEmpty) {
+                      final examData = examsResult.first;
+                      final attempts = examData['attempts'] as List?;
+                      final bool hasPassed = attempts != null &&
+                          attempts.any((a) => a['is_passed'] == true);
+
+                      if (hasPassed) {
+                        _goToNextLesson(nextLesson);
+                      } else {
+                        // User hasn't passed the exam yet
+                        if (mounted) {
+                          _showExamRequirementDialog(examData, nextLesson);
+                        }
+                      }
+                    } else {
+                      // No exam for this lesson - show info and move on
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(_t('no_exam_at_all'),
+                                textAlign: TextAlign.right),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                        _goToNextLesson(nextLesson);
+                      }
                     }
                   },
                 ),
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _goToNextLesson(Lesson nextLesson) {
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LessonScreen(
+          lesson: nextLesson,
+          allLessons: widget.allLessons,
+          courseTitle: widget.courseTitle,
+          isEnrolled: widget.isEnrolled,
+        ),
+      ),
+    );
+  }
+
+  void _showExamRequirementDialog(
+      Map<String, dynamic> examData, Lesson nextLesson) {
+    final exam = Exam.fromJson(examData);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.primaryPurple,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          _t('must_take_exam'),
+          textAlign: TextAlign.right,
+          style:
+              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'يجب إكمال واجتياز اختبار "${exam.title}" للانتقال للدرس التالي.',
+          textAlign: TextAlign.right,
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(_t('cancel'),
+                style: const TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ExamTakingScreen(
+                    exam: exam,
+                    onCompleted: () {
+                      // When exam is finished, go back to this lesson screen
+                      // or directly to the next one if they passed?
+                      // The current ExamResultScreen returns to lesson.
+                      // If they pass, they can click 'Next' again.
+                    },
+                  ),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.white,
+              foregroundColor: AppColors.primaryPurple,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(_t('start_exam')),
+          ),
+        ],
       ),
     );
   }

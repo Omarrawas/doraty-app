@@ -36,4 +36,7 @@ abstract class Env {
       defaultValue:
           '535436798827-23an8ocpmvq3aj0ad8v426nqqid0vf14.apps.googleusercontent.com')
   static const String googleAndroidClientId = _Env.googleAndroidClientId;
+
+  @EnviedField(varName: 'GITHUB_TOKEN', defaultValue: '')
+  static const String githubToken = _Env.githubToken;
 }

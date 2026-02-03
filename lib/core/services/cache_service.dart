@@ -187,14 +187,31 @@ Future<T> fetchWithCache<T>({
   }
 
   // 3. Fetch from source if not found or forced
-  debugPrint('🌐 Fetching from source: $key');
-  final data = await fetcher();
-  
-  // 4. Update both caches
-  cache.set(key, data, duration: duration);
-  await offlineCache.cacheUserData(key, data);
-  
-  return data;
+  try {
+    debugPrint('🌐 Fetching from source: $key');
+    final data = await fetcher();
+
+    // 4. Update both caches
+    cache.set(key, data, duration: duration);
+    await offlineCache.cacheUserData(key, data);
+
+    return data;
+  } catch (e) {
+    debugPrint('❌ Network fetch failed for: $key ($e)');
+
+    // 5. CRITICAL: On failure, search persistent cache AGAIN even if duration expired
+    // but we only reach here if step 2 failed (expired/not found) or forceRefresh was true
+    try {
+      final fallbackData = await offlineCache.getCachedUserData(key);
+      if (fallbackData != null) {
+        debugPrint('📦 Fallback to persistent cache for: $key');
+        return fallbackData as T;
+      }
+    } catch (_) {}
+
+    // If no cache, rethrow relative to the original error
+    rethrow;
+  }
 }
 
 /// Helper for background fetching without blocking the UI

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/image_upload_service.dart';
 import '../../core/utils/string_utils.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 
 class TeachersManagementScreen extends StatefulWidget {
   const TeachersManagementScreen({super.key});
@@ -73,47 +78,50 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      )
-                    : _teachers.isEmpty
-                        ? _buildEmptyState()
-                        : RefreshIndicator(
-                            onRefresh: _loadData,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(20),
-                              itemCount: _teachers.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
-                                  child: _buildTeacherCard(_teachers[index]),
-                                );
-                              },
-                            ),
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
+    return Theme(
+      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
+      child: Scaffold(
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(
+                  child: _isLoading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
-              ),
-            ],
+                        )
+                      : _teachers.isEmpty
+                          ? _buildEmptyState(context)
+                          : RefreshIndicator(
+                              onRefresh: _loadData,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.all(20),
+                                itemCount: _teachers.length,
+                                itemBuilder: (context, index) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(bottom: 12),
+                                    child: _buildTeacherCard(
+                                        context, _teachers[index]),
+                                  );
+                                },
+                              ),
+                            ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -124,10 +132,11 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: Colors.white.withOpacity(0.3), width: 1),
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -137,27 +146,27 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
             ),
           ),
           const SizedBox(width: 16),
-          const Expanded(
+          Expanded(
             child: Text(
               'إدارة المدرسين',
               style: TextStyle(
                 fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+                fontWeight: FontWeight.normal,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppColors.getGlassColor(context, opacity: 0.2),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
               '${_teachers.length} مدرس',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
+              style: TextStyle(
+                color: AppColors.getTextColor(context),
+                fontWeight: FontWeight.normal,
               ),
             ),
           ),
@@ -166,7 +175,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
     );
   }
 
-  Widget _buildTeacherCard(Map<String, dynamic> teacher) {
+  Widget _buildTeacherCard(BuildContext context, Map<String, dynamic> teacher) {
     final user = teacher['users'] as Map<String, dynamic>?;
     final teacherCourses = teacher['teacher_courses'] as List? ?? [];
     final teacherId = user?['id'] ?? '';
@@ -178,17 +187,11 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.25),
-                Colors.white.withOpacity(0.15),
-              ],
-            ),
+            color: AppColors.getGlassColor(context, opacity: 0.2),
             borderRadius: BorderRadius.circular(20),
-            border:
-                Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
+            border: Border.all(
+                color: AppColors.getGlassColor(context, opacity: 0.3),
+                width: 1.5),
           ),
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -217,17 +220,18 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                           Text(
                             StringUtils.cleanTeacherName(
                                 user?['full_name'] ?? 'مدرس'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              fontWeight: FontWeight.normal,
+                              color: AppColors.getTextColor(context),
                             ),
                           ),
                           Text(
                             user?['email'] ?? '',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withOpacity(0.7),
+                              color: AppColors.getTextColor(context)
+                                  .withOpacity(0.7),
                             ),
                           ),
                         ],
@@ -248,7 +252,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                             style: const TextStyle(
                               color: Color.fromARGB(255, 250, 250, 250),
                               fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.normal,
                             ),
                           ),
                         ),
@@ -259,12 +263,13 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: AppColors.getGlassColor(context,
+                                  opacity: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.edit,
-                              color: Colors.white,
+                              color: AppColors.getTextColor(context),
                               size: 18,
                             ),
                           ),
@@ -281,17 +286,18 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: AppColors.getGlassColor(context, opacity: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.2),
+                        color: AppColors.getGlassColor(context, opacity: 0.2),
                         width: 1,
                       ),
                     ),
                     child: Text(
                       user['bio'],
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.85),
+                        color:
+                            AppColors.getTextColor(context).withOpacity(0.85),
                         fontSize: 13,
                         height: 1.4,
                       ),
@@ -312,10 +318,10 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: AppColors.getGlassColor(context, opacity: 0.15),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: AppColors.getGlassColor(context, opacity: 0.3),
                           width: 1,
                         ),
                       ),
@@ -325,16 +331,16 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                             isExpanded
                                 ? Icons.keyboard_arrow_up
                                 : Icons.keyboard_arrow_down,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                             size: 20,
                           ),
                           const SizedBox(width: 8),
                           Text(
                             'الدورات المرتبطة (${teacherCourses.length})',
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppColors.getTextColor(context),
                               fontSize: 13,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.normal,
                             ),
                           ),
                         ],
@@ -351,18 +357,21 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color:
+                                AppColors.getGlassColor(context, opacity: 0.15),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.2),
+                              color: AppColors.getGlassColor(context,
+                                  opacity: 0.2),
                               width: 1,
                             ),
                           ),
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.book,
-                                color: Colors.white70,
+                                color: AppColors.getTextColor(context,
+                                    secondary: true),
                                 size: 16,
                               ),
                               const SizedBox(width: 8),
@@ -406,6 +415,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                 const SizedBox(height: 16),
                 // Add course button
                 _buildActionButton(
+                  context: context,
                   icon: Icons.add,
                   label: 'ربط بدورة جديدة',
                   onTap: () => _showAssignCourseDialog(user?['id']),
@@ -419,6 +429,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
   }
 
   Widget _buildActionButton({
+    required BuildContext context,
     required IconData icon,
     required String label,
     required VoidCallback onTap,
@@ -431,10 +442,11 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppColors.getGlassColor(context, opacity: 0.2),
               borderRadius: BorderRadius.circular(12),
-              border:
-                  Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+              border: Border.all(
+                  color: AppColors.getGlassColor(context, opacity: 0.3),
+                  width: 1),
             ),
             child: Material(
               color: Colors.transparent,
@@ -446,14 +458,15 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(icon, color: Colors.white, size: 18),
+                      Icon(icon,
+                          color: AppColors.getTextColor(context), size: 18),
                       const SizedBox(width: 6),
                       Text(
                         label,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.getTextColor(context),
                           fontSize: 14,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.normal,
                         ),
                       ),
                     ],
@@ -467,7 +480,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -478,22 +491,24 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
             child: Container(
               padding: const EdgeInsets.all(30),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: AppColors.getGlassColor(context, opacity: 0.15),
                 borderRadius: BorderRadius.circular(16),
-                border:
-                    Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                border: Border.all(
+                    color: AppColors.getGlassColor(context, opacity: 0.3),
+                    width: 1),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.school, color: Colors.white, size: 64),
+                  Icon(Icons.school,
+                      color: AppColors.getTextColor(context), size: 64),
                   const SizedBox(height: 16),
                   Text(
                     'لا يوجد مدرسون',
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.white.withOpacity(0.8),
-                      fontWeight: FontWeight.bold,
+                      color: AppColors.getTextColor(context).withOpacity(0.8),
+                      fontWeight: FontWeight.normal,
                     ),
                   ),
                 ],
@@ -566,6 +581,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
     final avatarController =
         TextEditingController(text: user['avatar_url'] ?? '');
     final bioController = TextEditingController(text: user['bio'] ?? '');
+    bool isAvatarUploading = false;
 
     showDialog(
       context: context,
@@ -635,22 +651,73 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   style: TextStyle(color: Colors.white70, fontSize: 12),
                 ),
                 const SizedBox(height: 4),
-                TextField(
-                  controller: avatarController,
-                  style: const TextStyle(color: Colors.white),
-                  keyboardType: TextInputType.url,
-                  decoration: InputDecoration(
-                    hintText: 'https://example.com/image.jpg',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                    filled: true,
-                    fillColor: Colors.white.withOpacity(0.1),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: avatarController,
+                        style: const TextStyle(color: Colors.white),
+                        keyboardType: TextInputType.url,
+                        decoration: InputDecoration(
+                          hintText: 'https://example.com/image.jpg',
+                          hintStyle:
+                              TextStyle(color: Colors.white.withOpacity(0.5)),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.1),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(Icons.link,
+                              color: Colors.white54, size: 20),
+                        ),
+                      ),
                     ),
-                    prefixIcon:
-                        const Icon(Icons.link, color: Colors.white54, size: 20),
-                  ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: () async {
+                        setState(() => isAvatarUploading = true);
+                        try {
+                          final imageService = ImageUploadService();
+                          final imageFile = await imageService.pickImage();
+                          if (imageFile != null) {
+                            final url = await imageService.uploadImageToGitHub(
+                              imageFile,
+                              folder: 'images/teachers',
+                            );
+                            avatarController.text = url;
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('خطأ في الرفع: $e'),
+                                  backgroundColor: Colors.red),
+                            );
+                          }
+                        } finally {
+                          setState(() => isAvatarUploading = false);
+                        }
+                      },
+                      icon: isAvatarUploading
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.add_a_photo),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.primaryPurple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 Text(
