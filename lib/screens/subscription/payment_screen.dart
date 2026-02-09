@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/error_utils.dart';
 import '../../models/payment_account.dart';
 import '../../services/payment_service.dart' as service;
 import '../../models/course.dart';
+import '../payment/qr_scanner_screen.dart';
 
 class PaymentScreen extends StatefulWidget {
   final Course? course;
@@ -43,9 +45,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       final accounts = await dbService.getPaymentAccounts();
       
       setState(() {
-        _paymentAccounts = accounts
-            .map((json) => PaymentAccount.fromJson(json))
-            .toList();
+        _paymentAccounts = accounts;
         _isLoadingAccounts = false;
       });
     } catch (e) {
@@ -128,7 +128,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ: $e'),
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -196,6 +196,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildPlanSummary(),
+                            const SizedBox(height: 24),
+                            _buildScanQrCard(),
                             const SizedBox(height: 24),
                             const Text(
                               'اختر طريقة الدفع',
@@ -703,6 +705,85 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScanQrCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.purple.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.purple.withOpacity(0.5),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.qr_code_scanner, color: Colors.white, size: 28),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'هل لديك كود تفعيل؟',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'امسح رمز QR لتفعيل الدورة مباشرة',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QrScannerScreen(),
+                      ),
+                    );
+
+                    if (result == true && mounted) {
+                      // Success, maybe close payment screen or referesh
+                      Navigator.pop(context, true);
+                    }
+                  },
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('اشحن بالكود (QR)'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.purple,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

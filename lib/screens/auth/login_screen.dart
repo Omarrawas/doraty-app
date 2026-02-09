@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/supabase_service.dart';
+import '../../core/services/screen_security_service.dart';
 import 'register_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/utils/error_utils.dart';
 import '../../main.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -385,6 +387,11 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
+        // Apply screen security based on user role
+        await _applyScreenSecurity();
+      }
+        
+      if (mounted) {
         // Navigate to main screen
         Navigator.pushReplacement(
           context,
@@ -403,6 +410,32 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _applyScreenSecurity() async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return;
+
+      // Check if user is admin
+      final response = await SupabaseService.instance.client
+          .from('user_roles')
+          .select('roles(name)')
+          .eq('user_id', userId);
+
+      final roles = response as List;
+      final isAdmin = roles.any((role) {
+        final roleData = role['roles'] as Map<String, dynamic>?;
+        return roleData?['name'] == 'admin';
+      });
+
+      // Apply screen security based on role and app settings
+      await ScreenSecurityService().applySecurityPolicy(isAdmin: isAdmin);
+    } catch (e) {
+      debugPrint('⚠️ Error applying screen security: $e');
+      // On error, enable security by default for safety
+      await ScreenSecurityService().enableScreenSecurity();
+    }
+  }
+
   Future<void> _handleGoogleLogin() async {
     setState(() {
       _isLoading = true;
@@ -412,6 +445,11 @@ class _LoginScreenState extends State<LoginScreen> {
       final authService = AuthService();
       await authService.signInWithGoogle();
 
+      if (mounted) {
+        // Apply screen security based on user role
+        await _applyScreenSecurity();
+      }
+        
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -433,31 +471,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   String _getErrorMessage(Object error) {
-    if (error is AuthException) {
-      // Check for specific Supabase auth errors
-      if (error.message.contains('Invalid login credentials') ||
-          error.message.contains('invalid_credentials')) {
-        return 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-      }
-      if (error.message.contains('Email not confirmed')) {
-        return 'الرجاء تأكيد البريد الإلكتروني الخاص بك من خلال الرابط المرسل إليك';
-      }
-      if (error.message.contains('User not found')) {
-        return 'لا يوجد حساب بهذا البريد الإلكتروني';
-      }
-      // General auth error
-      return 'حدث خطأ في المصادقة: ${error.message}';
-    }
-
-    // Check for network errors (generic check since we might not import dart:io directly if not needed, but robust enough)
-    final errorString = error.toString().toLowerCase();
-    if (errorString.contains('socketexception') ||
-        errorString.contains('network') ||
-        errorString.contains('connection')) {
-      return 'تأكد من اتصالك بالإنترنت وحاول مرة أخرى';
-    }
-
-    return 'حدث خطأ غير متوقع: $error';
+    return ErrorUtils.getFriendlyErrorMessage(error);
   }
 
   void _showErrorSnackBar(String message) {

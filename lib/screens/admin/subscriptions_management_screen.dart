@@ -6,8 +6,13 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/string_utils.dart';
+import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:flutter/services.dart';
 import 'course_enrollments_screen.dart';
 import 'teacher_enrollment_stats_screen.dart';
 
@@ -25,14 +30,16 @@ class _SubscriptionsManagementScreenState
   final NumberFormat _currencyFormat =
       NumberFormat.currency(symbol: 'ل.س ', decimalDigits: 0);
 
-  List<Map<String, dynamic>> _enrollments = [];
+
   List<Map<String, dynamic>> _coursesGrouped = [];
   List<Map<String, dynamic>> _teachersGrouped = [];
   Map<String, dynamic> _stats = {};
   bool _isLoading = true;
   String _searchQuery = '';
   final String _selectedStatus = 'all';
-  int _selectedTabIndex = 0; // 0: All, 1: By Course, 2: By Teacher
+  int _selectedTabIndex = 0; // 0: By Course, 1: By Teacher
+  DateTime? _selectedMonth;
+  int? _selectedYear;
 
   @override
   void initState() {
@@ -44,17 +51,48 @@ class _SubscriptionsManagementScreenState
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      final enrollments = await _db.getAllEnrollments(
+      DateTime? startDate;
+      DateTime? endDate;
+
+      if (_selectedMonth != null) {
+        startDate = DateTime(_selectedMonth!.year, _selectedMonth!.month, 1);
+        endDate = DateTime(_selectedMonth!.year, _selectedMonth!.month + 1, 1);
+      } else if (_selectedYear != null) {
+        startDate = DateTime(_selectedYear!, 1, 1);
+        endDate = DateTime(_selectedYear! + 1, 1, 1);
+      }
+
+      Map<String, dynamic> stats;
+      if (_selectedMonth != null || _selectedYear != null) {
+        final report = await _db.getDetailedFinancialReport(
+          startDate: startDate,
+          endDate: endDate,
+        );
+        stats = {
+          'total_revenue': report['total_revenue'],
+          'active_subscriptions': report['total_enrollments'],
+          'monthly_revenue': report['total_revenue'],
+          'total_enrollments': report['total_enrollments'],
+        };
+      } else {
+        stats = await _db.getSubscriptionStats();
+      }
+      final coursesGrouped = await _db.getEnrollmentsGroupedByCourse(
         status: _selectedStatus,
         searchQuery: _searchQuery,
+        startDate: startDate,
+        endDate: endDate,
       );
-      final stats = await _db.getSubscriptionStats();
-      final coursesGrouped = await _db.getEnrollmentsGroupedByCourse();
-      final teachersGrouped = await _db.getEnrollmentsGroupedByTeacher();
+      final teachersGrouped = await _db.getEnrollmentsGroupedByTeacher(
+        status: _selectedStatus,
+        searchQuery: _searchQuery,
+        startDate: startDate,
+        endDate: endDate,
+      );
 
       if (!mounted) return;
       setState(() {
-        _enrollments = enrollments;
+
         _stats = stats;
         _coursesGrouped = coursesGrouped;
         _teachersGrouped = teachersGrouped;
@@ -64,7 +102,10 @@ class _SubscriptionsManagementScreenState
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -107,15 +148,6 @@ class _SubscriptionsManagementScreenState
 
   Widget _buildMainContent() {
     if (_selectedTabIndex == 0) {
-      if (_enrollments.isEmpty) return _buildEmptyState();
-      return ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: _enrollments.length,
-        itemBuilder: (context, index) {
-          return _buildEnrollmentCard(_enrollments[index]);
-        },
-      );
-    } else if (_selectedTabIndex == 1) {
       if (_coursesGrouped.isEmpty) return _buildEmptyState();
       return ListView.builder(
         padding: const EdgeInsets.all(20),
@@ -183,9 +215,24 @@ class _SubscriptionsManagementScreenState
                       color: AppColors.getGlassColor(context, opacity: 0.3),
                       width: 1),
                 ),
-                child: IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
-                  onPressed: _loadData,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.print, color: Colors.white),
+                      onPressed: _printReport,
+                      tooltip: 'طباعة التقرير',
+                    ),
+                    Container(
+                      height: 24,
+                      width: 1,
+                      color: Colors.white24,
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh, color: Colors.white),
+                      onPressed: _loadData,
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -304,23 +351,71 @@ class _SubscriptionsManagementScreenState
                       color: AppColors.getGlassColor(context, opacity: 0.2),
                       width: 1.5),
                 ),
-                child: TextField(
-                  onChanged: (value) {
-                    setState(() => _searchQuery = value);
-                    _loadData();
-                  },
-                  style: TextStyle(color: AppColors.getTextColor(context)),
-                  decoration: InputDecoration(
-                    hintText: 'بحث باسم الطالب أو الدورة...',
-                    hintStyle: TextStyle(
-                        color:
-                            AppColors.getTextColor(context).withOpacity(0.4)),
-                    prefixIcon: Icon(Icons.search,
-                        color:
-                            AppColors.getTextColor(context).withOpacity(0.6)),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(16),
-                  ),
+                child: Column(
+                  children: [
+                    TextField(
+                      onChanged: (value) {
+                        setState(() => _searchQuery = value);
+                        _loadData();
+                      },
+                      style: TextStyle(color: AppColors.getTextColor(context)),
+                      decoration: InputDecoration(
+                        hintText: 'بحث باسم الطالب أو الدورة...',
+                        hintStyle: TextStyle(
+                            color: AppColors.getTextColor(context)
+                                .withOpacity(0.4)),
+                        prefixIcon: Icon(Icons.search,
+                            color: AppColors.getTextColor(context)
+                                .withOpacity(0.6)),
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.all(16),
+                      ),
+                    ),
+                    const Divider(height: 1, color: Colors.white12),
+                    InkWell(
+                      onTap: _showFilterDatePicker,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        child: Row(
+                          children: [
+                            Icon(Icons.calendar_month,
+                                color: AppColors.getTextColor(context)
+                                    .withOpacity(0.6),
+                                size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              _selectedMonth == null && _selectedYear == null
+                                  ? 'تصفية حسب التاريخ: الكل'
+                                  : _selectedMonth != null
+                                      ? 'تصفية: ${DateFormat('MMMM yyyy', 'ar').format(_selectedMonth!)}'
+                                      : 'تصفية: سنة $_selectedYear',
+                              style: TextStyle(
+                                color: AppColors.getTextColor(context)
+                                    .withOpacity(0.8),
+                                fontSize: 14,
+                              ),
+                            ),
+                            const Spacer(),
+                            if (_selectedMonth != null || _selectedYear != null)
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedMonth = null;
+                                    _selectedYear = null;
+                                  });
+                                  _loadData();
+                                },
+                                child: const Icon(Icons.close,
+                                    color: Colors.white54, size: 18),
+                              ),
+                            const Icon(Icons.arrow_drop_down,
+                                color: Colors.white54),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -341,9 +436,8 @@ class _SubscriptionsManagementScreenState
       ),
       child: Row(
         children: [
-          _buildTabItem(0, 'الكل', Icons.list),
-          _buildTabItem(1, 'حسب الدورة', Icons.book),
-          _buildTabItem(2, 'حسب المدرس', Icons.person),
+          _buildTabItem(0, 'حسب الدورة', Icons.book),
+          _buildTabItem(1, 'حسب المدرس', Icons.person),
         ],
       ),
     );
@@ -389,7 +483,8 @@ class _SubscriptionsManagementScreenState
 
 
 
-  Widget _buildEnrollmentCard(Map<String, dynamic> enrollment) {
+  Widget _buildEnrollmentCard(Map<String, dynamic> enrollment,
+      {bool showCourseInfo = true}) {
     final userData = enrollment['users'] as Map<String, dynamic>?;
     final courseData = enrollment['courses'] as Map<String, dynamic>?;
     final DateTime? enrolledAt = enrollment['enrolled_at'] != null
@@ -415,82 +510,132 @@ class _SubscriptionsManagementScreenState
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: Colors.black26,
-                          borderRadius: BorderRadius.circular(12),
-                          image: courseData?['thumbnail'] != null
-                              ? DecorationImage(
-                                  image: NetworkImage(courseData!['thumbnail']),
-                                  fit: BoxFit.cover,
+                  if (showCourseInfo) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.black26,
+                            borderRadius: BorderRadius.circular(12),
+                            image: courseData?['thumbnail'] != null
+                                ? DecorationImage(
+                                    image:
+                                        NetworkImage(courseData!['thumbnail']),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
+                          ),
+                          child: courseData?['thumbnail'] == null
+                              ? const Icon(Icons.book, color: Colors.white24)
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                courseData?['title'] ?? 'دورة غير منسوبة',
+                                style: TextStyle(
+                                  color: AppColors.getTextColor(context),
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 16,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 10,
+                                    backgroundColor: AppColors.primaryPurple,
+                                    backgroundImage: userData?['avatar_url'] !=
+                                            null
+                                        ? NetworkImage(userData!['avatar_url'])
+                                        : null,
+                                    child: userData?['avatar_url'] == null
+                                        ? Text(
+                                            (userData?['full_name']?[0] ?? 'U')
+                                                .toUpperCase(),
+                                            style: const TextStyle(
+                                                fontSize: 8,
+                                                color: Colors.white),
+                                          )
+                                        : null,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Text(
+                                      StringUtils.cleanTeacherName(
+                                          userData?['full_name'] ?? 'مستخدم'),
+                                      style: TextStyle(
+                                        color: AppColors.getTextColor(context)
+                                            .withOpacity(0.7),
+                                        fontSize: 13,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        _buildStatusBadge(status),
+                      ],
+                    ),
+                  ] else ...[
+                    // Minimal student info when showCourseInfo is false
+                    Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 20,
+                          backgroundColor: AppColors.primaryPurple,
+                          backgroundImage: userData?['avatar_url'] != null
+                              ? NetworkImage(userData!['avatar_url'])
+                              : null,
+                          child: userData?['avatar_url'] == null
+                              ? Text(
+                                  (userData?['full_name']?[0] ?? 'U')
+                                      .toUpperCase(),
+                                  style: const TextStyle(color: Colors.white),
                                 )
                               : null,
                         ),
-                        child: courseData?['thumbnail'] == null
-                            ? const Icon(Icons.book, color: Colors.white24)
-                            : null,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              courseData?['title'] ?? 'دورة غير منسوبة',
-                              style: TextStyle(
-                                color: AppColors.getTextColor(context),
-                                fontWeight: FontWeight.normal,
-                                fontSize: 16,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                StringUtils.cleanTeacherName(
+                                    userData?['full_name'] ?? 'طالب'),
+                                style: TextStyle(
+                                  color: AppColors.getTextColor(context),
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 15,
+                                ),
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  radius: 10,
-                                  backgroundColor: AppColors.primaryPurple,
-                                  backgroundImage: userData?['avatar_url'] !=
-                                          null
-                                      ? NetworkImage(userData!['avatar_url'])
-                                      : null,
-                                  child: userData?['avatar_url'] == null
-                                      ? Text(
-                                          (userData?['full_name']?[0] ?? 'U')
-                                              .toUpperCase(),
-                                          style: const TextStyle(
-                                              fontSize: 8, color: Colors.white),
-                                        )
-                                      : null,
+                              Text(
+                                userData?['email'] ?? '',
+                                style: TextStyle(
+                                  color: AppColors.getTextColor(context)
+                                      .withOpacity(0.5),
+                                  fontSize: 11,
                                 ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    StringUtils.cleanTeacherName(
-                                        userData?['full_name'] ?? 'مستخدم'),
-                                    style: TextStyle(
-                                      color: AppColors.getTextColor(context)
-                                          .withOpacity(0.7),
-                                      fontSize: 13,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                      _buildStatusBadge(status),
-                    ],
-                  ),
+                        _buildStatusBadge(status),
+                      ],
+                    ),
+                  ],
                   const Divider(height: 24, color: Colors.white12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -609,94 +754,117 @@ class _SubscriptionsManagementScreenState
 
   Widget _buildCourseSummaryCard(Map<String, dynamic> item) {
     final course = item['course'] as Map<String, dynamic>?;
-    return GestureDetector(
-      onTap: () {
-        if (course != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CourseEnrollmentsScreen(
-                courseId: course['id'],
-                courseTitle: course['title'] ?? 'دورة غير منسوبة',
-              ),
+    final List<dynamic> enrollments = item['enrollments'] ?? [];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.getGlassColor(context, opacity: 0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                  color: AppColors.getGlassColor(context, opacity: 0.3),
+                  width: 1.5),
             ),
-          );
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.getGlassColor(context, opacity: 0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                    color: AppColors.getGlassColor(context, opacity: 0.3),
-                    width: 1.5),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          image: course?['thumbnail'] != null
-                              ? DecorationImage(
-                                  image: NetworkImage(course!['thumbnail']),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                          color: Colors.black26,
-                        ),
-                        child: course?['thumbnail'] == null
-                            ? const Icon(Icons.book, color: Colors.white24)
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                  dividerColor: Colors.transparent,
+                  dividerTheme:
+                      const DividerThemeData(color: Colors.transparent)),
+              child: ExpansionTile(
+                title: Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        image: course?['thumbnail'] != null
+                            ? DecorationImage(
+                                image: NetworkImage(course!['thumbnail']),
+                                fit: BoxFit.cover,
+                              )
                             : null,
+                        color: Colors.black26,
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              course?['title'] ?? 'دورة غير منسوبة',
-                              style: TextStyle(
-                                  color: AppColors.getTextColor(context),
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 16),
-                            ),
-                            Text(
-                              'السعر: ${_currencyFormat.format(course?['price'] ?? 0)}',
-                              style: TextStyle(
-                                  color: AppColors.getTextColor(context)
-                                      .withOpacity(0.6),
-                                  fontSize: 12),
-                            ),
-                          ],
-                        ),
+                      child: course?['thumbnail'] == null
+                          ? const Icon(Icons.book, color: Colors.white24)
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            course?['title'] ?? 'دورة غير منسوبة',
+                            style: TextStyle(
+                                color: AppColors.getTextColor(context),
+                                fontWeight: FontWeight.normal,
+                                fontSize: 16),
+                          ),
+                          Text(
+                            'السعر: ${_currencyFormat.format(course?['price'] ?? 0)}',
+                            style: TextStyle(
+                                color: AppColors.getTextColor(context)
+                                    .withOpacity(0.6),
+                                fontSize: 12),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const Divider(height: 24, color: Colors.white12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ),
+                  ],
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
                     children: [
                       _buildSummaryItem(
                           'الطلاب', '${item['enrollment_count']}', Icons.person,
                           color: Colors.blueAccent),
+                      const SizedBox(width: 8),
                       _buildSummaryItem(
-                          'إجمالي الدخل',
+                          'الدخل',
                           _currencyFormat.format(item['total_revenue']),
                           Icons.payments,
                           color: Colors.greenAccent),
                     ],
                   ),
+                ),
+                iconColor: Colors.white70,
+                collapsedIconColor: Colors.white54,
+                childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  const Divider(color: Colors.white12),
+                  ...enrollments.map((e) => _buildEnrollmentCard(
+                      e as Map<String, dynamic>,
+                      showCourseInfo: false)),
+                  if (enrollments.isNotEmpty) ...[
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CourseEnrollmentsScreen(
+                              courseId: course?['id'] ?? '',
+                              courseTitle:
+                                  course?['title'] ?? 'دورة غير منسوبة',
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.open_in_new, size: 14),
+                      label: const Text('إدارة تفصيلية',
+                          style: TextStyle(fontSize: 12)),
+                      style:
+                          TextButton.styleFrom(foregroundColor: Colors.white70),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                 ],
               ),
             ),
@@ -708,89 +876,113 @@ class _SubscriptionsManagementScreenState
 
   Widget _buildTeacherSummaryCard(Map<String, dynamic> item) {
     final teacher = item['teacher'] as Map<String, dynamic>?;
-    return GestureDetector(
-      onTap: () {
-        if (teacher != null && teacher['id'] != null) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TeacherEnrollmentStatsScreen(
-                teacherId: teacher['id'],
-                teacherName: teacher['full_name'] ?? 'مدرس مجهول',
-                avatarUrl: teacher['avatar_url'],
-              ),
+    final List<dynamic> enrollments = item['enrollments'] ?? [];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.getGlassColor(context, opacity: 0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                  color: AppColors.getGlassColor(context, opacity: 0.3),
+                  width: 1.5),
             ),
-          );
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.getGlassColor(context, opacity: 0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                    color: AppColors.getGlassColor(context, opacity: 0.3),
-                    width: 1.5),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 25,
-                        backgroundColor: AppColors.primaryPurple,
-                        backgroundImage: teacher?['avatar_url'] != null
-                            ? NetworkImage(teacher!['avatar_url'])
-                            : null,
-                        child: teacher?['avatar_url'] == null
-                            ? const Icon(Icons.person, color: Colors.white)
-                            : null,
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                  dividerColor: Colors.transparent,
+                  dividerTheme:
+                      const DividerThemeData(color: Colors.transparent)),
+              child: ExpansionTile(
+                title: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 25,
+                      backgroundColor: AppColors.primaryPurple,
+                      backgroundImage: teacher?['avatar_url'] != null
+                          ? NetworkImage(teacher!['avatar_url'])
+                          : null,
+                      child: teacher?['avatar_url'] == null
+                          ? const Icon(Icons.person, color: Colors.white)
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            StringUtils.cleanTeacherName(
+                                teacher?['full_name'] ?? 'مدرس مجهول'),
+                            style: TextStyle(
+                                color: AppColors.getTextColor(context),
+                                fontWeight: FontWeight.normal,
+                                fontSize: 16),
+                          ),
+                          Text(
+                            'عدد الكورسات: ${item['course_count']}',
+                            style: TextStyle(
+                                color: AppColors.getTextColor(context)
+                                    .withOpacity(0.6),
+                                fontSize: 12),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              StringUtils.cleanTeacherName(
-                                  teacher?['full_name'] ?? 'مدرس مجهول'),
-                              style: TextStyle(
-                                  color: AppColors.getTextColor(context),
-                                  fontWeight: FontWeight.normal,
-                                  fontSize: 16),
-                            ),
-                            Text(
-                              'عدد الكورسات: ${item['course_count']}',
-                              style: TextStyle(
-                                  color: AppColors.getTextColor(context)
-                                      .withOpacity(0.6),
-                                  fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 24, color: Colors.white12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    ),
+                  ],
+                ),
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Row(
                     children: [
-                      _buildSummaryItem('إجمالي الطلاب',
-                          '${item['student_count']}', Icons.people,
-                          color: Colors.orangeAccent),
                       _buildSummaryItem(
-                          'إجمالي الدخل',
+                          'الطلاب', '${item['student_count']}', Icons.people,
+                          color: Colors.orangeAccent),
+                      const SizedBox(width: 8),
+                      _buildSummaryItem(
+                          'الدخل',
                           _currencyFormat.format(item['total_revenue']),
                           Icons.account_balance,
                           color: Colors.blueAccent),
                     ],
                   ),
+                ),
+                iconColor: Colors.white70,
+                collapsedIconColor: Colors.white54,
+                childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
+                children: [
+                  const Divider(color: Colors.white12),
+                  ...enrollments.map((e) => _buildEnrollmentCard(
+                      e as Map<String, dynamic>,
+                      showCourseInfo:
+                          true)), // Show course info for teacher view
+                  if (enrollments.isNotEmpty) ...[
+                    TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TeacherEnrollmentStatsScreen(
+                              teacherId: teacher?['id'] ?? '',
+                              teacherName:
+                                  teacher?['full_name'] ?? 'مدرس مجهول',
+                              avatarUrl: teacher?['avatar_url'],
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.open_in_new, size: 14),
+                      label: const Text('إحصائيات المدرس',
+                          style: TextStyle(fontSize: 12)),
+                      style:
+                          TextButton.styleFrom(foregroundColor: Colors.white70),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                 ],
               ),
             ),
@@ -902,7 +1094,7 @@ class _SubscriptionsManagementScreenState
                   } catch (e) {
                     messenger.showSnackBar(
                       SnackBar(
-                          content: Text('حدث خطأ: $e'),
+                          content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
                           backgroundColor: Colors.red),
                     );
                   }
@@ -915,6 +1107,311 @@ class _SubscriptionsManagementScreenState
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _showFilterDatePicker() async {
+    final now = DateTime.now();
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => DefaultTabController(
+        length: 2,
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: AlertDialog(
+            backgroundColor: AppColors.getGlassColor(context, opacity: 0.9),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: Colors.white24),
+            ),
+            titlePadding: EdgeInsets.zero,
+            title: const Column(
+              children: [
+                SizedBox(height: 16),
+                Text('اختر فترة التصفية',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+                SizedBox(height: 12),
+                TabBar(
+                  indicatorColor: AppColors.primaryPurple,
+                  labelColor: AppColors.primaryPurple,
+                  unselectedLabelColor: Colors.white60,
+                  tabs: [
+                    Tab(text: 'شهري'),
+                    Tab(text: 'سنوي'),
+                  ],
+                ),
+              ],
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 300,
+              child: TabBarView(
+                children: [
+                  // Month Picker
+                  ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: 12,
+                    itemBuilder: (context, index) {
+                      final month = DateTime(now.year, now.month - index, 1);
+                      final monthName =
+                          DateFormat('MMMM yyyy', 'ar').format(month);
+                      bool isSelected = _selectedMonth?.year == month.year &&
+                          _selectedMonth?.month == month.month;
+
+                      return ListTile(
+                        title: Text(monthName,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? AppColors.primaryPurple
+                                  : Colors.white,
+                              fontSize: 14,
+                            )),
+                        trailing: isSelected
+                            ? const Icon(Icons.check,
+                                color: AppColors.primaryPurple)
+                            : null,
+                        onTap: () {
+                          setState(() {
+                            _selectedMonth = month;
+                            _selectedYear = null;
+                          });
+                          _loadData();
+                          Navigator.pop(ctx);
+                        },
+                      );
+                    },
+                  ),
+                  // Year Picker
+                  ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: 5,
+                    itemBuilder: (context, index) {
+                      final year = now.year - index;
+                      bool isSelected = _selectedYear == year;
+
+                      return ListTile(
+                        title: Text('سنة $year',
+                            style: TextStyle(
+                              color: isSelected
+                                  ? AppColors.primaryPurple
+                                  : Colors.white,
+                              fontSize: 14,
+                            )),
+                        trailing: isSelected
+                            ? const Icon(Icons.check,
+                                color: AppColors.primaryPurple)
+                            : null,
+                        onTap: () {
+                          setState(() {
+                            _selectedYear = year;
+                            _selectedMonth = null;
+                          });
+                          _loadData();
+                          Navigator.pop(ctx);
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _printReport() async {
+    DateTime? startDate;
+    DateTime? endDate;
+
+    if (_selectedMonth != null) {
+      startDate = DateTime(_selectedMonth!.year, _selectedMonth!.month, 1);
+      endDate = DateTime(_selectedMonth!.year, _selectedMonth!.month + 1, 1);
+    } else if (_selectedYear != null) {
+      startDate = DateTime(_selectedYear!, 1, 1);
+      endDate = DateTime(_selectedYear! + 1, 1, 1);
+    }
+
+    if (_selectedMonth == null && _selectedYear == null) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('طباعة التقرير'),
+          content: const Text(
+              'لم يتم تحديد فترة تصفية (شهر أو سنة). سيتم طباعة تقرير لجميع الاشتراكات.\nهل تريد المتابعة؟'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('متابعة'),
+            ),
+          ],
+        ),
+      );
+      if (confirm != true) return;
+    }
+
+    try {
+      final reportData = await _db.getDetailedFinancialReport(
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+      await Printing.layoutPdf(
+        onLayout: (format) => _generatePdf(format, reportData),
+        name:
+            'Financial_Report_${DateFormat('yyyyMMdd').format(DateTime.now())}',
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('فشل إنشاء التقرير: $e'),
+              backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<Uint8List> _generatePdf(
+      PdfPageFormat format, Map<String, dynamic> data) async {
+    final pdf = pw.Document();
+
+    // Load fonts
+    final fontData = await rootBundle.load("assets/fonts/Cairo-Regular.ttf");
+    final ttf = pw.Font.ttf(fontData);
+    final fontBoldData = await rootBundle.load("assets/fonts/Cairo-Bold.ttf");
+    final ttfBold = pw.Font.ttf(fontBoldData);
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pw.PageTheme(
+          theme: pw.ThemeData.withFont(
+            base: ttf,
+            bold: ttfBold,
+          ),
+          textDirection: pw.TextDirection.rtl,
+          buildBackground: (context) => pw.FullPage(
+            ignoreMargins: true,
+            child: pw.Container(color: PdfColors.white),
+          ),
+        ),
+        build: (context) => [
+          _buildPdfHeader(data, ttfBold),
+          pw.SizedBox(height: 20),
+          _buildPdfSummary(data, ttfBold),
+          pw.SizedBox(height: 20),
+          _buildPdfTable(data, ttfBold),
+        ],
+      ),
+    );
+
+    return pdf.save();
+  }
+
+  pw.Widget _buildPdfHeader(Map<String, dynamic> data, pw.Font fontBold) {
+    return pw.Header(
+      level: 0,
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('التقرير المالي',
+                  style: pw.TextStyle(
+                      fontSize: 24, font: fontBold, color: PdfColors.purple)),
+              pw.Text('منصة دوراتي التعليمية',
+                  style: const pw.TextStyle(fontSize: 14)),
+            ],
+          ),
+          pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.end,
+            children: [
+              pw.Text('الفترة: ${data['period']}',
+                  style: const pw.TextStyle(fontSize: 12)),
+              pw.Text(
+                  'تاريخ الطباعة: ${DateFormat('yyyy/MM/dd').format(DateTime.now())}',
+                  style: const pw.TextStyle(fontSize: 10)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPdfSummary(Map<String, dynamic> data, pw.Font fontBold) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(10),
+      decoration: pw.BoxDecoration(
+        color: PdfColors.grey100,
+        borderRadius: pw.BorderRadius.circular(8),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          _buildPdfSummaryItem(
+              'إجمالي الإيرادات',
+              '${(data['total_revenue'] as double).toStringAsFixed(0)} ل.س',
+              fontBold),
+          _buildPdfSummaryItem(
+              'عدد الاشتراكات', '${data['total_enrollments']}', fontBold),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPdfSummaryItem(String label, String value, pw.Font fontBold) {
+    return pw.Column(
+      children: [
+        pw.Text(label,
+            style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+        pw.Text(value,
+            style: pw.TextStyle(
+                fontSize: 18, font: fontBold, color: PdfColors.purple)),
+      ],
+    );
+  }
+
+  pw.Widget _buildPdfTable(Map<String, dynamic> data, pw.Font fontBold) {
+    final items = data['enrollments'] as List<dynamic>;
+
+    return pw.Table.fromTextArray(
+      headers: ['الرقم', 'التاريخ', 'الطالب', 'الدورة', 'طريقة الدفع', 'السعر'],
+      data: List<List<dynamic>>.generate(items.length, (index) {
+        final item = items[index];
+        return [
+          '${index + 1}',
+          DateFormat('yyyy/MM/dd').format(DateTime.parse(item['enrolled_at'])),
+          item['user_full_name'] ?? '-',
+          item['course_title'] ?? '-',
+          item['payment_method'] ?? 'نقدي',
+          '${item['course_price']} ل.س',
+        ];
+      }),
+      headerStyle: pw.TextStyle(font: fontBold, color: PdfColors.white),
+      headerDecoration: const pw.BoxDecoration(color: PdfColors.purple),
+      rowDecoration: const pw.BoxDecoration(
+        border: pw.Border(
+            bottom: pw.BorderSide(color: PdfColors.grey300, width: 0.5)),
+      ),
+      cellAlignment: pw.Alignment.centerRight,
+      cellStyle: const pw.TextStyle(fontSize: 10),
+      columnWidths: {
+        0: const pw.FlexColumnWidth(1),
+        1: const pw.FlexColumnWidth(2),
+        2: const pw.FlexColumnWidth(3),
+        3: const pw.FlexColumnWidth(3),
+        4: const pw.FlexColumnWidth(2),
+        5: const pw.FlexColumnWidth(2),
+      },
     );
   }
 }

@@ -166,10 +166,6 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  // Keys to force rebuild when switching tabs
-  Key _coursesKey = UniqueKey();
-  Key _profileKey = UniqueKey();
-  Key _exploreKey = UniqueKey();
 
   @override
   Widget build(BuildContext context) {
@@ -180,11 +176,11 @@ class _MainScreenState extends State<MainScreen> {
       body: GradientBackground(
         child: IndexedStack(
           index: _currentIndex,
-          children: [
-            const HomeScreen(),
-            ExploreScreen(key: _exploreKey),
-            CoursesListScreen(key: _coursesKey, showBackButton: false),
-            ProfileScreen(key: _profileKey),
+          children: const [
+            HomeScreen(),
+            ExploreScreen(),
+            CoursesListScreen(showBackButton: false),
+            ProfileScreen(),
           ],
         ),
       ),
@@ -224,14 +220,6 @@ class _MainScreenState extends State<MainScreen> {
             onTap: (index) {
               setState(() {
                 _currentIndex = index;
-                // Force rebuild of courses and profile screens
-                if (index == 1) {
-                  _exploreKey = UniqueKey();
-                } else if (index == 2) {
-                  _coursesKey = UniqueKey();
-                } else if (index == 3) {
-                  _profileKey = UniqueKey();
-                }
               });
             },
             letIndexChange: (index) => true,

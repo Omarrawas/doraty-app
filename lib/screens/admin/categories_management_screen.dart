@@ -7,6 +7,7 @@ import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../models/category_model.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../core/utils/error_utils.dart';
 
 class CategoriesManagementScreen extends StatefulWidget {
   const CategoriesManagementScreen({super.key});
@@ -41,7 +42,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ في تحميل التصنيفات: $e'),
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
             backgroundColor: AppColors.error,
           ),
         );
@@ -268,7 +269,8 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
               } catch (e) {
                 if (mounted) {
                   scaffoldMessenger.showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
+                    SnackBar(
+                        content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
                   );
                   setState(() => _isLoading = false);
                 }
@@ -301,7 +303,8 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
         _loadCategories();
       } catch (e) {
          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+          ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))));
             setState(() => _isLoading = false);
          }
       }

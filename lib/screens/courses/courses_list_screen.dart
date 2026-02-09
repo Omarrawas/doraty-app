@@ -11,6 +11,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/utils/error_utils.dart';
 
 class CoursesListScreen extends StatefulWidget {
   final bool showBackButton;
@@ -99,7 +100,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${_t('error_label')}: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
       return false;
@@ -147,164 +148,136 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount = 2;
+    double childAspectRatio = 0.85; // Much shorter cards
+
+    if (screenWidth > 1200) {
+      crossAxisCount = 4;
+      childAspectRatio = 0.95;
+    } else if (screenWidth > 800) {
+      crossAxisCount = 3;
+      childAspectRatio = 0.9;
+    }
+
     return Scaffold(
       body: DynamicGradientBackground(
         child: SafeArea(
-          child: Column(
-            children: [
-              // Header
-              _buildHeader(),
+          child: Scrollbar(
+            thickness: 6,
+            radius: const Radius.circular(10),
+            interactive: true,
+            child: CustomScrollView(
+              slivers: [
+                // Header
+                SliverToBoxAdapter(child: _buildHeader()),
 
-              const SizedBox(height: 20),
-
-              // Courses List
-              // Tabs
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.getGlassColor(context, opacity: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.getGlassColor(context, opacity: 0.2),
+                // Tabs
+                SliverPadding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  sliver: SliverToBoxAdapter(
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: AppColors.getGlassColor(context, opacity: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.getGlassColor(context, opacity: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _buildTab(
+                              title: _t('current'),
+                              isSelected: _selectedTab == 0,
+                              onTap: () => setState(() => _selectedTab = 0),
+                            ),
+                          ),
+                          Expanded(
+                            child: _buildTab(
+                              title: _t('completed'),
+                              isSelected: _selectedTab == 1,
+                              onTap: () => setState(() => _selectedTab = 1),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildTab(
-                          title: _t('current'),
-                          isSelected: _selectedTab == 0,
-                          onTap: () => setState(() => _selectedTab = 0),
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildTab(
-                          title: _t('completed'),
-                          isSelected: _selectedTab == 1,
-                          onTap: () => setState(() => _selectedTab = 1),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-              ),
 
-              const SizedBox(height: 20),
+                const SliverPadding(padding: EdgeInsets.only(bottom: 10)),
 
-              // Courses List
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _loadEnrolledCourses,
-                  color: AppColors.primaryPurple,
-                  backgroundColor: Colors.white,
-                  child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        )
-                      : Builder(
-                          builder: (context) {
-                            final filteredCourses =
-                                _enrolledCourses.where((enrollment) {
-                              final progress = (enrollment['progress'] as num?)
-                                      ?.toDouble() ??
-                                  0.0;
-                              final isCompleted = progress >= 100.0;
-                              return _selectedTab == 0
-                                  ? !isCompleted
-                                  : isCompleted;
-                            }).toList();
+                // Courses Grid
+                _isLoading
+                    ? SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        sliver: SliverToBoxAdapter(
+                          child: Center(
+                              child: CircularProgressIndicator(
+                                  color: Colors.white.withOpacity(0.5))),
+                        ),
+                      )
+                    : Builder(
+                        builder: (context) {
+                          final filteredCourses =
+                              _enrolledCourses.where((enrollment) {
+                            final progress =
+                                (enrollment['progress'] as num?)?.toDouble() ??
+                                    0.0;
+                            final isCompleted = progress >= 100.0;
+                            return _selectedTab == 0
+                                ? !isCompleted
+                                : isCompleted;
+                          }).toList();
 
-                            if (filteredCourses.isEmpty) {
-                              // Wrap empty state in SingleChildScrollView to allow refresh even when empty
-                              return LayoutBuilder(
-                                builder: (context, constraints) {
-                                  return SingleChildScrollView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    child: ConstrainedBox(
-                                      constraints: BoxConstraints(
-                                        minHeight: constraints.maxHeight,
-                                      ),
-                                      child: _buildEmptyState(),
-                                    ),
-                                  );
-                                },
-                              );
-                            }
-
-                            return ListView.builder(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              itemCount: filteredCourses.length,
-                              itemBuilder: (context, index) {
-                                final enrollment = filteredCourses[index];
-                                final courseData = enrollment['courses'];
-
-                                if (courseData == null) return const SizedBox();
-
-                                final course = Course(
-                                  id: courseData['id'],
-                                  title: courseData['title'] ?? '',
-                                  titleEn: courseData['title_en'],
-                                  description: courseData['description'] ?? '',
-                                  descriptionEn: courseData['description_en'],
-                                  instructorId: courseData['instructor_id'],
-                                  instructorName:
-                                      courseData['instructor_name'] ?? '',
-                                  instructorFullNameEn:
-                                      courseData['instructor_full_name_en'],
-                                  instructorPhoto:
-                                      courseData['instructor_photo'] ?? '',
-                                  imageUrl: courseData['image_url'] ??
-                                      courseData['thumbnail'] ??
-                                      '',
-                                  price: (courseData['price'] as num?)
-                                          ?.toDouble() ??
-                                      0,
-                                  rating: (courseData['rating'] as num?)
-                                          ?.toDouble() ??
-                                      0,
-                                  studentsCount:
-                                      courseData['students_count'] ?? 0,
-                                  lessonsCount:
-                                      courseData['lessons_count'] ?? 0,
-                                  durationHours: courseData['duration_hours']
-                                          ?.toString() ??
-                                      courseData['duration'],
-                                  categories:
-                                      courseData['categories_names'] != null
-                                          ? List<String>.from(
-                                              courseData['categories_names'])
-                                          : (courseData['category'] != null
-                                              ? [courseData['category']]
-                                              : []),
-                                  subject: courseData['subject'] ?? '',
-                                  subjectEn: courseData['subject_en'],
-                                  curriculum: const [],
-                                  isEnrolled: true,
-                                  isPublished: courseData['is_published'] ?? true,
-                                );
-
-                                final progress =
-                                    (enrollment['progress'] as num?)
-                                            ?.toDouble() ??
-                                        0;
-
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 16),
-                                  child:
-                                      _buildCourseCard(course, progress, index),
-                                );
-                              },
+                          if (filteredCourses.isEmpty) {
+                            return SliverFillRemaining(
+                              hasScrollBody: false,
+                              child: _buildEmptyState(),
                             );
-                          },
-                        ),
-                ),
-              ),
-            ],
+                          }
+
+                          return SliverPadding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            sliver: SliverGrid(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  final enrollment = filteredCourses[index];
+                                  final courseData = enrollment['courses'];
+
+                                  if (courseData == null) {
+                                    return const SizedBox();
+                                  }
+
+                                  final course = Course.fromJson(courseData);
+                                  final progress =
+                                      (enrollment['progress'] as num?)
+                                              ?.toDouble() ??
+                                          0;
+
+                                  return _buildCourseCard(
+                                      course, progress, index);
+                                },
+                                childCount: filteredCourses.length,
+                              ),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                childAspectRatio: childAspectRatio,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 20,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+              ],
+            ),
           ),
         ),
       ),
@@ -399,6 +372,8 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
   }
 
   Widget _buildCourseCard(Course course, double progress, int index) {
+    final locale = Provider.of<LocaleProvider>(context).locale;
+
     return Dismissible(
       key: Key(course.id),
       direction: DismissDirection.endToStart,
@@ -407,37 +382,36 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
         padding: const EdgeInsets.only(left: 20),
         decoration: BoxDecoration(
           color: Colors.red.withOpacity(0.8),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
         ),
-        child: const Icon(
-          Icons.delete,
-          color: Colors.white,
-          size: 32,
-        ),
+        child: const Icon(Icons.delete, color: Colors.white, size: 32),
       ),
-      confirmDismiss: (direction) async {
-        return await _showDeleteConfirmation();
-      },
-      onDismissed: (direction) {
-        _unenrollCourse(course.id, index);
-      },
+      confirmDismiss: (direction) async => await _showDeleteConfirmation(),
+      onDismissed: (direction) => _unenrollCourse(course.id, index),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.getGlassColor(context, opacity: 0.25),
-              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.25),
+                  Colors.white.withOpacity(0.15),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: AppColors.getGlassColor(context, opacity: 0.3),
+                color: Colors.white.withOpacity(0.3),
                 width: 1.5,
               ),
             ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 onTap: course.isPublished
                     ? () {
                         Navigator.push(
@@ -449,198 +423,108 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                         );
                       }
                     : null,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Course Image
-                    ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                      child: CachedNetworkImage(
-                        imageUrl: course.imageUrl ?? '',
-                        height: 150,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorWidget: (context, url, error) => Container(
-                          height: 150,
-                          color: Colors.white.withOpacity(0.2),
-                          child: const Icon(
-                            Icons.image,
-                            color: Colors.white,
-                            size: 50,
-                          ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Course Info (Top)
+                      Text(
+                        course.getLocalizedTitle(locale),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
+                      const SizedBox(height: 2),
+                      Text(
+                        course.getLocalizedInstructorName(locale),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.white.withOpacity(0.6),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
 
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
+                      // Progress Bar
+                      const SizedBox(height: 8),
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            course.getLocalizedTitle(
-                                Provider.of<LocaleProvider>(context).locale),
-                            textAlign:
-                                Provider.of<LocaleProvider>(context).locale ==
-                                        'ar'
-                                    ? TextAlign.right
-                                    : TextAlign.left,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.white,
-                            ),
-                          ),
-
-                          // Offline Badge
-                          if (_offlineCourseIds.contains(course.id))
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4, bottom: 4),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.offline_pin, 
-                                    color: Colors.greenAccent.shade400, 
-                                    size: 16
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    _t('offline_badge_label'), // Replaced 'محمّل على الجهاز'
-                                    style: TextStyle(
-                                      color: Colors.greenAccent.shade400,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                          if (!course.isPublished)
-                            Container(
-                              margin: const EdgeInsets.only(top: 10),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.red.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                    color: Colors.red.withOpacity(0.3)),
-                              ),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.info_outline,
-                                      color: Colors.white70, size: 16),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(
-                                      _t('course_unavailable_label'),
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ),
-                                  // Delete Button
-                                  TextButton.icon(
-                                    onPressed: () async {
-                                      final confirmed =
-                                          await _showDeleteConfirmation();
-                                      if (confirmed == true) {
-                                        _unenrollCourse(course.id, index);
-                                      }
-                                    },
-                                    icon: const Icon(Icons.delete_outline,
-                                        color: Colors.redAccent, size: 18),
-                                    label: Text(
-                                      _t('unenroll_button_label'),
-                                      style: const TextStyle(
-                                        color: Colors.redAccent,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                    style: TextButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 8),
-                                      backgroundColor:
-                                          Colors.red.withOpacity(0.1),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                          const SizedBox(height: 8),
-
-                          // Instructor
-                          Text(
-                            course.getLocalizedInstructorName(
-                                Provider.of<LocaleProvider>(context).locale),
-                            textAlign:
-                                Provider.of<LocaleProvider>(context).locale ==
-                                        'ar'
-                                    ? TextAlign.right
-                                    : TextAlign.left,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.white.withOpacity(0.8),
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          // Progress Bar
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _t('progress_label'),
-                                    style: const TextStyle(
-                                      color: Colors.white70,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    '${progress.toInt()}%',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.normal,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: LinearProgressIndicator(
-                                  value: progress / 100,
-                                  backgroundColor:
-                                      Colors.white.withOpacity(0.2),
-                                  valueColor:
-                                      const AlwaysStoppedAnimation<Color>(
-                                    AppColors.primaryPurple,
-                                  ),
-                                  minHeight: 8,
+                              Text(
+                                '${progress.toInt()}%',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
+                              if (_offlineCourseIds.contains(course.id))
+                                Icon(Icons.offline_pin,
+                                    color: Colors.greenAccent.shade400,
+                                    size: 12),
                             ],
+                          ),
+                          const SizedBox(height: 3),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: LinearProgressIndicator(
+                              value: progress / 100,
+                              backgroundColor: Colors.white.withOpacity(0.1),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                AppColors.primaryPurple,
+                              ),
+                              minHeight: 4,
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+
+                      const SizedBox(height: 8),
+                      // Course Image (Bottom)
+                      Expanded(
+                        child: Center(
+                          child: Hero(
+                            tag: 'course_list_image_${course.id}',
+                            child: AspectRatio(
+                              aspectRatio: 1.8, // Shorter image to save space
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: CachedNetworkImage(
+                                  imageUrl: course.imageUrl ?? '',
+                                  fit: BoxFit.cover,
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                    color: Colors.white10,
+                                    child: const Icon(Icons.image,
+                                        color: Colors.white24, size: 30),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      if (!course.isPublished)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            _t('course_unavailable_label'),
+                            style: const TextStyle(
+                                color: Colors.redAccent, fontSize: 10),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

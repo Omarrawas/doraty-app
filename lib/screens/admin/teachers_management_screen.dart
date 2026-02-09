@@ -8,6 +8,7 @@ import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/services/image_upload_service.dart';
 import '../../core/utils/string_utils.dart';
+import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class TeachersManagementScreen extends StatefulWidget {
@@ -22,8 +23,10 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
   final DatabaseService _db = DatabaseService();
 
   List<Map<String, dynamic>> _teachers = [];
+  List<Map<String, dynamic>> _filteredTeachers = [];
   List<Map<String, dynamic>> _courses = [];
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
   final Map<String, bool> _expandedCards =
       {}; // Track expanded state for each teacher
 
@@ -63,17 +66,40 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
 
       setState(() {
         _teachers = teachers;
+        _filteredTeachers = teachers;
         _courses = courses;
         _isLoading = false;
       });
+      _onSearchChanged(); // Apply search if controller is not empty
     } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredTeachers = _teachers.where((teacher) {
+        final user = teacher['users'] as Map<String, dynamic>?;
+        final fullName = (user?['full_name'] as String? ?? '').toLowerCase();
+        final email = (user?['email'] as String? ?? '').toLowerCase();
+        return fullName.contains(query) || email.contains(query);
+      }).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -88,6 +114,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
             child: Column(
               children: [
                 _buildHeader(context),
+                _buildSearchBar(context),
                 Expanded(
                   child: _isLoading
                       ? const Center(
@@ -96,24 +123,68 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : _teachers.isEmpty
+                      : _filteredTeachers.isEmpty
                           ? _buildEmptyState(context)
                           : RefreshIndicator(
                               onRefresh: _loadData,
                               child: ListView.builder(
                                 padding: const EdgeInsets.all(20),
-                                itemCount: _teachers.length,
+                                itemCount: _filteredTeachers.length,
                                 itemBuilder: (context, index) {
                                   return Padding(
                                     padding: const EdgeInsets.only(bottom: 12),
                                     child: _buildTeacherCard(
-                                        context, _teachers[index]),
+                                        context, _filteredTeachers[index]),
                                   );
                                 },
                               ),
                             ),
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.getGlassColor(context, opacity: 0.15),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.getGlassColor(context, opacity: 0.3),
+                width: 1,
+              ),
+            ),
+            child: TextField(
+              controller: _searchController,
+              onChanged: (_) => _onSearchChanged(),
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: 'البحث عن مدرس بالاسم أو البريد...',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.white70),
+                        onPressed: () {
+                          _searchController.clear();
+                          _onSearchChanged();
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              ),
             ),
           ),
         ),
@@ -163,7 +234,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              '${_teachers.length} مدرس',
+              '${_filteredTeachers.length} مدرس',
               style: TextStyle(
                 color: AppColors.getTextColor(context),
                 fontWeight: FontWeight.normal,
@@ -559,7 +630,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   navigator.pop();
                   messenger.showSnackBar(
                     SnackBar(
-                      content: Text('خطأ: $e'),
+                      content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
                       backgroundColor: Colors.red,
                     ),
                   );
@@ -691,7 +762,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                  content: Text('خطأ في الرفع: $e'),
+                                  content: Text(
+                                      ErrorUtils.getFriendlyErrorMessage(e)),
                                   backgroundColor: Colors.red),
                             );
                           }
@@ -802,7 +874,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                   if (mounted) {
                     messenger.showSnackBar(
                       SnackBar(
-                        content: Text('خطأ: $e'),
+                        content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
                         backgroundColor: Colors.red,
                       ),
                     );
@@ -891,7 +963,9 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                                   navigator.pop();
                                   messenger.showSnackBar(
                                     SnackBar(
-                                      content: Text('خطأ: $e'),
+                                      content: Text(
+                                          ErrorUtils.getFriendlyErrorMessage(
+                                              e)),
                                       backgroundColor: Colors.red,
                                     ),
                                   );

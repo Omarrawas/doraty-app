@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/error_utils.dart';
 import '../../models/course.dart';
 import 'course_details_screen.dart';
 
@@ -66,7 +67,7 @@ class _CourseLoaderScreenState extends State<CourseLoaderScreen> {
       debugPrint('Error loading course: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('حدث خطأ أثناء تحميل الدورة')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
         Navigator.pop(context);
       }

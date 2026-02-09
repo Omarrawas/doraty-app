@@ -5,6 +5,7 @@ import '../../models/lesson.dart';
 import '../../models/flashcard.dart';
 import 'settings_service.dart';
 import 'supabase_service.dart';
+import '../utils/error_utils.dart';
 
 class AIService {
   // Mock fallback if nothing is configured
@@ -31,7 +32,7 @@ class AIService {
       return _askOpenAI(lesson, question, history);
     } catch (e) {
       debugPrint('AI Error: $e');
-      return 'عذراً، حدث خطأ أثناء الاتصال بالمساعد الذكي. يرجى المحاولة مرة أخرى لاحقاً.';
+      return ErrorUtils.getFriendlyErrorMessage(e);
     }
   }
 

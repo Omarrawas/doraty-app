@@ -9,6 +9,7 @@ import 'image_viewer_screen.dart';
 import 'interactive_quiz_screen.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../widgets/tex_view_widget.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
 import '../../models/note.dart';
@@ -21,6 +22,7 @@ import '../notes/add_note_screen.dart';
 import '../../core/services/course_download_service.dart';
 import '../../models/download.dart' as dl;
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../core/utils/error_utils.dart';
 import 'dart:ui';
 import 'dart:io';
 import 'dart:math' as math; 
@@ -147,7 +149,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${_t('download_error')}: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     } finally {
@@ -262,7 +264,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('حدث خطأ أثناء حذف الملاحظة: $e')),
+            SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
           );
         }
       }
@@ -312,7 +314,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ في التحديث: $e')),
+            SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
           );
         }
       }
@@ -404,7 +406,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         _youtubePlayerController = YoutubePlayerController(
           initialVideoId: videoId,
           flags: const YoutubePlayerFlags(
-            autoPlay: true,
+            autoPlay: false,
             mute: false,
             forceHD: true,
             enableCaption: false,
@@ -1632,7 +1634,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               return const Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
-              return Center(child: Text('حدث خطأ: ${snapshot.error}'));
+                return Center(
+                    child: Text(
+                        ErrorUtils.getFriendlyErrorMessage(snapshot.error!)));
             }
             
             final notesData = snapshot.data ?? [];
@@ -1970,9 +1974,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
+              TexViewWidget(
                 question.content,
-                textAlign: TextAlign.right,
                 style: const TextStyle(
                     fontSize: 14, height: 1.5, color: Colors.white),
               ),
@@ -2092,9 +2095,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             ],
           ),
           const SizedBox(height: 4),
-          Text(
+          TexViewWidget(
             reply.content,
-            textAlign: TextAlign.right,
             style: TextStyle(
               fontSize: 13,
               color: Colors.white.withOpacity(0.9),
@@ -2142,7 +2144,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+              .showSnackBar(
+              SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))));
         }
       }
     }
@@ -2158,7 +2161,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('خطأ: $e')));
+              .showSnackBar(
+              SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))));
         }
       }
     }
@@ -2359,7 +2363,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       _refreshFutures();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ أثناء التفاعل. $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     }
@@ -2424,7 +2428,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               } catch (e) {
                 if (mounted) {
                   messenger.showSnackBar(
-                    SnackBar(content: Text('خطأ: $e')),
+                    SnackBar(
+                        content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
                   );
                 }
               }
@@ -2455,7 +2460,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ أثناء إرسال السؤال: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     }
@@ -2715,7 +2720,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('خطأ في التعديل: $e')));
+              .showSnackBar(
+              SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))));
         }
       }
     }
@@ -2755,7 +2761,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('خطأ في التعديل: $e')));
+              .showSnackBar(
+              SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))));
         }
       }
     }

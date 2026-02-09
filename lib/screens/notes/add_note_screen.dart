@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/error_utils.dart';
 
 class AddNoteScreen extends StatefulWidget {
   final String? lessonId;
@@ -81,7 +82,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     if (widget.lessonId == null || widget.courseId == null) {
        ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('خطأ: لا يمكن حفظ الملاحظة بدون درس أو مساق'),
+          content: Text('لا يمكن حفظ الملاحظة بدون درس أو مساق'),
           backgroundColor: Colors.red,
         ),
       );
@@ -114,7 +115,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('حدث خطأ أثناء الحفظ: $e'),
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
             backgroundColor: Colors.red,
           ),
         );

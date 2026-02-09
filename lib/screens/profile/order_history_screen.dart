@@ -121,10 +121,133 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
+                fontFamily: 'Cairo',
               ),
             ),
           ),
           const SizedBox(width: 48), // To balance the back button
+        ],
+      ),
+    );
+  }
+
+  void _showOrderDetails(Map<String, dynamic> order) {
+    final status = order['status'] ?? 'pending';
+    final amount = order['total_amount'] ?? 0;
+    final orderNumber = order['order_number'] ?? 'N/A';
+    final course = order['courses'] as Map<String, dynamic>?;
+    final courseTitle = course?['title'] ?? 'اشتراك';
+    final paymentMethod = order['payment_method'] ?? 'N/A';
+    final transactionId = order['payment_transaction_id'] ?? 'N/A';
+    final createdAtStr = order['created_at'];
+
+    // Payment receipts data (if available from join)
+    final receipts = order['payment_receipts'] as List?;
+    final receipt =
+        (receipts != null && receipts.isNotEmpty) ? receipts.first : null;
+    final phoneNumber = receipt?['phone_number'] ?? 'N/A';
+    final receiptTransactionId = receipt?['transaction_id'] ?? transactionId;
+
+    String dateStr = '';
+    if (createdAtStr != null) {
+      final createdAt = DateTime.parse(createdAtStr);
+      dateStr =
+          '${createdAt.year}/${createdAt.month}/${createdAt.day} ${createdAt.hour}:${createdAt.minute.toString().padLeft(2, '0')}';
+    }
+
+    Color statusColor;
+    String statusText;
+
+    switch (status) {
+      case 'completed':
+      case 'approved':
+        statusColor = Colors.green;
+        statusText = 'مكتمل';
+        break;
+      case 'failed':
+      case 'rejected':
+        statusColor = Colors.red;
+        statusText = 'فاشل';
+        break;
+      default:
+        statusColor = Colors.orange;
+        statusText = 'قيد المعالجة';
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF1A1A2E),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              const Icon(Icons.receipt_long, color: Colors.white),
+              const SizedBox(width: 10),
+              Text(
+                _t('order_report'),
+                style:
+                    const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDetailRow(_t('order_number'), orderNumber),
+                _buildDetailRow(_t('course_title'), courseTitle),
+                _buildDetailRow(_t('order_date'), dateStr),
+                _buildDetailRow(_t('total_amount'), '$amount ل.س'),
+                _buildDetailRow(_t('payment_method'), paymentMethod),
+                _buildDetailRow(_t('transaction_id'), receiptTransactionId),
+                if (phoneNumber != 'N/A')
+                  _buildDetailRow(_t('phone_number'), phoneNumber),
+                _buildDetailRow(_t('status'), statusText,
+                    valueColor: statusColor),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(_t('cancel'),
+                  style: const TextStyle(color: Colors.white70)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value, {Color? valueColor}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 13,
+                fontFamily: 'Cairo'),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                color: valueColor ?? Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                fontFamily: 'Cairo',
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -164,7 +287,6 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.getGlassColor(context, opacity: 0.1),
         borderRadius: BorderRadius.circular(16),
@@ -172,66 +294,107 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           color: AppColors.getGlassColor(context, opacity: 0.2),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _showOrderDetails(order),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  courseTitle,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        courseTitle,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          fontFamily: 'Cairo',
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$orderNumber • $dateStr',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 12,
+                          fontFamily: 'Cairo',
+                        ),
+                      ),
+                    ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  '$orderNumber • $dateStr',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
-                    fontSize: 12,
-                  ),
+                const SizedBox(width: 8),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$amount ل.س',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.receipt_long_outlined,
+                          color: Colors.white.withOpacity(0.7),
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _t('order_report'),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 10,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: statusColor.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                            border:
+                                Border.all(color: statusColor.withOpacity(0.5)),
+                          ),
+                          child: Text(
+                            statusText,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Cairo',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '$amount ل.س',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: statusColor.withOpacity(0.5)),
-                ),
-                child: Text(
-                  statusText,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

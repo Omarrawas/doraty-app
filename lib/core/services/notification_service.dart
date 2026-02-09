@@ -6,11 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:doraty/core/services/database_service.dart';
 import 'package:doraty/core/services/supabase_service.dart';
+import 'package:doraty/firebase_options.dart';
 
 // Top-level function for background handling
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   debugPrint("Handling a background message: ${message.messageId}");
 }
 
@@ -32,7 +35,9 @@ class NotificationService {
     try {
       // 1. Initialize Firebase if not already (usually done in main, but safe to check)
       try {
-        await Firebase.initializeApp();
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
       } catch (e) {
         debugPrint('Firebase already initialized or failed: $e');
       }

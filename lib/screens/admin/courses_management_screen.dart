@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import 'create_course_screen.dart';
 import 'lessons_management_screen.dart';
@@ -27,7 +28,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
   List<Map<String, dynamic>> _courses = [];
   bool _isLoading = true;
   String _searchQuery = '';
-  String _filter = 'all'; // all, published, draft
+  String _filter = 'published'; // all, published, draft
 
   @override
   void initState() {
@@ -83,7 +84,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -674,7 +677,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -734,7 +739,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }

@@ -18,6 +18,7 @@ import 'lesson_exam_screen.dart';
 
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/utils/error_utils.dart';
 
 class LessonViewScreen extends StatefulWidget {
   final Lesson lesson;
@@ -77,7 +78,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
           _chewieController = ChewieController(
             videoPlayerController: _videoController!,
-            autoPlay: true,
+            autoPlay: false,
             looping: false,
             aspectRatio: _videoController!.value.aspectRatio,
             allowFullScreen: true,
@@ -198,7 +199,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     }
@@ -324,7 +325,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       if (!mounted) return;
       Navigator.pop(context); // Close loading dialog
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ في تحميل خيارات الجودة: $e')),
+        SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
       );
     }
   }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/screen_security_service.dart';
 import '../auth/login_screen.dart';
 import '../../main.dart';
 
@@ -62,6 +63,11 @@ class _SplashScreenState extends State<SplashScreen>
           '🔐 Auth check: ${isAuthenticated ? "Authenticated" : "Not authenticated"}');
 
       if (isAuthenticated) {
+        // Check user role and apply screen security
+        await _applyScreenSecurity();
+
+        if (!mounted) return;
+        
         // User is logged in, go to main screen
         Navigator.pushReplacement(
           context,
@@ -83,6 +89,32 @@ class _SplashScreenState extends State<SplashScreen>
           MaterialPageRoute(builder: (context) => const LoginScreen()),
         );
       }
+    }
+  }
+
+  Future<void> _applyScreenSecurity() async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return;
+
+      // Check if user is admin
+      final response = await SupabaseService.instance.client
+          .from('user_roles')
+          .select('roles(name)')
+          .eq('user_id', userId);
+
+      final roles = response as List;
+      final isAdmin = roles.any((role) {
+        final roleData = role['roles'] as Map<String, dynamic>?;
+        return roleData?['name'] == 'admin';
+      });
+
+      // Apply screen security based on role and app settings
+      await ScreenSecurityService().applySecurityPolicy(isAdmin: isAdmin);
+    } catch (e) {
+      debugPrint('⚠️ Error applying screen security: $e');
+      // On error, enable security by default for safety
+      await ScreenSecurityService().enableScreenSecurity();
     }
   }
 

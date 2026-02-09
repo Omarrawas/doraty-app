@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import 'create_lesson_screen.dart';
 import '../../models/chapter.dart';
@@ -88,7 +89,9 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -123,6 +126,31 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                                 padding: const EdgeInsets.all(20),
                                 itemCount: _lessons.length,
                                 onReorder: _reorderLessons,
+                                buildDefaultDragHandles: false,
+                                proxyDecorator: (child, index, animation) {
+                                  return AnimatedBuilder(
+                                    animation: animation,
+                                    builder: (context, child) {
+                                      final double animValue = Curves.easeInOut
+                                          .transform(animation.value);
+                                      final double scale =
+                                          lerpDouble(1, 1.02, animValue)!;
+                                      final double elevation =
+                                          lerpDouble(0, 6, animValue)!;
+                                      return Transform.scale(
+                                        scale: scale,
+                                        child: Material(
+                                          elevation: elevation,
+                                          color: Colors.transparent,
+                                          shadowColor:
+                                              Colors.black.withOpacity(0.5),
+                                          child: child,
+                                        ),
+                                      );
+                                    },
+                                    child: child,
+                                  );
+                                },
                                 itemBuilder: (context, index) {
                                   final lesson = _lessons[index];
                                   final prevLesson =
@@ -355,6 +383,26 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  // Drag Handle - Larger touch area and better icon
+                  ReorderableDragStartListener(
+                    index: index,
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.drag_handle_rounded,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
                   if (isFree)
                     Container(
                       padding:
@@ -686,7 +734,9 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       _loadLessons();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -731,7 +781,9 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }

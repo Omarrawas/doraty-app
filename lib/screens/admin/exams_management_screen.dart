@@ -8,6 +8,7 @@ import '../../core/services/database_service.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../teacher/create_exam_screen.dart';
 import '../teacher/manage_questions_screen.dart';
+import '../../core/utils/error_utils.dart';
 
 class AdminExamsManagementScreen extends StatefulWidget {
   final String courseId;
@@ -50,7 +51,9 @@ class _AdminExamsManagementScreenState
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -505,7 +508,9 @@ class _AdminExamsManagementScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -548,7 +553,9 @@ class _AdminExamsManagementScreenState
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }

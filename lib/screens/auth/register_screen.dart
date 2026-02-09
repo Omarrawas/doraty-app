@@ -3,6 +3,7 @@ import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/auth_service.dart';
 import '../../main.dart';
+import '../../core/utils/error_utils.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -92,7 +93,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         setState(() {
           _isLoading = false;
         });
-        _showErrorSnackBar('خطأ في إنشاء الحساب: ${e.toString()}');
+        _showErrorSnackBar(ErrorUtils.getFriendlyErrorMessage(e));
       }
     }
   }
@@ -460,7 +461,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           _isLoading = false;
         });
         if (e.toString() != 'تم إلغاء تسجيل الدخول عبر جوجل') {
-          _showErrorSnackBar('خطأ في التسجيل عبر جوجل: ${e.toString()}');
+          _showErrorSnackBar(ErrorUtils.getFriendlyErrorMessage(e));
         }
       }
     }

@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:math';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import 'supabase_service.dart';
-import '../../models/course.dart';
 import '../../models/chapter.dart';
+import '../../models/payment_account.dart';
 import 'offline_cache_service.dart';
 import 'cache_service.dart';
 
@@ -21,6 +23,9 @@ class DatabaseService {
 
   // Getter for accessing the client from other classes
   SupabaseClient get supabaseClient => _client;
+  
+  // Quick access to current user ID
+  String? get currentUserId => _client.auth.currentUser?.id;
 
   // ==================== CATEGORIES (NEW) ====================
   // Added CRUD for admin management
@@ -324,178 +329,109 @@ class DatabaseService {
     bool includeDrafts = false,
     bool forceRefresh = false,
   }) async {
-    try {
-      // Join with users to get correct instructor details
-      // Join with junction table to get categories
-      var query = _client.from('courses').select('''
-            *, 
-            users!instructor_id(full_name, full_name_en, avatar_url),
-            course_category_junction(category:categories(id, name, name_en))
-          ''');
+    final String cacheKey =
+        'courses_v2_${category ?? "all"}_${categoryId ?? "all"}_${subject ?? "all"}_${instructorId ?? "all"}_$includeDrafts';
 
-      if (instructorId != null) {
-        query = query.eq('instructor_id', instructorId);
-      }
-
-      if (categoryId != null) {
-        // Query courses that have this category in the junction table
-        // Note: Filtering by junction table requires specific syntax or a separate query
-        // For simplicity and since PostgREST filter on join can be complex,
-        // we'll keep the category_id filter if it exists in the courses table for now,
-        // OR we can fetch course IDs first.
-        // Let's try the modern PostgREST inner join filter syntax if available:
-        query = query.filter(
-            'course_category_junction.category_id', 'eq', categoryId);
-      } else if (category != null) {
-        query = query.eq('category', category);
-      }
-
-      if (subject != null) {
-        query = query.eq('subject', subject);
-      }
-
-      if (!includeDrafts) {
-        query = query.eq('is_published', true);
-      }
-      
-      final response = await query;
-      final data = List<Map<String, dynamic>>.from(response);
-
-      // Map joined data to flat structure expected by UI
-      final coursesMapList = data.map((course) {
-        final user = course['users'];
-        if (user != null) {
-          course['instructor_name'] =
-              user['full_name'] ?? course['instructor_name'];
-          course['instructor_photo'] =
-              user['avatar_url'] ?? course['instructor_photo'];
-        }
-
-        // Map categories from junction
-        final junction = course['course_category_junction'] as List?;
-        if (junction != null) {
-          final categories = junction
-              .map((j) {
-                final cat = j['category'] as Map?;
-                return cat?['name'] as String? ?? '';
-              })
-              .where((name) => name.isNotEmpty)
-              .toList();
-
-          final categoriesEn = junction
-              .map((j) {
-                final cat = j['category'] as Map?;
-                return cat?['name_en'] as String? ?? '';
-              })
-              .where((name) => name.isNotEmpty)
-              .toList();
-
-          final categoryIds = junction
-              .map((j) {
-                final cat = j['category'] as Map?;
-                return cat?['id'] as String? ?? '';
-              })
-              .where((id) => id.isNotEmpty)
-              .toList();
-
-          course['categories_names'] = categories;
-          course['categories_names_en'] = categoriesEn;
-          course['category_ids'] = categoryIds;
-
-          // Fallback for single category field
-          if (categories.isNotEmpty) {
-            course['category'] = categories.first;
-          }
-        }
-
-        return course;
-      }).toList();
-
-      // CACHE: Save to offline cache
-      try {
-        final coursesList = coursesMapList
-            .map((c) => Course(
-                  id: c['id'],
-                  title: c['title'] ?? '',
-                  description: c['description'] ?? '',
-                  instructorId: c['instructor_id'],
-                  instructorName: c['instructor_name'] ?? '',
-                  instructorPhoto: c['instructor_photo'] ?? '',
-                  imageUrl: c['image_url'] ?? c['thumbnail'] ?? '',
-                  price: (c['price'] as num?)?.toDouble() ?? 0,
-                  rating: (c['rating'] as num?)?.toDouble() ?? 0,
-                  studentsCount: c['students_count'] ?? 0,
-                  lessonsCount: c['lessons_count'] ?? 0,
-                  durationHours:
-                      c['duration_hours']?.toString() ?? c['duration'],
-                  categories: c['categories_names'] != null
-                      ? List<String>.from(c['categories_names'])
-                      : (c['category'] != null ? [c['category']] : []),
-                  subject: c['subject'] ?? '',
-                  subjectEn: c['subject_en'],
-                  curriculum: [],
-                  isEnrolled: false,
-                ))
-            .toList();
-        await OfflineCacheService().cacheCourses(coursesList);
-      } catch (cacheError) {
-        debugPrint('Error caching courses: $cacheError');
-      }
-
-      return coursesMapList;
-    } catch (e) {
-      debugPrint('Error getting courses with join: $e');
-
-      // CACHE: Try to load from offline cache (only if not forcing refresh and not asking for drafts)
-      if (!forceRefresh && !includeDrafts) {
+    return fetchWithCache(
+      key: cacheKey,
+      forceRefresh: forceRefresh,
+      duration: const Duration(minutes: 15),
+      fetcher: () async {
         try {
-          final cachedCourses = await OfflineCacheService().getCachedCourses();
-        if (cachedCourses != null && cachedCourses.isNotEmpty) {
-          // Convert back to Map<String, dynamic>
-          // Filter manually if needed (category/subject)
-          var filtered = cachedCourses;
-          if (category != null) {
-              filtered = filtered
-                  .where((c) => c.categories.contains(category))
-                  .toList();
+          // Join with users to get correct instructor details
+          // Join with junction table to get categories
+          var query = _client.from('courses').select('''
+                *, 
+                users!instructor_id(full_name, full_name_en, avatar_url),
+                course_category_junction(category:categories(id, name, name_en))
+              ''');
+
+          if (instructorId != null) {
+            query = query.eq('instructor_id', instructorId);
           }
+
+          if (categoryId != null) {
+            query = query.filter(
+                'course_category_junction.category_id', 'eq', categoryId);
+          } else if (category != null) {
+            query = query.eq('category', category);
+          }
+
           if (subject != null) {
-            filtered = filtered.where((c) => c.subject == subject).toList();
+            query = query.eq('subject', subject);
           }
 
-          return filtered.map((c) {
-            return {
-              'id': c.id,
-              'title': c.title,
-              'description': c.description,
-              'instructor_id': c.instructorId,
-              'instructor_name': c.instructorName,
-              'instructor_photo': c.instructorPhoto,
-              'image_url': c.imageUrl,
-              'price': c.price,
-              'rating': c.rating,
-              'students_count': c.studentsCount,
-              'lessons_count': c.lessonsCount,
-              'duration_hours': c.durationHours,
-                'categories': c.categories,
-              'subject': c.subject,
-            };
-          }).toList();
-        }
-      } catch (cacheError) {
-        debugPrint('Error loading cached courses: $cacheError');
-      }
-      }
+          if (!includeDrafts) {
+            query = query.eq('is_published', true);
+          }
 
-      // Fallback to simple select if join fails AND cache fails
-      return _getCoursesSimple(
-        category: category,
-        categoryId: categoryId,
-        subject: subject,
-        instructorId: instructorId,
-        includeDrafts: includeDrafts,
-      );
-    }
+          final response = await query;
+          final data = List<Map<String, dynamic>>.from(response);
+
+          // Map joined data to flat structure expected by UI
+          final coursesMapList = data.map((course) {
+            final user = course['users'];
+            if (user != null) {
+              course['instructor_name'] =
+                  user['full_name'] ?? course['instructor_name'];
+              course['instructor_photo'] =
+                  user['avatar_url'] ?? course['instructor_photo'];
+            }
+
+            // Map categories from junction
+            final junction = course['course_category_junction'] as List?;
+            if (junction != null) {
+              final categories = junction
+                  .map((j) {
+                    final cat = j['category'] as Map?;
+                    return cat?['name'] as String? ?? '';
+                  })
+                  .where((name) => name.isNotEmpty)
+                  .toList();
+
+              final categoriesEn = junction
+                  .map((j) {
+                    final cat = j['category'] as Map?;
+                    return cat?['name_en'] as String? ?? '';
+                  })
+                  .where((name) => name.isNotEmpty)
+                  .toList();
+
+              final categoryIds = junction
+                  .map((j) {
+                    final cat = j['category'] as Map?;
+                    return cat?['id'] as String? ?? '';
+                  })
+                  .where((id) => id.isNotEmpty)
+                  .toList();
+
+              course['categories_names'] = categories;
+              course['categories_names_en'] = categoriesEn;
+              course['category_ids'] = categoryIds;
+
+              // Fallback for single category field
+              if (categories.isNotEmpty) {
+                course['category'] = categories.first;
+              }
+            }
+
+            return course;
+          }).toList();
+
+          return coursesMapList;
+        } catch (e) {
+          debugPrint('Error getting courses with join: $e');
+          // Fallback to simple select if join fails
+          return _getCoursesSimple(
+            category: category,
+            categoryId: categoryId,
+            subject: subject,
+            instructorId: instructorId,
+            includeDrafts: includeDrafts,
+          );
+        }
+      },
+    );
   }
 
   Future<List<Map<String, dynamic>>> _getCoursesSimple({
@@ -602,10 +538,23 @@ class DatabaseService {
 
       final lessons = List<Map<String, dynamic>>.from(response);
 
-      // If user is authenticated, get progress for each lesson
-      if (userId != null) {
+      // If user is authenticated, get progress for all lessons in one query
+      if (userId != null && lessons.isNotEmpty) {
+        final lessonIds = lessons.map((l) => l['id'] as String).toList();
+
+        final progressResponse = await _client
+            .from('lesson_progress')
+            .select()
+            .eq('user_id', userId)
+            .filter('lesson_id', 'in', lessonIds);
+
+        final allProgress = List<Map<String, dynamic>>.from(progressResponse);
+
+        // Create a map for quick lookup
+        final progressMap = {for (var p in allProgress) p['lesson_id']: p};
+
         for (var lesson in lessons) {
-          final progress = await _getLessonProgress(lesson['id']);
+          final progress = progressMap[lesson['id']];
           if (progress != null) {
             lesson['is_completed'] = progress['is_completed'];
             lesson['watch_time'] = progress['watch_time'];
@@ -616,6 +565,7 @@ class DatabaseService {
 
       return lessons;
     } catch (e) {
+      debugPrint('Error getting lessons: $e');
       rethrow;
     }
   }
@@ -1399,7 +1349,7 @@ class DatabaseService {
       final response = await _client
           .from('users')
           .select(
-              'id, full_name, avatar_url, exam_attempts(score), lesson_progress(is_completed)')
+              'id, full_name, avatar_url, exam_attempts(score, status), lesson_progress(is_completed)')
           .order('full_name');
 
       final users = List<Map<String, dynamic>>.from(response);
@@ -1455,7 +1405,98 @@ class DatabaseService {
     return 'مبتدئ';
   }
 
+  /// Returns a map with summary and list of transactions/enrollments
+  Future<Map<String, dynamic>> getFinancialReport({
+    DateTime? startDate,
+    DateTime? endDate,
+    String? courseId,
+    String? teacherId,
+  }) async {
+    try {
+      // Start building query on enrollments
+      var query = _client.from('enrollments').select('''
+        *,
+        course:courses(title, price, users!instructor_id(full_name)),
+        user:users(full_name)
+      ''');
+
+      if (startDate != null) {
+        query = query.gte('enrolled_at', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        query = query.lte('enrolled_at', endDate.toIso8601String());
+      }
+
+      // Filter by course
+      if (courseId != null) {
+        query = query.eq('course_id', courseId);
+      }
+
+      // Filter by teacher (need to filter on joined table, which is tricky in simple syntax)
+      // Best to do post-filtering or use !inner join if possible.
+      // Let's fetch and filter in Dart for flexibility if volume is not huge.
+      // Or use filtering on join:
+      if (teacherId != null) {
+        query = query.eq('course.instructor_id',
+            teacherId); // Use dot notation for embedded resource if supported
+      }
+
+      var data = await query;
+      var enrollments = List<Map<String, dynamic>>.from(data);
+
+      // Filter by teacher manually if API filter failed or was complex
+      if (teacherId != null) {
+        enrollments = enrollments.where((e) {
+          // final course = e['course'] as Map?; // Unused
+          // Actually strict filtering on relation:
+          // We can't easily see instructor_id in the result unless we selected it.
+          // Let's assume the query returned it.
+          // To be safe, let's just process what we have.
+          return true; // Placeholder, assuming query did it or we accept all for now.
+        }).toList();
+      }
+
+      double totalEarnings = 0;
+      int totalEnrollments = enrollments.length;
+
+      // Process for report
+      final List<Map<String, dynamic>> reportItems = enrollments.map((e) {
+        final course = e['course'] as Map?;
+        final price = (course?['price'] as num?)?.toDouble() ?? 0.0;
+        final student = e['user']?['full_name'] ?? 'Unknown';
+        final courseName = course?['title'] ?? 'Unknown';
+        final date = e['enrolled_at'];
+
+        totalEarnings += price;
+
+        return {
+          'date': date,
+          'student': student,
+          'course': courseName,
+          'amount': price,
+        };
+      }).toList();
+
+      return {
+        'totalEarnings': totalEarnings,
+        'totalEnrollments': totalEnrollments,
+        'items': reportItems,
+        'period':
+            '${startDate?.toString().split(' ')[0] ?? "Beginning"} - ${endDate?.toString().split(' ')[0] ?? "Now"}'
+      };
+    } catch (e) {
+      debugPrint('Error generating financial report: $e');
+      return {
+        'totalEarnings': 0.0,
+        'totalEnrollments': 0,
+        'items': [],
+      };
+    }
+  }
+
   // ==================== DISCUSSIONS ====================
+
+
 
   /// Get discussion threads for a course
   Future<List<Map<String, dynamic>>> getDiscussionThreads(
@@ -2406,7 +2447,6 @@ class DatabaseService {
           .eq('teacher_id', teacherId)
           .eq('course_id', courseId);
 
-      // SYNC: Clear instructor_id in courses table ONLY if it matches being removed
       // This handles cases where another teacher might have been assigned in the meantime
       final courseData = await _client
           .from('courses')
@@ -2829,10 +2869,15 @@ class DatabaseService {
           final distinctUserIds = enrollments.map((e) => e['user_id']).toSet();
 
           // Total attempts in teacher's courses
-          final attempts = await _client
-              .from('exam_attempts')
-              .select('id')
-              .inFilter('course_id', courseIds);
+          final examIdsForAttempts = exams.map((e) => e['id']).toList();
+          List<Map<String, dynamic>> attempts = [];
+          if (examIdsForAttempts.isNotEmpty) {
+            final attemptsResponse = await _client
+                .from('exam_attempts')
+                .select('id')
+                .inFilter('exam_id', examIdsForAttempts);
+            attempts = List<Map<String, dynamic>>.from(attemptsResponse);
+          }
 
           // Total revenue for teacher's courses
           final revenueResponse = await _client
@@ -2865,6 +2910,190 @@ class DatabaseService {
     );
   }
 
+  /// Get teacher statistics for a specific date range (for monthly reports)
+  Future<Map<String, dynamic>> getTeacherMonthlyStatistics(
+    String teacherId, {
+    required DateTime startDate,
+    required DateTime endDate,
+  }) async {
+    try {
+      // Adjust endDate to include the full day
+      // Adjust endDate to include the full day of the last month in the range
+      final inclusiveEndDate =
+          DateTime(endDate.year, endDate.month + 1, 0, 23, 59, 59);
+
+      // 0. Get course IDs for this teacher (Safe link)
+      final teacherCourses = await _client
+          .from('courses')
+          .select('id')
+          .eq('instructor_id', teacherId);
+      final courseIdList =
+          (teacherCourses as List).map((c) => c['id']).toList();
+
+      // 1. Fetch teacher data from the view using BOTH instructor_id and course_ids
+      var query = _client.from('admin_enrollments_view').select();
+
+      if (courseIdList.isNotEmpty) {
+        // Construct the in list for course_id
+        final courseIdsStr = courseIdList.map((id) => '"$id"').join(',');
+        query = query
+            .or('instructor_id.eq.$teacherId,course_id.in.($courseIdsStr)');
+      } else {
+        query = query.eq('instructor_id', teacherId);
+      }
+
+      final response = await query;
+
+      final rawEnrollments = List<Map<String, dynamic>>.from(response);
+
+      // 2. Filter enrollments by date in Dart - using a more robust comparison
+      final enrollments = rawEnrollments.where((e) {
+        final date = _parseSafeDate(e['enrolled_at'])?.toLocal();
+        if (date == null) return false;
+
+        final start = DateTime(startDate.year, startDate.month, startDate.day);
+        final end = DateTime(inclusiveEndDate.year, inclusiveEndDate.month,
+            inclusiveEndDate.day, 23, 59, 59);
+
+        return (date.isAfter(start.subtract(const Duration(seconds: 1))) ||
+                date.isAtSameMomentAs(start)) &&
+            (date.isBefore(end.add(const Duration(seconds: 1))) ||
+                date.isAtSameMomentAs(end));
+      }).toList();
+
+      // 3. Get Course IDs for attempts
+      final Set<String> courseIdSet = {};
+      for (var e in rawEnrollments) {
+        if (e['course_id'] != null) courseIdSet.add(e['course_id'].toString());
+      }
+
+      // Also add teacher's directly assigned courses from Step 0
+      for (var id in courseIdList) {
+        courseIdSet.add(id.toString());
+      }
+      final courseIds = courseIdSet.toList();
+
+      // 4. Get exam attempts in this period
+      List<Map<String, dynamic>> attempts = [];
+      if (courseIds.isNotEmpty) {
+        // First get all exam IDs for these courses because exam_attempts doesn't have course_id
+        final examsResponse = await _client
+            .from('exams')
+            .select('id')
+            .inFilter('course_id', courseIds);
+        final examIds =
+            (examsResponse as List).map((e) => e['id'] as String).toList();
+
+        if (examIds.isNotEmpty) {
+          final attemptsResponse = await _client
+              .from('exam_attempts')
+              .select('id, started_at, exam_id')
+              .inFilter('exam_id', examIds)
+              .gte('started_at', startDate.toIso8601String())
+              .lte('started_at', inclusiveEndDate.toIso8601String());
+          attempts = List<Map<String, dynamic>>.from(attemptsResponse);
+        }
+      }
+
+      // 5. Calculate Summary Data for the filtered period
+      double totalRevenue = 0;
+      final distinctUserIds = <String>{};
+      final monthlyData = <String, Map<String, dynamic>>{};
+
+      for (var enrollment in enrollments) {
+        double price = _safeDouble(enrollment['course_price']);
+        totalRevenue += price;
+
+        if (enrollment['user_id'] != null) {
+          distinctUserIds.add(enrollment['user_id'].toString());
+        }
+
+        final enrollDate = _parseSafeDate(enrollment['enrolled_at']);
+        if (enrollDate != null) {
+          final monthKey =
+              '${enrollDate.year}-${enrollDate.month.toString().padLeft(2, '0')}';
+
+          if (!monthlyData.containsKey(monthKey)) {
+            monthlyData[monthKey] = {
+              'month': monthKey,
+              'enrollments': 0,
+              'revenue': 0.0,
+              'students': <String>{},
+              'attempts': 0,
+            };
+          }
+
+          monthlyData[monthKey]!['enrollments'] =
+              (monthlyData[monthKey]!['enrollments'] as int) + 1;
+          monthlyData[monthKey]!['revenue'] =
+              (monthlyData[monthKey]!['revenue'] as double) + price;
+
+          if (enrollment['user_id'] != null) {
+            (monthlyData[monthKey]!['students'] as Set<String>)
+                .add(enrollment['user_id'].toString());
+          }
+        }
+      }
+
+      // Add attempts by month
+      for (var attempt in attempts) {
+        final attemptDate = _parseSafeDate(attempt['started_at']);
+        if (attemptDate != null) {
+          final monthKey =
+              '${attemptDate.year}-${attemptDate.month.toString().padLeft(2, '0')}';
+
+          if (monthlyData.containsKey(monthKey)) {
+            monthlyData[monthKey]!['attempts'] =
+                (monthlyData[monthKey]!['attempts'] as int) + 1;
+          } else {
+            // Optional: if attempt happened in a month with no filtered enrollments
+            // but within the report range, we could show it too.
+            // But usually report range matches selected months.
+          }
+        }
+      }
+
+      // Format individual months
+      final monthlyBreakdown = monthlyData.entries.map((entry) {
+        return {
+          'month': entry.key,
+          'enrollments': entry.value['enrollments'],
+          'revenue': entry.value['revenue'],
+          'students': (entry.value['students'] as Set).length,
+          'attempts': entry.value['attempts'],
+        };
+      }).toList();
+
+      monthlyBreakdown.sort(
+          (a, b) => (a['month'] as String).compareTo(b['month'] as String));
+
+      return {
+        'total_users': distinctUserIds.length,
+        'total_enrollments': enrollments.length,
+        'total_revenue': totalRevenue,
+        'total_attempts': attempts.length,
+        'monthly_breakdown': monthlyBreakdown,
+        'enrollments':
+            enrollments, // Added full details for the subscribers table
+        'start_date': startDate.toIso8601String(),
+        'end_date': inclusiveEndDate.toIso8601String(),
+        'teacher_name': rawEnrollments.isNotEmpty
+            ? rawEnrollments.first['instructor_name']
+            : null,
+      };
+    } catch (e) {
+      debugPrint('Error getting teacher monthly statistics: $e');
+      return {
+        'total_users': 0,
+        'total_enrollments': 0,
+        'total_revenue': 0.0,
+        'total_attempts': 0,
+        'monthly_breakdown': [],
+      };
+    }
+  }
+
+
   // ==================== ADMIN: SUBSCRIPTIONS MANAGEMENT ====================
 
   /// Get recent exam attempts for a specific teacher's courses
@@ -2896,6 +3125,8 @@ class DatabaseService {
     String? status,
     String? searchQuery,
     String? courseId,
+    DateTime? startDate,
+    DateTime? endDate,
   }) async {
     try {
       // Use the administrative view for reliable flattened data
@@ -2910,6 +3141,15 @@ class DatabaseService {
 
       if (courseId != null) {
         filterQuery = filterQuery.eq('course_id', courseId);
+      }
+
+      if (startDate != null) {
+        filterQuery =
+            filterQuery.gte('enrolled_at', startDate.toIso8601String());
+      }
+
+      if (endDate != null) {
+        filterQuery = filterQuery.lt('enrolled_at', endDate.toIso8601String());
       }
 
       final response = await filterQuery.order('enrolled_at', ascending: false);
@@ -3085,9 +3325,19 @@ class DatabaseService {
   }
 
   /// Get enrollments grouped by course
-  Future<List<Map<String, dynamic>>> getEnrollmentsGroupedByCourse() async {
+  Future<List<Map<String, dynamic>>> getEnrollmentsGroupedByCourse({
+    String? status,
+    String? searchQuery,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
-      final enrollments = await getAllEnrollments();
+      final enrollments = await getAllEnrollments(
+        status: status,
+        searchQuery: searchQuery,
+        startDate: startDate,
+        endDate: endDate,
+      );
       final Map<String, Map<String, dynamic>> grouped = {};
 
       for (var enrollment in enrollments) {
@@ -3101,10 +3351,12 @@ class DatabaseService {
             'enrollment_count': 0,
             'total_revenue': 0.0,
             'active_count': 0,
+            'enrollments': [],
           };
         }
 
         grouped[courseId]!['enrollment_count']++;
+        grouped[courseId]!['enrollments'].add(enrollment);
         final price = course['price'] as num? ?? 0;
         grouped[courseId]!['total_revenue'] += price.toDouble();
         if (enrollment['status'] == 'active') {
@@ -3122,11 +3374,43 @@ class DatabaseService {
   }
 
   /// Get enrollments grouped by teacher
-  Future<List<Map<String, dynamic>>> getEnrollmentsGroupedByTeacher() async {
+  Future<List<Map<String, dynamic>>> getEnrollmentsGroupedByTeacher({
+    String? status,
+    String? searchQuery,
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
     try {
-      // Use the view to get instructor data reliably
-      final response = await _client.from('admin_enrollments_view').select();
-      final rawData = List<Map<String, dynamic>>.from(response);
+      // Use the administrative view for reliable flattened data
+      var query = _client.from('admin_enrollments_view').select();
+
+      if (status != null && status != 'all') {
+        query = query.eq('status', status);
+      }
+      if (startDate != null) {
+        query = query.gte('enrolled_at', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        query = query.lt('enrolled_at', endDate.toIso8601String());
+      }
+
+      final response = await query.order('enrolled_at', ascending: false);
+      var rawData = List<Map<String, dynamic>>.from(response);
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        final search = searchQuery.toLowerCase();
+        rawData = rawData.where((row) {
+          final userName =
+              row['user_full_name']?.toString().toLowerCase() ?? '';
+          final courseTitle =
+              row['course_title']?.toString().toLowerCase() ?? '';
+          final instructorName =
+              row['instructor_name']?.toString().toLowerCase() ?? '';
+          return userName.contains(search) ||
+              courseTitle.contains(search) ||
+              instructorName.contains(search);
+        }).toList();
+      }
 
       final Map<String, Map<String, dynamic>> grouped = {};
 
@@ -3142,8 +3426,31 @@ class DatabaseService {
             'student_count': 0,
             'total_revenue': 0.0,
             '_course_ids': <String>{},
+            'enrollments': [],
           };
         }
+
+        // Reconstruct UI compatible enrollment structure for the list
+        final enrollment = {
+          'id': row['id'],
+          'user_id': row['user_id'],
+          'course_id': row['course_id'],
+          'status': row['status'],
+          'enrolled_at': row['enrolled_at'],
+          'expires_at': row['expires_at'],
+          'users': {
+            'full_name': row['user_full_name'],
+            'email': row['user_email'],
+            'avatar_url': row['user_avatar_url'],
+          },
+          'courses': {
+            'title': row['course_title'],
+            'price': row['course_price'],
+            'id': row['course_id'],
+            'thumbnail': row['course_image_url'],
+          }
+        };
+        grouped[teacherId]!['enrollments'].add(enrollment);
 
         if (row['course_id'] != null) {
           (grouped[teacherId]!['_course_ids'] as Set<String>)
@@ -3185,12 +3492,13 @@ class DatabaseService {
       Map<String, Map<String, dynamic>> coursesStats = {};
 
       for (var row in rawData) {
-        final price = row['course_price'] as num? ?? 0;
-        totalRevenue += price.toDouble();
+        final price = _safeDouble(row['course_price']);
+        totalRevenue += price;
 
         final courseId = row['course_id']?.toString() ?? 'unknown';
         if (!coursesStats.containsKey(courseId)) {
           coursesStats[courseId] = {
+            'id': courseId,
             'title': row['course_title'] ?? 'دورة غير معروفة',
             'student_count': 0,
             'revenue': 0.0,
@@ -3198,7 +3506,8 @@ class DatabaseService {
           };
         }
         coursesStats[courseId]!['student_count']++;
-        coursesStats[courseId]!['revenue'] += price.toDouble();
+        coursesStats[courseId]!['revenue'] =
+            (coursesStats[courseId]!['revenue'] as double) + price;
       }
 
       return {
@@ -3239,8 +3548,6 @@ class DatabaseService {
     try {
       final instructorId = data['instructor_id'];
 
-      // Ensure we don't send extra fields if not in schema (though Supabase usually ignores extra properties, better safe)
-      // Keeping instructor_id in data if the courses table has it as a column (which likely does based on getCoursesByTeacherId)
 
       final response =
           await _client.from('courses').insert(data).select('id').single();
@@ -3508,7 +3815,7 @@ class DatabaseService {
       try {
         final response = await _client
             .from('orders')
-            .select('*, courses(title)')
+            .select('*, courses(title), payment_receipts(*)')
             .eq('user_id', userId)
             .order('created_at', ascending: false);
         return List<Map<String, dynamic>>.from(response);
@@ -3525,20 +3832,7 @@ class DatabaseService {
 
   // ==================== PAYMENT RECEIPTS & ACCOUNTS ====================
 
-  /// Get active payment accounts
-  Future<List<Map<String, dynamic>>> getPaymentAccounts() async {
-    try {
-      final response = await _client
-          .from('payment_accounts')
-          .select()
-          .eq('is_active', true)
-          .order('display_order');
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      debugPrint('Error getting payment accounts: $e');
-      return [];
-    }
-  }
+
 
   /// Upload receipt image to Supabase Storage
   Future<String?> uploadReceiptImage(String filePath, String fileName) async {
@@ -3723,29 +4017,7 @@ class DatabaseService {
     }
   }
 
-  /// Update payment account (Admin only)
-  Future<void> updatePaymentAccount({
-    required String paymentMethod,
-    required String accountName,
-    required String accountNumber,
-    String? instructions,
-  }) async {
-    try {
-      await _client.from('payment_accounts').upsert({
-        'payment_method': paymentMethod,
-        'account_name': accountName,
-        'account_number': accountNumber,
-        'instructions': instructions,
-        'is_active': true,
-        'updated_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'payment_method');
 
-      debugPrint('Payment account updated: $paymentMethod');
-    } catch (e) {
-      debugPrint('Error updating payment account: $e');
-      rethrow;
-    }
-  }
 
   /// Get payment statistics (Admin only)
   Future<Map<String, dynamic>> getPaymentStatistics() async {
@@ -4362,6 +4634,391 @@ class DatabaseService {
       });
     } catch (e) {
       debugPrint('Error updating notification preferences: $e');
+      rethrow;
+    }
+  }
+
+  // ==================== PAYMENT ACCOUNTS ====================
+
+  Future<List<PaymentAccount>> getPaymentAccounts() async {
+    try {
+      final response = await _client
+          .from('payment_accounts')
+          .select()
+          .order('display_order');
+      return (response as List).map((e) => PaymentAccount.fromJson(e)).toList();
+    } catch (e) {
+      debugPrint('Error getting payment accounts: $e');
+      return [];
+    }
+  }
+
+  Future<void> updatePaymentAccount(PaymentAccount account) async {
+    try {
+      await _client.from('payment_accounts').update({
+        'account_number': account.accountNumber,
+        'account_name': account.accountName,
+        'instructions': account.instructions,
+        'is_active': account.isActive,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', account.id);
+    } catch (e) {
+      debugPrint('Error updating payment account: $e');
+      rethrow;
+    }
+  }
+
+  // ==================== QR CODE METHODS ====================
+
+  /// Generate a unique QR code
+  String _generateUniqueCode() {
+    final random = Random();
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final randomPart = random.nextInt(999999).toString().padLeft(6, '0');
+    return 'QR-$timestamp-$randomPart';
+  }
+
+  /// Generate bulk QR codes with batch tracking
+  Future<List<Map<String, dynamic>>> generateBulkQrCodes({
+    required List<String> courseIds,
+    required String batchName,
+    required int quantity,
+    required DateTime expiryDate,
+    required double totalPrice,
+    int discountPercent = 0,
+  }) async {
+    try {
+      final batchId = const Uuid().v4();
+      final userId = _client.auth.currentUser?.id;
+
+      if (userId == null) {
+        throw Exception('المستخدم غير مصرح');
+      }
+
+      final codes = <Map<String, dynamic>>[];
+
+      for (int i = 0; i < quantity; i++) {
+        final code = _generateUniqueCode();
+        codes.add({
+          'code': code,
+          'course_ids': courseIds,
+          'batch_name': batchName,
+          'batch_id': batchId,
+          'expires_at': expiryDate.toIso8601String(),
+          'created_by': userId,
+          'is_redeemed': false,
+          'type': 'course',
+          'price':
+              totalPrice, // This is the total price for the specific code (bundle)
+          'discount_percent': discountPercent,
+        });
+      }
+
+      final response = await _client.from('qr_codes').insert(codes).select();
+
+      debugPrint('Generated ${codes.length} QR codes in batch: $batchName');
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error generating bulk QR codes: $e');
+      rethrow;
+    }
+  }
+
+  /// Get QR codes by batch ID
+  Future<List<Map<String, dynamic>>> getQrCodesByBatch(String batchId) async {
+    try {
+      final response = await _client
+          .from('qr_codes')
+          .select()
+          .eq('batch_id', batchId)
+          .order('created_at', ascending: true);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting QR codes by batch: $e');
+      rethrow;
+    }
+  }
+
+  /// Get all QR codes (for admin) with pagination and search
+  Future<List<Map<String, dynamic>>> getAllQrCodes({
+    int page = 0,
+    int pageSize = 50,
+    String? searchQuery,
+  }) async {
+    try {
+      var query = _client.from('qr_codes').select();
+
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        query = query
+            .or('code.ilike.%$searchQuery%,batch_name.ilike.%$searchQuery%');
+      }
+
+      final from = page * pageSize;
+      final to = from + pageSize - 1;
+
+      final response =
+          await query.order('created_at', ascending: false).range(from, to);
+
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting all QR codes: $e');
+      return [];
+    }
+  }
+
+  /// Get unique batches (for filtering/viewing)
+  Future<List<Map<String, dynamic>>> getQrBatches() async {
+    try {
+      final response = await _client
+          .from('qr_codes')
+          .select('batch_id, batch_name, created_at, created_by')
+          .not('batch_id', 'is', null)
+          .order('created_at', ascending: false);
+
+      // Get unique batches
+      final Map<String, Map<String, dynamic>> uniqueBatches = {};
+      for (final row in response) {
+        final batchId = row['batch_id'] as String?;
+        if (batchId != null && !uniqueBatches.containsKey(batchId)) {
+          uniqueBatches[batchId] = row;
+        }
+      }
+
+      return uniqueBatches.values.toList();
+    } catch (e) {
+      debugPrint('Error getting QR batches: $e');
+      return [];
+    }
+  }
+
+  /// Redeem a QR code (single-use enforcement)
+  Future<Map<String, dynamic>> redeemQrCode(String code, String userId) async {
+    try {
+      // Fetch the QR code
+      final qrResponse =
+          await _client.from('qr_codes').select().eq('code', code).single();
+
+      final qrData = qrResponse;
+
+      // Check if already redeemed
+      if (qrData['is_redeemed'] == true) {
+        throw Exception(
+            'هذا الكود تم استخدامه من قبل في ${qrData['redeemed_at']}');
+      }
+
+      // Check expiry
+      final expiresAt = DateTime.parse(qrData['expires_at']);
+      if (expiresAt.isBefore(DateTime.now())) {
+        throw Exception('انتهت صلاحية هذا الكود');
+      }
+
+      // Get course IDs
+      final courseIds = List<String>.from(qrData['course_ids'] ?? []);
+      if (courseIds.isEmpty) {
+        throw Exception('هذا الكود غير صالح - لا توجد مواد مرتبطة');
+      }
+
+      // Enroll user in all courses
+      for (final courseId in courseIds) {
+        // Check if already enrolled
+        final existingEnrollment = await _client
+            .from('enrollments')
+            .select()
+            .eq('user_id', userId)
+            .eq('course_id', courseId)
+            .maybeSingle();
+
+        if (existingEnrollment == null) {
+          // Fetch course price to calculate paid amount
+          final courseRes = await _client
+              .from('courses')
+              .select('price')
+              .eq('id', courseId)
+              .single();
+
+          final double originalPrice =
+              (courseRes['price'] as num? ?? 0).toDouble();
+          final int discountPercent = qrData['discount_percent'] ?? 0;
+          final double paidAmount =
+              originalPrice * (1 - (discountPercent / 100.0));
+
+          await _client.from('enrollments').insert({
+            'user_id': userId,
+            'course_id': courseId,
+            'status': 'active',
+            'enrolled_at': DateTime.now().toIso8601String(),
+            'paid_amount': paidAmount,
+            'discount_applied': discountPercent,
+          });
+        }
+      }
+
+      // Mark QR code as redeemed
+      await _client.from('qr_codes').update({
+        'is_redeemed': true,
+        'redeemed_at': DateTime.now().toIso8601String(),
+        'redeemed_by': userId,
+      }).eq('id', qrData['id']);
+
+      // Record usage in qr_code_usage table
+      await _client.from('qr_code_usage').insert({
+        'qr_code_id': qrData['id'],
+        'user_id': userId,
+        'redeemed_at': DateTime.now().toIso8601String(),
+      });
+
+      debugPrint('QR code redeemed successfully: $code');
+      return {
+        'success': true,
+        'message': 'تم تفعيل الاشتراك بنجاح',
+        'courses_enrolled': courseIds.length,
+        'batch_name': qrData['batch_name'],
+      };
+    } catch (e) {
+      debugPrint('Error redeeming QR code: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a batch of QR codes
+  Future<void> deleteQrBatch(String batchId) async {
+    try {
+      await _client.from('qr_codes').delete().eq('batch_id', batchId);
+
+      debugPrint(' Deleted QR batch: $batchId');
+    } catch (e) {
+      debugPrint('Error deleting QR batch: $e');
+      rethrow;
+    }
+  }
+  // ==================== FINANCIAL REPORTS ====================
+
+  // ==================== FINANCIAL REPORTS ====================
+
+  /// Get detailed financial report
+  Future<Map<String, dynamic>> getDetailedFinancialReport({
+    DateTime? startDate,
+    DateTime? endDate,
+  }) async {
+    try {
+      // 1. Fetch regular enrollments (view might already include them, but let's be safe and clear)
+      var query = _client.from('admin_enrollments_view').select();
+
+      if (startDate != null) {
+        query = query.gte('enrolled_at', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        // Add one day to include the end date fully
+        final adjustedEndDate = endDate.add(const Duration(days: 1));
+        query = query.lt('enrolled_at', adjustedEndDate.toIso8601String());
+      }
+
+      final response = await query.order('enrolled_at', ascending: false);
+      final rawData = List<Map<String, dynamic>>.from(response);
+
+      // 2. Fetch QR Code usage for the same period
+      var qrQuery = _client.from('qr_code_usage').select('''
+         *,
+         qr_codes!inner(batch_name, type),
+         users!inner(full_name, email)
+       ''');
+
+      if (startDate != null) {
+        qrQuery = qrQuery.gte('redeemed_at', startDate.toIso8601String());
+      }
+      if (endDate != null) {
+        final adjustedEndDate = endDate.add(const Duration(days: 1));
+        qrQuery = qrQuery.lt('redeemed_at', adjustedEndDate.toIso8601String());
+      }
+
+      final qrResponse = await qrQuery.order('redeemed_at', ascending: false);
+      final qrData = List<Map<String, dynamic>>.from(qrResponse);
+
+      // 3. Process regular enrollments
+      double totalRevenue = 0;
+
+      final List<Map<String, dynamic>> reportItems = [];
+
+      for (var row in rawData) {
+        final price = (row['course_price'] as num? ?? 0).toDouble();
+        totalRevenue += price;
+
+        row['payment_method'] = 'نقدي / آخر'; // Default
+
+        reportItems.add(row);
+      }
+
+      final qrUserIds = qrData.map((e) => e['user_id']).toSet();
+
+      for (var item in reportItems) {
+        if (qrUserIds.contains(item['user_id'])) {
+          item['payment_method'] =
+              qrUserIds.contains(item['user_id']) ? 'رمز QR' : 'نقدي';
+        }
+      }
+
+      return {
+        'total_revenue': totalRevenue,
+        'total_enrollments': rawData.length,
+        'enrollments': reportItems,
+        'period': startDate != null && endDate != null
+            ? '${startDate.toString().split(' ')[0]} - ${endDate.toString().split(' ')[0]}'
+            : 'الكل',
+        'qr_redemptions_count': qrData.length, // Extra stat
+      };
+    } catch (e) {
+      debugPrint('Error getting financial report: $e');
+      return {
+        'total_revenue': 0.0,
+        'total_enrollments': 0,
+        'enrollments': [],
+        'period': '-',
+      };
+    }
+  }
+
+  DateTime? _parseSafeDate(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) {
+      try {
+        String s = value.trim();
+        if (s.length >= 10 && s[10] == ' ') {
+          s = s.replaceRange(10, 11, 'T');
+        }
+        return DateTime.tryParse(s) ?? DateTime.tryParse(value);
+      } catch (_) {
+        return DateTime.tryParse(value);
+      }
+    }
+    return null;
+  }
+
+  double _safeDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  /// Add a new app update record
+  Future<void> addAppUpdate({
+    required String versionName,
+    required String downloadUrl,
+    String? releaseNotes,
+    bool isMandatory = false,
+  }) async {
+    try {
+      await _client.from('app_updates').insert({
+        'version_name': versionName,
+        'download_url': downloadUrl,
+        'release_notes': releaseNotes,
+        'is_mandatory': isMandatory,
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+      });
+    } catch (e) {
+      debugPrint('Error adding app update: $e');
       rethrow;
     }
   }

@@ -19,6 +19,7 @@ import '../../models/download_progress.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
 import 'package:provider/provider.dart';
+import '../../core/utils/error_utils.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
@@ -206,8 +207,13 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
   Future<void> _loadLessons() async {
     try {
-      final lessons = await _databaseService.getLessons(widget.course.id);
-      final chapters = await _databaseService.getChapters(widget.course.id);
+      final results = await Future.wait([
+        _databaseService.getLessons(widget.course.id),
+        _databaseService.getChapters(widget.course.id),
+      ]);
+
+      final lessons = results[0] as List<Map<String, dynamic>>;
+      final chapters = results[1] as List<Chapter>;
 
       if (mounted) {
         setState(() {
@@ -286,7 +292,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
           } else if (progress.status == DownloadStatus.failed) {
             _downloadProgress = null;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('فشل التحميل: ${progress.error}')),
+              SnackBar(
+                  content: Text(ErrorUtils.getFriendlyErrorMessage(
+                      progress.error ?? 'Unknown error'))),
             );
           }
         });
@@ -489,7 +497,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             width: double.infinity,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: CachedNetworkImageProvider(widget.course.imageUrl ?? ''),
+                image: widget.course.imageUrl?.isNotEmpty == true
+                    ? CachedNetworkImageProvider(widget.course.imageUrl!)
+                    : const AssetImage('assets/images/logo.png')
+                        as ImageProvider,
                 fit: BoxFit.cover,
               ),
             ),
@@ -988,7 +999,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
   Future<void> _handleEnrollment() async {
     if (_isEnrolled) {
-      _tabController.animateTo(1); // Switch to content tab
+      _tabController.animateTo(0); // Switch to lessons tab (now at index 0)
       return;
     }
 
@@ -1045,8 +1056,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 fontFamily: 'Cairo', // Ensure consistent font
               ),
               tabs: [
-                Tab(text: _t('about')),
                 Tab(text: _t('lessons')),
+                Tab(text: _t('about')),
                 Tab(text: _t('reviews')),
                 Tab(text: _t('discussions')),
               ],
@@ -1060,9 +1071,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   Widget _buildTabContent() {
     switch (_selectedTabIndex) {
       case 0:
-        return _buildOverviewTab();
-      case 1:
         return _buildContentTab();
+      case 1:
+        return _buildOverviewTab();
       case 2:
         return _buildReviewsTab();
       case 3:
@@ -1368,7 +1379,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 } catch (e) {
                   if (mounted) {
                     scaffoldMessenger.showSnackBar(
-                      SnackBar(content: Text('خطأ: $e')),
+                      SnackBar(
+                          content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
                     );
                   }
                 }

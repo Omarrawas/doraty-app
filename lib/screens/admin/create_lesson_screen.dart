@@ -12,6 +12,7 @@ import '../../core/config/github_config.dart';
 import '../../widgets/video_preview_widget.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../models/chapter.dart';
+import '../../core/utils/error_utils.dart';
 
 class CreateLessonScreen extends StatefulWidget {
   final String courseId;
@@ -785,7 +786,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         setState(() => _isUploadingToGitHub = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ: $e'),
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
             backgroundColor: Colors.red,
           ),
         );
@@ -836,7 +837,9 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
       setState(() => _isSaving = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }

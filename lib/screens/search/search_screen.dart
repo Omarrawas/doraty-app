@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'dart:async'; // Added for Timer
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/error_utils.dart';
 import '../../models/course.dart';
 import '../../widgets/course_card.dart';
 import '../../widgets/shimmer_loader.dart';
@@ -93,9 +94,8 @@ class _SearchScreenState extends State<SearchScreen> {
       if (mounted) {
         setState(() {
           _isLoading = false;
-          // You could show a snackbar error here
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('حدث خطأ أثناء البحث: $e')),
+            SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
           );
         });
       }

@@ -7,7 +7,12 @@ import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/string_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' as intl;
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:flutter/services.dart';
+import '../../core/utils/error_utils.dart';
 
 class TeacherEnrollmentStatsScreen extends StatefulWidget {
   final String teacherId;
@@ -27,8 +32,8 @@ class TeacherEnrollmentStatsScreen extends StatefulWidget {
 
 class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScreen> {
   final DatabaseService _db = DatabaseService();
-  final NumberFormat _currencyFormat =
-      NumberFormat.currency(symbol: 'ل.س ', decimalDigits: 0);
+  final intl.NumberFormat _currencyFormat =
+      intl.NumberFormat.currency(symbol: 'ل.س ', decimalDigits: 0);
 
   Map<String, dynamic> _stats = {};
   bool _isLoading = true;
@@ -43,6 +48,7 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
+      // Use the same detailed stats logic for the main screen data
       final stats = await _db.getTeacherDetailedStats(widget.teacherId);
       if (!mounted) return;
       setState(() {
@@ -53,7 +59,9 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ في تحميل الإحصائيات: $e'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -148,6 +156,26 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
               ],
             ),
           ),
+          const SizedBox(width: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white24, width: 1),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.print, color: Colors.white),
+                  onPressed: _showMonthSelectionDialog,
+                  tooltip: 'طباعة التقرير الشهري',
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
           CircleAvatar(
             radius: 24,
             backgroundImage: widget.avatarUrl != null ? NetworkImage(widget.avatarUrl!) : null,
@@ -312,9 +340,436 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
         subtitle: Text(enrollment['course_title'] ?? '',
             style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
         trailing: Text(
-          DateFormat('MM/dd').format(DateTime.parse(enrollment['enrolled_at'])),
+          intl.DateFormat('MM/dd')
+              .format(DateTime.parse(enrollment['enrolled_at'])),
           style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11),
         ),
+      ),
+    );
+  }
+
+  void _showMonthSelectionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => _MonthSelectionDialog(
+        onGenerateReport: (selectedMonths) {
+          if (selectedMonths.isNotEmpty) {
+            _generateAndPrintReport(selectedMonths);
+          }
+        },
+      ),
+    );
+  }
+
+  Future<void> _generateAndPrintReport(List<DateTime> selectedMonths) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      ),
+    );
+
+    try {
+      final startDate = selectedMonths.reduce((a, b) => a.isBefore(b) ? a : b);
+      final endDate = DateTime(
+        selectedMonths.reduce((a, b) => a.isAfter(b) ? a : b).year,
+        selectedMonths.reduce((a, b) => a.isAfter(b) ? a : b).month + 1,
+        0,
+      );
+
+      final stats = await _db.getTeacherMonthlyStatistics(
+        widget.teacherId,
+        startDate: startDate,
+        endDate: endDate,
+      );
+
+      if (mounted) Navigator.pop(context); // Close loading
+
+      final pdf = await _createPDF(stats, selectedMonths);
+
+      await Printing.layoutPdf(
+        onLayout: (format) => pdf.save(),
+        name:
+            'Report_${widget.teacherName}_${intl.DateFormat('yyyyMMdd').format(DateTime.now())}',
+      );
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // Close loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<pw.Document> _createPDF(
+      Map<String, dynamic> stats, List<DateTime> selectedMonths) async {
+    final pdf = pw.Document();
+
+    final fontData = await rootBundle.load("assets/fonts/Cairo-Regular.ttf");
+    final ttf = pw.Font.ttf(fontData);
+    final fontBoldData = await rootBundle.load("assets/fonts/Cairo-Bold.ttf");
+    final ttfBold = pw.Font.ttf(fontBoldData);
+
+    pdf.addPage(
+      pw.MultiPage(
+        pageTheme: pw.PageTheme(
+          theme: pw.ThemeData.withFont(base: ttf, bold: ttfBold),
+          textDirection: pw.TextDirection.rtl,
+          margin: const pw.EdgeInsets.all(30),
+        ),
+        build: (context) => [
+          // Header
+          pw.Header(
+            level: 0,
+            child: pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text('التقرير الإحصائي الشهري التفصيلي',
+                        style: pw.TextStyle(
+                            fontSize: 24,
+                            font: ttfBold,
+                            color: PdfColors.blue900)),
+                    pw.Text('المدرس: ${widget.teacherName}',
+                        style: pw.TextStyle(fontSize: 16, font: ttf)),
+                    if (stats['start_date'] != null &&
+                        stats['end_date'] != null)
+                      pw.Padding(
+                        padding: const pw.EdgeInsets.only(top: 4),
+                        child: pw.Text(
+                            'الفترة: ${_formatMonthYear(stats['start_date'].toString().substring(0, 7))} - ${_formatMonthYear(stats['end_date'].toString().substring(0, 7))}',
+                            style: pw.TextStyle(
+                                fontSize: 10,
+                                font: ttf,
+                                color: PdfColors.grey700)),
+                      ),
+                  ],
+                ),
+                pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.end,
+                  children: [
+                    pw.Text(
+                        'تاريخ الإنشاء: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.now())}',
+                        style: const pw.TextStyle(fontSize: 10)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          pw.SizedBox(height: 20),
+
+          // Summary Cards
+          pw.Row(
+            children: [
+              _buildPDFStatCard(
+                  'إجمالي الدخل',
+                  _currencyFormat.format(_safeDouble(stats['total_revenue'])),
+                  PdfColors.green800,
+                  ttfBold),
+              pw.SizedBox(width: 8),
+              _buildPDFStatCard(
+                  'إجمالي الطلاب',
+                  (stats['total_users'] ?? 0).toString(),
+                  PdfColors.blue800,
+                  ttfBold),
+              pw.SizedBox(width: 8),
+              _buildPDFStatCard(
+                  'الاشتراكات الجديدة',
+                  (stats['total_enrollments'] ?? 0).toString(),
+                  PdfColors.orange800,
+                  ttfBold),
+            ],
+          ),
+
+          pw.SizedBox(height: 25),
+
+          // Monthly Table
+          pw.Text('الخلاصة الشهرية',
+              style: pw.TextStyle(fontSize: 16, font: ttfBold)),
+          pw.SizedBox(height: 8),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey400),
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  _buildTableCell('الشهر', ttfBold, isHeader: true),
+                  _buildTableCell('الاشتراكات', ttfBold, isHeader: true),
+                  _buildTableCell('طلاب جدد', ttfBold, isHeader: true),
+                  _buildTableCell('الإيرادات', ttfBold, isHeader: true),
+                  _buildTableCell('الاختبارات', ttfBold, isHeader: true),
+                ],
+              ),
+              ...(stats['monthly_breakdown'] as List? ?? [])
+                  .map((m) {
+                    return pw.TableRow(
+                      children: [
+                        _buildTableCell(
+                            _formatMonthYear(m['month'] ?? ''), ttf),
+                        _buildTableCell(
+                            (m['enrollments'] ?? 0).toString(), ttf),
+                        _buildTableCell((m['students'] ?? 0).toString(), ttf),
+                        _buildTableCell(
+                            _currencyFormat.format(_safeDouble(m['revenue'])),
+                            ttf),
+                        _buildTableCell((m['attempts'] ?? 0).toString(), ttf),
+                      ],
+                    );
+                  })
+                  .toList()
+                  .cast<pw.TableRow>(),
+            ],
+          ),
+
+          pw.SizedBox(height: 25),
+
+          // Detailed Table
+          pw.Text('تفاصيل المشتركين والمبالغ',
+              style: pw.TextStyle(fontSize: 16, font: ttfBold)),
+          pw.SizedBox(height: 8),
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey400),
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey200),
+                children: [
+                  _buildTableCell('اسم الطالب', ttfBold, isHeader: true),
+                  _buildTableCell('الكورس', ttfBold, isHeader: true),
+                  _buildTableCell('المبلغ', ttfBold, isHeader: true),
+                  _buildTableCell('التاريخ', ttfBold, isHeader: true),
+                ],
+              ),
+              ...(stats['enrollments'] as List? ?? [])
+                  .map((e) {
+                    return pw.TableRow(
+                      children: [
+                        _buildTableCell(e['user_full_name'] ?? '-', ttf),
+                        _buildTableCell(e['course_title'] ?? '-', ttf),
+                        _buildTableCell(
+                            _currencyFormat
+                                .format(_safeDouble(e['course_price'])),
+                            ttf),
+                        _buildTableCell(_formatFullDate(e['enrolled_at']), ttf),
+                      ],
+                    );
+                  })
+                  .toList()
+                  .cast<pw.TableRow>(),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    return pdf;
+  }
+
+  pw.Widget _buildPDFStatCard(
+      String label, String value, PdfColor color, pw.Font fontBold) {
+    return pw.Expanded(
+      child: pw.Container(
+        padding: const pw.EdgeInsets.all(10),
+        decoration: pw.BoxDecoration(
+          color: color,
+          borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Text(label,
+                style:
+                    const pw.TextStyle(color: PdfColors.white, fontSize: 10)),
+            pw.Text(value,
+                style: pw.TextStyle(
+                    color: PdfColors.white, fontSize: 16, font: fontBold)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  pw.Widget _buildTableCell(String text, pw.Font font,
+      {bool isHeader = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(8),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          font: font,
+          fontSize: isHeader ? 12 : 10,
+          fontWeight: isHeader ? pw.FontWeight.bold : pw.FontWeight.normal,
+        ),
+        textAlign: pw.TextAlign.center,
+      ),
+    );
+  }
+
+  double _safeDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
+  }
+
+  String _formatMonthYear(String monthKey) {
+    if (monthKey.isEmpty) return '-';
+    try {
+      final parts = monthKey.split('-');
+      if (parts.length < 2) return monthKey;
+      final date = DateTime(int.parse(parts[0]), int.parse(parts[1]));
+      return intl.DateFormat('MMMM yyyy', 'ar').format(date);
+    } catch (e) {
+      return monthKey;
+    }
+  }
+
+  String _formatFullDate(dynamic dateValue) {
+    if (dateValue == null) return '-';
+    try {
+      DateTime? date;
+      if (dateValue is DateTime) {
+        date = dateValue;
+      } else if (dateValue is String) {
+        String s = dateValue.trim();
+        if (s.length >= 10 && s[10] == ' ') {
+          s = s.replaceRange(10, 11, 'T');
+        }
+        date = DateTime.tryParse(s);
+      }
+      if (date != null) {
+        return intl.DateFormat('yyyy/MM/dd HH:mm', 'ar').format(date);
+      }
+    } catch (_) {}
+    return dateValue.toString();
+  }
+}
+
+class _MonthSelectionDialog extends StatefulWidget {
+  final Function(List<DateTime>) onGenerateReport;
+
+  const _MonthSelectionDialog({required this.onGenerateReport});
+
+  @override
+  State<_MonthSelectionDialog> createState() => _MonthSelectionDialogState();
+}
+
+class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
+  final Map<DateTime, bool> _selectedMonths = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeMonths();
+  }
+
+  void _initializeMonths() {
+    final now = DateTime.now();
+    for (int i = 11; i >= 0; i--) {
+      final month = DateTime(now.year, now.month - i, 1);
+      _selectedMonths[month] = false;
+    }
+  }
+
+  void _toggleSelectAll(bool value) {
+    setState(() {
+      _selectedMonths.updateAll((key, _) => value);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedCount = _selectedMonths.values.where((v) => v).length;
+
+    return BackdropFilter(
+      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+      child: AlertDialog(
+        backgroundColor: AppColors.getGlassColor(context, opacity: 0.9),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: Colors.white24),
+        ),
+        title: const Text('اختر الأشهر للتقرير',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton.icon(
+                    onPressed: () => _toggleSelectAll(true),
+                    icon: const Icon(Icons.select_all, size: 18),
+                    label: const Text('تحديد الكل'),
+                    style: TextButton.styleFrom(
+                        foregroundColor: Colors.blueAccent),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => _toggleSelectAll(false),
+                    icon: const Icon(Icons.deselect, size: 18),
+                    label: const Text('إلغاء الكل'),
+                    style:
+                        TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                  ),
+                ],
+              ),
+              const Divider(color: Colors.white12),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: _selectedMonths.keys.toList().reversed.map((month) {
+                    final monthName =
+                        intl.DateFormat('MMMM yyyy', 'ar').format(month);
+                    return CheckboxListTile(
+                      value: _selectedMonths[month],
+                      onChanged: (val) =>
+                          setState(() => _selectedMonths[month] = val!),
+                      title: Text(monthName,
+                          style: const TextStyle(color: Colors.white)),
+                      activeColor: AppColors.primaryPurple,
+                      checkColor: Colors.white,
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            onPressed: selectedCount > 0
+                ? () {
+                    final selected = _selectedMonths.entries
+                        .where((e) => e.value)
+                        .map((e) => e.key)
+                        .toList();
+                    Navigator.pop(context);
+                    widget.onGenerateReport(selected);
+                  }
+                : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPurple,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text('إنشاء التقرير ($selectedCount)'),
+          ),
+        ],
       ),
     );
   }

@@ -14,6 +14,7 @@ import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
+import '../../core/utils/error_utils.dart';
 import 'order_history_screen.dart';
 import 'leaderboard_screen.dart';
 import '../../core/services/streak_service.dart';
@@ -93,7 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${_t('error_loading')}: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     }
@@ -388,7 +389,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           } catch (e) {
                             scaffoldMessenger.showSnackBar(
                               SnackBar(
-                                  content: Text('خطأ في تسجيل الخروج: $e')),
+                                  content: Text(
+                                      ErrorUtils.getFriendlyErrorMessage(e))),
                             );
                           }
                         },

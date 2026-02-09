@@ -101,111 +101,182 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount = 2;
+    double childAspectRatio = 0.65;
+
+    if (screenWidth > 1200) {
+      crossAxisCount = 4;
+      childAspectRatio = 0.75;
+    } else if (screenWidth > 800) {
+      crossAxisCount = 3;
+      childAspectRatio = 0.7;
+    }
+
     return Scaffold(
       body: DynamicGradientBackground(
         child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              // Header
-              SliverPadding( // Changed to non-const to allow _t()
-                padding: const EdgeInsets.all(20),
-                sliver: SliverToBoxAdapter(
-                  child: Text(
-                    _t('explore_courses'),
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.normal,
-                      color: Colors.white,
+          child: Scrollbar(
+            thickness: 6,
+            radius: const Radius.circular(10),
+            interactive: true,
+            child: CustomScrollView(
+              slivers: [
+                // Header
+                SliverPadding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  sliver: SliverToBoxAdapter(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _t('explore_courses'),
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.normal,
+                            color: Colors.white,
+                          ),
+                        ),
+                        // Small Decoration like Home
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.auto_awesome,
+                              color: Colors.amber, size: 20),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
 
-              // Categories List
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 120,
-                  child: _categories.isEmpty && !_isLoading
-                  ? Center(child: Text(_t('no_categories_found'), style: const TextStyle(color: Colors.white)))
-                  : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _isLoading ? 5 : _categories.length,
-                    itemBuilder: (context, index) {
-                       if (_isLoading) {
-                         return Shimmer.fromColors(
-                           baseColor: Colors.white10,
-                           highlightColor: Colors.white24,
-                           child: Container(
-                             width: 100, 
-                             margin: const EdgeInsets.only(right: 12),
-                             decoration: BoxDecoration(
-                               color: Colors.white,
-                               borderRadius: BorderRadius.circular(16)
-                             ),
-                           ),
-                         );
-                       }
-                       
-                       final cat = _categories[index];
-                       return CategoryCard(
-                         category: cat,
-                         isSelected: _selectedCategoryId == cat.id,
-                         onTap: () => _onCategorySelected(cat.id),
-                       );
-                    },
+                // Categories List (Now Circular)
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 120,
+                    child: _categories.isEmpty && !_isLoading
+                        ? Center(
+                            child: Text(_t('no_categories_found'),
+                                style: const TextStyle(color: Colors.white)))
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _isLoading ? 5 : _categories.length,
+                            itemBuilder: (context, index) {
+                              if (_isLoading) {
+                                return _buildShimmerCategory();
+                              }
+
+                              final cat = _categories[index];
+                              return CategoryCard(
+                                category: cat,
+                                isSelected: _selectedCategoryId == cat.id,
+                                onTap: () => _onCategorySelected(cat.id),
+                              );
+                            },
+                          ),
                   ),
                 ),
-              ),
 
-              const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
+                const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
 
-              // Search Bar (Optional, can be its own widget)
-              // ...
-
-              // Courses Grid
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: _isLoading 
-                ? SliverToBoxAdapter(child: _buildShimmerGrid())
-                : _filteredCourses.isEmpty
-                  ? SliverToBoxAdapter(child: Center(child: Text(_t('no_courses_in_category'), style: const TextStyle(color: Colors.white70))))
-                  : SliverGrid(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          return CourseCard(
-                            course: _filteredCourses[index],
-                            heroTag: 'explore_course_image_${_filteredCourses[index].id}',
-                          );
-                        },
-                        childCount: _filteredCourses.length,
-                      ),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2, // Responsive?
-                        childAspectRatio: 0.5,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
-                    ),
-              ),
-              
-              const SliverPadding(padding: EdgeInsets.only(bottom: 80)), // Space for BottomNav
-            ],
+                // Courses Grid
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: _isLoading 
+                      ? SliverToBoxAdapter(
+                          child: _buildShimmerGrid(
+                              crossAxisCount, childAspectRatio))
+                      : _filteredCourses.isEmpty
+                          ? SliverToBoxAdapter(
+                              child: Center(
+                                  child: Column(
+                              children: [
+                                const SizedBox(height: 60),
+                                Icon(Icons.search_off,
+                                    size: 64,
+                                    color: Colors.white.withOpacity(0.3)),
+                                const SizedBox(height: 16),
+                                Text(_t('no_courses_in_category'),
+                                    style:
+                                        const TextStyle(color: Colors.white70)),
+                              ],
+                            )))
+                          : SliverGrid(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  return CourseCard(
+                                    course: _filteredCourses[index],
+                                    heroTag:
+                                        'explore_course_image_${_filteredCourses[index].id}',
+                                    showEnrollButton:
+                                        true, // Matches Home Style
+                                  );
+                                },
+                                childCount: _filteredCourses.length,
+                              ),
+                              gridDelegate:
+                                  SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                childAspectRatio: childAspectRatio,
+                                crossAxisSpacing: 16,
+                                mainAxisSpacing: 20,
+                              ),
+                            ),
+                ),
+                
+                const SliverPadding(
+                    padding:
+                        EdgeInsets.only(bottom: 100)), // Space for BottomNav
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildShimmerGrid() {
+  Widget _buildShimmerCategory() {
+    return Shimmer.fromColors(
+      baseColor: Colors.white10,
+      highlightColor: Colors.white24,
+      child: Container(
+        width: 75,
+        margin: const EdgeInsets.only(right: 16),
+        child: Column(
+          children: [
+            Container(
+              width: 75,
+              height: 75,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: 50,
+              height: 10,
+              color: Colors.white,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShimmerGrid(int crossAxisCount, double aspectRatio) {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 0.75,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: aspectRatio,
         crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        mainAxisSpacing: 20,
       ),
       itemCount: 4,
       itemBuilder: (context, index) {
@@ -215,7 +286,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
            child: Container(
              decoration: BoxDecoration(
                color: Colors.white,
-               borderRadius: BorderRadius.circular(12)
+               borderRadius: BorderRadius.circular(24)
              ),
            ),
         );

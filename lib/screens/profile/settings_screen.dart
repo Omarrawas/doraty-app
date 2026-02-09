@@ -8,6 +8,8 @@ import 'package:provider/provider.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/supabase_service.dart';
 
+import '../../core/utils/error_utils.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -65,7 +67,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('خطأ في الحفظ: $e')));
+              .showSnackBar(
+              SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))));
         }
       }
     }

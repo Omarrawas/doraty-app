@@ -6,8 +6,12 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/string_utils.dart';
+import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class CourseEnrollmentsScreen extends StatefulWidget {
   final String courseId;
@@ -56,7 +60,9 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+        SnackBar(
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -165,8 +171,31 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                       width: 1),
                 ),
                 child: IconButton(
+                  icon: const Icon(Icons.print, color: Colors.white),
+                  onPressed:
+                      _enrollments.isEmpty ? null : _generateAndPrintReport,
+                  tooltip: 'طباعة التقرير',
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
+                      width: 1),
+                ),
+                child: IconButton(
                   icon: const Icon(Icons.refresh, color: Colors.white),
                   onPressed: _loadData,
+                  tooltip: 'تحديث البيانات',
                 ),
               ),
             ),
@@ -435,7 +464,9 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                     );
                   } catch (e) {
                     messenger.showSnackBar(
-                      SnackBar(content: Text('حدث خطأ: $e'), backgroundColor: Colors.red),
+                      SnackBar(
+                          content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+                          backgroundColor: Colors.red),
                     );
                   }
                 },
@@ -445,6 +476,198 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Future<void> _generateAndPrintReport() async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+
+      final pdf = await _createPDF();
+
+      if (!mounted) return;
+      Navigator.pop(context); // Hide loading
+
+      await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => pdf.save(),
+        name: 'تقرير_${widget.courseTitle}',
+      );
+    } catch (e) {
+      if (mounted) Navigator.pop(context); // Hide loading
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+            backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<pw.Document> _createPDF() async {
+    final pdf = pw.Document();
+    final arabicFont = await PdfGoogleFonts.cairoRegular();
+    final arabicBold = await PdfGoogleFonts.cairoBold();
+
+    // Calculate stats
+    double totalRevenue = 0;
+    int activeCount = 0;
+    for (var e in _enrollments) {
+      totalRevenue += (e['courses']['price'] as num? ?? 0).toDouble();
+      if (e['status'] == 'active') activeCount++;
+    }
+
+    pdf.addPage(
+      pw.MultiPage(
+        textDirection: pw.TextDirection.rtl,
+        theme: pw.ThemeData.withFont(
+          base: arabicFont,
+          bold: arabicBold,
+        ),
+        header: (pw.Context context) => pw.Container(
+          alignment: pw.Alignment.centerLeft,
+          margin: const pw.EdgeInsets.only(bottom: 20),
+          child: pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+            children: [
+              pw.Text('تقرير اشتراكات الدورة',
+                  style: pw.TextStyle(fontSize: 20, font: arabicBold)),
+              pw.Text(DateFormat('yyyy/MM/dd').format(DateTime.now()),
+                  style: const pw.TextStyle(fontSize: 12)),
+            ],
+          ),
+        ),
+        build: (pw.Context context) => [
+          pw.SizedBox(height: 10),
+          pw.Text('الدورة: ${widget.courseTitle}',
+              style: pw.TextStyle(fontSize: 18, font: arabicBold)),
+          pw.SizedBox(height: 20),
+
+          // Summary Cards
+          pw.Row(
+            mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
+            children: [
+              _buildPDFStatCard(
+                  'إجمالي الاشتراكات', '${_enrollments.length}', arabicBold),
+              _buildPDFStatCard(
+                  'الاشتراكات النشطة', '$activeCount', arabicBold),
+              _buildPDFStatCard('إجمالي المبالغ',
+                  _currencyFormat.format(totalRevenue), arabicBold),
+            ],
+          ),
+
+          pw.SizedBox(height: 30),
+          pw.Text('قائمة المشتركين:',
+              style: pw.TextStyle(fontSize: 16, font: arabicBold)),
+          pw.SizedBox(height: 10),
+
+          // Students Table
+          pw.Table(
+            border: pw.TableBorder.all(color: PdfColors.grey300),
+            columnWidths: {
+              0: const pw.FlexColumnWidth(3), // Name
+              1: const pw.FlexColumnWidth(3), // Email
+              2: const pw.FlexColumnWidth(2), // Date
+              3: const pw.FlexColumnWidth(2), // Amount
+              4: const pw.FlexColumnWidth(1), // Status
+            },
+            children: [
+              pw.TableRow(
+                decoration: const pw.BoxDecoration(color: PdfColors.grey100),
+                children: [
+                  _buildPDFTableCell('اسم الطالب', arabicBold, isHeader: true),
+                  _buildPDFTableCell('البريد الإلكتروني', arabicBold,
+                      isHeader: true),
+                  _buildPDFTableCell('تاريخ الاشتراك', arabicBold,
+                      isHeader: true),
+                  _buildPDFTableCell('المبلغ', arabicBold, isHeader: true),
+                  _buildPDFTableCell('الحالة', arabicBold, isHeader: true),
+                ],
+              ),
+              ..._enrollments.map((e) {
+                final dateStr = e['enrolled_at'] != null
+                    ? DateFormat('yyyy/MM/dd')
+                        .format(DateTime.parse(e['enrolled_at']))
+                    : '-';
+                String statusLabel = 'نشط';
+                if (e['status'] == 'cancelled') statusLabel = 'ملغي';
+                if (e['status'] == 'expired') statusLabel = 'منتهي';
+
+                return pw.TableRow(
+                  children: [
+                    _buildPDFTableCell(
+                        e['users']['full_name'] ?? '', arabicFont),
+                    _buildPDFTableCell(e['users']['email'] ?? '', arabicFont),
+                    _buildPDFTableCell(dateStr, arabicFont),
+                    _buildPDFTableCell(
+                        _currencyFormat.format(e['courses']['price'] ?? 0),
+                        arabicFont),
+                    _buildPDFTableCell(statusLabel, arabicFont),
+                  ],
+                );
+              }),
+            ],
+          ),
+        ],
+        footer: (pw.Context context) => pw.Container(
+          alignment: pw.Alignment.center,
+          margin: const pw.EdgeInsets.only(top: 20),
+          child: pw.Column(
+            children: [
+              pw.Divider(color: PdfColors.grey300),
+              pw.SizedBox(height: 5),
+              pw.Text('تم إنشاء هذا التقرير تلقائياً من منصة دراتي',
+                  style:
+                      const pw.TextStyle(fontSize: 10, color: PdfColors.grey)),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return pdf;
+  }
+
+  pw.Widget _buildPDFStatCard(String label, String value, pw.Font font) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(10),
+      width: 150,
+      decoration: pw.BoxDecoration(
+        border: pw.Border.all(color: PdfColor.fromHex('#E1BEE7')),
+        borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+        color: PdfColor.fromHex('#F3E5F5'),
+      ),
+      child: pw.Column(
+        children: [
+          pw.Text(label, style: const pw.TextStyle(fontSize: 10)),
+          pw.SizedBox(height: 5),
+          pw.Text(value,
+              style: pw.TextStyle(
+                  fontSize: 14, font: font, color: PdfColors.purple800)),
+        ],
+      ),
+    );
+  }
+
+  pw.Widget _buildPDFTableCell(String text, pw.Font font,
+      {bool isHeader = false}) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.all(5),
+      child: pw.Text(
+        text,
+        style: pw.TextStyle(
+          font: font,
+          fontSize: isHeader ? 10 : 9,
+          color: isHeader ? PdfColors.black : PdfColors.grey800,
+        ),
+        textAlign: pw.TextAlign.center,
       ),
     );
   }

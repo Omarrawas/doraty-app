@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import '../core/services/database_service.dart';
+import '../core/utils/error_utils.dart';
 
 enum PaymentMethod {
   shamCash,
@@ -67,7 +68,7 @@ class PaymentService {
       debugPrint('Error processing payment: $e');
       return {
         'success': false,
-        'message': 'حدث خطأ أثناء معالجة الطلب. يرجى المحاولة مرة أخرى.',
+        'message': ErrorUtils.getFriendlyErrorMessage(e),
       };
     }
   }

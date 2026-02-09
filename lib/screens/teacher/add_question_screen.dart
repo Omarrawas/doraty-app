@@ -5,7 +5,12 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../core/utils/error_utils.dart';
 import 'dart:ui';
+import '../../widgets/tex_view_widget.dart';
+// import '../../widgets/math_symbol_toolbar.dart'; // No longer needed here as it's inside RichTextEditor
+
+import '../../widgets/rich_text_editor.dart';
 
 class AddQuestionScreen extends StatefulWidget {
   final String examId;
@@ -26,17 +31,18 @@ class AddQuestionScreen extends StatefulWidget {
 }
 
 class _AddQuestionScreenState extends State<AddQuestionScreen> {
-  final DatabaseService _db = DatabaseService();
   final _formKey = GlobalKey<FormState>();
+  final DatabaseService _db = DatabaseService.instance;
 
-  final _questionController = TextEditingController();
-  final _explanationController = TextEditingController();
+  // Controllers
+  // _questionController removed in favor of _questionHtml
+  String _questionHtml = '';
+  // _explanationController removed in favor of _explanationHtml
+  String _explanationHtml = '';
   final _pointsController = TextEditingController(text: '1');
 
-  final List<TextEditingController> _optionControllers = [
-    TextEditingController(),
-    TextEditingController(),
-  ];
+  // _optionControllers removed in favor of _optionHtmls
+  final List<String> _optionHtmls = ['', ''];
 
   String _questionType = 'multiple_choice';
   int _correctAnswer = 0;
@@ -44,26 +50,39 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
 
   bool get _isEditing => widget.questionId != null;
 
+  final ScrollController _toolbarScrollController = ScrollController();
+
+  final FocusNode _explanationFocus = FocusNode();
+  final FocusNode _pointsFocus = FocusNode();
+
+  List<bool> _showOptionPreviews = [
+    false,
+    false
+  ]; // Track preview state for each option (kept for consistency or rendering)
+
   @override
   void initState() {
     super.initState();
-    if (_isEditing && widget.questionData != null) {
+    if (_isEditing) {
       _loadQuestionData();
     }
   }
 
   void _loadQuestionData() {
     final q = widget.questionData!;
-    _questionController.text = q['question_text'] ?? '';
-    _explanationController.text = q['explanation'] ?? '';
+    _questionHtml = q['question_text'] ?? '';
+    _explanationHtml = q['explanation'] ?? '';
     _pointsController.text = q['points']?.toString() ?? '1';
     _questionType = q['question_type'] ?? 'multiple_choice';
 
     final options = q['options'] as List?;
     if (options != null) {
-      _optionControllers.clear();
-      for (var option in options) {
-        _optionControllers.add(TextEditingController(text: option.toString()));
+      _optionHtmls.clear();
+      _showOptionPreviews.clear();
+
+      for (var i = 0; i < options.length; i++) {
+        _optionHtmls.add(options[i].toString());
+        _showOptionPreviews.add(false);
       }
     }
 
@@ -87,7 +106,8 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                 _buildHeader(context),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(
+                        20, 20, 20, 80), // Extra padding for toolbar
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -99,19 +119,27 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                               children: [
                                 _buildQuestionTypeSelector(),
                                 const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _questionController,
-                                  style: TextStyle(
-                                      color: AppColors.getTextColor(context)),
-                                  decoration: _inputDecoration(
-                                    label: 'نص السؤال',
-                                    hint: 'اكتب السؤال هنا',
-                                    icon: Icons.quiz,
-                                  ),
-                                  maxLines: 3,
-                                  validator: (v) =>
-                                      v == null || v.isEmpty ? 'مطلوب' : null,
+                                const SizedBox(height: 16),
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: Text('نص السؤال',
+                                      style: TextStyle(
+                                          color:
+                                              AppColors.getTextColor(context))),
                                 ),
+                                Theme(
+                                  data: ThemeData.light(),
+                                  child: RichTextEditor(
+                                    initialHtml: _questionHtml,
+                                    height: 200,
+                                    textColor: Colors.black,
+                                    onContentChanged: (html) {
+                                      _questionHtml = html;
+                                    },
+                                    placeholder: 'اكتب السؤال هنا...',
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
                               ],
                             ),
                           ),
@@ -129,6 +157,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                               children: [
                                 TextFormField(
                                   controller: _pointsController,
+                                  focusNode: _pointsFocus,
                                   style: TextStyle(
                                       color: AppColors.getTextColor(context)),
                                   decoration: _inputDecoration(
@@ -146,21 +175,33 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                                   },
                                 ),
                                 const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _explanationController,
-                                  style: TextStyle(
-                                      color: AppColors.getTextColor(context)),
-                                  decoration: _inputDecoration(
-                                    label: 'الشرح (اختياري)',
-                                    hint: 'شرح الإجابة الصحيحة',
-                                    icon: Icons.lightbulb,
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Text('الشرح (اختياري)',
+                                        style: TextStyle(
+                                            color: AppColors.getTextColor(
+                                                context))),
                                   ),
-                                  maxLines: 3,
+                                ),
+                                Theme(
+                                  data: ThemeData.light(),
+                                  child: RichTextEditor(
+                                    initialHtml: _explanationHtml,
+                                    height: 120,
+                                    isCompact: true,
+                                    textColor: Colors.black,
+                                    onContentChanged: (html) {
+                                      _explanationHtml = html;
+                                    },
+                                    placeholder: 'شرح الإجابة الصحيحة...',
+                                  ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 32),
+                          const SizedBox(height: 12), // Reduced from 32
                           _buildSubmitButton(),
                           const SizedBox(height: 40),
                         ],
@@ -234,7 +275,8 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
               width: 1.5,
             ),
           ),
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(
+              horizontal: 16, vertical: 12), // Reduced padding
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -381,14 +423,15 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
         setState(() {
           _questionType = type;
           if (type == 'true_false') {
-            _optionControllers.clear();
-            _optionControllers.add(TextEditingController(text: 'صح'));
-            _optionControllers.add(TextEditingController(text: 'خطأ'));
+            _optionHtmls.clear();
+            _optionHtmls.add('صح');
+            _optionHtmls.add('خطأ');
+            _showOptionPreviews = [false, false];
           }
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: 8), // Reduced from 12
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryPurple
@@ -440,7 +483,8 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
               TextButton.icon(
                 onPressed: () {
                   setState(() {
-                    _optionControllers.add(TextEditingController());
+                    _optionHtmls.add('');
+                    _showOptionPreviews.add(false);
                   });
                 },
                 icon: const Icon(Icons.add),
@@ -449,101 +493,158 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        ..._optionControllers.asMap().entries.map((entry) {
+        ..._optionHtmls.asMap().entries.map((entry) {
           final index = entry.key;
-          final controller = entry.value;
+          final optionHtml = entry.value;
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _buildOptionField(index, controller),
+            child: _buildOptionField(index, optionHtml),
           );
         }),
       ],
     );
   }
 
-  Widget _buildOptionField(int index, TextEditingController controller) {
+  Widget _buildOptionField(int index, String optionHtml) {
     final isCorrect = _correctAnswer == index;
-    return Container(
-      decoration: BoxDecoration(
-        color: isCorrect
-            ? Colors.green.withOpacity(0.2)
-            : Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isCorrect ? Colors.green : Colors.white.withOpacity(0.1),
-          width: isCorrect ? 2 : 1,
+    // Ensure list bounds
+    if (index >= _showOptionPreviews.length) {
+      _showOptionPreviews.add(false);
+    }
+
+    // No focus node management needed
+
+    return Column(
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: isCorrect
+                ? Colors.green.withOpacity(0.2)
+                : Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isCorrect ? Colors.green : Colors.white.withOpacity(0.1),
+              width: isCorrect ? 2 : 1,
+            ),
+          ),
+          child: Theme(
+            data: ThemeData.light(),
+            child: Row(
+              children: [
+                Radio<int>(
+                  value: index,
+                  groupValue: _correctAnswer,
+                  onChanged: (value) {
+                    setState(() => _correctAnswer = value!);
+                  },
+                  activeColor: Colors.green,
+                ),
+                Expanded(
+                  child: Theme(
+                    data: ThemeData.light(),
+                    child: RichTextEditor(
+                      initialHtml: optionHtml,
+                      height: 40,
+                      isCompact: true,
+                      textColor: Colors.black,
+                      onContentChanged: (html) {
+                        _optionHtmls[index] = html;
+                      },
+                      placeholder: 'الخيار ${index + 1}',
+                    ),
+                  ),
+                ),
+                IconButton(
+                    icon: Icon(
+                        _showOptionPreviews[index]
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: Colors.blueAccent,
+                        size: 20),
+                    onPressed: () {
+                      setState(() {
+                        _showOptionPreviews[index] =
+                            !_showOptionPreviews[index];
+                      });
+                    }),
+                if (_questionType == 'multiple_choice' &&
+                    _optionHtmls.length > 2)
+                  IconButton(
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () {
+                      setState(() {
+                        _optionHtmls.removeAt(index);
+                        _showOptionPreviews.removeAt(index);
+
+                        // Focus node management removed
+
+                        if (_correctAnswer >= _optionHtmls.length) {
+                          _correctAnswer = 0;
+                        }
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Radio<int>(
-            value: index,
-            groupValue: _correctAnswer,
-            onChanged: (value) {
-              setState(() => _correctAnswer = value!);
-            },
-            activeColor: Colors.green,
-          ),
-          Expanded(
-            child: TextFormField(
-              controller: controller,
-              style: TextStyle(color: AppColors.getTextColor(context)),
-              decoration: InputDecoration(
-                hintText: 'الخيار ${index + 1}',
-                hintStyle: const TextStyle(color: Colors.white38),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              ),
-              validator: (v) => v == null || v.isEmpty ? 'مطلوب' : null,
+        if (_showOptionPreviews[index] && optionHtml.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+            ),
+            width: double.infinity,
+            child: TexViewWidget(
+              optionHtml,
+              style: const TextStyle(color: Colors.black87, fontSize: 16),
             ),
           ),
-          if (_questionType == 'multiple_choice' &&
-              _optionControllers.length > 2)
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () {
-                setState(() {
-                  _optionControllers.removeAt(index);
-                  if (_correctAnswer >= _optionControllers.length) {
-                    _correctAnswer = 0;
-                  }
-                });
-              },
-            ),
-        ],
-      ),
+      ],
     );
   }
 
   Future<void> _saveQuestion() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // Validate options exist
+    if (_questionType != 'essay' && _optionHtmls.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('الرجاء إضافة خيارات للسؤال'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+      return;
+    }
 
     setState(() => _isLoading = true);
 
     try {
-      final options = _optionControllers.map((c) => c.text).toList();
+      final options = _optionHtmls;
 
       if (_isEditing) {
         await _db.updateQuestion(widget.questionId!, {
-          'question_text': _questionController.text,
+          'question_text': _questionHtml,
           'question_type': _questionType,
           'options': _questionType == 'essay' ? [] : options,
           'correct_answer': _questionType == 'essay' ? '' : _correctAnswer,
-          'explanation': _explanationController.text.isEmpty
-              ? null
-              : _explanationController.text,
+          'explanation': _explanationHtml.isEmpty ? null : _explanationHtml,
           'points': int.parse(_pointsController.text),
         });
       } else {
         await _db.addQuestion(
           examId: widget.examId,
-          questionText: _questionController.text,
+          questionText: _questionHtml,
           questionType: _questionType,
           options: _questionType == 'essay' ? [] : options,
           correctAnswer: _questionType == 'essay' ? '' : _correctAnswer,
-          explanation: _explanationController.text.isEmpty
-              ? null
-              : _explanationController.text,
+          explanation: _explanationHtml.isEmpty ? null : _explanationHtml,
           points: int.parse(_pointsController.text),
           orderIndex: widget.orderIndex,
         );
@@ -562,7 +663,9 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -570,12 +673,10 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
 
   @override
   void dispose() {
-    _questionController.dispose();
-    _explanationController.dispose();
     _pointsController.dispose();
-    for (var controller in _optionControllers) {
-      controller.dispose();
-    }
+    _toolbarScrollController.dispose();
+    _explanationFocus.dispose();
+    _pointsFocus.dispose();
     super.dispose();
   }
 }

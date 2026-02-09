@@ -4,6 +4,7 @@ import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../models/notification_model.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/error_utils.dart';
 import '../courses/course_loader_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -107,7 +108,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في مسح الإشعارات: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     }

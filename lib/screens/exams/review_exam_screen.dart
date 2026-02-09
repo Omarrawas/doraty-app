@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/error_utils.dart';
+import '../../widgets/tex_view_widget.dart';
 
 class ReviewExamScreen extends StatefulWidget {
   final String attemptId;
@@ -58,7 +60,7 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل التفاصيل: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
         setState(() => _isLoading = false);
       }
@@ -197,7 +199,7 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            Text(
+            TexViewWidget(
               question['question_text'] ?? '',
               style: const TextStyle(
                 color: Colors.white,
@@ -244,7 +246,7 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(
+                      child: TexViewWidget(
                         options[optIndex],
                         style: const TextStyle(color: Colors.white),
                       ),
@@ -269,7 +271,7 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
                      const Icon(Icons.info_outline, color: Colors.blue, size: 20),
                      const SizedBox(width: 8),
                      Expanded(
-                       child: Text(
+                      child: TexViewWidget(
                          'توضيح: ${question['explanation']}',
                          style: const TextStyle(color: Colors.white70, fontSize: 13),
                        ),

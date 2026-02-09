@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/error_utils.dart';
 
 class AddReviewScreen extends StatefulWidget {
   final String courseId;
@@ -77,7 +78,7 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ في إضافة التقييم: $e'),
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
             backgroundColor: Colors.red,
           ),
         );

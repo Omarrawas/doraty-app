@@ -6,6 +6,8 @@ import '../../core/services/database_service.dart';
 import '../../models/exam.dart';
 import 'exam_result_screen.dart';
 import 'package:audioplayers/audioplayers.dart';
+import '../../core/utils/error_utils.dart';
+import '../../widgets/tex_view_widget.dart';
 
 class ExamTakingScreen extends StatefulWidget {
   final Exam exam;
@@ -115,7 +117,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في بدء الاختبار: ${e.toString()}')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
         Navigator.pop(context);
       }
@@ -276,7 +278,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         Navigator.pop(context);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في حفظ النتائج: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
         // Still navigate to results? Or keep them here?
         // For now, let's keep them here to retry or exit.
@@ -554,14 +556,12 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
               width: 1.5,
             ),
           ),
-          child: Text(
+          child: TexViewWidget(
             question.text,
-            textAlign: TextAlign.right,
             style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Colors.white,
-              height: 1.6,
             ),
           ),
         ),
@@ -627,9 +627,8 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                     ),
                     const SizedBox(width: 16),
                     Expanded(
-                      child: Text(
+                      child: TexViewWidget(
                         question.options[optionIndex],
-                        textAlign: TextAlign.right,
                         style: const TextStyle(
                           fontSize: 16,
                           color: Colors.white,

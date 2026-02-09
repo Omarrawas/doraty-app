@@ -4,6 +4,7 @@ import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../models/bookmark.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/error_utils.dart';
 
 class BookmarksWidget extends StatefulWidget {
   final String lessonId;
@@ -157,7 +158,8 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('خطأ: $e')),
+                    SnackBar(
+                        content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
                   );
                 }
               }
@@ -187,7 +189,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     }

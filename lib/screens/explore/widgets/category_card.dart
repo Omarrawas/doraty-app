@@ -19,55 +19,81 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 100,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: isSelected 
-              ? AppColors.primaryPurple.withOpacity(0.2) 
-              : AppColors.getSurfaceColor(context),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isSelected 
-                ? AppColors.primaryPurple 
-                : Colors.grey.withOpacity(0.1),
-            width: isSelected ? 2 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (category.iconUrl != null && category.iconUrl!.isNotEmpty)
-              CachedNetworkImage(
-                imageUrl: category.iconUrl!,
-                width: 40,
-                height: 40,
-                placeholder: (context, url) => const Icon(Icons.category, color: Colors.grey),
-                errorWidget: (context, url, error) => const Icon(Icons.error, color: Colors.grey),
-              )
-            else
-              const Icon(Icons.school, size: 40, color: AppColors.primaryPurple),
-            
+            Container(
+              width: 75,
+              height: 75,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: isSelected
+                    ? AppColors.primaryGradient
+                    : LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.1),
+                          Colors.white.withOpacity(0.05),
+                        ],
+                      ),
+                border: Border.all(
+                  color: isSelected 
+                      ? Colors.white.withOpacity(0.5)
+                      : Colors.white.withOpacity(0.1),
+                  width: 2,
+                ),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: AppColors.primaryPurple.withOpacity(0.3),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        )
+                      ]
+                    : [],
+              ),
+              padding: EdgeInsets.all(isSelected ? 3 : 0),
+              child: ClipOval(
+                child: category.iconUrl != null && category.iconUrl!.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: category.iconUrl!,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          color: Colors.white10,
+                          child: const Icon(Icons.category,
+                              color: Colors.white30, size: 24),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          color: Colors.white10,
+                          child: const Icon(Icons.error,
+                              color: Colors.white30, size: 24),
+                        ),
+                      )
+                    : Container(
+                        color: Colors.white.withOpacity(0.1),
+                        child: Icon(
+                          Icons.school,
+                          size: 30,
+                          color: isSelected
+                              ? Colors.white
+                              : AppColors.primaryPurple,
+                        ),
+                      ),
+              ),
+            ),
             const SizedBox(height: 8),
-            
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
+            SizedBox(
+              width: 75,
               child: Text(
                 category.name,
                 textAlign: TextAlign.center,
-                maxLines: 2,
+                maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.normal : FontWeight.w500,
-                  color: isSelected ? AppColors.primaryPurple : null,
+                  fontWeight:
+                      isSelected ? FontWeight.normal : FontWeight.normal,
+                  color: isSelected ? Colors.white : Colors.white70,
                 ),
               ),
             ),

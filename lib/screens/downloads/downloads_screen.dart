@@ -123,6 +123,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
+                fontFamily: 'Cairo',
               ),
             ),
           ),
@@ -181,6 +182,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.white,
+                          fontFamily: 'Cairo',
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -190,6 +192,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
+                          fontFamily: 'Cairo',
                         ),
                       ),
                     ],
@@ -210,6 +213,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontFamily: 'Cairo',
                     ),
                   ),
                 ),
@@ -279,6 +283,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
+                              fontFamily: 'Cairo',
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -293,6 +298,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                               color: download.status == DownloadStatus.failed
                                   ? Colors.redAccent
                                   : Colors.white.withOpacity(0.8),
+                              fontFamily: 'Cairo',
                             ),
                           ),
                         ],
@@ -346,6 +352,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withOpacity(0.8),
+                          fontFamily: 'Cairo',
                         ),
                       ),
                       Row(
@@ -381,6 +388,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.white.withOpacity(0.6),
+                      fontFamily: 'Cairo',
                     ),
                   ),
                 ],
@@ -408,6 +416,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.white,
+              fontFamily: 'Cairo',
             ),
           ),
           const SizedBox(height: 8),
@@ -416,6 +425,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
             style: TextStyle(
               fontSize: 15,
               color: Colors.white.withOpacity(0.8),
+              fontFamily: 'Cairo',
             ),
           ),
         ],
@@ -462,6 +472,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    fontFamily: 'Cairo',
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -471,6 +482,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                   style: const TextStyle(
                     fontSize: 14,
                     color: Colors.white,
+                    fontFamily: 'Cairo',
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -496,6 +508,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
+                                  fontFamily: 'Cairo',
                                 ),
                               ),
                             ),
@@ -537,6 +550,7 @@ class _DownloadsScreenState extends State<DownloadsScreen> {
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
+                                  fontFamily: 'Cairo',
                                 ),
                               ),
                             ),

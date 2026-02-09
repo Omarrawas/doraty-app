@@ -7,6 +7,7 @@ import '../../models/review.dart';
 import 'add_review_screen.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/utils/error_utils.dart';
 
 class ReviewsListScreen extends StatefulWidget {
   final String courseId;
@@ -56,7 +57,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل التقييمات: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     }

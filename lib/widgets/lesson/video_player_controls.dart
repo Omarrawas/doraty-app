@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
 import '../../models/download.dart';
+import '../../core/utils/error_utils.dart';
 
 class VideoPlayerControls extends StatefulWidget {
   final YoutubePlayerController? youtubeController;
@@ -416,7 +417,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
       navigator.pop();
 
       messenger.showSnackBar(
-        SnackBar(content: Text('خطأ: $e')),
+        SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
       );
     }
   }

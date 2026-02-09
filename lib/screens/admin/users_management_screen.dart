@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/string_utils.dart';
+import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class UsersManagementScreen extends StatefulWidget {
@@ -53,7 +54,10 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -477,7 +481,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                     navigator.pop();
                     messenger.showSnackBar(
                       SnackBar(
-                        content: Text('خطأ: $e'),
+                        content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
                         backgroundColor: Colors.red,
                       ),
                     );

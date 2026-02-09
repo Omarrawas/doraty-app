@@ -18,6 +18,7 @@ import 'privacy_policy_screen.dart';
 import '../../core/constants/app_strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/localization/locale_provider.dart';
+import '../../core/utils/error_utils.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -72,7 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${_t('error_loading')}: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     }
@@ -90,7 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${_t('error_saving')}: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     }
@@ -383,6 +384,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
+                fontFamily: 'Cairo',
               ),
             ),
           ),
@@ -515,6 +517,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
+                          fontFamily: 'Cairo',
                         ),
                       ),
                     ),
@@ -541,6 +544,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         fontSize: 18,
         fontWeight: FontWeight.bold,
         color: Colors.white,
+        fontFamily: 'Cairo',
       ),
     );
   }
@@ -586,6 +590,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        fontFamily: 'Cairo',
                       ),
                     ),
                   ),
@@ -672,6 +677,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 fontSize: 12,
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
+                fontFamily: 'Cairo',
               ),
             ),
           ],
@@ -735,6 +741,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
                                 color: Colors.white,
+                                fontFamily: 'Cairo',
                               ),
                             ),
                             if (subtitle != null) ...[
@@ -744,6 +751,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.white.withOpacity(0.7),
+                                  fontFamily: 'Cairo',
                                 ),
                               ),
                             ],
@@ -866,6 +874,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.red,
+                        fontFamily: 'Cairo',
                       ),
                     ),
                   ],
@@ -913,6 +922,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontFamily: 'Cairo',
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -968,6 +978,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.white,
+                    fontFamily: 'Cairo',
                   ),
                 ),
               ),
@@ -1058,6 +1069,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontFamily: 'Cairo',
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -1086,7 +1098,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: Color(0xFF7B2CBF), width: 2),
                       ),
                     ),
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(
+                        color: Colors.white, fontFamily: 'Cairo'),
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -1096,7 +1109,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           onPressed: () => Navigator.pop(context),
                           child: Text(
                             _t('cancel'),
-                            style: const TextStyle(color: Colors.white70),
+                            style: const TextStyle(
+                                color: Colors.white70, fontFamily: 'Cairo'),
                           ),
                         ),
                       ),
@@ -1169,6 +1183,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontFamily: 'Cairo',
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -1210,6 +1225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     style: const TextStyle(
                                       fontSize: 16,
                                       color: Colors.white,
+                                      fontFamily: 'Cairo',
                                     ),
                                   ),
                                 ),
@@ -1269,6 +1285,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontFamily: 'Cairo',
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -1310,7 +1327,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(fontSize: 16, color: Colors.white),
+                  style: const TextStyle(
+                      fontSize: 16, color: Colors.white, fontFamily: 'Cairo'),
                 ),
               ),
               if (isSelected)
@@ -1345,7 +1363,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               _t('clear'),
-              style: const TextStyle(color: Colors.red),
+              style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
             ),
           ),
         ],
@@ -1406,13 +1424,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      fontFamily: 'Cairo',
                     ),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     _t('support_dialog_desc'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white70),
+                    style: const TextStyle(
+                        color: Colors.white70, fontFamily: 'Cairo'),
                   ),
                   const SizedBox(height: 24),
                   _buildSupportOption(
@@ -1481,6 +1501,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   style: const TextStyle(
                     fontSize: 16,
                     color: Colors.white,
+                    fontFamily: 'Cairo',
                   ),
                 ),
               ),
@@ -1499,7 +1520,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(
           _t('delete_confirm_title'),
           style:
-              const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              const TextStyle(
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Cairo'),
         ),
         content: Text(_t('delete_confirm_desc')),
         actions: [
@@ -1515,7 +1539,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: Text(
               _t('delete'),
-              style: const TextStyle(color: Colors.white),
+              style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
             ),
           ),
         ],

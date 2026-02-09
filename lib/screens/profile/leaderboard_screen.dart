@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class LeaderboardScreen extends StatefulWidget {
@@ -36,12 +37,20 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
-                      return Center(child: Text('حدث خطأ: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
+                      return Center(
+                          child: Text(
+                              ErrorUtils.getFriendlyErrorMessage(
+                                  snapshot.error!),
+                              style: const TextStyle(
+                                  color: Colors.white, fontFamily: 'Cairo')));
                     }
 
                     final data = snapshot.data ?? [];
                     if (data.isEmpty) {
-                      return const Center(child: Text('لا يوجد بيانات بعد', style: TextStyle(color: Colors.white)));
+                      return const Center(
+                          child: Text('لا يوجد بيانات بعد',
+                              style: TextStyle(
+                                  color: Colors.white, fontFamily: 'Cairo')));
                     }
 
                     return _buildLeaderboardContent(data);
@@ -61,7 +70,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+            icon: const Icon(Icons.arrow_back_ios_new,
+                color: Colors.white, size: 20),
             onPressed: () => Navigator.pop(context),
           ),
           const Spacer(),
@@ -72,6 +82,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               fontSize: 20,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2,
+              fontFamily: 'Cairo',
             ),
           ),
           const Spacer(),
@@ -115,15 +126,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // 2nd Place
-          if (topThree.length >= 2)
-            _buildTopUser(topThree[1], 2, 100),
+          if (topThree.length >= 2) _buildTopUser(topThree[1], 2, 100),
           const SizedBox(width: 15),
           // 1st Place
           _buildTopUser(topThree[0], 1, 140),
           const SizedBox(width: 15),
           // 3rd Place
-          if (topThree.length >= 3)
-            _buildTopUser(topThree[2], 3, 90),
+          if (topThree.length >= 3) _buildTopUser(topThree[2], 3, 90),
         ],
       ),
     );
@@ -169,7 +178,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       ? Image.network(user['avatar_url'], fit: BoxFit.cover)
                       : Container(
                           color: Colors.white.withOpacity(0.1),
-                          child: const Icon(Icons.person, color: Colors.white30, size: 40),
+                          child: const Icon(Icons.person,
+                              color: Colors.white30, size: 40),
                         ),
                 ),
               ),
@@ -184,6 +194,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 14,
+            fontFamily: 'Cairo',
           ),
         ),
         Text(
@@ -192,6 +203,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             color: rankColor,
             fontWeight: FontWeight.w600,
             fontSize: 12,
+            fontFamily: 'Cairo',
           ),
         ),
         const SizedBox(height: 5),
@@ -203,7 +215,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           ),
           child: Text(
             user['rank_title'],
-            style: TextStyle(color: rankColor, fontSize: 10),
+            style:
+                TextStyle(color: rankColor, fontSize: 10, fontFamily: 'Cairo'),
           ),
         ),
       ],
@@ -233,6 +246,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.5),
                       fontWeight: FontWeight.bold,
+                      fontFamily: 'Cairo',
                     ),
                   ),
                   const SizedBox(width: 15),
@@ -242,24 +256,32 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                         : null,
                     backgroundColor: Colors.white10,
                     child: user['avatar_url'] == null
-                        ? const Icon(Icons.person, size: 20, color: Colors.white38)
+                        ? const Icon(Icons.person,
+                            size: 20, color: Colors.white38)
                         : null,
                   ),
                 ],
               ),
               title: Text(
                 user['full_name'] ?? 'طالب',
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'Cairo'),
               ),
               subtitle: Text(
                 user['rank_title'],
-                style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.4),
+                    fontSize: 12,
+                    fontFamily: 'Cairo'),
               ),
               trailing: Text(
                 '${user['points']} نقطة',
                 style: const TextStyle(
                   color: AppColors.primaryPurple,
                   fontWeight: FontWeight.bold,
+                  fontFamily: 'Cairo',
                 ),
               ),
             ),

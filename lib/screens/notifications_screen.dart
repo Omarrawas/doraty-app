@@ -3,6 +3,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../core/services/database_service.dart';
 import '../core/theme/app_colors.dart';
 import '../models/app_notification.dart';
+import '../core/utils/error_utils.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -36,7 +37,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل الإشعارات: $e')),
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
     }

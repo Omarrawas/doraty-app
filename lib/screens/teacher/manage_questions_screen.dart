@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../core/utils/error_utils.dart';
 import 'add_question_screen.dart';
 import 'dart:ui';
 
@@ -46,7 +47,9 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -382,7 +385,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.quiz, color: Colors.white.withOpacity(0.3), size: 64),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'لا توجد أسئلة',
             style: TextStyle(
@@ -391,7 +394,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
               fontWeight: FontWeight.normal,
             ),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
             'اضغط على الزر أدناه لإضافة سؤال',
             style: TextStyle(
@@ -452,7 +455,9 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }
