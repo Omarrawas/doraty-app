@@ -98,6 +98,43 @@ class _RichTextEditorState extends State<RichTextEditor> {
     super.dispose();
   }
 
+  String _normalizeMathSymbol(String symbol) {
+    const box = '□';
+    const fraction = '⁄';
+
+    final replacements = <String, String>{
+      r'\( \frac{}{} \)': '$box$fraction$box',
+      r'\( \tfrac{}{} \)': '$box$fraction$box',
+      r'\( ^{}/_{} \)': '$box$fraction$box',
+      r'\( \cfrac{}{} \)': '$box$fraction$box',
+      r'\( \sqrt{} \)': '\u221A$box',
+      r'\( \sqrt[2]{} \)': '\u00B2\u221A$box',
+      r'\( \sqrt[3]{} \)': '\u00B3\u221A$box',
+      r'\( \sqrt[]{} \)': '\u207F\u221A$box',
+      r'\( \int \)': '\u222B',
+      r'\( \int_{}^{} \)': '\u222B$box',
+      r'\( \iint \)': '\u222C',
+      r'\( \oint \)': '\u222E',
+      r'\( \sum_{}^{} \)': '\u2211',
+      r'\( \sum_{} \)': '\u2211',
+      r'\( \prod_{}^{} \)': '\u220F',
+      r'\( \left( \right) \)': '()',
+      r'\( \lim_{x \to \infty} \)': 'lim\u2093\u2192\u221E',
+      r'\( \log_{10} \)': 'log\u2081\u2080',
+      r'\( \xrightarrow{\Delta} \)': '\u2192\u0394',
+      r'\( \xrightarrow{pt} \)': '\u2192Pt',
+      r'\( \xrightarrow{H_2O} \)': '\u2192H\u2082O',
+      r'\( \xrightleftharpoons[k_2]{k_1} \)': '\u21CCk\u2081/k\u2082',
+    };
+
+    var normalized = symbol;
+    replacements.forEach((key, value) {
+      normalized = normalized.replaceAll(key, value);
+    });
+
+    return normalized;
+  }
+
   @override
   Widget build(BuildContext context) {
     return TapRegion(
@@ -167,22 +204,29 @@ class _RichTextEditorState extends State<RichTextEditor> {
                       final index = _controller.selection.extentOffset;
                       final length = _controller.selection.end -
                           _controller.selection.start;
+                      final normalized = _normalizeMathSymbol(symbol);
 
                       _controller.replaceText(
                         index >= 0 ? index : 0,
                         length > 0 ? length : 0,
-                        symbol,
+                        normalized,
                         null,
                       );
 
-                      // Move cursor after the inserted symbol (or inside if it's a template like {})
-                      int newOffset = (index >= 0 ? index : 0) + symbol.length;
-                      if (symbol.contains('{}')) {
-                        newOffset =
-                            (index >= 0 ? index : 0) + symbol.indexOf('{}') + 1;
-                      } else if (symbol.contains('[]')) {
-                        newOffset =
-                            (index >= 0 ? index : 0) + symbol.indexOf('[]') + 1;
+                      // Move cursor after the inserted symbol (or inside if it's a template)
+                      int newOffset =
+                          (index >= 0 ? index : 0) + normalized.length;
+                      if (normalized.contains('{}')) {
+                        newOffset = (index >= 0 ? index : 0) +
+                            normalized.indexOf('{}') +
+                            1;
+                      } else if (normalized.contains('[]')) {
+                        newOffset = (index >= 0 ? index : 0) +
+                            normalized.indexOf('[]') +
+                            1;
+                      } else if (normalized.contains('□')) {
+                        newOffset = (index >= 0 ? index : 0) +
+                            normalized.indexOf('□');
                       }
 
                       _controller.updateSelection(

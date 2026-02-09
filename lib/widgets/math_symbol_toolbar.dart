@@ -12,19 +12,38 @@ class MathSymbolToolbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final background = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F3F3);
+    final border = isDark ? Colors.white12 : const Color(0xFFD0D0D0);
     return Container(
-      height: 70,
+      height: 72,
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E1E),
-        border: Border(
-          top: BorderSide(color: Colors.white.withOpacity(0.05)),
-          bottom: BorderSide(color: Colors.white.withOpacity(0.05)),
+        color: background,
+        gradient: LinearGradient(
+          colors: [
+            background.withOpacity(0.98),
+            background.withOpacity(0.9),
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
+        border: Border(
+          top: BorderSide(color: border),
+          bottom: BorderSide(color: border),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
+            blurRadius: 12,
+            offset: const Offset(0, -2),
+          ),
+        ],
       ),
       child: ListView(
         scrollDirection: Axis.horizontal,
         controller: scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         children: [
           _buildCategoryMenu(
             context,
@@ -64,18 +83,50 @@ class MathSymbolToolbar extends StatelessWidget {
             'كيمياء',
             '⇌',
             [
-              _MathTemplate('→', 'تفاعل تام', '→'),
-              _MathTemplate('⇌', 'تفاعل عكسي (اتزان)', '⇌'),
-              _MathTemplate('↑', 'تصاعد غاز', '↑'),
-              _MathTemplate('↓', 'ترسب (راسب)', '↓'),
-              _MathTemplate(r'\( \xrightarrow{\Delta} \)', 'تسخين', '→ (Δ)'),
-              _MathTemplate(r'\( \xrightarrow{pt} \)', 'عامل حفاز', '→ (pt)'),
-              _MathTemplate(r'\( \xrightarrow{H_2O} \)', 'تميؤ', '→ (H₂O)'),
-              _MathTemplate(r'\( \xrightleftharpoons[k_2]{k_1} \)', 'اتزان بأسماء ثوابت', '⇌ (k)'),
-              _MathTemplate('(s)', 'حالة صلبة', '(s)'),
-              _MathTemplate('(l)', 'حالة سائلة', '(l)'),
-              _MathTemplate('(g)', 'حالة غازية', '(g)'),
-              _MathTemplate('(aq)', 'محلول مائي', '(aq)'),
+              _MathTemplate('?', '????? ???', '?'),
+              _MathTemplate('?', '????? ????', '?'),
+              _MathTemplate('?', '????? ???? (?????)', '?'),
+              _MathTemplate('?', '???????', '?'),
+              _MathTemplate('?', '????? ???', '?'),
+              _MathTemplate('?', '???? (????)', '?'),
+              _MathTemplate('?', '???? ?????', '?'),
+              _MathTemplate('H?O', '???', 'H?O'),
+              _MathTemplate('CO?', '???? ????? ???????', 'CO?'),
+              _MathTemplate('SO???', '???????', 'SO???'),
+              _MathTemplate('NH??', '???????', 'NH??'),
+              _MathTemplate('Na?', '??????', 'Na?'),
+              _MathTemplate('Cl?', '??????', 'Cl?'),
+              _MathTemplate('Ca??', '???????', 'Ca??'),
+              _MathTemplate('Al??', '????????', 'Al??'),
+              _MathTemplate('O??', '?????', 'O??'),
+              _MathTemplate('S??', '???????', 'S??'),
+              _MathTemplate('NO??', '?????', 'NO??'),
+              _MathTemplate('CO???', '???????', 'CO???'),
+              _MathTemplate('PO???', '??????', 'PO???'),
+              _MathTemplate('?', '??? ???? 0', '?'),
+              _MathTemplate('?', '??? ???? 1', '?'),
+              _MathTemplate('?', '??? ???? 2', '?'),
+              _MathTemplate('?', '??? ???? 3', '?'),
+              _MathTemplate('?', '??? ???? 4', '?'),
+              _MathTemplate('?', '??? ???? 5', '?'),
+              _MathTemplate('?', '??? ???? 6', '?'),
+              _MathTemplate('?', '??? ???? 7', '?'),
+              _MathTemplate('?', '??? ???? 8', '?'),
+              _MathTemplate('?', '??? ???? 9', '?'),
+              _MathTemplate('?', '???? ?????', '?'),
+              _MathTemplate('?', '???? ?????', '?'),
+              _MathTemplate('??', '???? 2+', '??'),
+              _MathTemplate('??', '???? 2-', '??'),
+              _MathTemplate('??', '???? 3+', '??'),
+              _MathTemplate('??', '???? 3-', '??'),
+              _MathTemplate(r'\( \xrightarrow{\Delta} \)', '?????', '? (?)'),
+              _MathTemplate(r'\( \xrightarrow{pt} \)', '???? ????', '? (pt)'),
+              _MathTemplate(r'\( \xrightarrow{H_2O} \)', '????', '? (H?O)'),
+              _MathTemplate(r'\( \xrightleftharpoons[k_2]{k_1} \)', '????? ?????? ?????', '? (k)'),
+              _MathTemplate('(s)', '???? ????', '(s)'),
+              _MathTemplate('(l)', '???? ?????', '(l)'),
+              _MathTemplate('(g)', '???? ?????', '(g)'),
+              _MathTemplate('(aq)', '????? ????', '(aq)'),
             ],
           ),
           _buildCategoryMenu(
@@ -226,37 +277,53 @@ class MathSymbolToolbar extends StatelessWidget {
     String iconLabel,
     List<_MathTemplate> templates,
   ) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final surface = isDark ? const Color(0xFF2A2A2A) : Colors.white;
+    final border = isDark ? Colors.white12 : const Color(0xFFD0D0D0);
+    final textPrimary = isDark ? Colors.white : const Color(0xFF1B1B1B);
+    final textSecondary = isDark ? Colors.white70 : const Color(0xFF5C5C5C);
+    final accent = isDark ? const Color(0xFF8AB4F8) : const Color(0xFF0F6CBD);
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6),
       child: PopupMenuButton<String>(
         onSelected: onSymbolSelected,
-        offset: const Offset(0, -350),
+        offset: const Offset(0, -8),
+        elevation: 10,
+        color: surface,
+        constraints: const BoxConstraints(maxHeight: 380, minWidth: 260),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: border),
+        ),
         tooltip: label,
         child: Container(
-          width: 80,
+          width: 84,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.white.withOpacity(0.1)),
+            color: surface.withOpacity(isDark ? 0.9 : 1),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: border),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
                 iconLabel,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: textPrimary,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
+                  fontFamily: 'Segoe UI',
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white54,
+                style: TextStyle(
+                  color: textSecondary,
                   fontSize: 9,
+                  fontFamily: 'Segoe UI',
                 ),
               ),
             ],
@@ -265,33 +332,45 @@ class MathSymbolToolbar extends StatelessWidget {
         itemBuilder: (context) => templates.map((t) {
           return PopupMenuItem<String>(
             value: t.value,
+            height: 44,
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(4),
+                    color: accent.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: accent.withOpacity(0.25)),
                   ),
                   child: Directionality(
                     textDirection: TextDirection.ltr,
                     child: Text(
                       t.preview,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: Colors.blue,
+                        color: accent,
                         fontWeight: FontWeight.bold,
+                        fontFamily: 'Segoe UI',
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     t.label,
-                    style: const TextStyle(fontSize: 13),
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: textPrimary,
+                      fontFamily: 'Segoe UI',
+                    ),
                     textAlign: TextAlign.right,
                   ),
+                ),
+                Icon(
+                  Icons.chevron_left,
+                  size: 18,
+                  color: textSecondary.withOpacity(0.7),
                 ),
               ],
             ),
