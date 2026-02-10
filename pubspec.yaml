@@ -115,6 +115,7 @@ dev_dependencies:
 
   envied_generator: ^0.5.4
   flutter_launcher_icons: ^0.13.1
+  msix: ^3.16.7
 
 flutter:
   uses-material-design: true
@@ -147,3 +148,14 @@ flutter_launcher_icons:
     image_path: "assets/icons/logo.png"
     background_color: "#FFFFFF"
     theme_color: "#7B2CBF"
+
+msix_config:
+  display_name: Doraty
+  publisher_display_name: Omarrawas
+  identity_name: Omarrawas.Doraty
+  msix_version: 1.0.0.0
+  logo_path: assets/icons/logo.png
+  store_logo_path: assets/icons/logo.png
+  capabilities:
+    - internetClient
+
