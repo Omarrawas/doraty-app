@@ -13,6 +13,7 @@ import '../../widgets/video_preview_widget.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../models/chapter.dart';
 import '../../core/utils/error_utils.dart';
+import '../../widgets/rich_text_editor.dart';
 
 class CreateLessonScreen extends StatefulWidget {
   final String courseId;
@@ -35,10 +36,11 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _titleController;
-  late TextEditingController _descriptionController;
   late TextEditingController _videoUrlController;
   late TextEditingController _durationController;
-  late TextEditingController _contentController;
+  
+  String _descriptionHtml = '';
+  String _contentHtml = '';
 
   bool _isFree = false;
   bool _isSaving = false;
@@ -56,18 +58,14 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     _titleController = TextEditingController(
       text: widget.lessonData?['title'] ?? '',
     );
-    _descriptionController = TextEditingController(
-      text: widget.lessonData?['description'] ?? '',
-    );
     _videoUrlController = TextEditingController(
       text: widget.lessonData?['video_url'] ?? '',
     );
     _durationController = TextEditingController(
       text: widget.lessonData?['duration']?.toString() ?? '',
     );
-    _contentController = TextEditingController(
-      text: widget.lessonData?['content'] ?? '',
-    );
+    _descriptionHtml = widget.lessonData?['description'] ?? '';
+    _contentHtml = widget.lessonData?['content'] ?? '';
     _isFree = widget.lessonData?['is_free'] ?? false;
 
     if (widget.lessonData?['resources'] != null) {
@@ -147,10 +145,8 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   @override
   void dispose() {
     _titleController.dispose();
-    _descriptionController.dispose();
     _videoUrlController.dispose();
     _durationController.dispose();
-    _contentController.dispose();
     super.dispose();
   }
 
@@ -240,16 +236,26 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                   },
                                 ),
                                 const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _descriptionController,
-                                  style: TextStyle(
-                                      color: AppColors.getTextColor(context)),
-                                  decoration: _inputDecoration(
-                                    label: 'وصف الدرس',
-                                    hint: 'وصف مختصر عن محتوى الدرس',
-                                    icon: Icons.description_outlined,
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: Text('وصف الدرس',
+                                        style: TextStyle(
+                                            color: AppColors.getTextColor(
+                                                context))),
                                   ),
-                                  maxLines: 3,
+                                ),
+                                Theme(
+                                  data: ThemeData.light(),
+                                  child: RichTextEditor(
+                                    initialHtml: _descriptionHtml,
+                                    height: 150,
+                                    onContentChanged: (html) {
+                                      _descriptionHtml = html;
+                                    },
+                                    placeholder: 'وصف مختصر عن محتوى الدرس...',
+                                  ),
                                 ),
                               ],
                             ),
@@ -310,16 +316,26 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                   },
                                 ),
                                 const SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _contentController,
-                                  style: TextStyle(
-                                      color: AppColors.getTextColor(context)),
-                                  decoration: _inputDecoration(
-                                    label: 'محتوى الدرس (اختياري)',
-                                    hint: 'شرح نصي، أمثلة، تمارين...',
-                                    icon: Icons.article_outlined,
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    child: Text('محتوى الدرس (اختياري)',
+                                        style: TextStyle(
+                                            color: AppColors.getTextColor(
+                                                context))),
                                   ),
-                                  maxLines: 6,
+                                ),
+                                Theme(
+                                  data: ThemeData.light(),
+                                  child: RichTextEditor(
+                                    initialHtml: _contentHtml,
+                                    height: 250,
+                                    onContentChanged: (html) {
+                                      _contentHtml = html;
+                                    },
+                                    placeholder: 'شرح نصي، أمثلة، تمارين...',
+                                  ),
                                 ),
                               ],
                             ),
@@ -800,24 +816,46 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final data = {
-        'course_id': widget.courseId,
-        'chapter_id': _selectedChapterId,
-        'title': _titleController.text.trim(),
-        'description': _descriptionController.text.trim(),
-        'video_url': _videoUrlController.text.trim(),
-        'duration': _durationController.text.trim(),
-        'content': _contentController.text.trim(),
-        'is_free': _isFree,
-        if (_attachments.isNotEmpty) 'resources': _attachments,
-      };
+      final durationText = _durationController.text.trim();
+      int duration;
+      if (durationText.contains(':')) {
+        final parts = durationText.split(':');
+        if (parts.length == 2) {
+          duration = int.parse(parts[0]) * 60 + int.parse(parts[1]);
+        } else if (parts.length == 3) {
+          duration = int.parse(parts[0]) * 3600 +
+              int.parse(parts[1]) * 60 +
+              int.parse(parts[2]);
+        } else {
+          duration = 0; // Invalid format, default to 0
+        }
+      } else {
+        duration = int.tryParse(durationText) ?? 0;
+      }
 
       if (widget.lessonId != null) {
-        await _db.updateLesson(widget.lessonId!, data);
+        await _db.updateLesson(widget.lessonId!, {
+          'chapter_id': _selectedChapterId,
+          'title': _titleController.text.trim(),
+          'description': _descriptionHtml,
+          'video_url': _videoUrlController.text.trim(),
+          'duration': duration,
+          'content': _contentHtml,
+          'is_free': _isFree,
+          'resources': _attachments,
+        });
       } else {
-        final lessons = await _db.getCourseLessons(widget.courseId);
-        data['order_index'] = lessons.length + 1;
-        await _db.createLesson(data);
+        await _db.createLesson({
+          'course_id': widget.courseId,
+          'chapter_id': _selectedChapterId,
+          'title': _titleController.text.trim(),
+          'description': _descriptionHtml,
+          'video_url': _videoUrlController.text.trim(),
+          'duration': duration,
+          'content': _contentHtml,
+          'is_free': _isFree,
+          'resources': _attachments,
+        });
       }
 
       if (mounted) {

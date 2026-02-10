@@ -19,12 +19,13 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   final DatabaseService _databaseService = DatabaseService();
-  
+
   List<CategoryModel> _categories = [];
-  // List<Course> _allCourses = []; // Unused
+  List<Course> _allCourses = [];
   List<Course> _filteredCourses = [];
   bool _isLoading = true;
   String? _selectedCategoryId;
+  String _searchQuery = '';
 
   String _t(String key) =>
       AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -35,23 +36,38 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _isLoading = true);
+  Future<void> _loadData({bool forceRefresh = false}) async {
+    if (!forceRefresh) {
+      setState(() => _isLoading = true);
+    }
     try {
-      // Load Categories
-      final categoriesData = await _databaseService.getCategories();
-      final categories = categoriesData.map((e) => CategoryModel.fromJson(e)).toList();
+      // Load Categories and Courses in parallel
+      final results = await Future.wait([
+        _databaseService.getCategories(forceRefresh: forceRefresh),
+        _databaseService.getCourses(
+            includeDrafts: false, forceRefresh: forceRefresh),
+      ]);
 
-      // Load All Courses (or featured/popular)
-      // Ideally we should paginate, but for now fetch all published
-      final coursesData = await _databaseService.getCourses(includeDrafts: false);
+      final categoriesData = results[0];
+      final coursesData = results[1];
+
+      final categories =
+          categoriesData.map((e) => CategoryModel.fromJson(e)).toList();
       final courses = coursesData.map((c) => Course.fromJson(c)).toList();
+
+      // If cache returned empty courses and this was not a forced refresh,
+      // retry with forceRefresh to get fresh data from the server
+      if (courses.isEmpty && !forceRefresh) {
+        debugPrint('⚠️ Cache returned empty courses, forcing refresh...');
+        await _loadData(forceRefresh: true);
+        return;
+      }
 
       if (mounted) {
         setState(() {
           _categories = categories;
-          final seenIds = <String>{};
-          _filteredCourses = courses.where((c) => seenIds.add(c.id)).toList();
+          _allCourses = courses;
+          _applyFilters();
           _isLoading = false;
         });
       }
@@ -61,42 +77,64 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
-  Future<void> _onCategorySelected(String? categoryId) async {
-    if (_selectedCategoryId == categoryId) {
-      // Deselect
-      setState(() {
-        _selectedCategoryId = null;
-      });
-      await _loadCourses();
-    } else {
-      setState(() {
-        _selectedCategoryId = categoryId;
-      });
-      await _loadCourses(categoryId: categoryId);
+  void _applyFilters() {
+    List<Course> filtered = _allCourses;
+
+    // Filter by category
+    if (_selectedCategoryId != null) {
+      filtered = filtered.where((course) {
+        // Check if the course belongs to this category via category IDs
+        if (course.categoryIds.contains(_selectedCategoryId)) return true;
+
+        // Also check the category names against the selected category model
+        final selectedCat =
+            _categories.where((c) => c.id == _selectedCategoryId).firstOrNull;
+        if (selectedCat != null) {
+          final catName = selectedCat.name.toLowerCase();
+          final catNameEn = selectedCat.nameEn?.toLowerCase() ?? '';
+          return course.categories.any((c) =>
+                  c.toLowerCase() == catName || c.toLowerCase() == catNameEn) ||
+              course.subject.toLowerCase() == catName ||
+              course.subject.toLowerCase() == catNameEn;
+        }
+        return false;
+      }).toList();
     }
+
+    // Filter by search query
+    if (_searchQuery.isNotEmpty) {
+      final query = _searchQuery.toLowerCase();
+      filtered = filtered.where((course) {
+        return course.title.toLowerCase().contains(query) ||
+            (course.titleEn ?? '').toLowerCase().contains(query) ||
+            (course.description ?? '').toLowerCase().contains(query) ||
+            course.subject.toLowerCase().contains(query) ||
+            course.instructorName.toLowerCase().contains(query);
+      }).toList();
+    }
+
+    // Ensure unique courses by ID
+    final seenIds = <String>{};
+    _filteredCourses = filtered.where((c) => seenIds.add(c.id)).toList();
   }
 
-  Future<void> _loadCourses({String? categoryId}) async {
-    setState(() => _filteredCourses = []); // Show loading list or keep old?
-    // Let's keep old and show loading indicator maybe? or just wait.
-    
-    try {
-      final coursesData = await _databaseService.getCourses(
-        categoryId: categoryId,
-        includeDrafts: false,
-      );
-      
-      final courses = coursesData.map((c) => Course.fromJson(c)).toList();
-      
-      if (mounted) {
-        setState(() {
-          final seenIds = <String>{};
-          _filteredCourses = courses.where((c) => seenIds.add(c.id)).toList();
-        });
+  void _onCategorySelected(String? categoryId) {
+    setState(() {
+      if (_selectedCategoryId == categoryId) {
+        // Deselect
+        _selectedCategoryId = null;
+      } else {
+        _selectedCategoryId = categoryId;
       }
-    } catch (e) {
-      debugPrint('Error filtering courses: $e');
-    }
+      _applyFilters();
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+      _applyFilters();
+    });
   }
 
   @override
@@ -116,122 +154,175 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return Scaffold(
       body: DynamicGradientBackground(
         child: SafeArea(
-          child: Scrollbar(
-            thickness: 6,
-            radius: const Radius.circular(10),
-            interactive: true,
-            child: CustomScrollView(
-              slivers: [
-                // Header
-                SliverPadding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-                  sliver: SliverToBoxAdapter(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _t('explore_courses'),
-                          style: const TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.white,
+          child: RefreshIndicator(
+            onRefresh: () => _loadData(forceRefresh: true),
+            color: Colors.white,
+            backgroundColor: Colors.deepPurple,
+            child: Scrollbar(
+              thickness: 6,
+              radius: const Radius.circular(10),
+              interactive: true,
+              child: CustomScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: [
+                  // Header
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 24),
+                    sliver: SliverToBoxAdapter(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            _t('explore_courses'),
+                            style: const TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.normal,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
-                        // Small Decoration like Home
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.auto_awesome,
+                                color: Colors.amber, size: 20),
                           ),
-                          child: const Icon(Icons.auto_awesome,
-                              color: Colors.amber, size: 20),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
 
-                // Categories List (Now Circular)
-                SliverToBoxAdapter(
-                  child: SizedBox(
-                    height: 120,
-                    child: _categories.isEmpty && !_isLoading
-                        ? Center(
-                            child: Text(_t('no_categories_found'),
-                                style: const TextStyle(color: Colors.white)))
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _isLoading ? 5 : _categories.length,
-                            itemBuilder: (context, index) {
-                              if (_isLoading) {
-                                return _buildShimmerCategory();
-                              }
-
-                              final cat = _categories[index];
-                              return CategoryCard(
-                                category: cat,
-                                isSelected: _selectedCategoryId == cat.id,
-                                onTap: () => _onCategorySelected(cat.id),
-                              );
-                            },
+                  // Search Bar
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverToBoxAdapter(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
                           ),
-                  ),
-                ),
-
-                const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
-
-                // Courses Grid
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: _isLoading 
-                      ? SliverToBoxAdapter(
-                          child: _buildShimmerGrid(
-                              crossAxisCount, childAspectRatio))
-                      : _filteredCourses.isEmpty
-                          ? SliverToBoxAdapter(
-                              child: Center(
-                                  child: Column(
-                              children: [
-                                const SizedBox(height: 60),
-                                Icon(Icons.search_off,
-                                    size: 64,
-                                    color: Colors.white.withOpacity(0.3)),
-                                const SizedBox(height: 16),
-                                Text(_t('no_courses_in_category'),
-                                    style:
-                                        const TextStyle(color: Colors.white70)),
-                              ],
-                            )))
-                          : SliverGrid(
-                              delegate: SliverChildBuilderDelegate(
-                                (context, index) {
-                                  return CourseCard(
-                                    course: _filteredCourses[index],
-                                    heroTag:
-                                        'explore_course_image_${_filteredCourses[index].id}',
-                                    showEnrollButton:
-                                        true, // Matches Home Style
-                                  );
-                                },
-                                childCount: _filteredCourses.length,
-                              ),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: crossAxisCount,
-                                childAspectRatio: childAspectRatio,
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 20,
-                              ),
+                        ),
+                        child: TextField(
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: _t('search_course_hint'),
+                            hintStyle: TextStyle(
+                              color: Colors.white.withOpacity(0.5),
                             ),
-                ),
-                
-                const SliverPadding(
-                    padding:
-                        EdgeInsets.only(bottom: 100)), // Space for BottomNav
-              ],
+                            prefixIcon: Icon(Icons.search,
+                                color: Colors.white.withOpacity(0.5)),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                          ),
+                          onChanged: _onSearchChanged,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+
+                  // Categories List (Circular)
+                  SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 120,
+                      child: _categories.isEmpty && !_isLoading
+                          ? Center(
+                              child: Text(_t('no_categories_found'),
+                                  style: const TextStyle(color: Colors.white)))
+                          : ListView.builder(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _isLoading ? 5 : _categories.length,
+                              itemBuilder: (context, index) {
+                                if (_isLoading) {
+                                  return _buildShimmerCategory();
+                                }
+
+                                final cat = _categories[index];
+                                return CategoryCard(
+                                  category: cat,
+                                  isSelected: _selectedCategoryId == cat.id,
+                                  onTap: () => _onCategorySelected(cat.id),
+                                );
+                              },
+                            ),
+                    ),
+                  ),
+
+                  const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+
+                  // Courses Grid
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: _isLoading
+                        ? SliverToBoxAdapter(
+                            child: _buildShimmerGrid(
+                                crossAxisCount, childAspectRatio))
+                        : _filteredCourses.isEmpty
+                            ? SliverToBoxAdapter(
+                                child: Center(
+                                    child: Column(
+                                children: [
+                                  const SizedBox(height: 60),
+                                  Icon(Icons.search_off,
+                                      size: 64,
+                                      color: Colors.white.withOpacity(0.3)),
+                                  const SizedBox(height: 16),
+                                  Text(_t('no_courses_in_category'),
+                                      style: const TextStyle(
+                                          color: Colors.white70)),
+                                  const SizedBox(height: 16),
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        _selectedCategoryId = null;
+                                        _searchQuery = '';
+                                        _applyFilters();
+                                      });
+                                    },
+                                    icon: const Icon(Icons.refresh,
+                                        color: Colors.white70),
+                                    label: Text(_t('show_all'),
+                                        style: const TextStyle(
+                                            color: Colors.white70)),
+                                  ),
+                                ],
+                              )))
+                            : SliverGrid(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    return CourseCard(
+                                      course: _filteredCourses[index],
+                                      heroTag:
+                                          'explore_course_image_${_filteredCourses[index].id}',
+                                      showEnrollButton: true,
+                                    );
+                                  },
+                                  childCount: _filteredCourses.length,
+                                ),
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  childAspectRatio: childAspectRatio,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 20,
+                                ),
+                              ),
+                  ),
+
+                  const SliverPadding(
+                      padding:
+                          EdgeInsets.only(bottom: 100)), // Space for BottomNav
+                ],
+              ),
             ),
           ),
         ),

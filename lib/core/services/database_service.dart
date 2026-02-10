@@ -4917,23 +4917,30 @@ class DatabaseService {
       final response = await query.order('enrolled_at', ascending: false);
       final rawData = List<Map<String, dynamic>>.from(response);
 
-      // 2. Fetch QR Code usage for the same period
-      var qrQuery = _client.from('qr_code_usage').select('''
-         *,
-         qr_codes!inner(batch_name, type),
-         users!inner(full_name, email)
-       ''');
+      // 2. Fetch QR Code usage for the same period (Safely)
+      List<Map<String, dynamic>> qrData = [];
+      try {
+        var qrQuery = _client.from('qr_code_usage').select('''
+           *,
+           qr_codes!inner(batch_name, type),
+           users!inner(full_name, email)
+         ''');
 
-      if (startDate != null) {
-        qrQuery = qrQuery.gte('redeemed_at', startDate.toIso8601String());
-      }
-      if (endDate != null) {
-        final adjustedEndDate = endDate.add(const Duration(days: 1));
-        qrQuery = qrQuery.lt('redeemed_at', adjustedEndDate.toIso8601String());
-      }
+        if (startDate != null) {
+          qrQuery = qrQuery.gte('redeemed_at', startDate.toIso8601String());
+        }
+        if (endDate != null) {
+          final adjustedEndDate = endDate.add(const Duration(days: 1));
+          qrQuery =
+              qrQuery.lt('redeemed_at', adjustedEndDate.toIso8601String());
+        }
 
-      final qrResponse = await qrQuery.order('redeemed_at', ascending: false);
-      final qrData = List<Map<String, dynamic>>.from(qrResponse);
+        final qrResponse = await qrQuery.order('redeemed_at', ascending: false);
+        qrData = List<Map<String, dynamic>>.from(qrResponse);
+      } catch (e) {
+        debugPrint('⚠️ Error fetching QR data for report: $e');
+        // Continue without QR data
+      }
 
       // 3. Process regular enrollments
       double totalRevenue = 0;
@@ -4953,8 +4960,7 @@ class DatabaseService {
 
       for (var item in reportItems) {
         if (qrUserIds.contains(item['user_id'])) {
-          item['payment_method'] =
-              qrUserIds.contains(item['user_id']) ? 'رمز QR' : 'نقدي';
+          item['payment_method'] = 'رمز QR';
         }
       }
 

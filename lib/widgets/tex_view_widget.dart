@@ -17,7 +17,7 @@ class TexViewWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Check if content likely contains LaTeX or similar equation markers
-    // Common markers: $...$, $$...$$, \(...\), \[...\], or any backslash command
+    // Also check for HTML tags to ensure they are rendered correctly
     bool hasLatex = content.contains(r'$') ||
         content.contains(r'\(') ||
         content.contains(r'\[') ||
@@ -25,9 +25,11 @@ class TexViewWidget extends StatelessWidget {
         content.contains(r'^') ||
         content.contains(r'_') ||
         (content.contains(r'{') && content.contains(r'}'));
+    
+    bool hasHtml = content.contains('<') && content.contains('>');
 
-    // If no latex markers, just render text for performance
-    if (!hasLatex) {
+    // If no latex markers and no HTML, just render text for performance
+    if (!hasLatex && !hasHtml) {
       return Text(
         content,
         style: style,

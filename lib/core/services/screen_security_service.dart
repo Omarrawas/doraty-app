@@ -36,8 +36,7 @@ class ScreenSecurityService {
   /// Enable screenshot and screen recording protection
   /// This should be called for non-admin users (if protection is enabled)
   Future<void> enableScreenSecurity() async {
-    if (_isSecured) return;
-    
+    // Always try to enable, don't rely solely on valid state
     try {
       // Only works on Android
       if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
@@ -53,8 +52,7 @@ class ScreenSecurityService {
   /// Disable screenshot and screen recording protection
   /// This should be called for admin users or when protection is disabled globally
   Future<void> disableScreenSecurity() async {
-    if (!_isSecured) return;
-    
+    // Always try to disable, don't rely solely on valid state
     try {
       // Only works on Android
       if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {

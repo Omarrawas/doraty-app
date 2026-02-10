@@ -1387,13 +1387,22 @@ class _SubscriptionsManagementScreenState
       headers: ['الرقم', 'التاريخ', 'الطالب', 'الدورة', 'طريقة الدفع', 'السعر'],
       data: List<List<dynamic>>.generate(items.length, (index) {
         final item = items[index];
+        
+        String dateStr = '-';
+        if (item['enrolled_at'] != null) {
+          try {
+            dateStr = DateFormat('yyyy/MM/dd')
+                .format(DateTime.parse(item['enrolled_at']));
+          } catch (_) {}
+        }
+
         return [
           '${index + 1}',
-          DateFormat('yyyy/MM/dd').format(DateTime.parse(item['enrolled_at'])),
-          item['user_full_name'] ?? '-',
+          dateStr,
+          item['user_full_name'] ?? item['student_name'] ?? '-',
           item['course_title'] ?? '-',
           item['payment_method'] ?? 'نقدي',
-          '${item['course_price']} ل.س',
+          '${item['course_price'] ?? 0} ل.س',
         ];
       }),
       headerStyle: pw.TextStyle(font: fontBold, color: PdfColors.white),

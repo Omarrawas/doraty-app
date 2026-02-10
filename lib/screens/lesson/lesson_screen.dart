@@ -10,6 +10,7 @@ import 'interactive_quiz_screen.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../widgets/tex_view_widget.dart';
+import '../../widgets/rich_text_editor.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
 import '../../models/note.dart';
@@ -58,7 +59,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
   
-  final TextEditingController _questionController = TextEditingController();
+  String _questionHtml = '';
   final DatabaseService _db = DatabaseService.instance;
 
   // Video
@@ -272,18 +273,19 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Future<void> _editNote(Note note) async {
-    final controller = TextEditingController(text: note.content);
+    String editedContent = note.content;
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(_t('edit_note'), textAlign: TextAlign.right),
-        content: TextField(
-          controller: controller,
-          textAlign: TextAlign.right,
-          maxLines: 5,
-          decoration: InputDecoration(
-            hintText: _t('your_comment_here'),
-            border: const OutlineInputBorder(),
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.8,
+          child: RichTextEditor(
+            initialHtml: note.content,
+            onContentChanged: (html) {
+              editedContent = html;
+            },
+            height: 250,
           ),
         ),
         actions: [
@@ -292,7 +294,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             child: Text(_t('cancel')),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, controller.text),
+            onPressed: () => Navigator.pop(context, editedContent),
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple),
             child:
@@ -447,7 +449,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     // _saveProgressBeforeExit(); // Removed async call from dispose
     _tabController.dispose();
     _mainScrollController.dispose();
-    _questionController.dispose();
 
     // Proper video disposal
     _videoPlayerController?.dispose();
@@ -870,18 +871,19 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HtmlWidget(
+        TexViewWidget(
           widget.lesson.description,
-          textStyle:
+          style:
               const TextStyle(fontSize: 16, height: 1.8, color: Colors.white),
         ),
 
         if (widget.lesson.content != null &&
-            widget.lesson.content != widget.lesson.description) ...[
+            widget.lesson.content != widget.lesson.description &&
+            widget.lesson.content!.isNotEmpty) ...[
           const SizedBox(height: 24),
-          HtmlWidget(
+          TexViewWidget(
             widget.lesson.content!,
-            textStyle:
+            style:
                 const TextStyle(fontSize: 16, height: 1.8, color: Colors.white),
           ),
         ],
@@ -1800,10 +1802,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                               ],
                             ),
                             const SizedBox(height: 8),
-                            Text(
+                            TexViewWidget(
                               note.content,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.white.withOpacity(0.8),
@@ -1845,25 +1845,32 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 border: Border.all(
                     color: Colors.white.withOpacity(0.2), width: 1.5),
               ),
-              child: Row(
+              child: Column(
                 children: [
-                  IconButton(
-                    onPressed: _sendQuestion,
-                    icon: const Icon(Icons.send_rounded, color: Colors.white),
+                  RichTextEditor(
+                    initialHtml: _questionHtml,
+                    onContentChanged: (html) {
+                      _questionHtml = html;
+                    },
+                    placeholder: 'اسأل سؤالاً عن هذا الدرس...',
+                    height: 120,
+                    isCompact: true,
                   ),
-                  Expanded(
-                    child: TextField(
-                      controller: _questionController,
-                      textAlign: TextAlign.right,
-                      onSubmitted: (_) => _sendQuestion(),
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'اسأل سؤالاً عن هذا الدرس...',
-                        hintStyle:
-                            TextStyle(color: Colors.white.withOpacity(0.5)),
-                        border: InputBorder.none,
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: ElevatedButton.icon(
+                      onPressed: _sendQuestion,
+                      icon: const Icon(Icons.send_rounded, size: 18),
+                      label: const Text('إرسال السؤال'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primaryPurple,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -2397,17 +2404,20 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   void _showReplyDialog(LessonQuestion question, {String? initialText}) {
-    final replyController = TextEditingController(text: initialText);
+    String replyContent = initialText ?? '';
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('إضافة رد', textAlign: TextAlign.right),
-        content: TextField(
-          controller: replyController,
-          textAlign: TextAlign.right,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'اكتب ردك هنا...',
+        content: SizedBox(
+          width: MediaQuery.of(context).size.width * 0.8,
+          child: RichTextEditor(
+            initialHtml: initialText,
+            onContentChanged: (html) {
+              replyContent = html;
+            },
+            height: 200,
+            isCompact: true,
           ),
         ),
         actions: [
@@ -2417,8 +2427,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           ),
           ElevatedButton(
             onPressed: () async {
-              if (replyController.text.trim().isEmpty) return;
-              final content = replyController.text.trim();
+              if (replyContent.trim().isEmpty) return;
+              final content = replyContent.trim();
               Navigator.pop(context);
 
               final messenger = ScaffoldMessenger.of(context);
@@ -2444,10 +2454,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Future<void> _sendQuestion() async {
-    if (_questionController.text.trim().isEmpty) return;
-
-    final content = _questionController.text.trim();
-    _questionController.clear();
+    if (_questionHtml.trim().isEmpty) return;
+    final content = _questionHtml;
+    setState(() {
+      _questionHtml = '';
+    });
 
     try {
       await DatabaseService().askLessonQuestion(widget.lesson.id, content);

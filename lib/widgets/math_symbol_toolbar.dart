@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_tex/flutter_tex.dart';
 
 class MathSymbolToolbar extends StatelessWidget {
   final Function(String) onSymbolSelected;
@@ -14,7 +15,8 @@ class MathSymbolToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final background = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F3F3);
+    final background =
+        isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F3F3);
     final border = isDark ? Colors.white12 : const Color(0xFFD0D0D0);
     return Container(
       height: 72,
@@ -45,37 +47,43 @@ class MathSymbolToolbar extends StatelessWidget {
         controller: scrollController,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         children: [
+          // ── Quick Equation Insert (Word-like) ──
+          _buildEquationButton(context),
           _buildCategoryMenu(
             context,
             'الرموز',
             'αΩ',
             [
-              _MathTemplate('α', 'ألفا', 'α'),
-              _MathTemplate('β', 'بيتا', 'β'),
-              _MathTemplate('γ', 'غاما', 'γ'),
-              _MathTemplate('δ', 'دلتا', 'δ'),
-              _MathTemplate('ε', 'إبسيلون', 'ε'),
-              _MathTemplate('ζ', 'زيتا', 'ζ'),
-              _MathTemplate('η', 'إيتا', 'η'),
-              _MathTemplate('θ', 'ثيتا', 'θ'),
-              _MathTemplate('ι', 'أيوتا', 'ι'),
-              _MathTemplate('κ', 'كابة', 'κ'),
-              _MathTemplate('λ', 'لامدا', 'λ'),
-              _MathTemplate('μ', 'ميو', 'μ'),
-              _MathTemplate('ν', 'نيو', 'ν'),
-              _MathTemplate('ξ', 'كسي', 'ξ'),
-              _MathTemplate('π', 'باي', 'π'),
-              _MathTemplate('ρ', 'رو', 'ρ'),
-              _MathTemplate('σ', 'سيغما', 'σ'),
-              _MathTemplate('τ', 'تاو', 'τ'),
-              _MathTemplate('φ', 'فاي', 'φ'),
-              _MathTemplate('χ', 'كاي', 'χ'),
-              _MathTemplate('ψ', 'بساي', 'ψ'),
-              _MathTemplate('ω', 'أوميغا', 'ω'),
-              _MathTemplate('Δ', 'دلتا كابيتال', 'Δ'),
-              _MathTemplate('Ω', 'أوميغا كابيتال', 'Ω'),
-              _MathTemplate('Σ', 'سيغما كابيتال', 'Σ'),
-              _MathTemplate('Phi', 'فاي كابيتال', 'Φ'),
+              _MathItem('α', 'ألفا', 'α'),
+              _MathItem('β', 'بيتا', 'β'),
+              _MathItem('γ', 'غاما', 'γ'),
+              _MathItem('δ', 'دلتا', 'δ'),
+              _MathItem('ε', 'إبسيلون', 'ε'),
+              _MathItem('ζ', 'زيتا', 'ζ'),
+              _MathItem('η', 'إيتا', 'η'),
+              _MathItem('θ', 'ثيتا', 'θ'),
+              _MathItem('ι', 'أيوتا', 'ι'),
+              _MathItem('κ', 'كابا', 'κ'),
+              _MathItem('λ', 'لامدا', 'λ'),
+              _MathItem('μ', 'ميو', 'μ'),
+              _MathItem('ν', 'نيو', 'ν'),
+              _MathItem('ξ', 'كسي', 'ξ'),
+              _MathItem('π', 'باي', 'π'),
+              _MathItem('ρ', 'رو', 'ρ'),
+              _MathItem('σ', 'سيغما', 'σ'),
+              _MathItem('τ', 'تاو', 'τ'),
+              _MathItem('φ', 'فاي', 'φ'),
+              _MathItem('χ', 'كاي', 'χ'),
+              _MathItem('ψ', 'بساي', 'ψ'),
+              _MathItem('ω', 'أوميغا', 'ω'),
+              _MathItem('Δ', 'دلتا كبيرة', 'Δ'),
+              _MathItem('Ω', 'أوميغا كبيرة', 'Ω'),
+              _MathItem('Σ', 'سيغما كبيرة', 'Σ'),
+              _MathItem('Φ', 'فاي كبيرة', 'Φ'),
+              _MathItem('∞', 'لانهاية', '∞'),
+              _MathItem('∂', 'اشتقاق جزئي', '∂'),
+              _MathItem('∇', 'نابلا', '∇'),
+              _MathItem('ℏ', 'ثابت بلانك', 'ℏ'),
             ],
           ),
           _buildCategoryMenu(
@@ -83,162 +91,108 @@ class MathSymbolToolbar extends StatelessWidget {
             'كيمياء',
             '⇌',
             [
-              _MathTemplate('?', '????? ???', '?'),
-              _MathTemplate('?', '????? ????', '?'),
-              _MathTemplate('?', '????? ???? (?????)', '?'),
-              _MathTemplate('?', '???????', '?'),
-              _MathTemplate('?', '????? ???', '?'),
-              _MathTemplate('?', '???? (????)', '?'),
-              _MathTemplate('?', '???? ?????', '?'),
-              _MathTemplate('H?O', '???', 'H?O'),
-              _MathTemplate('CO?', '???? ????? ???????', 'CO?'),
-              _MathTemplate('SO???', '???????', 'SO???'),
-              _MathTemplate('NH??', '???????', 'NH??'),
-              _MathTemplate('Na?', '??????', 'Na?'),
-              _MathTemplate('Cl?', '??????', 'Cl?'),
-              _MathTemplate('Ca??', '???????', 'Ca??'),
-              _MathTemplate('Al??', '????????', 'Al??'),
-              _MathTemplate('O??', '?????', 'O??'),
-              _MathTemplate('S??', '???????', 'S??'),
-              _MathTemplate('NO??', '?????', 'NO??'),
-              _MathTemplate('CO???', '???????', 'CO???'),
-              _MathTemplate('PO???', '??????', 'PO???'),
-              _MathTemplate('?', '??? ???? 0', '?'),
-              _MathTemplate('?', '??? ???? 1', '?'),
-              _MathTemplate('?', '??? ???? 2', '?'),
-              _MathTemplate('?', '??? ???? 3', '?'),
-              _MathTemplate('?', '??? ???? 4', '?'),
-              _MathTemplate('?', '??? ???? 5', '?'),
-              _MathTemplate('?', '??? ???? 6', '?'),
-              _MathTemplate('?', '??? ???? 7', '?'),
-              _MathTemplate('?', '??? ???? 8', '?'),
-              _MathTemplate('?', '??? ???? 9', '?'),
-              _MathTemplate('?', '???? ?????', '?'),
-              _MathTemplate('?', '???? ?????', '?'),
-              _MathTemplate('??', '???? 2+', '??'),
-              _MathTemplate('??', '???? 2-', '??'),
-              _MathTemplate('??', '???? 3+', '??'),
-              _MathTemplate('??', '???? 3-', '??'),
-              _MathTemplate(r'\( \xrightarrow{\Delta} \)', '?????', '? (?)'),
-              _MathTemplate(r'\( \xrightarrow{pt} \)', '???? ????', '? (pt)'),
-              _MathTemplate(r'\( \xrightarrow{H_2O} \)', '????', '? (H?O)'),
-              _MathTemplate(r'\( \xrightleftharpoons[k_2]{k_1} \)', '????? ?????? ?????', '? (k)'),
-              _MathTemplate('(s)', '???? ????', '(s)'),
-              _MathTemplate('(l)', '???? ?????', '(l)'),
-              _MathTemplate('(g)', '???? ?????', '(g)'),
-              _MathTemplate('(aq)', '????? ????', '(aq)'),
+              // ─── Arrows & Reactions ───
+              _MathItem('→', 'سهم تفاعل', '→'),
+              _MathItem('⇌', 'تفاعل عكوس', '⇌'),
+              _MathItem('⇀', 'سهم أمامي', '⇀'),
+              _MathItem('↽', 'سهم عكسي', '↽'),
+              _MathItem('↑', 'غاز متصاعد', '↑'),
+              _MathItem('↓', 'راسب', '↓'),
+              // ─── States of Matter ───
+              _MathItem('(s)', 'حالة صلبة', '(s)'),
+              _MathItem('(l)', 'حالة سائلة', '(l)'),
+              _MathItem('(g)', 'حالة غازية', '(g)'),
+              _MathItem('(aq)', 'محلول مائي', '(aq)'),
+              // ─── Subscript Numbers ───
+              _MathItem('₀', 'رقم سفلي 0', '₀'),
+              _MathItem('₁', 'رقم سفلي 1', '₁'),
+              _MathItem('₂', 'رقم سفلي 2', '₂'),
+              _MathItem('₃', 'رقم سفلي 3', '₃'),
+              _MathItem('₄', 'رقم سفلي 4', '₄'),
+              _MathItem('₅', 'رقم سفلي 5', '₅'),
+              _MathItem('₆', 'رقم سفلي 6', '₆'),
+              _MathItem('₇', 'رقم سفلي 7', '₇'),
+              _MathItem('₈', 'رقم سفلي 8', '₈'),
+              _MathItem('₉', 'رقم سفلي 9', '₉'),
+              // ─── Superscript Numbers & Signs ───
+              _MathItem('⁰', 'رقم علوي 0', '⁰'),
+              _MathItem('¹', 'رقم علوي 1', '¹'),
+              _MathItem('²', 'رقم علوي 2', '²'),
+              _MathItem('³', 'رقم علوي 3', '³'),
+              _MathItem('⁴', 'رقم علوي 4', '⁴'),
+              _MathItem('⁺', 'شحنة موجبة', '⁺'),
+              _MathItem('⁻', 'شحنة سالبة', '⁻'),
+              _MathItem('²⁺', 'شحنة 2+', '²⁺'),
+              _MathItem('²⁻', 'شحنة 2-', '²⁻'),
+              _MathItem('³⁺', 'شحنة 3+', '³⁺'),
+              _MathItem('³⁻', 'شحنة 3-', '³⁻'),
+              // ─── Common Formulas (quick insert) ───
+              _MathItem('H₂O', 'ماء', 'H₂O'),
+              _MathItem('CO₂', 'ثاني أكسيد الكربون', 'CO₂'),
+              _MathItem('O₂', 'أكسجين', 'O₂'),
+              _MathItem('N₂', 'نيتروجين', 'N₂'),
+              _MathItem('H₂', 'هيدروجين', 'H₂'),
+              _MathItem('Cl₂', 'كلور', 'Cl₂'),
+              _MathItem('NaCl', 'كلوريد الصوديوم', 'NaCl'),
+              _MathItem('NaOH', 'هيدروكسيد الصوديوم', 'NaOH'),
+              _MathItem('HCl', 'حمض الهيدروكلوريك', 'HCl'),
+              _MathItem('H₂SO₄', 'حمض الكبريتيك', 'H₂SO₄'),
+              _MathItem('HNO₃', 'حمض النتريك', 'HNO₃'),
+              _MathItem('NH₃', 'أمونيا', 'NH₃'),
+              _MathItem('CaCO₃', 'كربونات الكالسيوم', 'CaCO₃'),
+              _MathItem('CH₄', 'ميثان', 'CH₄'),
+              _MathItem('C₂H₅OH', 'إيثانول', 'C₂H₅OH'),
+              _MathItem('Fe₂O₃', 'أكسيد الحديد III', 'Fe₂O₃'),
+              // ─── Ions ───
+              _MathItem('SO₄²⁻', 'كبريتات', 'SO₄²⁻'),
+              _MathItem('NO₃⁻', 'نترات', 'NO₃⁻'),
+              _MathItem('CO₃²⁻', 'كربونات', 'CO₃²⁻'),
+              _MathItem('PO₄³⁻', 'فوسفات', 'PO₄³⁻'),
+              _MathItem('OH⁻', 'هيدروكسيد', 'OH⁻'),
+              _MathItem('NH₄⁺', 'أمونيوم', 'NH₄⁺'),
+              _MathItem('Na⁺', 'صوديوم', 'Na⁺'),
+              _MathItem('Ca²⁺', 'كالسيوم', 'Ca²⁺'),
+              _MathItem('Al³⁺', 'ألمنيوم', 'Al³⁺'),
+              _MathItem('Fe²⁺', 'حديد II', 'Fe²⁺'),
+              _MathItem('Fe³⁺', 'حديد III', 'Fe³⁺'),
+              _MathItem('Cu²⁺', 'نحاس', 'Cu²⁺'),
+              _MathItem('MnO₄⁻', 'برمنغنات', 'MnO₄⁻'),
+              _MathItem('Cr₂O₇²⁻', 'ثنائي كرومات', 'Cr₂O₇²⁻'),
             ],
           ),
           _buildCategoryMenu(
             context,
-            'كسر',
-            'x/y',
+            'عمليات',
+            '±÷',
             [
-              _MathTemplate(r'\( \frac{}{} \)', 'كسر رأسي', '󰡬'),
-              _MathTemplate(r'\( \tfrac{}{} \)', 'كسر صغير', '½'),
-              _MathTemplate('/', 'كسر مائل', '/'),
-              _MathTemplate(r'\( ^{}/_{} \)', 'كسر خطي', 'x/y'),
-              _MathTemplate(r'\( \cfrac{}{} \)', 'كسر مستمر', '󰡬󰡬'),
-            ],
-          ),
-          _buildCategoryMenu(
-            context,
-            'برنامج نصي',
-            'eˣ',
-            [
-              _MathTemplate(r'^{}', 'أس علوي', 'xʸ'),
-              _MathTemplate(r'_{}', 'دليل سفلي', 'xᵧ'),
-              _MathTemplate(r'^{}_{}', 'أس ودليل علوي وسفلي', 'xᵧᶻ'),
-              _MathTemplate(r'{}^{}_{}\Box', 'أس ودليل من اليسار', 'ʸᶻx'),
-            ],
-          ),
-          _buildCategoryMenu(
-            context,
-            'جذري',
-            'ⁿ√x',
-            [
-              _MathTemplate(r'\( \sqrt{} \)', 'جذر تربيعي', '√'),
-              _MathTemplate(r'\( \sqrt[2]{} \)', 'جذر تربيعي برقم', '²√'),
-              _MathTemplate(r'\( \sqrt[3]{} \)', 'جذر تكعيبي', '∛'),
-              _MathTemplate(r'\( \sqrt[]{} \)', 'جذر نوني', 'ⁿ√'),
-            ],
-          ),
-          _buildCategoryMenu(
-            context,
-            'تكامل',
-            '∫',
-            [
-              _MathTemplate(r'\( \int \)', 'تكامل بسيط', '∫'),
-              _MathTemplate(r'\( \int_{}^{} \)', 'تكامل بحدود', '∫ₐᵇ'),
-              _MathTemplate(r'\( \iint \)', 'تكامل ثنائي', '∬'),
-              _MathTemplate(r'\( \oint \)', 'تكامل مساري', '∮'),
-            ],
-          ),
-          _buildCategoryMenu(
-            context,
-            'عامل تشغيل كبير',
-            '∑',
-            [
-              _MathTemplate('∑', 'مجموع', '∑'),
-              _MathTemplate(r'\( \sum_{}^{} \)', 'مجموع بحدود', '∑ᵢ₌₁ⁿ'),
-              _MathTemplate(r'\( \sum_{} \)', 'مجموع بحد سفلي', '∑ᵢ'),
-              _MathTemplate('∏', 'حاصل طلب', '∏'),
-              _MathTemplate(r'\( \prod_{}^{} \)', 'حاصل طلب بحدود', '∏ᵢ₌₁ⁿ'),
-              _MathTemplate('⋂', 'تقاطع كبير', '⋂'),
-              _MathTemplate('⋃', 'اتحاد كبير', '⋃'),
-            ],
-          ),
-          _buildCategoryMenu(
-            context,
-            'قوس',
-            '{()} ',
-            [
-              _MathTemplate('(', 'أقواس عادية', '(x)'),
-              _MathTemplate('[', 'أقواس مربعة', '[x]'),
-              _MathTemplate('{', 'أقواس مجموعة', '{x}'),
-              _MathTemplate('|', 'قدر مطلق', '|x|'),
-              _MathTemplate(r'\( \left( \right) \)', 'أقواس متمددة', '(...)'),
-            ],
-          ),
-          _buildCategoryMenu(
-            context,
-            'دالة',
-            'sinθ',
-            [
-              _MathTemplate('sin', 'جا', 'sin'),
-              _MathTemplate('cos', 'جتا', 'cos'),
-              _MathTemplate('tan', 'ظا', 'tan'),
-              _MathTemplate('cot', 'ظتا', 'cot'),
-              _MathTemplate('sec', 'قا', 'sec'),
-              _MathTemplate('csc', 'قتا', 'csc'),
-              _MathTemplate('sin⁻¹', 'جا عكسية', 'sin⁻¹'),
-              _MathTemplate('cos⁻¹', 'جتا عكسية', 'cos⁻¹'),
-              _MathTemplate('tan⁻¹', 'ظا عكسية', 'tan⁻¹'),
-            ],
-          ),
-          _buildCategoryMenu(
-            context,
-            'التمييز',
-            'ä',
-            [
-              _MathTemplate(r'\( \dot{} \)', 'نقطة علوية', 'ẋ'),
-              _MathTemplate(r'\( \ddot{} \)', 'نقطتين علوية', 'ẍ'),
-              _MathTemplate('â', 'قبعة', 'â'),
-              _MathTemplate('ā', 'خط علوي صغير', 'ā'),
-              _MathTemplate('v⃗', 'متجه', 'v⃗'),
-              _MathTemplate('x→', 'سهم لليمين علوي', 'x→ '),
-            ],
-          ),
-          _buildCategoryMenu(
-            context,
-            'حد وسجل',
-            'lim',
-            [
-              _MathTemplate('lim', 'نهاية بلا حدود', 'lim'),
-              _MathTemplate(r'\( \lim_{x \to \infty} \)', 'نهاية بحدود', 'limₓ→∞'),
-              _MathTemplate('log', 'لوغاريتم', 'log'),
-              _MathTemplate(r'\( \log_{10} \)', 'لوغاريتم بأساس', 'log₁₀'),
-              _MathTemplate('ln', 'لوغاريتم طبيعي', 'ln'),
+              _MathItem('±', 'زائد أو ناقص', '±'),
+              _MathItem('∓', 'ناقص أو زائد', '∓'),
+              _MathItem('×', 'ضرب', '×'),
+              _MathItem('÷', 'قسمة', '÷'),
+              _MathItem('·', 'ضرب (نقطة)', '·'),
+              _MathItem('≠', 'لا يساوي', '≠'),
+              _MathItem('≈', 'تقريبا', '≈'),
+              _MathItem('≡', 'مطابق', '≡'),
+              _MathItem('≤', 'أقل أو يساوي', '≤'),
+              _MathItem('≥', 'أكبر أو يساوي', '≥'),
+              _MathItem('≪', 'أصغر بكثير', '≪'),
+              _MathItem('≫', 'أكبر بكثير', '≫'),
+              _MathItem('∝', 'تتناسب مع', '∝'),
+              _MathItem('∈', 'ينتمي إلى', '∈'),
+              _MathItem('∉', 'لا ينتمي إلى', '∉'),
+              _MathItem('⊂', 'مجموعة جزئية', '⊂'),
+              _MathItem('⊃', 'مجموعة شاملة', '⊃'),
+              _MathItem('∪', 'اتحاد', '∪'),
+              _MathItem('∩', 'تقاطع', '∩'),
+              _MathItem('∅', 'مجموعة فارغة', '∅'),
+              _MathItem('∀', 'لكل', '∀'),
+              _MathItem('∃', 'يوجد', '∃'),
+              _MathItem('∴', 'إذن', '∴'),
+              _MathItem('∵', 'لأن', '∵'),
+              _MathItem('⊥', 'عمودي على', '⊥'),
+              _MathItem('∥', 'يوازي', '∥'),
+              _MathItem('∠', 'زاوية', '∠'),
+              _MathItem('°', 'درجة', '°'),
             ],
           ),
           _buildCategoryMenu(
@@ -246,27 +200,362 @@ class MathSymbolToolbar extends StatelessWidget {
             'أسهم',
             '→',
             [
-              _MathTemplate('→', 'سهم لليمين', '→'),
-              _MathTemplate('←', 'سهم لليسار', '←'),
-              _MathTemplate('↔', 'سهم مزدوج', '↔'),
-              _MathTemplate('⇒', 'سهم مزدوج لليمين', '⇒'),
-              _MathTemplate('⇐', 'سهم مزدوج لليسار', '⇐'),
-              _MathTemplate('⇔', 'سهم مزدوج تبادلي', '⇔'),
+              _MathItem('→', 'سهم لليمين', '→'),
+              _MathItem('←', 'سهم لليسار', '←'),
+              _MathItem('↔', 'سهم مزدوج', '↔'),
+              _MathItem('⇒', 'يؤدي إلى', '⇒'),
+              _MathItem('⇐', 'ينتج من', '⇐'),
+              _MathItem('⇔', 'إذا وفقط إذا', '⇔'),
+              _MathItem('↑', 'سهم للأعلى', '↑'),
+              _MathItem('↓', 'سهم للأسفل', '↓'),
+              _MathItem('⇌', 'توازن', '⇌'),
+              _MathItem('⟶', 'سهم طويل', '⟶'),
+              _MathItem('⟸', 'سهم طويل لليسار', '⟸'),
+              _MathItem('⟹', 'سهم طويل لليمين', '⟹'),
             ],
           ),
           _buildCategoryMenu(
             context,
-            'مصفوفة',
-            '[::]',
+            'أعداد',
+            'x²',
             [
-              _MathTemplate(r'\( \begin{matrix}  &  \\  &  \end{matrix} \)', '2x2 مصفوفة', '[::]'),
-              _MathTemplate(r'\( \begin{matrix}  &  \end{matrix} \)', '1x2 مصفوفة', '[..]'),
-              _MathTemplate(r'\( \begin{matrix}  \\  \end{matrix} \)', '2x1 مصفوفة', '[:]'),
-              _MathTemplate('...', 'نقاط أفقية', '...'),
-              _MathTemplate('⋮', 'نقاط رأسية', '⋮'),
+              // Superscripts
+              _MathItem('⁰', 'أس 0', '⁰'),
+              _MathItem('¹', 'أس 1', '¹'),
+              _MathItem('²', 'أس 2', '²'),
+              _MathItem('³', 'أس 3', '³'),
+              _MathItem('⁴', 'أس 4', '⁴'),
+              _MathItem('⁵', 'أس 5', '⁵'),
+              _MathItem('⁶', 'أس 6', '⁶'),
+              _MathItem('⁷', 'أس 7', '⁷'),
+              _MathItem('⁸', 'أس 8', '⁸'),
+              _MathItem('⁹', 'أس 9', '⁹'),
+              _MathItem('⁺', 'علوي +', '⁺'),
+              _MathItem('⁻', 'علوي -', '⁻'),
+              _MathItem('⁼', 'علوي =', '⁼'),
+              _MathItem('ⁿ', 'أس n', 'ⁿ'),
+              _MathItem('ⁱ', 'أس i', 'ⁱ'),
+              // Subscripts
+              _MathItem('₀', 'سفلي 0', '₀'),
+              _MathItem('₁', 'سفلي 1', '₁'),
+              _MathItem('₂', 'سفلي 2', '₂'),
+              _MathItem('₃', 'سفلي 3', '₃'),
+              _MathItem('₄', 'سفلي 4', '₄'),
+              _MathItem('₅', 'سفلي 5', '₅'),
+              _MathItem('₆', 'سفلي 6', '₆'),
+              _MathItem('₇', 'سفلي 7', '₇'),
+              _MathItem('₈', 'سفلي 8', '₈'),
+              _MathItem('₉', 'سفلي 9', '₉'),
+              _MathItem('₊', 'سفلي +', '₊'),
+              _MathItem('₋', 'سفلي -', '₋'),
+              _MathItem('₌', 'سفلي =', '₌'),
+              _MathItem('ₙ', 'سفلي n', 'ₙ'),
+              _MathItem('ₓ', 'سفلي x', 'ₓ'),
+            ],
+          ),
+          _buildCategoryMenu(
+            context,
+            'دوال',
+            'sin',
+            [
+              _MathItem('sin', 'جا', 'sin'),
+              _MathItem('cos', 'جتا', 'cos'),
+              _MathItem('tan', 'ظا', 'tan'),
+              _MathItem('cot', 'ظتا', 'cot'),
+              _MathItem('sec', 'قا', 'sec'),
+              _MathItem('csc', 'قتا', 'csc'),
+              _MathItem('sin⁻¹', 'جا عكسية', 'arcsin'),
+              _MathItem('cos⁻¹', 'جتا عكسية', 'arccos'),
+              _MathItem('tan⁻¹', 'ظا عكسية', 'arctan'),
+              _MathItem('log', 'لوغاريتم', 'log'),
+              _MathItem('ln', 'لوغاريتم طبيعي', 'ln'),
+              _MathItem('lim', 'نهاية', 'lim'),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  /// ─── Equation Builder Button (Word-Like) ───
+  Widget _buildEquationButton(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? const Color(0xFF8AB4F8) : const Color(0xFF0F6CBD);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: InkWell(
+        onTap: () => _showEquationDialog(context),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: 84,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [accent.withOpacity(0.15), accent.withOpacity(0.05)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: accent.withOpacity(0.4)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.functions, color: accent, size: 20),
+              const SizedBox(height: 2),
+              Text(
+                'معادلة',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: accent,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ─── Visual Equation Dialog (like MS Word) ───
+  void _showEquationDialog(BuildContext context) {
+    final controller = TextEditingController();
+    String previewLatex = '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.all(16),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 520, maxHeight: 600),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF1E1E1E)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── Header ──
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0F6CBD).withOpacity(0.1),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.functions,
+                            color: Color(0xFF0F6CBD), size: 24),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'إدراج معادلة رياضية',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // ── Quick Templates ──
+                          const Text('قوالب سريعة:',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14)),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: _equationTemplates.map((t) {
+                              return InkWell(
+                                onTap: () {
+                                  controller.text = t.latex;
+                                  setDialogState(() => previewLatex = t.latex);
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                        color: Colors.grey.withOpacity(0.3)),
+                                  ),
+                                  child: Text(
+                                    t.label,
+                                    style: const TextStyle(fontSize: 13),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // ── LaTeX Input ──
+                          const Text('اكتب المعادلة بصيغة LaTeX:',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14)),
+                          const SizedBox(height: 8),
+                          Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: TextField(
+                              controller: controller,
+                              maxLines: 3,
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 14,
+                              ),
+                              decoration: InputDecoration(
+                                hintText:
+                                    r'مثال: \frac{-b \pm \sqrt{b^2-4ac}}{2a}',
+                                hintStyle: TextStyle(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    fontSize: 12),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey.withOpacity(0.05),
+                              ),
+                              onChanged: (val) {
+                                setDialogState(() => previewLatex = val);
+                              },
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // ── Live Preview ──
+                          const Text('المعاينة:',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14)),
+                          const SizedBox(height: 8),
+                          Container(
+                            constraints: const BoxConstraints(minHeight: 80),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color:
+                                      const Color(0xFF0F6CBD).withOpacity(0.3)),
+                            ),
+                            child: previewLatex.isEmpty
+                                ? const Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(20),
+                                      child: Text(
+                                        'ابدأ بالكتابة لرؤية المعاينة',
+                                        style: TextStyle(
+                                            color: Colors.grey, fontSize: 13),
+                                      ),
+                                    ),
+                                  )
+                                : TeXView(
+                                    child: TeXViewDocument(
+                                      '\\($previewLatex\\)',
+                                      style: TeXViewStyle(
+                                        contentColor: Colors.black,
+                                        fontStyle:
+                                            TeXViewFontStyle(fontSize: 18),
+                                        textAlign: TeXViewTextAlign.center,
+                                        padding: const TeXViewPadding.all(16),
+                                      ),
+                                    ),
+                                    style: const TeXViewStyle(
+                                      backgroundColor: Colors.white,
+                                    ),
+                                    renderingEngine:
+                                        const TeXViewRenderingEngine.katex(),
+                                    loadingWidgetBuilder: (context) =>
+                                        const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(16),
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // ── Actions ──
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border(
+                          top: BorderSide(color: Colors.grey.withOpacity(0.2))),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('إلغاء'),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: previewLatex.isEmpty
+                              ? null
+                              : () {
+                                  final result = '\\(${controller.text}\\)';
+                                  Navigator.pop(ctx);
+                                  onSymbolSelected(result);
+                                },
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('إدراج المعادلة'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F6CBD),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -275,7 +564,7 @@ class MathSymbolToolbar extends StatelessWidget {
     BuildContext context,
     String label,
     String iconLabel,
-    List<_MathTemplate> templates,
+    List<_MathItem> items,
   ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -284,6 +573,7 @@ class MathSymbolToolbar extends StatelessWidget {
     final textPrimary = isDark ? Colors.white : const Color(0xFF1B1B1B);
     final textSecondary = isDark ? Colors.white70 : const Color(0xFF5C5C5C);
     final accent = isDark ? const Color(0xFF8AB4F8) : const Color(0xFF0F6CBD);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
       child: PopupMenuButton<String>(
@@ -291,7 +581,7 @@ class MathSymbolToolbar extends StatelessWidget {
         offset: const Offset(0, -8),
         elevation: 10,
         color: surface,
-        constraints: const BoxConstraints(maxHeight: 380, minWidth: 260),
+        constraints: const BoxConstraints(maxHeight: 420, minWidth: 280),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: border),
@@ -307,13 +597,15 @@ class MathSymbolToolbar extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                iconLabel,
-                style: TextStyle(
-                  color: textPrimary,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  fontFamily: 'Segoe UI',
+              Directionality(
+                textDirection: TextDirection.ltr,
+                child: Text(
+                  iconLabel,
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
               ),
               const SizedBox(height: 2),
@@ -323,20 +615,21 @@ class MathSymbolToolbar extends StatelessWidget {
                 style: TextStyle(
                   color: textSecondary,
                   fontSize: 9,
-                  fontFamily: 'Segoe UI',
                 ),
               ),
             ],
           ),
         ),
-        itemBuilder: (context) => templates.map((t) {
+        itemBuilder: (context) => items.map((item) {
           return PopupMenuItem<String>(
-            value: t.value,
+            value: item.value,
             height: 44,
             child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  width: 48,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                   decoration: BoxDecoration(
                     color: accent.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(6),
@@ -345,12 +638,12 @@ class MathSymbolToolbar extends StatelessWidget {
                   child: Directionality(
                     textDirection: TextDirection.ltr,
                     child: Text(
-                      t.preview,
+                      item.preview,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
                         color: accent,
                         fontWeight: FontWeight.bold,
-                        fontFamily: 'Segoe UI',
                       ),
                     ),
                   ),
@@ -358,19 +651,13 @@ class MathSymbolToolbar extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    t.label,
+                    item.label,
                     style: TextStyle(
                       fontSize: 13,
                       color: textPrimary,
-                      fontFamily: 'Segoe UI',
                     ),
                     textAlign: TextAlign.right,
                   ),
-                ),
-                Icon(
-                  Icons.chevron_left,
-                  size: 18,
-                  color: textSecondary.withOpacity(0.7),
                 ),
               ],
             ),
@@ -379,12 +666,46 @@ class MathSymbolToolbar extends StatelessWidget {
       ),
     );
   }
+
+  /// ─── Quick equation templates ───
+  static final List<_EquationTemplate> _equationTemplates = [
+    _EquationTemplate(r'\frac{a}{b}', 'كسر'),
+    _EquationTemplate(r'\frac{-b \pm \sqrt{b^2-4ac}}{2a}', 'صيغة تربيعية'),
+    _EquationTemplate(r'\sqrt{x}', 'جذر تربيعي'),
+    _EquationTemplate(r'\sqrt[n]{x}', 'جذر نوني'),
+    _EquationTemplate(r'x^{n}', 'أس'),
+    _EquationTemplate(r'x_{n}', 'دليل سفلي'),
+    _EquationTemplate(r'\sum_{i=1}^{n} x_i', 'مجموع'),
+    _EquationTemplate(r'\prod_{i=1}^{n} x_i', 'جداء'),
+    _EquationTemplate(r'\int_{a}^{b} f(x) \, dx', 'تكامل محدد'),
+    _EquationTemplate(r'\int f(x) \, dx', 'تكامل غير محدد'),
+    _EquationTemplate(r'\lim_{x \to \infty} f(x)', 'نهاية'),
+    _EquationTemplate(r'\frac{dy}{dx}', 'مشتقة'),
+    _EquationTemplate(r'\frac{\partial f}{\partial x}', 'مشتقة جزئية'),
+    _EquationTemplate(r'\log_{a} x', 'لوغاريتم'),
+    _EquationTemplate(r'\binom{n}{k}', 'توافيق'),
+    _EquationTemplate(
+        r'\begin{pmatrix} a & b \\ c & d \end{pmatrix}', 'مصفوفة 2×2'),
+    _EquationTemplate(r'|\vec{A}|', 'متجه'),
+    _EquationTemplate(r'\vec{F} = m\vec{a}', 'قانون نيوتن'),
+    _EquationTemplate(r'E = mc^{2}', 'طاقة أينشتاين'),
+    _EquationTemplate(r'a^2 + b^2 = c^2', 'فيثاغورس'),
+    _EquationTemplate(r'e^{i\pi} + 1 = 0', 'أويلر'),
+    _EquationTemplate(r'PV = nRT', 'قانون الغاز المثالي'),
+  ];
 }
 
-class _MathTemplate {
+class _MathItem {
   final String value;
   final String label;
   final String preview;
 
-  _MathTemplate(this.value, this.label, this.preview);
+  _MathItem(this.value, this.label, this.preview);
+}
+
+class _EquationTemplate {
+  final String latex;
+  final String label;
+
+  _EquationTemplate(this.latex, this.label);
 }

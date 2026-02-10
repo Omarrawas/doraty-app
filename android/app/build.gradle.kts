@@ -19,7 +19,7 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.doraty.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -43,21 +43,25 @@ android {
         versionName = flutter.versionName
     }
 
-    buildTypes {
-        signingConfigs {
-            create("release") {
-                keyAlias = keystoreProperties.getProperty("keyAlias") ?: "doraty_key"
-                keyPassword = keystoreProperties.getProperty("keyPassword") ?: "changeit"
-                // Resolve store file relative to project root for predictable path
-                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile") ?: "android/app/key.jks")
-                storePassword = keystoreProperties.getProperty("storePassword") ?: "changeit"
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String? ?: "doraty_key"
+            keyPassword = keystoreProperties["keyPassword"] as String? ?: "changeit"
+            storeFile = if (keystoreProperties["storeFile"] != null) {
+                rootProject.file(keystoreProperties["storeFile"])
+            } else {
+                file("key.jks")
             }
+            storePassword = keystoreProperties["storePassword"] as String? ?: "changeit"
         }
-        release {
+    }
+
+    buildTypes {
+        getByName("release") {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            // Ensure shrinkResources is disabled unless code shrinking is enabled
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
 }

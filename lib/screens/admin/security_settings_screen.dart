@@ -53,11 +53,11 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     try {
       await SupabaseService.instance.client
           .from('app_settings')
-          .update({
+          .upsert({
+        'setting_key': 'screenshot_protection_enabled',
             'setting_value': _screenshotProtectionEnabled.toString(),
             'updated_at': DateTime.now().toIso8601String(),
-          })
-          .eq('setting_key', 'screenshot_protection_enabled');
+      }, onConflict: 'setting_key');
 
       if (mounted) {
         _showSuccessSnackBar('تم حفظ الإعدادات بنجاح');

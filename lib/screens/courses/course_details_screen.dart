@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart'
 import 'dart:async';
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
+import '../../widgets/tex_view_widget.dart';
 import '../../models/lesson.dart';
 import '../../models/chapter.dart';
 import '../../core/services/database_service.dart';
@@ -1105,16 +1106,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
               width: 1.5,
             ),
           ),
-          child: Text(
+          child: TexViewWidget(
             widget.course.getLocalizedDescription(
                     Provider.of<LocaleProvider>(context, listen: false)
                         .locale) ??
                 _t('no_description'),
-            textAlign:
-                Provider.of<LocaleProvider>(context, listen: false).locale ==
-                        'ar'
-                    ? TextAlign.right
-                    : TextAlign.left,
             style: const TextStyle(
               fontSize: 15,
               height: 1.8,

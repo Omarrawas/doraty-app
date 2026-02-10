@@ -4,6 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/exam.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'exam_taking_screen.dart';
+import '../../widgets/tex_view_widget.dart';
 
 class ExamResultScreen extends StatefulWidget {
   final Exam exam;
@@ -402,9 +403,8 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
               const SizedBox(height: 12),
 
               // Question Text
-              Text(
+              TexViewWidget(
                 question.text,
-                textAlign: TextAlign.right,
                 style: const TextStyle(
                   fontSize: 15,
                   color: Colors.white,
@@ -455,9 +455,8 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                         if (isCorrectAnswer || isUserAnswer)
                           const SizedBox(width: 8),
                         Expanded(
-                          child: Text(
+                          child: TexViewWidget(
                             question.options[optionIndex],
-                            textAlign: TextAlign.right,
                             style: TextStyle(
                               fontSize: 14,
                               color: isCorrectAnswer
@@ -495,9 +494,8 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
+                        child: TexViewWidget(
                           question.explanation!,
-                          textAlign: TextAlign.right,
                           style: const TextStyle(
                             fontSize: 13,
                             color: Colors.white,

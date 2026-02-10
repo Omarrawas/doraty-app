@@ -226,6 +226,7 @@ class AppStrings {
       'update_success': 'تم إضافة التحديث بنجاح',
       'mandatory': 'إجباري',
       'optional': 'اختياري',
+      'show_all': 'عرض الكل',
     },
     'en': {
       'settings': 'Settings',
@@ -452,6 +453,7 @@ class AppStrings {
       'update_success': 'Update added successfully',
       'mandatory': 'Mandatory',
       'optional': 'Optional',
+      'show_all': 'Show All',
     },
   };
 

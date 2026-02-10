@@ -8,6 +8,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/error_utils.dart';
 import 'add_question_screen.dart';
 import 'dart:ui';
+import '../../widgets/tex_view_widget.dart';
 
 class ManageQuestionsScreen extends StatefulWidget {
   final String examId;
@@ -251,15 +252,13 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            Text(
+              TexViewWidget(
               question['question_text'] ?? '',
                 style: TextStyle(
                 fontSize: 16,
                   color: AppColors.getTextColor(context),
                   fontWeight: FontWeight.normal,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+                ),
             ),
             const SizedBox(height: 12),
             _buildQuestionTypeChip(questionType),
