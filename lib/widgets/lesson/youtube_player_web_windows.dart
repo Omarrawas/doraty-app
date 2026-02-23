@@ -74,7 +74,7 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
             loadWithOverviewMode: true,
             javaScriptEnabled: true,
             transparentBackground: true,
-            allowsFullscreenVideo: true,
+            isElementFullscreenEnabled: true,
           ),
         ),
       );

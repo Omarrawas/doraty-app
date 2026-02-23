@@ -7,7 +7,6 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'pdf_viewer_screen.dart';
 import 'image_viewer_screen.dart';
 import 'interactive_quiz_screen.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../widgets/tex_view_widget.dart';
 import '../../widgets/rich_text_editor.dart';
