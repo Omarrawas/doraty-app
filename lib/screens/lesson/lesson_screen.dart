@@ -399,8 +399,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     // Handle Online/YouTube
     if (url.contains('youtu.be') || url.contains('youtube.com')) {
       _isYoutube = true;
-      if (kIsWeb) {
-        return; // Skip YouTube controller init on Web to avoid InAppWebView crash
+      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+        return; // Skip YouTube controller init on Web/Windows to avoid crashes or freezes
       }
 
       final videoId = YoutubePlayer.convertUrlToId(url);
@@ -513,7 +513,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    if (_isYoutube && _youtubePlayerController != null && !kIsWeb) {
+    if (_isYoutube &&
+        _youtubePlayerController != null &&
+        !kIsWeb &&
+        defaultTargetPlatform != TargetPlatform.windows) {
       return YoutubePlayerBuilder(
         player: YoutubePlayer(
           controller: _youtubePlayerController!,
@@ -816,7 +819,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     }
 
     if (_isYoutube) {
-      if (kIsWeb) {
+      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
         final videoId = YoutubePlayer.convertUrlToId(
             (widget.lesson.videoUrl as String?) ?? '');
         if (videoId != null) {
@@ -831,9 +834,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               <iframe 
                 width="100%" 
                 height="100%" 
-                src="https://www.youtube.com/embed/$videoId?autoplay=1&rel=0" 
+                src="https://www.youtube-nocookie.com/embed/$videoId?autoplay=1&rel=0&modestbranding=1" 
                 frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" 
                 allowfullscreen>
               </iframe>
               ''',

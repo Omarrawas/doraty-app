@@ -142,17 +142,24 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Sign in with Google
-  Future<AuthResponse> signInWithGoogle() async {
+  Future<AuthResponse?> signInWithGoogle() async {
     try {
-      // On web, serverClientId is not supported and should not be set
-      final googleSignIn = kIsWeb
-          ? GoogleSignIn(
-              clientId: Env.googleWebClientId,
-            )
-          : GoogleSignIn(
-              clientId: Env.googleIosClientId, // Required for iOS
-              serverClientId: Env.googleWebClientId, // Required to get idToken for Supabase
-            );
+      // استخدام OAuth للويب والويندوز والماك (المنصات التي لا تدعم google_sign_in مباشرة)
+      if (kIsWeb || (defaultTargetPlatform == TargetPlatform.windows)) {
+        await _client.auth.signInWithOAuth(
+          OAuthProvider.google,
+          // للويب نستخدم رابط Vercel، للويندوز نتركها لـ Supabase للتعامل معها أو نستخدم الرابط الافتراضي
+          redirectTo: kIsWeb ? 'https://doraty.vercel.app' : null,
+        );
+        return null;
+      }
+
+      // Native implementation for Android & iOS
+      final googleSignIn = GoogleSignIn(
+        clientId: Env.googleIosClientId, // Required for iOS
+        serverClientId:
+            Env.googleWebClientId, // Required to get idToken for Supabase
+      );
       
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {

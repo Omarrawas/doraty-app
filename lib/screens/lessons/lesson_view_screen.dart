@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -114,6 +115,15 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       // Fallback to YouTube
       final videoId = YoutubePlayer.convertUrlToId(widget.lesson.videoUrl);
       if (videoId != null && videoId.isNotEmpty) {
+        if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+          if (mounted) {
+            setState(() {
+              _hasValidVideo = true;
+              _isLocalVideo = false;
+            });
+          }
+          return;
+        }
         _youtubeController = YoutubePlayerController(
           initialVideoId: videoId,
           flags: const YoutubePlayerFlags(
@@ -693,6 +703,29 @@ class _LessonViewScreenState extends State<LessonViewScreen>
     }
 
     if (_youtubeController == null) {
+      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+        final videoId = YoutubePlayer.convertUrlToId(widget.lesson.videoUrl);
+        if (videoId != null) {
+          return Container(
+            width: double.infinity,
+            height:
+                (MediaQuery.of(context).size.width * 9 / 16).clamp(200, 500),
+            color: Colors.black,
+            child: HtmlWidget(
+              '''
+              <iframe 
+                width="100%" 
+                height="100%" 
+                src="https://www.youtube-nocookie.com/embed/$videoId?autoplay=0&rel=0&modestbranding=1" 
+                frameborder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" 
+                allowfullscreen>
+              </iframe>
+              ''',
+            ),
+          );
+        }
+      }
       return const SizedBox.shrink();
     }
 
