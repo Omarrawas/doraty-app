@@ -22,6 +22,9 @@ endif()
 if(POLICY CMP0126)
   cmake_policy(SET CMP0126 NEW)
 endif()
+if(POLICY CMP0148)
+  cmake_policy(SET CMP0148 NEW)
+endif()
 
 # Define build configuration option.
 get_property(IS_MULTICONFIG GLOBAL PROPERTY GENERATOR_IS_MULTI_CONFIG)
@@ -52,7 +55,7 @@ add_definitions(-DUNICODE -D_UNICODE)
 # of modifying this function.
 function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_features(${TARGET} PUBLIC cxx_std_17)
-  target_compile_options(${TARGET} PRIVATE /W4 /wd"4100")
+  target_compile_options(${TARGET} PRIVATE /W4 /wd"4100" /FS)
   target_compile_options(${TARGET} PRIVATE /EHsc)
   target_link_options(${TARGET} PRIVATE "/ignore:4099")
   target_compile_definitions(${TARGET} PRIVATE "_HAS_EXCEPTIONS=0")
