@@ -191,7 +191,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                 const SizedBox(height: 8),
                 Text(label,
                     style: TextStyle(
-                        color: AppColors.getTextColor(context).withOpacity(0.6),
+                        color: AppColors.getTextColor(context),
                         fontSize: 11)),
                 Text(value,
                     style: TextStyle(
@@ -234,16 +234,16 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                   _loadData();
                 }
               },
-              backgroundColor: Colors.white.withOpacity(0.1),
+              backgroundColor: Colors.white.withOpacity(0.2),
               selectedColor: AppColors.primaryPurple,
               labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.white70,
+                color: Colors.white,
                 fontWeight: isSelected ? FontWeight.normal : FontWeight.normal,
               ),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
-              side: BorderSide(
-                  color: isSelected ? Colors.transparent : Colors.white24),
+              side:
+                  BorderSide(color: isSelected ? Colors.transparent : Colors.white38),
             ),
           );
         },
@@ -315,8 +315,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                                   course?['title'] ?? 'دورة غير معروفة',
                                   style: TextStyle(
                                     fontSize: 13,
-                                    color: AppColors.getTextColor(context)
-                                        .withOpacity(0.6),
+                                    color: AppColors.getTextColor(context),
                                   ),
                                 ),
                               ],
@@ -334,7 +333,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                             children: [
                               const Text('المبلغ',
                                   style: TextStyle(
-                                      color: Colors.white54, fontSize: 11)),
+                                      color: Colors.white, fontSize: 11)),
                               Text('${receipt['amount']} ل.س',
                                   style: const TextStyle(
                                       color: Colors.greenAccent,
@@ -346,7 +345,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                             children: [
                               const Text('التاريخ',
                                   style: TextStyle(
-                                      color: Colors.white54, fontSize: 11)),
+                                      color: Colors.white, fontSize: 11)),
                               Text(_formatDate(receipt['created_at']),
                                   style: const TextStyle(
                                       color: Colors.white, fontSize: 12)),
@@ -405,8 +404,8 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
         children: [
           Icon(Icons.inbox, size: 64, color: Colors.white.withOpacity(0.2)),
           const SizedBox(height: 16),
-          Text('لا توجد إيصالات متاحة',
-              style: TextStyle(color: Colors.white.withOpacity(0.5))),
+          const Text('لا توجد إيصالات متاحة',
+              style: TextStyle(color: Colors.white)),
         ],
       ),
     );

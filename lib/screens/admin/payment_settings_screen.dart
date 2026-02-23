@@ -150,10 +150,10 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
           Icon(Icons.account_balance_wallet_outlined,
               size: 64, color: Colors.white.withOpacity(0.2)),
           const SizedBox(height: 16),
-          Text(
+          const Text(
             'لا توجد حسابات دفع',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.5),
+              color: Colors.white,
               fontFamily: 'Cairo',
               fontSize: 16,
             ),
@@ -345,7 +345,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                       ),
                       IconButton(
                         onPressed: () => _showEditDialog(account),
-                        icon: const Icon(Icons.edit, color: Colors.white70),
+                        icon: const Icon(Icons.edit, color: Colors.white),
                       ),
                     ],
                   ),
@@ -373,8 +373,8 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.6),
+          style: const TextStyle(
+            color: Colors.white,
             fontFamily: 'Cairo',
             fontSize: 13,
           ),
@@ -427,7 +427,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                       decoration: const InputDecoration(
                         labelText: 'اسم الحساب',
                         labelStyle: TextStyle(
-                            color: Colors.white70, fontFamily: 'Cairo'),
+                            color: Colors.white, fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.white30)),
                       ),
@@ -440,7 +440,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                       decoration: const InputDecoration(
                         labelText: 'رقم الحساب / الهاتف',
                         labelStyle: TextStyle(
-                            color: Colors.white70, fontFamily: 'Cairo'),
+                            color: Colors.white, fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.white30)),
                       ),
@@ -454,7 +454,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                       decoration: const InputDecoration(
                         labelText: 'تعليمات إضافية',
                         labelStyle: TextStyle(
-                            color: Colors.white70, fontFamily: 'Cairo'),
+                            color: Colors.white, fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.white30)),
                       ),
@@ -465,7 +465,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                         const Text(
                           'الحالة:',
                           style: TextStyle(
-                              color: Colors.white70, fontFamily: 'Cairo'),
+                              color: Colors.white, fontFamily: 'Cairo'),
                         ),
                         const Spacer(),
                         Switch(

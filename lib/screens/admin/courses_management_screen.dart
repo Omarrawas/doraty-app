@@ -254,14 +254,14 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             child: TextField(
               onChanged: (value) => setState(() => _searchQuery = value),
               style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 hintText: 'بحث عن دورة...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+                hintStyle: TextStyle(color: Colors.white),
                 prefixIcon:
-                    Icon(Icons.search, color: Colors.white.withOpacity(0.6)),
+                    Icon(Icons.search, color: Colors.white),
                 border: InputBorder.none,
                 contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                    EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               ),
             ),
           ),
@@ -324,7 +324,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                 style: TextStyle(
                   color: isSelected
                       ? Colors.white
-                      : AppColors.getTextColor(context).withOpacity(0.7),
+                      : AppColors.getTextColor(context),
                   fontWeight:
                       isSelected ? FontWeight.normal : FontWeight.normal,
                 ),
@@ -374,15 +374,14 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.category,
-                              size: 14, color: Colors.white.withOpacity(0.5)),
+                          const Icon(Icons.category,
+                              size: 14, color: Colors.white),
                           const SizedBox(width: 4),
                           Text(
                             course['category'] ?? 'تخصص عام',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.getTextColor(context)
-                                  .withOpacity(0.6),
+                              color: AppColors.getTextColor(context),
                             ),
                           ),
                         ],
@@ -454,7 +453,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14,
-                  color: AppColors.getTextColor(context).withOpacity(0.6),
+                  color: AppColors.getTextColor(context),
                   height: 1.4,
                 ),
               ),
@@ -527,24 +526,26 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                   const SizedBox(width: 10),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.blue.withOpacity(0.1),
+                      color: Colors.blue.withOpacity(0.25),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.withOpacity(0.5)),
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.analytics_outlined,
-                          color: Colors.blueAccent),
+                          color: Colors.white),
                       onPressed: () => _showStatistics(course),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withOpacity(0.25),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.withOpacity(0.5)),
                     ),
                     child: IconButton(
                       icon: const Icon(Icons.delete_outline_rounded,
-                          color: Colors.redAccent),
+                          color: Colors.white),
                       onPressed: () => _deleteCourse(course),
                     ),
                   ),
@@ -569,9 +570,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withOpacity(0.25),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.2)),
+          border: Border.all(color: color.withOpacity(0.5)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

@@ -127,24 +127,26 @@ class _RichTextEditorState extends State<RichTextEditor> {
                 children: [
                   quill.QuillSimpleToolbar(
                     controller: _controller,
-                  configurations: quill.QuillSimpleToolbarConfigurations(
+                    config: quill.QuillSimpleToolbarConfig(
                       multiRowsDisplay: false,
                       showSearchButton: false,
-                      showClipboardCut: false,
-                      showClipboardCopy: false,
-                      showClipboardPaste: false,
                       showFontFamily: false,
                       showFontSize: !widget.isCompact,
-                      fontSizesValues: const {
-                        'small': '10',
-                        'large': '18',
-                        'huge': '32',
-                        'clear': '14'
-                      },
+                      buttonOptions:
+                          const quill.QuillSimpleToolbarButtonOptions(
+                        fontSize: quill.QuillToolbarFontSizeButtonOptions(
+                          items: {
+                            'small': '10',
+                            'large': '18',
+                            'huge': '32',
+                            'clear': '14'
+                          },
+                        ),
+                      ),
                       showHeaderStyle: false, // Hide headings to save space
-                    showBoldButton: true,
-                    showItalicButton: true,
-                    showUnderLineButton: true,
+                      showBoldButton: true,
+                      showItalicButton: true,
+                      showUnderLineButton: true,
                       showStrikeThrough: !widget.isCompact,
                       showInlineCode: false,
                       showColorButton: true,
@@ -227,7 +229,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
             child: quill.QuillEditor.basic(
               controller: _controller,
               focusNode: _focusNode,
-              configurations: quill.QuillEditorConfigurations(
+              config: quill.QuillEditorConfig(
                 placeholder: widget.placeholder,
                 padding: const EdgeInsets.all(12),
                 expands: false,

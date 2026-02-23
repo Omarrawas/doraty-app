@@ -81,7 +81,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
               style: const TextStyle(color: Colors.white),
               decoration: InputDecoration(
                 labelText: 'العنوان',
-                labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                labelStyle: const TextStyle(color: Colors.white),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
@@ -99,7 +99,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
               maxLines: 3,
               decoration: InputDecoration(
                 labelText: 'ملاحظة (اختياري)',
-                labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+                labelStyle: const TextStyle(color: Colors.white),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
@@ -113,8 +113,8 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
             const SizedBox(height: 12),
             Text(
               'الموضع: ${_formatTimestamp(timestamp)}',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
+              style: const TextStyle(
+                color: Colors.white,
                 fontSize: 14,
               ),
             ),
@@ -285,11 +285,11 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
                           size: 48,
                         ),
                         const SizedBox(height: 12),
-                        Text(
+                        const Text(
                           'لا توجد علامات مرجعية بعد',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white,
                           ),
                         ),
                       ],
@@ -349,9 +349,9 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
                                       const SizedBox(height: 4),
                                       Text(
                                         bookmark.note!,
-                                        style: TextStyle(
+                                        style: const TextStyle(
                                           fontSize: 13,
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: Colors.white,
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,

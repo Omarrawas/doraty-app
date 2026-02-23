@@ -89,7 +89,7 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -208,11 +208,11 @@ class AppTheme {
         ),
         bodyMedium: GoogleFonts.cairo(
           fontSize: 14,
-          color: Colors.white70,
+          color: Colors.white,
         ),
         bodySmall: GoogleFonts.cairo(
           fontSize: 12,
-          color: Colors.white54,
+          color: Colors.white,
         ),
       ),
 
@@ -230,7 +230,7 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 4,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -263,7 +263,7 @@ class AppTheme {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         hintStyle: GoogleFonts.cairo(
-          color: Colors.white38,
+          color: Colors.white,
           fontSize: 14,
         ),
       ),
@@ -289,7 +289,7 @@ class AppTheme {
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: const Color(0xFF1E1E2E),
         selectedItemColor: AppColors.primaryPurple,
-        unselectedItemColor: Colors.white38,
+        unselectedItemColor: Colors.white,
         selectedLabelStyle: GoogleFonts.cairo(
           fontSize: 12,
           fontWeight: FontWeight.normal,
@@ -392,7 +392,7 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -402,7 +402,7 @@ class AppTheme {
       ),
 
       // Dialog Theme
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.cardBackground,
         surfaceTintColor: AppColors.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -514,11 +514,11 @@ class AppTheme {
         ),
         bodyMedium: GoogleFonts.cairo(
           fontSize: 14,
-          color: Colors.white70,
+          color: Colors.white,
         ),
         bodySmall: GoogleFonts.cairo(
           fontSize: 12,
-          color: Colors.white54,
+          color: Colors.white,
         ),
       ),
 
@@ -536,7 +536,7 @@ class AppTheme {
       ),
 
       // Card Theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -546,7 +546,7 @@ class AppTheme {
       ),
 
       // Dialog Theme
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: const Color(0xFF1A1A2E),
         surfaceTintColor: const Color(0xFF1A1A2E),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -557,7 +557,7 @@ class AppTheme {
         ),
         contentTextStyle: GoogleFonts.cairo(
           fontSize: 14,
-          color: Colors.white70,
+          color: Colors.white,
         ),
       ),
 
@@ -585,7 +585,7 @@ class AppTheme {
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         hintStyle: GoogleFonts.cairo(
-          color: Colors.white38,
+          color: Colors.white,
           fontSize: 14,
         ),
       ),

@@ -367,7 +367,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                           children: [
                             Icon(Icons.access_time,
                                 color: AppColors.getTextColor(context)
-                                    .withOpacity(0.7),
+                                    .withOpacity(1),
                                 size: 14),
                             const SizedBox(width: 4),
                             Text(
@@ -375,7 +375,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.getTextColor(context)
-                                    .withOpacity(0.7),
+                                    .withOpacity(1),
                               ),
                             ),
                           ],
@@ -472,10 +472,10 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
+                        color: Colors.orange.withOpacity(0.25),
                         borderRadius: BorderRadius.circular(10),
                         border:
-                            Border.all(color: Colors.orange.withOpacity(0.2)),
+                            Border.all(color: Colors.orange.withOpacity(0.5)),
                       ),
                       child: Row(
                         children: [
@@ -493,7 +493,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                             ),
                           ),
                           const Icon(Icons.chevron_right,
-                              size: 16, color: Colors.white54),
+                              size: 16, color: Colors.white),
                         ],
                       ),
                     ),
@@ -552,7 +552,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                     onPressed: () => _deleteLesson(lesson),
                     icon: const Icon(Icons.delete, color: Colors.redAccent),
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.red.withOpacity(0.15),
+                      backgroundColor: Colors.red.withOpacity(0.25),
                     ),
                   ),
                 ],
@@ -576,22 +576,22 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
-          color: (color ?? AppColors.primaryPurple).withOpacity(0.2),
+          color: (color ?? AppColors.primaryPurple).withOpacity(0.35),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: (color ?? AppColors.primaryPurple).withOpacity(0.3),
+            color: (color ?? AppColors.primaryPurple).withOpacity(0.6),
           ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 16, color: color ?? Colors.white),
+            Icon(icon, size: 16, color: Colors.white),
             const SizedBox(width: 6),
             Flexible(
               child: Text(
                 label,
-                style: TextStyle(
-                  color: color ?? Colors.white,
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.normal,
                 ),

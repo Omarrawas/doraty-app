@@ -1887,7 +1887,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           const Center(
             child: Padding(
               padding: EdgeInsets.all(20),
-              child: Text('لا توجد أسئلة بعد. كن أول من يسأل!'),
+              child: Text(
+                'لا توجد أسئلة بعد. كن أول من يسأل!',
+                style: TextStyle(color: Colors.white),
+              ),
             ),
           )
         else
@@ -1959,9 +1962,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                         ),
                         Text(
                           _formatDate(question.createdAt),
-                          style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white.withOpacity(0.5)),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Colors.white,
+                          ),
                         ),
                       ],
                     ),
@@ -2082,8 +2086,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     ),
                     Text(
                       _formatDate(reply.createdAt),
-                      style: TextStyle(
-                          fontSize: 10, color: Colors.white.withOpacity(0.5)),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                      ),
                     ),
                   ],
                 ),
@@ -2104,9 +2110,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           const SizedBox(height: 4),
           TexViewWidget(
             reply.content,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white,
             ),
           ),
           _buildReactionsRow(
@@ -2126,11 +2132,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: Text(
+              child: const Text(
                 'رد',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white,
                   fontWeight: FontWeight.bold,
                 ),
               ),

@@ -161,7 +161,7 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white70, fontSize: 13, fontFamily: 'Cairo'),
+          style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'Cairo'),
         ),
         const SizedBox(height: 8),
         Container(
@@ -177,8 +177,8 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
             style: const TextStyle(color: Colors.white, fontSize: 14),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-              prefixIcon: Icon(icon, color: Colors.white38, size: 20),
+              hintStyle: const TextStyle(color: Colors.white),
+              prefixIcon: Icon(icon, color: Colors.white, size: 20),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(16),
             ),
@@ -202,7 +202,7 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
         children: [
           Icon(
             _isMandatory ? Icons.warning_rounded : Icons.info_outline,
-            color: _isMandatory ? Colors.orange : Colors.white38,
+            color: _isMandatory ? Colors.orange : Colors.white,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -215,7 +215,7 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
                 ),
                 Text(
                   _isMandatory ? 'سيُجبر المستخدم على التحديث' : 'تحديث اختياري يظهر كتنبيه فقط',
-                  style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11, fontFamily: 'Cairo'),
+                  style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'Cairo'),
                 ),
               ],
             ),

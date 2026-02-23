@@ -676,7 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
               label: Text(
                 cat['name']!, // Display localized name
                 style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.white70,
+                  color: Colors.white,
                   fontWeight:
                       isSelected ? FontWeight.normal : FontWeight.normal,
                 ),
@@ -690,12 +690,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   });
                 }
               },
-              backgroundColor: Colors.white.withOpacity(0.05),
+              backgroundColor: Colors.white.withOpacity(0.2),
               selectedColor: AppColors.primaryPurple.withOpacity(0.8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
-                  color: isSelected ? Colors.transparent : Colors.white12,
+                  color: isSelected ? Colors.transparent : Colors.white30,
                 ),
               ),
               showCheckmark: false,
@@ -727,12 +727,12 @@ class _HomeScreenState extends State<HomeScreen> {
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
               hintText: _t('search_course_hint'),
-              hintStyle: TextStyle(
-                color: Colors.white.withOpacity(0.6),
+              hintStyle: const TextStyle(
+                color: Colors.white,
               ),
-              prefixIcon: Icon(
+              prefixIcon: const Icon(
                 Icons.search,
-                color: Colors.white.withOpacity(0.6),
+                color: Colors.white,
               ),
               border: InputBorder.none,
               contentPadding:

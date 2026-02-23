@@ -264,10 +264,10 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'عنوان الملاحظة',
               hintStyle: TextStyle(
-                color: Colors.white.withOpacity(0.5),
+                color: Colors.white,
                 fontSize: 20,
               ),
               border: InputBorder.none,
@@ -358,8 +358,8 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: 'أضف وسماً',
-                        hintStyle: TextStyle(
-                          color: Colors.white.withOpacity(0.5),
+                        hintStyle: const TextStyle(
+                          color: Colors.white,
                         ),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.1),
