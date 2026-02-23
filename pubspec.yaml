@@ -69,6 +69,8 @@ dependencies:
   flutter_tex: ^4.0.4
   flutter_tts: ^3.8.3
   webview_flutter: ^4.7.0
+  flutter_inappwebview: ^6.1.5
+  universal_html: ^2.1.0
   
   # Interactive Components
   flip_card: ^0.7.0

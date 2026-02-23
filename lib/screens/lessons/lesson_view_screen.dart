@@ -19,6 +19,7 @@ import 'lesson_exam_screen.dart';
 
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../widgets/lesson/youtube_player_web_windows.dart';
 import '../../core/utils/error_utils.dart';
 
 class LessonViewScreen extends StatefulWidget {
@@ -706,23 +707,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
         final videoId = YoutubePlayer.convertUrlToId(widget.lesson.videoUrl);
         if (videoId != null) {
-          return Container(
-            width: double.infinity,
-            height:
-                (MediaQuery.of(context).size.width * 9 / 16).clamp(200, 500),
-            color: Colors.black,
-            child: HtmlWidget(
-              '''
-              <iframe 
-                width="100%" 
-                height="100%" 
-                src="https://www.youtube-nocookie.com/embed/$videoId?autoplay=0&rel=0&modestbranding=1" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" 
-                allowfullscreen>
-              </iframe>
-              ''',
-            ),
+          return YoutubePlayerWebWindows(
+            videoId: videoId,
           );
         }
       }

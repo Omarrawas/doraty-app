@@ -34,6 +34,7 @@ import '../../widgets/lesson/video_player_controls.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
+import '../../widgets/lesson/youtube_player_web_windows.dart';
 
 class LessonScreen extends StatefulWidget {
   final Lesson lesson;
@@ -823,25 +824,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         final videoId = YoutubePlayer.convertUrlToId(
             (widget.lesson.videoUrl as String?) ?? '');
         if (videoId != null) {
-          return Container(
-            width: double.infinity,
-            // تأكد من تحديد ارتفاع ثابت هنا لمنع خطأ الـ Layout
+          return YoutubePlayerWebWindows(
+            videoId: videoId,
             height:
                 (MediaQuery.of(context).size.width * 9 / 16).clamp(200, 500),
-            color: Colors.black,
-            child: HtmlWidget(
-              '''
-              <iframe 
-                width="100%" 
-                height="100%" 
-                src="https://www.youtube-nocookie.com/embed/$videoId?autoplay=1&rel=0&modestbranding=1" 
-                frameborder="0" 
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" 
-                allowfullscreen>
-              </iframe>
-              ''',
-              factoryBuilder: () => WidgetFactory(),
-            ),
           );
         }
       }
