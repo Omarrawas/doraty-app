@@ -46,3 +46,9 @@ app.*.map.json
 
 # Supabase Credentials
 .env
+
+# Android Signing — NEVER commit these files!
+android/app/key.jks
+android/app/*.jks
+android/app/*.keystore
+android/key.properties
