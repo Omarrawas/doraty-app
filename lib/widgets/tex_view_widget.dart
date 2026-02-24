@@ -63,7 +63,6 @@ class TexViewWidget extends StatelessWidget {
       style: const TeXViewStyle(
         backgroundColor: Colors.transparent,
       ),
-      renderingEngine: const TeXViewRenderingEngine.katex(),
       loadingWidgetBuilder: (context) => Text(content, style: style),
     );
   }

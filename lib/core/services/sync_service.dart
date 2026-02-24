@@ -25,15 +25,17 @@ class SyncService {
     if (_isSyncing) return;
 
     // Check connectivity
-    final connectivityResult = await _connectivity.checkConnectivity();
-    if (connectivityResult == ConnectivityResult.none) {
+    final connectivityResults = await _connectivity.checkConnectivity();
+    if (connectivityResults.contains(ConnectivityResult.none)) {
       debugPrint('📴 No internet connection, skipping sync');
       return;
     }
 
     // Check WiFi Setting
     final wifiOnly = SettingsService().getWifiOnly();
-    if (wifiOnly && !forced && connectivityResult != ConnectivityResult.wifi) {
+    if (wifiOnly &&
+        !forced &&
+        !connectivityResults.contains(ConnectivityResult.wifi)) {
       debugPrint('📶 Not on WiFi (and restricted), skipping background sync');
       return;
     }
@@ -85,8 +87,8 @@ class SyncService {
 
   /// Initialize sync trigger (e.g. on app start)
   void init() {
-    _connectivity.onConnectivityChanged.listen((result) {
-      if (result == ConnectivityResult.wifi) {
+    _connectivity.onConnectivityChanged.listen((results) {
+      if (results.contains(ConnectivityResult.wifi)) {
         syncAll();
       }
     });

@@ -113,60 +113,58 @@ class _RichTextEditorState extends State<RichTextEditor> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Visibility(
-            visible: _isFocused,
-            maintainState: true,
-            maintainAnimation: true,
-            child: Container(
+          // Toolbar container
+          Container(
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withOpacity(0.05),
                 borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(8)),
+                  const BorderRadius.vertical(top: Radius.circular(12)),
+              border: Border.all(color: Colors.black12.withOpacity(0.05)),
               ),
               child: Column(
+              mainAxisSize: MainAxisSize.min,
                 children: [
-                  quill.QuillSimpleToolbar(
-                    controller: _controller,
-                    config: quill.QuillSimpleToolbarConfig(
-                      multiRowsDisplay: false,
-                      showSearchButton: false,
-                      showFontFamily: false,
-                      showFontSize: !widget.isCompact,
-                      buttonOptions:
-                          const quill.QuillSimpleToolbarButtonOptions(
-                        fontSize: quill.QuillToolbarFontSizeButtonOptions(
-                          items: {
-                            'small': '10',
-                            'large': '18',
-                            'huge': '32',
-                            'clear': '14'
-                          },
+                SizedBox(
+                  height: 50,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: IconTheme(
+                      data:
+                          const IconThemeData(color: Colors.black87, size: 20),
+                      child: quill.QuillSimpleToolbar(
+                        controller: _controller,
+                        config: const quill.QuillSimpleToolbarConfig(
+                          multiRowsDisplay: false,
+                          showSearchButton: false,
+                          showFontFamily: false,
+                          showFontSize: true,
+                          showHeaderStyle: false,
+                          showBoldButton: true,
+                          showItalicButton: true,
+                          showUnderLineButton: true,
+                          showStrikeThrough: true,
+                          showInlineCode: false,
+                          showColorButton: true,
+                          showBackgroundColorButton: true,
+                          showClearFormat: true,
+                          showAlignmentButtons: true,
+                          showLeftAlignment: true,
+                          showCenterAlignment: true,
+                          showRightAlignment: true,
+                          showJustifyAlignment: true,
+                          showListNumbers: true,
+                          showListBullets: true,
+                          showListCheck: false,
+                          showCodeBlock: false,
+                          showQuote: false,
+                          showIndent: false,
+                          showLink: false,
+                          showUndo: true,
+                          showRedo: true,
+                          showDirection: true,
                         ),
                       ),
-                      showHeaderStyle: false, // Hide headings to save space
-                      showBoldButton: true,
-                      showItalicButton: true,
-                      showUnderLineButton: true,
-                      showStrikeThrough: !widget.isCompact,
-                      showInlineCode: false,
-                      showColorButton: true,
-                      showBackgroundColorButton: true,
-                      showClearFormat: !widget.isCompact,
-                      showAlignmentButtons: true,
-                      showLeftAlignment: true,
-                      showCenterAlignment: true,
-                      showRightAlignment: true,
-                      showJustifyAlignment: true,
-                      showListNumbers: !widget.isCompact,
-                      showListBullets: !widget.isCompact,
-                      showListCheck: false,
-                      showCodeBlock: false,
-                      showQuote: false,
-                      showIndent: false,
-                      showLink: false,
-                      showUndo: false,
-                      showRedo: false,
-                      showDirection: true,
+                    ),
                     ),
                   ),
                   const Divider(height: 1, color: Colors.black12),
@@ -176,7 +174,6 @@ class _RichTextEditorState extends State<RichTextEditor> {
                       final length = _controller.selection.end -
                           _controller.selection.start;
                       
-                      // Using the raw LaTeX symbol directly for better rendering
                       _controller.replaceText(
                         index >= 0 ? index : 0,
                         length > 0 ? length : 0,
@@ -184,7 +181,6 @@ class _RichTextEditorState extends State<RichTextEditor> {
                         null,
                       );
 
-                      // Move cursor after the inserted symbol (or inside if it's a template)
                       int newOffset =
                           (index >= 0 ? index : 0) + symbol.length;
                       if (symbol.contains('{}')) {
@@ -202,7 +198,6 @@ class _RichTextEditorState extends State<RichTextEditor> {
                         quill.ChangeSource.local,
                       );
 
-                      // Use a small delay to ensure the popup is fully closed before requesting focus
                       Future.delayed(Duration.zero, () {
                         if (mounted) {
                           _focusNode.requestFocus();
@@ -212,7 +207,6 @@ class _RichTextEditorState extends State<RichTextEditor> {
                   ),
                 ],
               ),
-            ),
           ),
           Container(
             height: widget.height,
@@ -251,7 +245,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
             ),
           ),
         ],
-      ), // End of Column
-    ); // End of TapRegion
+      ),
+    );
   }
 }

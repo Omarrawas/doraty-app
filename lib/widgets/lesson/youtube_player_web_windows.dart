@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:universal_html/html.dart' as html;
-import 'dart:ui_web' as ui_web;
+import 'platform_view_registry_stub.dart'
+    if (dart.library.js_util) 'dart:ui_web' as ui_web;
 
 class YoutubePlayerWebWindows extends StatefulWidget {
   final String videoId;

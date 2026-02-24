@@ -4,9 +4,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:8.7.0")
+        classpath("com.android.tools.build:gradle:8.9.1")
         classpath("com.google.gms:google-services:4.4.2")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.0")
     }
 }
 
@@ -55,9 +55,9 @@ subprojects {
                 android.namespace = "com.doraty.generated.${project.name.replace("-", "_")}"
             }
 
-            android.compileSdkVersion(35)
+            android.compileSdkVersion(36)
             android.defaultConfig {
-                minSdkVersion(23)
+                minSdkVersion(24)
             }
 
             android.compileOptions {

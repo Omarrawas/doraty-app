@@ -494,8 +494,6 @@ class MathSymbolToolbar extends StatelessWidget {
                                     style: const TeXViewStyle(
                                       backgroundColor: Colors.white,
                                     ),
-                                    renderingEngine:
-                                        const TeXViewRenderingEngine.katex(),
                                     loadingWidgetBuilder: (context) =>
                                         const Center(
                                       child: Padding(

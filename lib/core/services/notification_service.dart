@@ -75,7 +75,7 @@ class NotificationService {
         );
 
         await _localNotifications.initialize(
-          initializationSettings,
+          settings: initializationSettings,
           onDidReceiveNotificationResponse: (NotificationResponse details) {
             debugPrint('Notification clicked payload: ${details.payload}');
             // Handle notification tap logic here if needed
@@ -176,10 +176,10 @@ class NotificationService {
 
     if (notification != null && android != null) {
       _localNotifications.show(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        const NotificationDetails(
+        id: notification.hashCode,
+        title: notification.title,
+        body: notification.body,
+        notificationDetails: const NotificationDetails(
           android: AndroidNotificationDetails(
             'high_importance_channel',
             'High Importance Notifications',

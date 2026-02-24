@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "386239634560-k2ti393lo4kf6kln08h4fk26sa2ajhk9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.doraty.app",
+            "certificate_hash": "6060010b3bcb52e0d6290f4a7581890be0b5ee3c"
+          }
+        },
+        {
           "client_id": "386239634560-n2l3sc43k3j3ipg5ko3nidj63ij161ml.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -27,7 +35,7 @@
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "386239634560-jhneg3lhevs0l8g9md8vii1mvgv46de4.apps.googleusercontent.com",
+              "client_id": "386239634560-n2l3sc43k3j3ipg5ko3nidj63ij161ml.apps.googleusercontent.com",
               "client_type": 3
             },
             {

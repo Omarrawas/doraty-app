@@ -19,7 +19,7 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.doraty.app"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -72,7 +72,7 @@ flutter {
 
 dependencies {
     // Required for desugaring (support for newer Java APIs on older devices)
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     // Required when using core library desugaring
     implementation("androidx.multidex:multidex:2.0.1")
 }

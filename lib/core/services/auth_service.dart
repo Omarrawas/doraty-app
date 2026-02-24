@@ -6,6 +6,7 @@ import '../env/multi_env.dart';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _client = SupabaseService.instance.client;
+  static bool _googleSignInInitialized = false;
 
   User? get currentUser => _client.auth.currentUser;
   bool get isAuthenticated => currentUser != null;
@@ -155,24 +156,34 @@ class AuthService extends ChangeNotifier {
       }
 
       // Native implementation for Android & iOS
-      final googleSignIn = GoogleSignIn(
-        clientId: Env.googleIosClientId, // Required for iOS
-        serverClientId:
-            Env.googleWebClientId, // Required to get idToken for Supabase
-      );
-      
-      final googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        throw 'تم إلغاء تسجيل الدخول عبر جوجل';
-      }
+      final googleSignIn = GoogleSignIn.instance;
 
-      final googleAuth = await googleUser.authentication;
-      final accessToken = googleAuth.accessToken;
+      if (!_googleSignInInitialized) {
+        await googleSignIn.initialize(
+          clientId: Env.googleIosClientId, // Required for iOS
+          serverClientId:
+              Env.googleWebClientId, // Required to get idToken for Supabase
+        );
+        _googleSignInInitialized = true;
+      }
+      
+      final googleUser = await googleSignIn.authenticate();
+
+      final googleAuth = googleUser.authentication;
       final idToken = googleAuth.idToken;
 
       if (idToken == null) {
         throw 'فشل الحصول على رمز الهوية من جوجل';
       }
+
+      // In v7.2.0, accessToken is not in GoogleSignInAuthentication. 
+      // We need to request it via the authorization client if Supabase needs it.
+      final authz = await googleUser.authorizationClient.authorizeScopes([
+        'email',
+        'openid',
+        'profile',
+      ]);
+      final accessToken = authz.accessToken;
 
       final response = await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,

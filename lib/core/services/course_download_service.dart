@@ -48,8 +48,8 @@ class CourseDownloadService {
     try {
       // 0. Check WiFi Constraint
       if (SettingsService().getWifiOnly()) {
-        final connectivityResult = await Connectivity().checkConnectivity();
-        if (connectivityResult != ConnectivityResult.wifi) {
+        final connectivityResults = await Connectivity().checkConnectivity();
+        if (!connectivityResults.contains(ConnectivityResult.wifi)) {
           throw Exception('Download restricted to WiFi only. Please connect to WiFi or change settings.');
         }
       }
