@@ -23,7 +23,7 @@ abstract class Env {
   @EnviedField(
       varName: 'GOOGLE_WEB_CLIENT_ID',
       defaultValue:
-          '535436798827-0rogt5b5beuq7lgsrl5ommvpa49q62bh.apps.googleusercontent.com')
+          '386239634560-n2l3sc43k3j3ipg5ko3nidj63ij161ml.apps.googleusercontent.com')
   static const String googleWebClientId = _Env.googleWebClientId;
 
   @EnviedField(
@@ -34,9 +34,11 @@ abstract class Env {
   @EnviedField(
       varName: 'GOOGLE_ANDROID_CLIENT_ID',
       defaultValue:
-          '535436798827-23an8ocpmvq3aj0ad8v426nqqid0vf14.apps.googleusercontent.com')
+          '386239634560-k2ti393lo4kf6kln08h4fk26sa2ajhk9.apps.googleusercontent.com')
   static const String googleAndroidClientId = _Env.googleAndroidClientId;
 
-  @EnviedField(varName: 'GITHUB_TOKEN', defaultValue: '')
+  @EnviedField(
+      varName: 'GITHUB_TOKEN',
+      defaultValue: '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')
   static const String githubToken = _Env.githubToken;
 }

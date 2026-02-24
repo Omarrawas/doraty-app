@@ -12,7 +12,6 @@ import 'widgets/gradient_background.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/services/supabase_service.dart';
-import 'core/env/multi_env.dart';
 import 'models/download.dart';
 import 'core/services/offline_cache_service.dart';
 import 'core/services/settings_service.dart';
@@ -20,7 +19,6 @@ import 'core/localization/locale_provider.dart';
 // import 'core/constants/app_strings.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'models/offline_course.dart';
 import 'models/offline_lesson.dart';
 import 'core/services/sync_service.dart';
@@ -30,9 +28,6 @@ import 'core/services/app_update_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Load environment variables from .env file
-  await dotenv.load(fileName: ".env");
 
   // Initialize Hive
   await Hive.initFlutter();
@@ -53,9 +48,9 @@ void main() async {
   await SettingsService().init();
 
   // Initialize Supabase
-  // Use environment variables from Env class
-  const String url = Env.supabaseUrl;
-  const String anonKey = Env.supabaseAnonKey;
+  // Read secrets from --dart-define
+  const String url = String.fromEnvironment('SUPABASE_URL');
+  const String anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
   // Initialize Supabase with the configuration
   try {

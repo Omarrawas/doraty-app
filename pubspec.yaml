@@ -127,7 +127,6 @@ flutter:
     - assets/icons/
     - assets/sounds/
     - assets/fonts/
-    - .env
 
   fonts:
     - family: Cairo
