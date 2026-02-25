@@ -73,12 +73,8 @@ jobs:
       - name: Prepare Android Artifacts
         run: |
           mkdir -p android-artifacts
-          cp build/app/outputs/flutter-apk/app-release.apk android-artifacts/
           cp build/app/outputs/bundle/release/app-release.aab android-artifacts/
-          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk android-artifacts/
-          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk android-artifacts/
-          cp build/app/outputs/flutter-apk/app-x86-release.apk android-artifacts/
-          cp build/app/outputs/flutter-apk/app-x86_64-release.apk android-artifacts/
+          cp build/app/outputs/flutter-apk/*-release.apk android-artifacts/ || true
 
       - uses: actions/upload-artifact@v4
         with:
@@ -151,8 +147,6 @@ jobs:
           - [Universal APK](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-release.apk)
           - [ARM64 APK](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-arm64-v8a-release.apk)
           - [ARMEABI-v7a APK](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-armeabi-v7a-release.apk)
-          - [x86 APK](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-x86-release.apk)
-          - [x86_64 APK](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-x86_64-release.apk)
           - [AAB (Play Store)](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-release.aab)
 
           💻 *نسخة الويندوز (Windows):*
