@@ -1,4 +1,4 @@
-name: Doraty Flutter CI/CD
+name: Doraty Ultimate CI/CD
 
 on:
   push:
@@ -8,9 +8,15 @@ on:
 permissions:
   contents: write
 
+env:
+  APP_NAME: Doraty
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+# ================= ANDROID BUILD =================
 jobs:
-  build:
-    name: Build & Release Doraty
+  android:
+    name: Android Build
     runs-on: ubuntu-latest
 
     env:
@@ -20,15 +26,13 @@ jobs:
       KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
       # 1️⃣ Checkout
       - uses: actions/checkout@v4
-
+      
       # 2️⃣ Java 17
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -41,25 +45,11 @@ jobs:
           channel: stable
           cache: true
 
-      # 4️⃣ Cache Pub
-      - uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-
-      # 5️⃣ Cache Gradle
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/*.kts') }}
-
-      # 6️⃣ Pub Get
+      # 4️⃣ Flutter Pub Get
       - run: flutter pub get
 
-      # 7️⃣ Keystore
-      - name: Setup Keystore
+      # 5️⃣ Keystore
+      - name: Decode Keystore
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > android/key.jks
           cat > android/key.properties <<EOF
@@ -69,29 +59,126 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
-      # 8️⃣ Build APK Split (Telegram safe)
+      # 6️⃣ Build Android
+      - run: flutter build apk --release
+      - run: flutter build appbundle --release
+      - run: flutter build apk --release --split-per-abi
+
+      # 7️⃣ Upload  artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-x86-release.apk
+            build/app/outputs/flutter-apk/app-x86_64-release.apk
+
+        
+# ================= WINDOWS BUILD =================
+  windows:
+    name: Windows Build
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      - name: Zip Windows Build
+        run: powershell Compress-Archive build/windows/x64/runner/Release Doraty-Windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: Doraty-Windows.zip
+
+# ================= LINUX BUILD =================
+  linux:
+    name: Linux Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux deps
+        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-linux-desktop
+      - run: flutter pub get
+      - run: flutter build linux --release
+
+      - run: tar -czvf Doraty-Linux.tar.gz build/linux/x64/release/bundle
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: Doraty-Linux.tar.gz
+
+# ================= RELEASE + TELEGRAM =================
+  release:
+    name: Release All
+    needs: [android, windows, linux]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      # Auto version
+      - name: Generate Version
+        id: version
+        run: echo "VERSION=v$(date +%Y.%m.%d)-${{ github.run_number }}" >> $GITHUB_ENV
+
+      # Changelog
+      - name: Generate Changelog
+        run: |
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 || echo HEAD^)..HEAD > CHANGELOG.md
+
+      #Build APK Split (Telegram safe)
       - name: Build APK Split ABI
         run: flutter build apk --release --split-per-abi
 
-      # 9️⃣ Build AAB
-      - name: Build AAB
-        run: flutter build appbundle --release
-
-      # 🔟 GitHub Release
-      - name: Create GitHub Release
+      # Create Release
+      - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: Doraty Release v${{ github.run_number }}
+          tag_name: ${{ github.run_number }}
+          name: Doraty Release ${{ github.run_number }}
+          body_path: CHANGELOG.md
           files: |
+            android-build/app-release.apk
             build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/bundle/release/app-release.aab
+            android-build/app-release.aab
+            windows-build/Doraty-Windows.zip
+            linux-build/Doraty-Linux.tar.gz
+            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/app-x86-release.apk
+            build/app/outputs/flutter-apk/app-x86_64-release.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 🤖 Telegram Message (NOT upload file)
-      - name: Send Release Link to Telegram
+      # Telegram Send APK only (limit)
+      - name: Send APK to Telegram
         run: |
-          curl -s -X POST https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage \
-          -d chat_id=$TELEGRAM_CHAT_ID \
-          -d text="🚀 Doraty New Build Ready:\nhttps://github.com/${{ github.repository }}/releases/latest"
+          curl -F document=@android-build/app-release.apk \
+          https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument \
+          -F chat_id=${TELEGRAM_CHAT_ID}
