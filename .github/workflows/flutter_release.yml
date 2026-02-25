@@ -60,21 +60,26 @@ jobs:
           EOF
 
       # 6️⃣ Build Android
-      - run: flutter build apk --release
-      - run: flutter build appbundle --release
-      - run: flutter build apk --release --split-per-abi
+      - run: flutter build apk --release --dart-define="SUPABASE_URL=${{ secrets.SUPABASE_URL }}" --dart-define="SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
+      - run: flutter build appbundle --release --dart-define="SUPABASE_URL=${{ secrets.SUPABASE_URL }}" --dart-define="SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
+      - run: flutter build apk --release --split-per-abi --dart-define="SUPABASE_URL=${{ secrets.SUPABASE_URL }}" --dart-define="SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
 
-      # 7️⃣ Upload  artifacts
+      # 7️⃣ Upload artifacts
+      # We rename files here to remove the complicated directory structure when adding them to the artifact.
+      - name: Prepare Android Artifacts
+        run: |
+          mkdir -p android-artifacts
+          cp build/app/outputs/flutter-apk/app-release.apk android-artifacts/
+          cp build/app/outputs/bundle/release/app-release.aab android-artifacts/
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk android-artifacts/
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk android-artifacts/
+          cp build/app/outputs/flutter-apk/app-x86-release.apk android-artifacts/
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk android-artifacts/
+
       - uses: actions/upload-artifact@v4
         with:
           name: android-build
-          path: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/bundle/release/app-release.aab
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/app-x86-release.apk
-            build/app/outputs/flutter-apk/app-x86_64-release.apk
+          path: android-artifacts/
 
         
 # ================= WINDOWS BUILD =================
@@ -93,7 +98,7 @@ jobs:
 
       - run: flutter config --enable-windows-desktop
       - run: flutter pub get
-      - run: flutter build windows --release
+      - run: flutter build windows --release --dart-define="SUPABASE_URL=${{ secrets.SUPABASE_URL }}" --dart-define="SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
 
       - name: Zip Windows Build
         run: powershell Compress-Archive build/windows/x64/runner/Release Doraty-Windows.zip
@@ -103,38 +108,11 @@ jobs:
           name: windows-build
           path: Doraty-Windows.zip
 
-# ================= LINUX BUILD =================
-  linux:
-    name: Linux Build
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Linux deps
-        run: sudo apt-get update && sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-          cache: true
-
-      - run: flutter config --enable-linux-desktop
-      - run: flutter pub get
-      - run: flutter build linux --release
-
-      - run: tar -czvf Doraty-Linux.tar.gz build/linux/x64/release/bundle
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: linux-build
-          path: Doraty-Linux.tar.gz
 
 # ================= RELEASE + TELEGRAM =================
   release:
     name: Release All
-    needs: [android, windows, linux]
+    needs: [android, windows]
     runs-on: ubuntu-latest
 
     steps:
@@ -153,10 +131,6 @@ jobs:
         run: |
           git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 || echo HEAD^)..HEAD > CHANGELOG.md
 
-      #Build APK Split (Telegram safe)
-      - name: Build APK Split ABI
-        run: flutter build apk --release --split-per-abi
-
       # Create Release
       - name: GitHub Release
         uses: softprops/action-gh-release@v2
@@ -165,20 +139,33 @@ jobs:
           name: Doraty Release ${{ github.run_number }}
           body_path: CHANGELOG.md
           files: |
-            android-build/app-release.apk
-            build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-            android-build/app-release.aab
-            windows-build/Doraty-Windows.zip
-            linux-build/Doraty-Linux.tar.gz
-            build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
-            build/app/outputs/flutter-apk/app-x86-release.apk
-            build/app/outputs/flutter-apk/app-x86_64-release.apk
+            android-build/*.apk
+            android-build/*.aab
+            windows-build/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Telegram Send APK only (limit)
-      - name: Send APK to Telegram
+      # Telegram Send Release Links
+      - name: Send Release Links to Telegram
         run: |
-          curl -F document=@android-build/app-release.apk \
-          https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument \
-          -F chat_id=${TELEGRAM_CHAT_ID}
+          MSG="🚀 *تم إصدار نسخة جديدة من Doraty (${{ github.run_number }})*
+          
+          📦 *نسخ الأندرويد (Android):*
+          - [Universal APK](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-release.apk)
+          - [ARM64 APK](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-arm64-v8a-release.apk)
+          - [ARMEABI-v7a APK](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-armeabi-v7a-release.apk)
+          - [x86 APK](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-x86-release.apk)
+          - [x86_64 APK](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-x86_64-release.apk)
+          - [AAB (Play Store)](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-release.aab)
+
+          💻 *نسخة الويندوز (Windows):*
+          - [Windows ZIP](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/Doraty-Windows.zip)
+          
+          📄 *لمشاهدة صفحة الإصدار والتفاصيل:*
+          https://github.com/${{ github.repository }}/releases/tag/${{ github.run_number }}"
+
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          -d chat_id="${TELEGRAM_CHAT_ID}" \
+          -d parse_mode="Markdown" \
+          -d disable_web_page_preview="true" \
+          -d text="$MSG"
