@@ -149,8 +149,10 @@ class AuthService extends ChangeNotifier {
       if (kIsWeb || (defaultTargetPlatform == TargetPlatform.windows)) {
         await _client.auth.signInWithOAuth(
           OAuthProvider.google,
-          // للويب نستخدم رابط Vercel، للويندوز نتركها لـ Supabase للتعامل معها أو نستخدم الرابط الافتراضي
-          redirectTo: kIsWeb ? 'https://doraty.vercel.app' : null,
+          // للويب نستخدم رابط Vercel، للويندوز والأندرويد نستخدم الرابط العميق
+          redirectTo: kIsWeb
+              ? 'https://doraty.vercel.app'
+              : 'com.doraty.app://callback',
         );
         return null;
       }

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:ui';
+import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/supabase_service.dart';
@@ -21,8 +24,31 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
+  late final StreamSubscription<AuthState> _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _authSubscription = SupabaseService.instance.client.auth.onAuthStateChange
+        .listen((data) async {
+      final AuthChangeEvent event = data.event;
+      if (event == AuthChangeEvent.signedIn) {
+        if (mounted) {
+          await _applyScreenSecurity();
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+            );
+          }
+        }
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _authSubscription.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -234,6 +260,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ],
                             ),
+                            
+                            const SizedBox(height: 10),
+
+                            // Guest Login
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const MainScreen(),
+                                  ),
+                                );
+                              },
+                              child: const Text(
+                                'تصفح كضيف',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Colors.white,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -444,6 +494,22 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final authService = AuthService();
       await authService.signInWithGoogle();
+
+      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+        // للويندوز والويب، تفتح النافذة في المتصفح لذلك يجب أن ننتظر ولا ننتقل فوراً
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('يرجى إكمال تسجيل الدخول من المتصفح...',
+                  style: TextStyle(fontFamily: 'Cairo')),
+            ),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        return; // الخروج هنا، وسيقوم مستمع AuthState أعلاه بنقلنا عند النجاح
+      }
 
       if (mounted) {
         // Apply screen security based on user role
