@@ -12,6 +12,8 @@ import 'widgets/gradient_background.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/services/supabase_service.dart';
+import 'core/env/multi_env.dart';
+
 import 'models/download.dart';
 import 'core/services/offline_cache_service.dart';
 import 'core/services/settings_service.dart';
@@ -48,9 +50,15 @@ void main() async {
   await SettingsService().init();
 
   // Initialize Supabase
-  // Read secrets from --dart-define
-  const String url = String.fromEnvironment('SUPABASE_URL');
-  const String anonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  // In CI/GitHub Actions builds, SUPABASE_URL & SUPABASE_ANON_KEY are injected
+  // via --dart-define. Locally (debug / Windows), they will be empty strings,
+  // so we fall back to the envied-generated Env class which reads from .env file.
+  const String ciUrl = String.fromEnvironment('SUPABASE_URL');
+  const String ciAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+
+  final String url = (ciUrl.isNotEmpty ? ciUrl : Env.supabaseUrl).trim();
+  final String anonKey =
+      (ciAnonKey.isNotEmpty ? ciAnonKey : Env.supabaseAnonKey).trim();
 
   // Initialize Supabase with the configuration
   try {

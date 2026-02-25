@@ -1,4 +1,4 @@
-name: Doraty Flutter CI/CD
+name: Doraty Ultimate CI/CD
 
 on:
   push:
@@ -6,67 +6,52 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write  # Required for creating GitHub Releases
+  contents: write
 
+env:
+  APP_NAME: Doraty
+  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+# ================= ANDROID BUILD =================
 jobs:
-  build:
-    name: Build & Release APK + AAB
+  android:
+    name: Android Build
     runs-on: ubuntu-latest
+
     env:
-      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
-      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
-      # 🧩 1) Checkout Repo
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # ☕ 2) Setup Java 17 (Required for flutter_secure_storage & modern AGP)
-      - name: Set up JDK 17
+      # 1️⃣ Checkout
+      - uses: actions/checkout@v4
+      
+      # 2️⃣ Java 17
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: 17
 
-      # 🐦 3) Setup Flutter
-      - name: Set up Flutter
+      # 3️⃣ Flutter
+      - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable'
+          channel: stable
           cache: true
 
-      # ⚡ 4) Cache Flutter Pub
-      - name: Cache Pub packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: ${{ runner.os }}-flutter-
+      # 4️⃣ Flutter Pub Get
+      - run: flutter pub get
 
-      # ⚡ 5) Cache Gradle
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/*.kts') }}
-          restore-keys: ${{ runner.os }}-gradle-
-
-      # 📦 5) Get Dependencies
-      - name: Flutter Pub Get
-        run: flutter pub get
-
-      # 🔐 6) Decode Keystore + Create key.properties
-      - name: Setup Keystore
+      # 5️⃣ Keystore
+      - name: Decode Keystore
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/key.jks
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/key.jks
           cat > android/key.properties <<EOF
           storeFile=key.jks
           storePassword=$KEYSTORE_PASSWORD
@@ -74,32 +59,118 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
-      # 🌐 8) Supabase env vars are already available via job-level env
+      # 6️⃣ Build Android
+      - name: Build APK
+        run: flutter build apk --release --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
-      # 🏗️ 9) Build APK
-      - name: Build APK Release
-        run: flutter build apk --release
+      - name: Build AAB
+        run: flutter build appbundle --release --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
-      # 🏗️ 10) Build AAB
-      - name: Build AAB Release
-        run: flutter build appbundle --release
+      - name: Build Split APKs
+        run: flutter build apk --release --split-per-abi --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
 
-      # 🚀 11) Upload to GitHub Releases
-      - name: Create GitHub Release
+      # 7️⃣ Upload artifacts
+      # We rename files here to remove the complicated directory structure when adding them to the artifact.
+      - name: Prepare Android Artifacts
+        run: |
+          mkdir -p android-artifacts
+          cp build/app/outputs/flutter-apk/app-release.apk android-artifacts/
+          cp build/app/outputs/bundle/release/app-release.aab android-artifacts/
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk android-artifacts/
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk android-artifacts/
+          cp build/app/outputs/flutter-apk/app-x86-release.apk android-artifacts/
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk android-artifacts/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: android-artifacts/
+
+        
+# ================= WINDOWS BUILD =================
+  windows:
+    name: Windows Build
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - run: flutter build windows --release --dart-define="SUPABASE_URL=${{ secrets.SUPABASE_URL }}" --dart-define="SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
+
+      - name: Zip Windows Build
+        run: powershell Compress-Archive build/windows/x64/runner/Release Doraty-Windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: Doraty-Windows.zip
+
+
+# ================= RELEASE + TELEGRAM =================
+  release:
+    name: Release All
+    needs: [android, windows]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      # Auto version
+      - name: Generate Version
+        id: version
+        run: echo "VERSION=v$(date +%Y.%m.%d)-${{ github.run_number }}" >> $GITHUB_ENV
+
+      # Changelog
+      - name: Generate Changelog
+        run: |
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 || echo HEAD^)..HEAD > CHANGELOG.md
+
+      # Create Release
+      - name: GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.run_number }}
-          name: Doraty Release v${{ github.run_number }}
+          tag_name: ${{ github.run_number }}
+          name: Doraty Release ${{ github.run_number }}
+          body_path: CHANGELOG.md
           files: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/bundle/release/app-release.aab
+            android-build/*.apk
+            android-build/*.aab
+            windows-build/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 🤖 12) Send APK to Telegram
-      - name: Send APK to Telegram
-        continue-on-error: true  # لا يوقف الـ Workflow إذا فشل إرسال Telegram
+      # Telegram Send Release Links
+      - name: Send Release Links to Telegram
         run: |
-          curl -F document=@build/app/outputs/flutter-apk/app-release.apk \
-          https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendDocument \
-          -F chat_id=$TELEGRAM_CHAT_ID
+          MSG="🚀 *تم إصدار نسخة جديدة من Doraty (${{ github.run_number }})*
+          
+          📦 *نسخ الأندرويد (Android):*
+          - [Universal APK](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-release.apk)
+          - [ARM64 APK](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-arm64-v8a-release.apk)
+          - [ARMEABI-v7a APK](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-armeabi-v7a-release.apk)
+          - [x86 APK](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-x86-release.apk)
+          - [x86_64 APK](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-x86_64-release.apk)
+          - [AAB (Play Store)](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/app-release.aab)
+
+          💻 *نسخة الويندوز (Windows):*
+          - [Windows ZIP](https://github.com/${{ github.repository }}/releases/download/${{ github.run_number }}/Doraty-Windows.zip)
+          
+          📄 *لمشاهدة صفحة الإصدار والتفاصيل:*
+          https://github.com/${{ github.repository }}/releases/tag/${{ github.run_number }}"
+
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          -d chat_id="${TELEGRAM_CHAT_ID}" \
+          -d parse_mode="Markdown" \
+          -d disable_web_page_preview="true" \
+          -d text="$MSG"
