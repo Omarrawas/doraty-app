@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../env/multi_env.dart';
+import 'platform_utils.dart';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _client = SupabaseService.instance.client;
@@ -146,13 +147,20 @@ class AuthService extends ChangeNotifier {
   Future<AuthResponse?> signInWithGoogle() async {
     try {
       // استخدام OAuth للويب والويندوز والماك (المنصات التي لا تدعم google_sign_in مباشرة)
-      if (kIsWeb || (defaultTargetPlatform == TargetPlatform.windows)) {
+      if (kIsWeb || PlatformUtils.isAndroid || PlatformUtils.isWindows) {
+        String? redirectUrl;
+        if (kIsWeb) {
+          redirectUrl = 'https://doraty.vercel.app/auth/callback';
+        } else if (PlatformUtils.isAndroid) {
+          redirectUrl = 'doraty://auth';
+        } else if (PlatformUtils.isWindows) {
+          redirectUrl = 'doraty://auth';
+        }
+
         await _client.auth.signInWithOAuth(
           OAuthProvider.google,
           // للويب نستخدم رابط Vercel، للويندوز والأندرويد نستخدم الرابط العميق
-          redirectTo: kIsWeb
-              ? 'https://doraty.vercel.app'
-              : 'com.doraty.app://callback',
+          redirectTo: redirectUrl,
         );
         return null;
       }
@@ -168,7 +176,7 @@ class AuthService extends ChangeNotifier {
         );
         _googleSignInInitialized = true;
       }
-      
+
       final googleUser = await googleSignIn.authenticate();
 
       final googleAuth = googleUser.authentication;
@@ -178,7 +186,7 @@ class AuthService extends ChangeNotifier {
         throw 'فشل الحصول على رمز الهوية من جوجل';
       }
 
-      // In v7.2.0, accessToken is not in GoogleSignInAuthentication. 
+      // In v7.2.0, accessToken is not in GoogleSignInAuthentication.
       // We need to request it via the authorization client if Supabase needs it.
       final authz = await googleUser.authorizationClient.authorizeScopes([
         'email',
@@ -198,8 +206,10 @@ class AuthService extends ChangeNotifier {
         await _client.from('users').upsert({
           'id': response.user!.id,
           'email': response.user!.email,
-          'full_name': response.user!.userMetadata?['full_name'] ?? googleUser.displayName,
-          'avatar_url': response.user!.userMetadata?['avatar_url'] ?? googleUser.photoUrl,
+          'full_name': response.user!.userMetadata?['full_name'] ??
+              googleUser.displayName,
+          'avatar_url':
+              response.user!.userMetadata?['avatar_url'] ?? googleUser.photoUrl,
           'updated_at': DateTime.now().toIso8601String(),
         });
       }

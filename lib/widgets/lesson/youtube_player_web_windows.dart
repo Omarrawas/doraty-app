@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:url_launcher/url_launcher.dart';
 import 'platform_view_registry_stub.dart'
     if (dart.library.js_util) 'dart:ui_web' as ui_web;
 
@@ -16,17 +17,20 @@ class YoutubePlayerWebWindows extends StatefulWidget {
   });
 
   @override
-  State<YoutubePlayerWebWindows> createState() => _YoutubePlayerWebWindowsState();
+  State<YoutubePlayerWebWindows> createState() =>
+      _YoutubePlayerWebWindowsState();
 }
 
 class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
   late String _viewId;
+  bool _hasError = false;
+  String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
     _viewId = 'youtube-${widget.videoId}';
-    
+
     if (kIsWeb) {
       // Register the view factory for Web
       // ignore: undefined_prefixed_name
@@ -34,17 +38,21 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
         _viewId,
         (int viewId) {
           final iframe = html.IFrameElement()
-            ..src = 'https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=0&rel=0&modestbranding=1&fs=1'
+            ..src =
+                'https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=0&rel=0&modestbranding=1&fs=1'
             ..style.border = 'none'
             ..style.width = '100%'
             ..style.height = '100%'
             ..allowFullscreen = true;
-            
-          // Set allow attribute for fullscreen and other permissions
-          iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen');
+
+          iframe.setAttribute(
+              'allow',
+              'accelerometer; autoplay; clipboard-write; '
+                  'encrypted-media; gyroscope; picture-in-picture; '
+                  'web-share; fullscreen');
           iframe.setAttribute('webkitallowfullscreen', 'true');
           iframe.setAttribute('mozallowfullscreen', 'true');
-          
+
           return iframe;
         },
       );
@@ -53,7 +61,7 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
 
   @override
   Widget build(BuildContext context) {
-    final double playerHeight = widget.height ?? 
+    final double playerHeight = widget.height ??
         (MediaQuery.of(context).size.width * 9 / 16).clamp(200, 500);
 
     if (kIsWeb) {
@@ -64,11 +72,16 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
     }
 
     if (defaultTargetPlatform == TargetPlatform.windows) {
+      if (_hasError) {
+        return _buildFallbackPlayer(playerHeight);
+      }
+
       return SizedBox(
         height: playerHeight,
         child: InAppWebView(
           initialUrlRequest: URLRequest(
-            url: WebUri('https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=0&rel=0&modestbranding=1&fs=1'),
+            url: WebUri(
+                'https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=0&rel=0&modestbranding=1&fs=1'),
           ),
           initialSettings: InAppWebViewSettings(
             useWideViewPort: true,
@@ -77,16 +90,106 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
             transparentBackground: true,
             isElementFullscreenEnabled: true,
           ),
+          onReceivedError: (controller, request, error) {
+            debugPrint('❌ InAppWebView error: ${error.description}');
+            if (mounted) {
+              setState(() {
+                _hasError = true;
+                _errorMessage = error.description;
+              });
+            }
+          },
+          onWebViewCreated: (controller) {
+            debugPrint('✅ InAppWebView created for Windows');
+          },
         ),
       );
     }
 
+    return _buildFallbackPlayer(playerHeight);
+  }
+
+  /// Fallback when WebView2 is not available or any error occurs
+  Widget _buildFallbackPlayer(double height) {
+    final youtubeUrl = 'https://www.youtube.com/watch?v=${widget.videoId}';
+
     return Container(
-      height: playerHeight,
-      color: Colors.black,
-      child: const Center(
-        child: Text('Platform not supported for this player'),
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.play_circle_outline,
+              color: Colors.white70, size: 64),
+          const SizedBox(height: 16),
+          const Text(
+            'تعذّر تشغيل الفيديو داخل التطبيق',
+            style: TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          if (_errorMessage.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Text(
+                _errorMessage,
+                style: const TextStyle(color: Colors.white38, fontSize: 12),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
+          const Text(
+            'قد يحتاج جهازك إلى تثبيت Microsoft Edge WebView2',
+            style: TextStyle(color: Colors.white54, fontSize: 13),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () => _openInBrowser(youtubeUrl),
+                icon: const Icon(Icons.open_in_browser),
+                label: const Text('فتح في المتصفح'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              OutlinedButton.icon(
+                onPressed: () => _openInBrowser(
+                    'https://aka.ms/microsoft-edge-webview2-runtime'),
+                icon: const Icon(Icons.download, size: 16),
+                label: const Text('تثبيت WebView2',
+                    style: TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.white70,
+                  side: const BorderSide(color: Colors.white30),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _openInBrowser(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 }

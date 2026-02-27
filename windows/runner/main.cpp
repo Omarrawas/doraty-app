@@ -22,6 +22,21 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   std::vector<std::string> command_line_arguments =
       GetCommandLineArguments();
 
+  // Capture custom protocol URI (e.g., doraty://auth) passed by the OS.
+  // This makes it easy to detect deep-links on the Dart side via
+  // Platform.executableArguments.
+  std::string deeplink_arg;
+  for (const auto& arg : command_line_arguments) {
+    if (arg.rfind("doraty://", 0) == 0) {
+      deeplink_arg = arg;
+      break;
+    }
+  }
+  if (!deeplink_arg.empty()) {
+    command_line_arguments.push_back("--deeplink");
+    command_line_arguments.push_back(deeplink_arg);
+  }
+
   project.set_dart_entrypoint_arguments(std::move(command_line_arguments));
 
   FlutterWindow window(project);

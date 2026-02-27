@@ -31,9 +31,12 @@ class _LoginScreenState extends State<LoginScreen> {
     super.initState();
     _authSubscription = SupabaseService.instance.client.auth.onAuthStateChange
         .listen((data) async {
-      final AuthChangeEvent event = data.event;
-      if (event == AuthChangeEvent.signedIn) {
+      final Session? session = data.session;
+      if (session != null) {
         if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
           await _applyScreenSecurity();
           if (mounted) {
             Navigator.pushReplacement(
@@ -260,7 +263,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ],
                             ),
-                            
+
                             const SizedBox(height: 10),
 
                             // Guest Login
@@ -440,7 +443,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Apply screen security based on user role
         await _applyScreenSecurity();
       }
-        
+
       if (mounted) {
         // Navigate to main screen
         Navigator.pushReplacement(
@@ -504,9 +507,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(fontFamily: 'Cairo')),
             ),
           );
-          setState(() {
-            _isLoading = false;
-          });
         }
         return; // الخروج هنا، وسيقوم مستمع AuthState أعلاه بنقلنا عند النجاح
       }
@@ -515,7 +515,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Apply screen security based on user role
         await _applyScreenSecurity();
       }
-        
+
       if (mounted) {
         Navigator.pushReplacement(
           context,

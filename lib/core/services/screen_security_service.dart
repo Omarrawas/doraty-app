@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
+import 'package:no_screenshot/no_screenshot.dart';
 import 'supabase_service.dart';
 
 /// Service to manage screen security (prevent screenshots and screen recording)
@@ -36,14 +37,24 @@ class ScreenSecurityService {
   /// Enable screenshot and screen recording protection
   /// This should be called for non-admin users (if protection is enabled)
   Future<void> enableScreenSecurity() async {
-    // Always try to enable, don't rely solely on valid state
+    // Only supported on mobile platforms
+    if (kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      debugPrint('ℹ️ Screen security not supported on this platform');
+      return;
+    }
     try {
+      final noScreenshot = NoScreenshot.instance;
+      await noScreenshot.screenshotOff();
+
       // Only works on Android
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
         await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE);
-        _isSecured = true;
-        debugPrint('✅ Screen security enabled - Screenshots blocked');
       }
+      _isSecured = true;
+      debugPrint('✅ Screen security enabled - Screenshots blocked');
     } catch (e) {
       debugPrint('⚠️ Failed to enable screen security: $e');
     }
@@ -52,14 +63,24 @@ class ScreenSecurityService {
   /// Disable screenshot and screen recording protection
   /// This should be called for admin users or when protection is disabled globally
   Future<void> disableScreenSecurity() async {
-    // Always try to disable, don't rely solely on valid state
+    // Only supported on mobile platforms
+    if (kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS) {
+      _isSecured = false;
+      return;
+    }
     try {
+      final noScreenshot = NoScreenshot.instance;
+      await noScreenshot.screenshotOn();
+
       // Only works on Android
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
         await FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE);
-        _isSecured = false;
-        debugPrint('✅ Screen security disabled - Screenshots allowed');
       }
+      _isSecured = false;
+      debugPrint('✅ Screen security disabled - Screenshots allowed');
     } catch (e) {
       debugPrint('⚠️ Failed to disable screen security: $e');
     }

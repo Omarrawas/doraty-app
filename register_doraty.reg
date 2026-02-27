@@ -1,0 +1,12 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\doraty]
+@="URL:Doraty Protocol"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\doraty\shell]
+
+[HKEY_CLASSES_ROOT\doraty\shell\open]
+
+[HKEY_CLASSES_ROOT\doraty\shell\open\command]
+@="\"C:\Users\omarr\OneDrive\Desktop\Release\Doraty.exe\" \"%1\""
