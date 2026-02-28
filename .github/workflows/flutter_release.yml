@@ -10,8 +10,6 @@ permissions:
 
 env:
   APP_NAME: Doraty
-  TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
 jobs:
   # ================= ANDROID BUILD =================
@@ -61,13 +59,13 @@ jobs:
 
       # 6️⃣ Build Android
       - name: Build APK
-        run: flutter build apk --release --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+        run: flutter build apk --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
       - name: Build AAB
-        run: flutter build appbundle --release --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+        run: flutter build appbundle --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
       - name: Build Split APKs
-        run: flutter build apk --release --split-per-abi --dart-define=SUPABASE_URL=$SUPABASE_URL --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
+        run: flutter build apk --release --split-per-abi --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
       # 7️⃣ Store Artifacts
       - name: Prepare Android Artifacts
@@ -140,6 +138,9 @@ jobs:
 
       # Telegram Notification
       - name: Send Release Links to Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           MSG="🚀 *تم إصدار نسخة جديدة من Doraty (${{ github.run_number }})*
           
