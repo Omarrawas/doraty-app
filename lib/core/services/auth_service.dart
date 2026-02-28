@@ -150,7 +150,7 @@ class AuthService extends ChangeNotifier {
       if (kIsWeb || PlatformUtils.isAndroid || PlatformUtils.isWindows) {
         String? redirectUrl;
         if (kIsWeb) {
-          redirectUrl = 'https://doraty.vercel.app/auth/callback';
+          redirectUrl = 'https://doraty-app.vercel.app/auth/callback';
         } else if (PlatformUtils.isAndroid) {
           redirectUrl = 'doraty://auth';
         } else if (PlatformUtils.isWindows) {
