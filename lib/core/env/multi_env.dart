@@ -11,19 +11,17 @@ abstract class Env {
 
   @EnviedField(
       varName: 'SUPABASE_ANON_KEY',
-      defaultValue:
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNzdGxxeWpvZmxoeHRvY3J0eXBnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5MTg4ODQsImV4cCI6MjA3OTQ5NDg4NH0.qF7RU9yndmuoDHXhhnitURuTM8cSr4UMuoxHh8b1_vM')
+      defaultValue: '')
   static const String supabaseAnonKey = _Env.supabaseAnonKey;
 
   @EnviedField(
       varName: 'ENCRYPTION_KEY',
-      defaultValue: 'default_encryption_key_32_chars_long!')
+      defaultValue: '')
   static const String encryptionKey = _Env.encryptionKey;
   
   @EnviedField(
       varName: 'GOOGLE_WEB_CLIENT_ID',
-      defaultValue:
-          '386239634560-n2l3sc43k3j3ipg5ko3nidj63ij161ml.apps.googleusercontent.com')
+      defaultValue: '')
   static const String googleWebClientId = _Env.googleWebClientId;
 
   @EnviedField(
@@ -33,12 +31,11 @@ abstract class Env {
 
   @EnviedField(
       varName: 'GOOGLE_ANDROID_CLIENT_ID',
-      defaultValue:
-          '386239634560-k2ti393lo4kf6kln08h4fk26sa2ajhk9.apps.googleusercontent.com')
+      defaultValue: '')
   static const String googleAndroidClientId = _Env.googleAndroidClientId;
 
   @EnviedField(
       varName: 'GITHUB_TOKEN',
-      defaultValue: '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')
+      defaultValue: '')
   static const String githubToken = _Env.githubToken;
 }

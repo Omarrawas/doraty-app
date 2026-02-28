@@ -2,6 +2,10 @@
   "outputDirectory": "build/web",
   "rewrites": [
     {
+      "source": "/auth/callback",
+      "destination": "/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

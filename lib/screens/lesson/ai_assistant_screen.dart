@@ -29,17 +29,20 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
     _checkGeminiKey();
     // Add welcome message
     _messages.add(ChatMessage(
-      text: 'أهلاً بك! أنا مساعدك الذكي لدرس "${widget.lesson.title}". كيف يمكنني مساعدتك اليوم؟',
+      text:
+          'أهلاً بك! أنا مساعدك الدراسي الذكي في منصة دوراتي. كيف يمكنني مساعدتك في درس "${widget.lesson.title}"؟',
       isUser: false,
       timestamp: DateTime.now(),
     ));
   }
 
-  void _checkGeminiKey() {
-    final key = SettingsService().getGeminiApiKey();
-    setState(() {
-      _hasGeminiKey = key != null && key.isNotEmpty;
-    });
+  Future<void> _checkGeminiKey() async {
+    final key = await SettingsService().getGeminiApiKey();
+    if (mounted) {
+      setState(() {
+        _hasGeminiKey = key != null && key.isNotEmpty;
+      });
+    }
   }
 
   @override
@@ -194,7 +197,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'المساعد الذكي (AI)',
+                      'مساعد دوراتي الذكي',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -337,7 +340,7 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
                 ),
                 const SizedBox(width: 10),
                 Text(
-                  'يفكر المساعد الذكي...',
+                  'جاري التفكير...',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.7),
                     fontSize: 12,
@@ -443,9 +446,12 @@ class _AIAssistantScreenState extends State<AIAssistantScreen> {
     return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
   }
 
-  void _showLinkGeminiDialog() {
+  Future<void> _showLinkGeminiDialog() async {
+    final currentKey = await SettingsService().getGeminiApiKey();
+    if (!mounted) return;
+    
     final TextEditingController keyController = TextEditingController(
-      text: SettingsService().getGeminiApiKey() ?? '',
+      text: currentKey ?? '',
     );
 
     showDialog(

@@ -18,7 +18,7 @@ class AIService {
     List<Map<String, String>> history = const [],
   }) async {
     try {
-      final geminiKey = SettingsService().getGeminiApiKey();
+      final geminiKey = await SettingsService().getGeminiApiKey();
       if (_openaiApiKey.isEmpty && (geminiKey == null || geminiKey.isEmpty)) {
         // Add a small delay for natural feel
         await Future.delayed(const Duration(seconds: 1));
@@ -151,7 +151,7 @@ class AIService {
   }
 
   Future<List<Flashcard>> generateFlashcards(Lesson lesson) async {
-    final apiKey = SettingsService().getGeminiApiKey();
+    final apiKey = await SettingsService().getGeminiApiKey();
     if (apiKey == null || apiKey.isEmpty) {
       throw Exception('Gemini API key is required to generate flashcards');
     }
@@ -215,16 +215,16 @@ class AIService {
   }
 
   String _getMockResponse(String question) {
-    // Basic mock logic to feel interactive
     if (question.contains('لخص') || question.contains('تلخيص')) {
-      return '• هذا الدرس يتحدث عن المفاهيم الأساسية للمادة.\n'
-             '• تم شرح كيفية تطبيق القواعد العلمية في المسائل.\n'
-             '• ركز المعلم على الأخطاء الشائعة التي يقع فيها الطلاب.\n'
-             '• ننصح بمراجعة الملاحظات الذكية التي قمت بتدوينها.';
+      return 'إليك ملخص سريع لأهم نقاط هذا الدرس:\n'
+          '• تم تناول المفاهيم الأساسية والأهداف التعليمية.\n'
+          '• شرح الخطوات العملية لتطبيق النظريات المذكورة.\n'
+          '• التنبيه على أبرز النقاط التي ترِد في تساؤلات الطلاب.\n'
+          '• توصية بمراجعة التدريبات التفاعلية المرفقة.';
     }
     
-    return 'أنا المساعد الذكي الخاص بك في منصة Doraty. حالياً أنا في المرحلة التجريبية. '
-           'يمكنني مساعدتك في فهم محتوى الدرس وتلخيصه والإجابة على استفساراتك. '
-           '(ملاحظة: يتطلب تفعيل الخدمة الكاملة ربط مفتاح API الخاص بالذكاء الاصطناعي)';
+    return 'مرحباً بك! أنا مساعدك الدراسي الذكي في منصة "دوراتي". حالياً وضع المحادثة المتقدم قيد التفعيل التجريبي.\n\n'
+        'يمكنني مساعدتك في شرح دروسك وتلخيصها وتقديم نصائح دراسية مخصصة. '
+        '(تنبيه فني: للحصول على كامل قدرات الذكاء الاصطناعي، يرجى التأكد من ربط مفتاح التشغيل الخاص بك في الإعدادات)';
   }
 }

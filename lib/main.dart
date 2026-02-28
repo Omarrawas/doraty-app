@@ -27,8 +27,13 @@ import 'core/services/sync_service.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/app_update_service.dart';
+import 'core/utils/url_strategy_noop.dart'
+    if (dart.library.html) 'core/utils/url_strategy_web.dart';
 
 void main() async {
+  // Use path URL strategy for clean URLs on web
+  configureUrlStrategy();
+  
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Hive
@@ -84,8 +89,8 @@ void main() async {
   // Initialize SyncService (Background) - AFTER Supabase
   SyncService().init();
 
-  // Initialize Notification Service - AFTER Supabase
-  await NotificationService().init();
+  // Initialize Notification Service - AFTER Supabase (Non-blocking)
+  NotificationService().init();
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
@@ -176,15 +181,20 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       extendBody: true,
-      body: GradientBackground(
-        child: IndexedStack(
-          index: _currentIndex,
-          children: const [
-            HomeScreen(),
-            ExploreScreen(),
-            CoursesListScreen(showBackButton: false),
-            ProfileScreen(),
-          ],
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: GradientBackground(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: const [
+                HomeScreen(),
+                ExploreScreen(),
+                CoursesListScreen(showBackButton: false),
+                ProfileScreen(),
+              ],
+            ),
+          ),
         ),
       ),
       bottomNavigationBar: Consumer<LocaleProvider>(

@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SettingsService {
   static final SettingsService _instance = SettingsService._internal();
@@ -13,9 +14,11 @@ class SettingsService {
   static const String _keyGeminiApiKey = 'gemini_api_key';
 
   late SharedPreferences _prefs;
+  late FlutterSecureStorage _secureStorage;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    _secureStorage = const FlutterSecureStorage();
   }
 
   // Language
@@ -63,16 +66,16 @@ class SettingsService {
     await _prefs.setBool(_keyWifiOnly, enabled);
   }
   
-  // Gemini API Key
-  String? getGeminiApiKey() {
-    return _prefs.getString(_keyGeminiApiKey);
+  // Gemini API Key (Stored Securely)
+  Future<String?> getGeminiApiKey() async {
+    return await _secureStorage.read(key: _keyGeminiApiKey);
   }
-
+  
   Future<void> setGeminiApiKey(String? key) async {
     if (key == null) {
-      await _prefs.remove(_keyGeminiApiKey);
+      await _secureStorage.delete(key: _keyGeminiApiKey);
     } else {
-      await _prefs.setString(_keyGeminiApiKey, key);
+      await _secureStorage.write(key: _keyGeminiApiKey, value: key);
     }
   }
 }
