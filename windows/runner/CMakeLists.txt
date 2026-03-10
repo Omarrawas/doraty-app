@@ -27,4 +27,3 @@ add_dependencies(${BINARY_NAME} flutter_assemble)
 
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
-target_link_libraries(${BINARY_NAME} PRIVATE ${PLUGIN_BUNDLED_LIBRARIES})
