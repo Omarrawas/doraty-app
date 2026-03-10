@@ -13,6 +13,7 @@ add_executable(${BINARY_NAME} WIN32
   "flutter_window.cpp"
   "flutter_window.h"
   "Runner.rc"
+  "../flutter/generated_plugin_registrant.cc"
   "resources/Runner.exe.manifest"
 )
 apply_standard_settings(${BINARY_NAME})
@@ -23,6 +24,7 @@ target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_PATCH=0")
 target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=1")
 
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app)
+target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 add_dependencies(${BINARY_NAME} flutter_assemble)
 
 # Generated plugin build rules, which manage building the plugins and adding
