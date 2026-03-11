@@ -17,11 +17,11 @@ add_executable(${BINARY_NAME} WIN32
   "resources/Runner.exe.manifest"
 )
 apply_standard_settings(${BINARY_NAME})
-target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION=\"1.0.1+3\"")
+target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION=\"1.0.2+4\"")
 target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_MAJOR=1")
 target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_MINOR=0")
-target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_PATCH=1")
-target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=3")
+target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_PATCH=2")
+target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION_BUILD=4")
 
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app dwmapi)
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
