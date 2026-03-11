@@ -297,20 +297,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     Widget? suffixIcon,
     TextInputType? keyboardType,
   }) {
+    final textColor = AppColors.getTextColor(context);
+    final secondaryTextColor = AppColors.getTextColor(context, secondary: true);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.25),
-                Colors.white.withOpacity(0.15),
-              ],
-            ),
+            color: AppColors.getGlassColor(context, opacity: 0.2),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: Colors.white.withOpacity(0.3),
@@ -322,18 +318,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
             obscureText: obscureText,
             keyboardType: keyboardType,
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: Colors.black87,
+            style: TextStyle(
+              color: textColor,
               fontSize: 16,
             ),
             decoration: InputDecoration(
               labelText: label,
-              labelStyle: const TextStyle(
-                color: Colors.black54,
+              labelStyle: TextStyle(
+                color: secondaryTextColor,
               ),
               prefixIcon: Icon(
                 icon,
-                color: Colors.black54,
+                color: secondaryTextColor,
               ),
               suffixIcon: suffixIcon,
               border: InputBorder.none,

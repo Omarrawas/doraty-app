@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/services/database_service.dart';
+import '../../core/theme/app_colors.dart';
 import '../../models/category_model.dart';
 import '../../models/course.dart';
 import '../../widgets/course_card.dart';
@@ -201,21 +202,22 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     sliver: SliverToBoxAdapter(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.08),
+                          color: AppColors.getGlassColor(context, opacity: 0.1),
                           borderRadius: BorderRadius.circular(15),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppColors.getGlassColor(context, opacity: 0.2),
                           ),
                         ),
                         child: TextField(
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.getTextColor(context)),
+                          cursorColor: AppColors.primaryPurple,
                           decoration: InputDecoration(
                             hintText: _t('search_course_hint'),
                             hintStyle: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
+                              color: AppColors.getTextColor(context, secondary: true),
                             ),
                             prefixIcon: Icon(Icons.search,
-                                color: Colors.white.withOpacity(0.5)),
+                                color: AppColors.getTextColor(context, secondary: true)),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),

@@ -26,6 +26,7 @@ import 'models/offline_lesson.dart';
 import 'core/services/sync_service.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'core/services/notification_service.dart';
+import 'core/services/auth_service.dart';
 import 'core/services/app_update_service.dart';
 import 'core/utils/url_strategy_noop.dart'
     if (dart.library.html) 'core/utils/url_strategy_web.dart';
@@ -113,6 +114,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
+        ChangeNotifierProvider(create: (_) => AuthService()),
       ],
       child: const MyApp(),
     ),
@@ -183,7 +185,7 @@ class _MainScreenState extends State<MainScreen> {
       extendBody: true,
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
+          constraints: const BoxConstraints(maxWidth: 1200),
           child: GradientBackground(
             child: IndexedStack(
               index: _currentIndex,
@@ -199,43 +201,74 @@ class _MainScreenState extends State<MainScreen> {
       ),
       bottomNavigationBar: Consumer<LocaleProvider>(
         builder: (context, localeProvider, child) {
-          // final lang = localeProvider.locale;
-          return CurvedNavigationBar(
-            index: _currentIndex,
-            height: 60.0,
-            items: <Widget>[
-              Icon(Icons.home_outlined,
-                  size: 30,
-                  color: _currentIndex == 0
-                      ? Colors.white
-                      : AppColors.primaryPurple),
-              Icon(Icons.manage_search_outlined,
-                  size: 30,
-                  color: _currentIndex == 1
-                      ? Colors.white
-                      : AppColors.primaryPurple),
-              Icon(Icons.play_circle_outline,
-                  size: 30,
-                  color: _currentIndex == 2
-                      ? Colors.white
-                      : AppColors.primaryPurple),
-              Icon(Icons.person_outline,
-                  size: 30,
-                  color: _currentIndex == 3
-                      ? Colors.white
-                      : AppColors.primaryPurple),
-            ],
-            color: AppColors.getSurfaceColor(context).withOpacity(0.95),
-            buttonBackgroundColor: AppColors.primaryPurple,
-            backgroundColor: Colors.transparent,
-            animationCurve: Curves.easeInOut,
-            animationDuration: const Duration(milliseconds: 300),
-            onTap: (index) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
-            letIndexChange: (index) => true,
+          return SafeArea(
+            bottom: true,
+            child: CurvedNavigationBar(
+              index: _currentIndex,
+              height: 60.0,
+              items: <Widget>[
+                Icon(Icons.home_outlined,
+                    size: 30,
+                    color: _currentIndex == 0
+                        ? Colors.white
+                        : AppColors.primaryPurple),
+                Icon(Icons.manage_search_outlined,
+                    size: 30,
+                    color: _currentIndex == 1
+                        ? Colors.white
+                        : AppColors.primaryPurple),
+                Icon(Icons.play_circle_outline,
+                    size: 30,
+                    color: _currentIndex == 2
+                        ? Colors.white
+                        : AppColors.primaryPurple),
+                Consumer<AuthService>(
+                  builder: (context, auth, _) {
+                    final photoUrl = auth.userProfile?['avatar_url'] ??
+                        auth.userProfile?['photo_url'];
+                    return Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: _currentIndex == 3
+                            ? Border.all(color: Colors.white, width: 2)
+                            : null,
+                      ),
+                      child: ClipOval(
+                        child: (auth.isAuthenticated && photoUrl != null)
+                            ? Image.network(
+                                photoUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Icon(Icons.person_outline,
+                                        size: 30,
+                                        color: _currentIndex == 3
+                                            ? Colors.white
+                                            : AppColors.primaryPurple),
+                              )
+                            : Icon(Icons.person_outline,
+                                size: 30,
+                                color: _currentIndex == 3
+                                    ? Colors.white
+                                    : AppColors.primaryPurple),
+                      ),
+                    );
+                  },
+                ),
+              ],
+              color: AppColors.getSurfaceColor(context).withOpacity(0.95),
+              buttonBackgroundColor: AppColors.primaryPurple,
+              backgroundColor: Colors.transparent,
+              animationCurve: Curves.easeInOut,
+              animationDuration: const Duration(milliseconds: 300),
+              onTap: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              letIndexChange: (index) => true,
+            ),
           );
         },
       ),

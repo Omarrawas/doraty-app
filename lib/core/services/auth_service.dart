@@ -12,11 +12,48 @@ class AuthService extends ChangeNotifier {
   User? get currentUser => _client.auth.currentUser;
   bool get isAuthenticated => currentUser != null;
 
+  Map<String, dynamic>? _userProfile;
+  Map<String, dynamic>? get userProfile => _userProfile;
+
   AuthService() {
+    // Initial load if authenticated
+    if (isAuthenticated) {
+      loadUserProfile();
+    }
+
     // Listen to auth state changes
     _client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
+      if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.tokenRefreshed) {
+        loadUserProfile();
+      } else if (event == AuthChangeEvent.signedOut) {
+        _userProfile = null;
+        notifyListeners();
+      }
       notifyListeners();
     });
+  }
+
+  /// Load or refresh user profile from users table
+  Future<void> loadUserProfile() async {
+    try {
+      if (currentUser == null) {
+        _userProfile = null;
+        notifyListeners();
+        return;
+      }
+
+      final response = await _client
+          .from('users')
+          .select()
+          .eq('id', currentUser!.id)
+          .maybeSingle();
+
+      _userProfile = response;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading user profile: $e');
+    }
   }
 
   /// Sign in with email and password
@@ -210,6 +247,8 @@ class AuthService extends ChangeNotifier {
               response.user!.userMetadata?['avatar_url'] ?? googleUser.photoUrl,
           'updated_at': DateTime.now().toIso8601String(),
         });
+        // Reload profile to update state
+        await loadUserProfile();
       }
 
       return response;

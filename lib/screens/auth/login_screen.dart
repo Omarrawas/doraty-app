@@ -308,13 +308,16 @@ class _LoginScreenState extends State<LoginScreen> {
     bool isPassword = false,
     TextInputType? keyboardType,
   }) {
+    final textColor = AppColors.getTextColor(context);
+    final secondaryTextColor = AppColors.getTextColor(context, secondary: true);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(30),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getGlassColor(context, opacity: 0.2),
             borderRadius: BorderRadius.circular(30),
             border: Border.all(
               color: Colors.white.withOpacity(0.3),
@@ -326,19 +329,19 @@ class _LoginScreenState extends State<LoginScreen> {
             obscureText: isPassword && !_isPasswordVisible,
             keyboardType: keyboardType,
             textDirection: TextDirection.rtl,
-            style: const TextStyle(
-              color: Colors.black87,
+            style: TextStyle(
+              color: textColor,
               fontSize: 16,
             ),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(
-                color: Colors.black54,
+              hintStyle: TextStyle(
+                color: secondaryTextColor,
                 fontSize: 16,
               ),
               prefixIcon: Icon(
                 icon,
-                color: Colors.black54,
+                color: secondaryTextColor,
               ),
               suffixIcon: isPassword
                   ? IconButton(
@@ -346,7 +349,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         _isPasswordVisible
                             ? Icons.visibility
                             : Icons.visibility_off,
-                        color: Colors.black54,
+                        color: secondaryTextColor,
                       ),
                       onPressed: () {
                         setState(() {

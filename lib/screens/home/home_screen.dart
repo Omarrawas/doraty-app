@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
 import '../../core/services/database_service.dart';
-import '../../core/services/supabase_service.dart';
 import '../courses/course_details_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../teacher/teacher_profile_screen.dart';
@@ -17,6 +16,7 @@ import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
+import '../../core/services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,8 +34,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _filteredTeachers = [];
   bool _isLoading = true;
   bool _hasUnreadNotifications = false;
-  String? _userName;
-  String? _userPhoto;
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -64,7 +62,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     await Future.wait([
-      _loadUserData(forceRefresh: forceRefresh),
       _loadCategories(forceRefresh: forceRefresh),
       _loadFeaturedCourses(forceRefresh: forceRefresh),
       _loadEnrolledCourses(), // Enrollments usually small and fast, can be kept simple
@@ -133,25 +130,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadUserData({bool forceRefresh = false}) async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) return;
-
-      final userData = await _databaseService.getUserById(userId,
-          forceRefresh: forceRefresh);
-
-      if (mounted && userData != null) {
-        setState(() {
-          _userName = userData['full_name'] ?? userData['name'] ?? '';
-          _userPhoto = userData['avatar_url'] ?? userData['photo_url'];
-          _filterCourses();
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading user data: $e');
-    }
-  }
 
   Future<void> _loadEnrolledCourses() async {
     try {
@@ -283,8 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Reload user courses when returning from settings
-    _loadUserData();
+    // Profile is managed by provider, no need for manual local state updates here
   }
 
   void _onSearchChanged(String query) {
@@ -435,7 +412,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           padding: const EdgeInsets.only(bottom: 30),
                           sliver: SliverToBoxAdapter(
                             child: SizedBox(
-                              height: 500,
+                              height: MediaQuery.of(context).size.width > 800 ? 550 : 500,
                               child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
                                 padding:
@@ -541,27 +518,62 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Logo & Notifications
-          Row(
+    return Consumer<AuthService>(
+      builder: (context, auth, _) {
+        final userName =
+            auth.userProfile?['full_name'] ?? auth.userProfile?['name'];
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.getGlassColor(context),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Image.asset(
-                  'assets/images/logo.png',
-                  width: 24,
-                  height: 24,
+              // Logo & Greeting (Left Side)
+              Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.getGlassColor(context),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        width: 24,
+                        height: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userName != null
+                                ? '${_t('welcome_with_name')} $userName 👋'
+                                : '${_t('welcome')} 👋',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.normal,
+                              color: Colors.white,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(
+                            _t('ready_to_learn'),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white.withOpacity(0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
+
+              // Notifications (Right Side)
               GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -598,57 +610,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-
-          // Title & Greeting
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  _userName != null
-                      ? '${_t('welcome_with_name')}, $_userName 👋'
-                      : '${_t('welcome')} 👋', // Replaced hardcoded string
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.normal,
-                    color: Colors.white,
-                  ),
-                ),
-                Text(
-                  _t('ready_to_learn'), // Replaced hardcoded string
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.5),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // User Avatar
-          Container(
-            width: 45,
-            height: 45,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white24, width: 2),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(25),
-              child: _userPhoto != null
-                  ? CachedNetworkImage(
-                      imageUrl: _userPhoto!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) =>
-                          Container(color: Colors.white10),
-                      errorWidget: (context, url, error) =>
-                          const Icon(Icons.person, color: Colors.white),
-                    )
-                  : const Icon(Icons.person, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -660,6 +623,24 @@ class _HomeScreenState extends State<HomeScreen> {
           .map((e) => {'key': e.id, 'name': e.getLocalizedName(locale)})
     ];
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isLargeScreen = screenWidth > 800;
+
+    if (isLargeScreen) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.center,
+          children: dynamicCategories.map((cat) {
+            final isSelected = _selectedCategory == cat['key'];
+            return _buildCategoryChipItem(cat, isSelected);
+          }).toList(),
+        ),
+      );
+    }
+
     return SizedBox(
       height: 40,
       child: ListView.builder(
@@ -668,41 +649,45 @@ class _HomeScreenState extends State<HomeScreen> {
         itemCount: dynamicCategories.length,
         itemBuilder: (context, index) {
           final cat = dynamicCategories[index];
-          final isSelected =
-              _selectedCategory == cat['key']; // Compare with key
+          final isSelected = _selectedCategory == cat['key']; // Compare with key
           return Padding(
             padding: const EdgeInsets.only(left: 8),
-            child: ChoiceChip(
-              label: Text(
-                cat['name']!, // Display localized name
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight:
-                      isSelected ? FontWeight.normal : FontWeight.normal,
-                ),
-              ),
-              selected: isSelected,
-              onSelected: (selected) {
-                if (selected) {
-                  setState(() {
-                    _selectedCategory = cat['key']!; // Set internal key
-                    _filterCourses();
-                  });
-                }
-              },
-              backgroundColor: Colors.white.withOpacity(0.2),
-              selectedColor: AppColors.primaryPurple.withOpacity(0.8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-                side: BorderSide(
-                  color: isSelected ? Colors.transparent : Colors.white30,
-                ),
-              ),
-              showCheckmark: false,
-            ),
+            child: _buildCategoryChipItem(cat, isSelected),
           );
         },
       ),
+    );
+  }
+
+  Widget _buildCategoryChipItem(Map<String, String> cat, bool isSelected) {
+    return ChoiceChip(
+      label: Text(
+        cat['name']!, // Display localized name
+        style: TextStyle(
+          color: isSelected ? Colors.white : AppColors.getTextColor(context),
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          setState(() {
+            _selectedCategory = cat['key']!; // Set internal key
+            _filterCourses();
+          });
+        }
+      },
+      backgroundColor: AppColors.getGlassColor(context, opacity: 0.2),
+      selectedColor: AppColors.primaryPurple.withOpacity(0.8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isSelected
+              ? Colors.transparent
+              : AppColors.getGlassColor(context, opacity: 0.3),
+        ),
+      ),
+      showCheckmark: false,
     );
   }
 
@@ -724,15 +709,16 @@ class _HomeScreenState extends State<HomeScreen> {
             textAlign: Provider.of<LocaleProvider>(context).locale == 'ar'
                 ? TextAlign.right
                 : TextAlign.left,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: AppColors.getTextColor(context)),
+            cursorColor: AppColors.primaryPurple,
             decoration: InputDecoration(
               hintText: _t('search_course_hint'),
-              hintStyle: const TextStyle(
-                color: Colors.white,
+              hintStyle: TextStyle(
+                color: AppColors.getTextColor(context, secondary: true),
               ),
-              prefixIcon: const Icon(
+              prefixIcon: Icon(
                 Icons.search,
-                color: Colors.white,
+                color: AppColors.getTextColor(context, secondary: true),
               ),
               border: InputBorder.none,
               contentPadding:

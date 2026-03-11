@@ -38,6 +38,16 @@ class _RichTextEditorState extends State<RichTextEditor> {
     _initializeController();
   }
 
+  @override
+  void didUpdateWidget(covariant RichTextEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialHtml != oldWidget.initialHtml) {
+      _controller.removeListener(_onContentChanged);
+      _controller.dispose();
+      _initializeController();
+    }
+  }
+
   void _onFocusChanged() {
     if (mounted && _focusNode.hasFocus) {
       setState(() {
@@ -101,7 +111,9 @@ class _RichTextEditorState extends State<RichTextEditor> {
   @override
   Widget build(BuildContext context) {
     return TapRegion(
+      groupId: 'rich_text_editor_group',
       onTapOutside: (event) {
+        // Only unfocus if we are actually focused and the tap is truly outside
         if (_isFocused) {
           setState(() {
             _isFocused = false;
@@ -115,98 +127,90 @@ class _RichTextEditorState extends State<RichTextEditor> {
         children: [
           // Toolbar container
           Container(
-              decoration: BoxDecoration(
+            decoration: BoxDecoration(
               color: Colors.grey.withOpacity(0.05),
-                borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(12)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
               border: Border.all(color: Colors.black12.withOpacity(0.05)),
-              ),
-              child: Column(
+            ),
+            child: Column(
               mainAxisSize: MainAxisSize.min,
-                children: [
-                SizedBox(
-                  height: 50,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: IconTheme(
-                      data:
-                          const IconThemeData(color: Colors.black87, size: 20),
-                      child: quill.QuillSimpleToolbar(
-                        controller: _controller,
-                        config: const quill.QuillSimpleToolbarConfig(
-                          multiRowsDisplay: false,
-                          showSearchButton: false,
-                          showFontFamily: false,
-                          showFontSize: true,
-                          showHeaderStyle: false,
-                          showBoldButton: true,
-                          showItalicButton: true,
-                          showUnderLineButton: true,
-                          showStrikeThrough: true,
-                          showInlineCode: false,
-                          showColorButton: true,
-                          showBackgroundColorButton: true,
-                          showClearFormat: true,
-                          showAlignmentButtons: true,
-                          showLeftAlignment: true,
-                          showCenterAlignment: true,
-                          showRightAlignment: true,
-                          showJustifyAlignment: true,
-                          showListNumbers: true,
-                          showListBullets: true,
-                          showListCheck: false,
-                          showCodeBlock: false,
-                          showQuote: false,
-                          showIndent: false,
-                          showLink: false,
-                          showUndo: true,
-                          showRedo: true,
-                          showDirection: true,
-                        ),
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: IconTheme(
+                    data: const IconThemeData(color: Colors.black87, size: 20),
+                    child: quill.QuillSimpleToolbar(
+                      controller: _controller,
+                      config: quill.QuillSimpleToolbarConfig(
+                        multiRowsDisplay: true,
+                        showSearchButton: false,
+                        showFontFamily: false,
+                        showFontSize: true,
+                        showHeaderStyle: false,
+                        showBoldButton: true,
+                        showItalicButton: true,
+                        showUnderLineButton: true,
+                        showStrikeThrough: true,
+                        showInlineCode: false,
+                        showColorButton: true,
+                        showBackgroundColorButton: true,
+                        showClearFormat: true,
+                        showAlignmentButtons: true,
+                        showLeftAlignment: true,
+                        showCenterAlignment: true,
+                        showRightAlignment: true,
+                        showJustifyAlignment: true,
+                        showListNumbers: true,
+                        showListBullets: true,
+                        showListCheck: false,
+                        showCodeBlock: false,
+                        showQuote: false,
+                        showIndent: false,
+                        showLink: false,
+                        showUndo: true,
+                        showRedo: true,
+                        showDirection: true,
                       ),
                     ),
-                    ),
                   ),
-                  const Divider(height: 1, color: Colors.black12),
-                  MathSymbolToolbar(
-                    onSymbolSelected: (symbol) {
-                      final index = _controller.selection.extentOffset;
-                      final length = _controller.selection.end -
-                          _controller.selection.start;
-                      
-                      _controller.replaceText(
-                        index >= 0 ? index : 0,
-                        length > 0 ? length : 0,
-                        symbol,
-                        null,
-                      );
+                ),
+                const Divider(height: 1, color: Colors.black12),
+                MathSymbolToolbar(
+                  onSymbolSelected: (symbol) {
+                    final index = _controller.selection.extentOffset;
+                    final length =
+                        _controller.selection.end - _controller.selection.start;
 
-                      int newOffset =
-                          (index >= 0 ? index : 0) + symbol.length;
-                      if (symbol.contains('{}')) {
-                        newOffset = (index >= 0 ? index : 0) +
-                            symbol.indexOf('{}') +
-                            1;
-                      } else if (symbol.contains('[]')) {
-                        newOffset = (index >= 0 ? index : 0) +
-                            symbol.indexOf('[]') +
-                            1;
-                      } 
+                    _controller.replaceText(
+                      index >= 0 ? index : 0,
+                      length > 0 ? length : 0,
+                      symbol,
+                      null,
+                    );
 
-                      _controller.updateSelection(
-                        TextSelection.collapsed(offset: newOffset),
-                        quill.ChangeSource.local,
-                      );
+                    int newOffset = (index >= 0 ? index : 0) + symbol.length;
+                    if (symbol.contains('{}')) {
+                      newOffset =
+                          (index >= 0 ? index : 0) + symbol.indexOf('{}') + 1;
+                    } else if (symbol.contains('[]')) {
+                      newOffset =
+                          (index >= 0 ? index : 0) + symbol.indexOf('[]') + 1;
+                    }
 
-                      Future.delayed(Duration.zero, () {
-                        if (mounted) {
-                          _focusNode.requestFocus();
-                        }
-                      });
-                    },
-                  ),
-                ],
-              ),
+                    _controller.updateSelection(
+                      TextSelection.collapsed(offset: newOffset),
+                      quill.ChangeSource.local,
+                    );
+
+                    Future.delayed(Duration.zero, () {
+                      if (mounted) {
+                        _focusNode.requestFocus();
+                      }
+                    });
+                  },
+                ),
+              ],
+            ),
           ),
           Container(
             height: widget.height,
