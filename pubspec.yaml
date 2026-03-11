@@ -1,7 +1,7 @@
 name: doraty
 description: "منصة تعليمية لجميع الطلاب في سوريا"
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -157,7 +157,7 @@ msix_config:
   display_name: Doraty
   publisher_display_name: Omarrawas
   identity_name: Omarrawas.Doraty
-  msix_version: 1.0.0.0
+  msix_version: 1.0.1.2
   logo_path: assets/icons/logo.png
   store_logo_path: assets/icons/logo.png
   protocol_activation: 

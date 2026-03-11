@@ -248,7 +248,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildSettingCard(
                       icon: Icons.info_outline,
                       title: _t('version'),
-                      subtitle: '1.0.0',
+                      subtitle: '1.0.1+2',
                     ),
 
                     _buildSettingCard(
