@@ -147,19 +147,17 @@ class AuthService extends ChangeNotifier {
   Future<AuthResponse?> signInWithGoogle() async {
     try {
       // استخدام OAuth للويب والويندوز والماك (المنصات التي لا تدعم google_sign_in مباشرة)
-      if (kIsWeb || PlatformUtils.isAndroid || PlatformUtils.isWindows) {
+      if (kIsWeb || PlatformUtils.isWindows) {
         String? redirectUrl;
         if (kIsWeb) {
           redirectUrl = 'https://doraty-app.vercel.app/auth/callback';
-        } else if (PlatformUtils.isAndroid) {
-          redirectUrl = 'doraty://auth';
         } else if (PlatformUtils.isWindows) {
-          redirectUrl = 'doraty://auth';
+          redirectUrl = 'com.doraty.app://callback';
         }
 
         await _client.auth.signInWithOAuth(
           OAuthProvider.google,
-          // للويب نستخدم رابط Vercel، للويندوز والأندرويد نستخدم الرابط العميق
+          // للويب نستخدم رابط Vercel، للويندوز نستخدم الرابط العميق
           redirectTo: redirectUrl,
         );
         return null;

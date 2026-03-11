@@ -498,17 +498,20 @@ class _LoginScreenState extends State<LoginScreen> {
       final authService = AuthService();
       await authService.signInWithGoogle();
 
-      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
-        // للويندوز والويب، تفتح النافذة في المتصفح لذلك يجب أن ننتظر ولا ننتقل فوراً
+      if (kIsWeb ||
+          defaultTargetPlatform == TargetPlatform.windows ||
+          defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS) {
+        // لهذه المنصات، ننتظر مستمع AuthState في initState ليقوم بالتحويل عند اكتشاف الجلسة
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('يرجى إكمال تسجيل الدخول من المتصفح...',
+              content: Text('جاري التحقق من الحساب...',
                   style: TextStyle(fontFamily: 'Cairo')),
             ),
           );
         }
-        return; // الخروج هنا، وسيقوم مستمع AuthState أعلاه بنقلنا عند النجاح
+        return;
       }
 
       if (mounted) {
