@@ -179,27 +179,94 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isWideScreen = screenWidth > 900;
 
     return Scaffold(
       extendBody: true,
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: GradientBackground(
-            child: IndexedStack(
-              index: _currentIndex,
-              children: const [
-                HomeScreen(),
-                ExploreScreen(),
-                CoursesListScreen(showBackButton: false),
-                ProfileScreen(),
-              ],
+      body: Row(
+        children: [
+          if (isWideScreen)
+            Container(
+              decoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: Colors.white.withOpacity(0.05),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: NavigationRail(
+                selectedIndex: _currentIndex,
+                onDestinationSelected: (index) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
+                },
+                backgroundColor: AppColors.getSurfaceColor(context).withOpacity(0.95),
+                indicatorColor: AppColors.primaryPurple.withOpacity(0.2),
+                labelType: NavigationRailLabelType.all,
+                useIndicator: true,
+                minWidth: 80,
+                destinations: [
+                  const NavigationRailDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home, color: AppColors.primaryPurple),
+                    label: Text('الرئيسية', style: TextStyle(fontSize: 12)),
+                  ),
+                  const NavigationRailDestination(
+                    icon: Icon(Icons.manage_search_outlined),
+                    selectedIcon: Icon(Icons.search, color: AppColors.primaryPurple),
+                    label: Text('استكشف', style: TextStyle(fontSize: 12)),
+                  ),
+                  const NavigationRailDestination(
+                    icon: Icon(Icons.play_circle_outline),
+                    selectedIcon: Icon(Icons.play_circle, color: AppColors.primaryPurple),
+                    label: Text('دوراتي', style: TextStyle(fontSize: 12)),
+                  ),
+                  NavigationRailDestination(
+                    icon: Consumer<AuthService>(
+                      builder: (context, auth, _) {
+                        final photoUrl = auth.userProfile?['avatar_url'] ??
+                            auth.userProfile?['photo_url'];
+                        return Container(
+                          width: 30,
+                          height: 30,
+                          decoration: const BoxDecoration(shape: BoxShape.circle),
+                          child: ClipOval(
+                            child: (auth.isAuthenticated && photoUrl != null)
+                                ? Image.network(photoUrl, fit: BoxFit.cover)
+                                : const Icon(Icons.person_outline),
+                          ),
+                        );
+                      },
+                    ),
+                    label: const Text('حسابي', style: TextStyle(fontSize: 12)),
+                  ),
+                ],
+              ),
+            ),
+          Expanded(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: GradientBackground(
+                  child: IndexedStack(
+                    index: _currentIndex,
+                    children: const [
+                      HomeScreen(),
+                      ExploreScreen(),
+                      CoursesListScreen(showBackButton: false),
+                      ProfileScreen(),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
-      bottomNavigationBar: Consumer<LocaleProvider>(
+      bottomNavigationBar: isWideScreen ? null : Consumer<LocaleProvider>(
         builder: (context, localeProvider, child) {
           return SafeArea(
             bottom: true,

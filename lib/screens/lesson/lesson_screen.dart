@@ -9,7 +9,6 @@ import 'image_viewer_screen.dart';
 import 'interactive_quiz_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../widgets/tex_view_widget.dart';
-import '../../widgets/rich_text_editor.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
 import '../../models/note.dart';
@@ -59,7 +58,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
   
-  String _questionHtml = '';
+  final TextEditingController _questionController = TextEditingController();
   final DatabaseService _db = DatabaseService.instance;
 
   // Video
@@ -118,10 +117,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     }
   }
 
-  Future<void> _downloadResource(Map<String, String> resource) async {
+  Future<String?> _downloadResource(Map<String, String> resource) async {
     final url = resource['url'] ?? '';
     final fileName = resource['name'] ?? 'file';
-    if (url.isEmpty) return;
+    if (url.isEmpty) return null;
 
     if (mounted) {
       setState(() {
@@ -130,11 +129,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${_t('starting_download')} $fileName...')),
+      SnackBar(content: Text(_t('starting_download'))),
     );
 
     try {
-      await CourseDownloadService().downloadResource(
+      final localPath = await CourseDownloadService().downloadResource(
         url: url,
         courseId: widget.lesson.courseId,
         lessonId: widget.lesson.id,
@@ -143,22 +142,54 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       await _checkDownloadedResources();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('${_t('download_success_encrypted')} $fileName')),
+          SnackBar(content: Text(_t('download_success_encrypted'))),
         );
       }
+      return localPath;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
         );
       }
+      return null;
     } finally {
       if (mounted) {
         setState(() {
           _downloadingFiles.remove(fileName);
         });
       }
+    }
+  }
+
+  void _openResource(String fileName, String localPath, String url) {
+    final ext = fileName.split('.').last.toLowerCase();
+    if (ext == 'pdf') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PdfViewerScreen(
+            url: null,
+            localPath: localPath,
+            title: fileName,
+            isOffline: true,
+          ),
+        ),
+      );
+    } else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].contains(ext)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ImageViewerScreen(
+            url: null,
+            localPath: localPath,
+            title: fileName,
+            isOffline: true,
+          ),
+        ),
+      );
+    } else {
+      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
     }
   }
 
@@ -280,13 +311,19 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         title: Text(_t('edit_note'), textAlign: TextAlign.right),
         content: SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
-          child: RichTextEditor(
-            initialHtml: note.content,
-            onContentChanged: (html) {
-              editedContent = html;
-            },
-            height: 250,
+          child: TextField(
+          controller: TextEditingController(text: note.content),
+          maxLines: null,
+          minLines: 5,
+          textAlign: TextAlign.right,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'اكتب ملاحظتك هنا...',
           ),
+          onChanged: (text) {
+            editedContent = text;
+          },
+        ),
         ),
         actions: [
           TextButton(
@@ -974,63 +1011,41 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     }
 
     return GestureDetector(
-      onTap: () {
+      onTap: () async {
         if (!isDownloaded) {
-          _downloadResource(resource);
-        } else {
-          final ext = fileName.split('.').last.toLowerCase();
-          if (ext == 'pdf') {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => PdfViewerScreen(
-                  url: null,
-                  localPath: localPath,
-                  title: fileName,
-                  isOffline: true,
-                ),
-              ),
-            );
-          } else if (['jpg', 'jpeg', 'png', 'webp', 'gif'].contains(ext)) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ImageViewerScreen(
-                  url: null,
-                  localPath: localPath,
-                  title: fileName,
-                  isOffline: true,
-                ),
-              ),
-            );
-          } else {
-            // For other types, fallback to browser for now as we don't have internal decryption-viewers
-            launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+          final path = await _downloadResource(resource);
+          if (path != null && mounted) {
+            _openResource(fileName, path, url);
           }
+        } else {
+          _openResource(fileName, localPath!, url);
         }
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          gradient: isDownloaded ? AppColors.primaryGradient : null,
-          color: isDownloaded ? null : Colors.white.withOpacity(0.1),
+          gradient: AppColors.primaryGradient,
           borderRadius: BorderRadius.circular(12),
-          border: isDownloaded ? null : Border.all(color: Colors.white24),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryPurple.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              isDownloaded
-                  ? Icons.remove_red_eye_outlined
-                  : Icons.download_outlined,
+            const Icon(
+              Icons.remove_red_eye_outlined,
               color: Colors.white,
               size: 18,
             ),
             const SizedBox(width: 8),
-            Text(
-              isDownloaded ? 'عرض' : 'تحميل',
-              style: const TextStyle(
+            const Text(
+              'عرض',
+              style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
@@ -1835,14 +1850,17 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               ),
               child: Column(
                 children: [
-                  RichTextEditor(
-                    initialHtml: _questionHtml,
-                    onContentChanged: (html) {
-                      _questionHtml = html;
-                    },
-                    placeholder: 'اسأل سؤالاً عن هذا الدرس...',
-                    height: 120,
-                    isCompact: true,
+                  TextField(
+                    controller: _questionController,
+                    maxLines: null,
+                    minLines: 3,
+                    textAlign: TextAlign.right,
+                    decoration: const InputDecoration(
+                      hintText: 'اسأل سؤالاً عن هذا الدرس...',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.all(12),
+                    ),
+                    style: const TextStyle(color: Colors.white),
                   ),
                   const SizedBox(height: 8),
                   Align(
@@ -2405,14 +2423,19 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         title: const Text('إضافة رد', textAlign: TextAlign.right),
         content: SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
-          child: RichTextEditor(
-            initialHtml: initialText,
-            onContentChanged: (html) {
-              replyContent = html;
-            },
-            height: 200,
-            isCompact: true,
+        child: TextField(
+          controller: TextEditingController(text: initialText),
+          maxLines: null,
+          minLines: 5,
+          textAlign: TextAlign.right,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            hintText: 'اكتب ردك هنا...',
           ),
+          onChanged: (text) {
+            replyContent = text;
+          },
+        ),
         ),
         actions: [
           TextButton(
@@ -2448,11 +2471,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Future<void> _sendQuestion() async {
-    if (_questionHtml.trim().isEmpty) return;
-    final content = _questionHtml;
-    setState(() {
-      _questionHtml = '';
-    });
+    final content = _questionController.text.trim();
+    _questionController.clear();
 
     try {
       await DatabaseService().askLessonQuestion(widget.lesson.id, content);

@@ -3,7 +3,7 @@ import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
-import '../../widgets/rich_text_editor.dart';
+
 
 class AddNoteScreen extends StatefulWidget {
   final String? lessonId;
@@ -25,7 +25,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _tagController = TextEditingController();
   final List<String> _tags = [];
-  String _contentHtml = '';
+  final TextEditingController _contentController = TextEditingController();
   bool _isSubmitting = false;
 
   String _formatTime(int seconds) {
@@ -36,7 +36,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
 
   @override
   void dispose() {
-    _titleController.dispose();
+    _contentController.dispose();
     _tagController.dispose();
     super.dispose();
   }
@@ -68,7 +68,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       return;
     }
 
-    if (_contentHtml.trim().isEmpty) {
+    if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('الرجاء إدخال محتوى الملاحظة'),
@@ -98,7 +98,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
         lessonId: widget.lessonId!,
         courseId: widget.courseId!,
         title: _titleController.text.trim(),
-        content: _contentHtml,
+        content: _contentController.text.trim(),
         timestamp: widget.videoTimestamp,
       );
 
@@ -300,13 +300,23 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               width: 1.5,
             ),
           ),
-          child: RichTextEditor(
-            initialHtml: _contentHtml,
-            onContentChanged: (html) {
-              _contentHtml = html;
-            },
-            placeholder: 'اكتب ملاحظتك هنا...',
-            height: 300,
+          child: TextField(
+            controller: _contentController,
+            maxLines: null,
+            minLines: 10,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+            decoration: const InputDecoration(
+              hintText: 'اكتب ملاحظتك هنا...',
+              hintStyle: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+              border: InputBorder.none,
+            ),
           ),
         ),
       ),

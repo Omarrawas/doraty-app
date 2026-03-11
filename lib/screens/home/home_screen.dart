@@ -51,6 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Use a dynamic viewport fraction based on screen size (estimated at init)
     _bannerController = PageController(viewportFraction: 0.85);
     _startBannerAutoPlay();
     _refreshData();
@@ -286,6 +287,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final bool isWideScreen = screenWidth > 900;
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () => _refreshData(forceRefresh: true),
@@ -329,68 +333,48 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   // Teachers Section
                   if (_filteredTeachers.isNotEmpty) ...[
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      sliver: SliverToBoxAdapter(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              _t('top_teachers'),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.white,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        const TeachersListScreen(),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                _t('explore_more'), // Using 'explore_more' or 'all' depending on preference
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.normal,
-                                  color: AppColors.primaryPurple.withOpacity(
-                                      0.9), // Lighter purple or accent
-                                ),
-                              ),
-                            ),
-                          ],
+                    _buildSectionHeader(_t('top_teachers'), () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const TeachersListScreen(),
                         ),
-                      ),
-                    ),
+                      );
+                    }),
                     SliverToBoxAdapter(
-                      child: SizedBox(
-                        height: 110,
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _filteredTeachers.length,
-                          itemBuilder: (context, index) =>
-                              _buildTeacherItem(_filteredTeachers[index]),
-                        ),
-                      ),
+                      child: isWideScreen
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Wrap(
+                                spacing: 20,
+                                runSpacing: 20,
+                                children: _filteredTeachers
+                                    .take(isWideScreen ? 12 : 6)
+                                    .map((t) => _buildTeacherItem(t))
+                                    .toList(),
+                              ),
+                            )
+                          : SizedBox(
+                              height: 110,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _filteredTeachers.length,
+                                itemBuilder: (context, index) =>
+                                    _buildTeacherItem(_filteredTeachers[index]),
+                              ),
+                            ),
                     ),
                   ],
 
-                  // Featured Courses Section
+                  // Featured Courses Section Header
                   SliverPadding(
-                    // Changed to SliverPadding to allow Text widget
                     padding: const EdgeInsets.fromLTRB(20, 30, 20, 16),
                     sliver: SliverToBoxAdapter(
                       child: Text(
-                        _t('featured_courses'), // Replaced hardcoded string
-                        style: const TextStyle(
-                          fontSize: 22,
+                        _t('featured_courses'),
+                        style: TextStyle(
+                          fontSize: isWideScreen ? 26 : 22,
                           fontWeight: FontWeight.normal,
                           color: Colors.white,
                         ),
@@ -401,38 +385,78 @@ class _HomeScreenState extends State<HomeScreen> {
                   _featuredCourses.isEmpty
                       ? SliverToBoxAdapter(
                           child: ProfessionalEmptyState(
-                            title: _t(
-                                'no_courses_found'), // Replaced hardcoded string
-                            message: _t(
-                                'no_featured_courses_message'), // Replaced hardcoded string
+                            title: _t('no_courses_found'),
+                            message: _t('no_featured_courses_message'),
                             icon: Icons.auto_awesome_motion_rounded,
                           ),
                         )
                       : SliverPadding(
-                          padding: const EdgeInsets.only(bottom: 30),
-                          sliver: SliverToBoxAdapter(
-                            child: SizedBox(
-                              height: MediaQuery.of(context).size.width > 800 ? 550 : 500,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 20),
-                                itemCount: _featuredCourses.length,
-                                itemBuilder: (context, index) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(left: 16),
-                                    child: _buildCourseCard(
-                                        _featuredCourses[index]),
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          sliver: isWideScreen
+                              ? SliverGrid(
+                                  delegate: SliverChildBuilderDelegate(
+                                    (context, index) => _buildCourseCard(_featuredCourses[index]),
+                                    childCount: _featuredCourses.length,
+                                  ),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    childAspectRatio: 0.75,
+                                    crossAxisSpacing: 20,
+                                    mainAxisSpacing: 20,
+                                  ),
+                                )
+                              : SliverToBoxAdapter(
+                                  child: SizedBox(
+                                    height: 500,
+                                    child: ListView.builder(
+                                      scrollDirection: Axis.horizontal,
+                                      itemCount: _featuredCourses.length,
+                                      itemBuilder: (context, index) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(left: 16),
+                                          child: _buildCourseCard(_featuredCourses[index]),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
                         ),
                 ],
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, VoidCallback onSeeAll) {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      sliver: SliverToBoxAdapter(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.normal,
+                color: Colors.white,
+              ),
+            ),
+            GestureDetector(
+              onTap: onSeeAll,
+              child: Text(
+                _t('explore_more'),
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.normal,
+                  color: AppColors.primaryPurple.withOpacity(0.9),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:vsc_quill_delta_to_html/vsc_quill_delta_to_html.dart';
 import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart';
+import '../../core/theme/app_colors.dart';
 import 'math_symbol_toolbar.dart';
 
 class RichTextEditor extends StatefulWidget {
@@ -110,10 +111,11 @@ class _RichTextEditorState extends State<RichTextEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return TapRegion(
-      groupId: 'rich_text_editor_group',
       onTapOutside: (event) {
-        // Only unfocus if we are actually focused and the tap is truly outside
         if (_isFocused) {
           setState(() {
             _isFocused = false;
@@ -121,135 +123,149 @@ class _RichTextEditorState extends State<RichTextEditor> {
           _focusNode.unfocus();
         }
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Toolbar container
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey.withOpacity(0.05),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              border: Border.all(color: Colors.black12.withOpacity(0.05)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+      child: Container(
+        decoration: BoxDecoration(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.white.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: _isFocused
+                ? AppColors.primaryPurple.withValues(alpha: 0.5)
+                : Colors.white.withValues(alpha: 0.1),
+            width: 1.5,
+          ),
+          boxShadow: [
+            if (_isFocused)
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Toolbar container - Only show if focused
+              if (_isFocused)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: IconTheme(
-                    data: const IconThemeData(color: Colors.black87, size: 20),
-                    child: quill.QuillSimpleToolbar(
-                      controller: _controller,
-                      config: quill.QuillSimpleToolbarConfig(
-                        multiRowsDisplay: true,
-                        showSearchButton: false,
-                        showFontFamily: false,
-                        showFontSize: true,
-                        showHeaderStyle: false,
-                        showBoldButton: true,
-                        showItalicButton: true,
-                        showUnderLineButton: true,
-                        showStrikeThrough: true,
-                        showInlineCode: false,
-                        showColorButton: true,
-                        showBackgroundColorButton: true,
-                        showClearFormat: true,
-                        showAlignmentButtons: true,
-                        showLeftAlignment: true,
-                        showCenterAlignment: true,
-                        showRightAlignment: true,
-                        showJustifyAlignment: true,
-                        showListNumbers: true,
-                        showListBullets: true,
-                        showListCheck: false,
-                        showCodeBlock: false,
-                        showQuote: false,
-                        showIndent: false,
-                        showLink: false,
-                        showUndo: true,
-                        showRedo: true,
-                        showDirection: true,
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.3)
+                      : Colors.grey.withValues(alpha: 0.1),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      quill.QuillSimpleToolbar(
+                        controller: _controller,
+                        config: quill.QuillSimpleToolbarConfig(
+                          multiRowsDisplay: false, // Make it a single row
+                          showSearchButton: false,
+                          showFontFamily: false,
+                          showFontSize: true,
+                          showHeaderStyle: false,
+                          showBoldButton: true,
+                          showItalicButton: true,
+                          showUnderLineButton: true,
+                          showStrikeThrough: false,
+                          showInlineCode: false,
+                          showColorButton: true,
+                          showBackgroundColorButton: true,
+                          showClearFormat: true,
+                          showAlignmentButtons: false,
+                          showLeftAlignment: true,
+                          showCenterAlignment: true,
+                          showRightAlignment: true,
+                          showJustifyAlignment: true,
+                          showListNumbers: false,
+                          showListBullets: false,
+                          showListCheck: false,
+                          showCodeBlock: false,
+                          showQuote: false,
+                          showIndent: false,
+                          showLink: false,
+                          showUndo: true,
+                          showRedo: true,
+                          showDirection: true,
+                        ),
+                      ),
+                      const Divider(height: 1, color: Colors.white12),
+                      MathSymbolToolbar(
+                        onSymbolSelected: (symbol) {
+                          final index = _controller.selection.extentOffset;
+                          final length = _controller.selection.end -
+                              _controller.selection.start;
+
+                          _controller.replaceText(
+                            index >= 0 ? index : 0,
+                            length > 0 ? length : 0,
+                            symbol,
+                            null,
+                          );
+
+                          int newOffset =
+                              (index >= 0 ? index : 0) + symbol.length;
+                          if (symbol.contains('{}')) {
+                            newOffset = (index >= 0 ? index : 0) +
+                                symbol.indexOf('{}') +
+                                1;
+                          } else if (symbol.contains('[]')) {
+                            newOffset = (index >= 0 ? index : 0) +
+                                symbol.indexOf('[]') +
+                                1;
+                          }
+
+                          _controller.updateSelection(
+                            TextSelection.collapsed(offset: newOffset),
+                            quill.ChangeSource.local,
+                          );
+
+                          Future.delayed(Duration.zero, () {
+                            if (mounted) {
+                              _focusNode.requestFocus();
+                            }
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              Container(
+                height: widget.height,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: quill.QuillEditor.basic(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  config: quill.QuillEditorConfig(
+                    placeholder: widget.placeholder,
+                    padding: const EdgeInsets.all(16),
+                    expands: false,
+                    scrollable: true,
+                    autoFocus: false,
+                    customStyles: quill.DefaultStyles(
+                      paragraph: quill.DefaultTextBlockStyle(
+                        TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                          fontSize: 16,
+                          height: 1.5,
+                        ),
+                        const quill.HorizontalSpacing(0, 0),
+                        const quill.VerticalSpacing(0, 0),
+                        const quill.VerticalSpacing(0, 0),
+                        null,
                       ),
                     ),
                   ),
                 ),
-                const Divider(height: 1, color: Colors.black12),
-                MathSymbolToolbar(
-                  onSymbolSelected: (symbol) {
-                    final index = _controller.selection.extentOffset;
-                    final length =
-                        _controller.selection.end - _controller.selection.start;
-
-                    _controller.replaceText(
-                      index >= 0 ? index : 0,
-                      length > 0 ? length : 0,
-                      symbol,
-                      null,
-                    );
-
-                    int newOffset = (index >= 0 ? index : 0) + symbol.length;
-                    if (symbol.contains('{}')) {
-                      newOffset =
-                          (index >= 0 ? index : 0) + symbol.indexOf('{}') + 1;
-                    } else if (symbol.contains('[]')) {
-                      newOffset =
-                          (index >= 0 ? index : 0) + symbol.indexOf('[]') + 1;
-                    }
-
-                    _controller.updateSelection(
-                      TextSelection.collapsed(offset: newOffset),
-                      quill.ChangeSource.local,
-                    );
-
-                    Future.delayed(Duration.zero, () {
-                      if (mounted) {
-                        _focusNode.requestFocus();
-                      }
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-          Container(
-            height: widget.height,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(
-                color: _isFocused
-                    ? Colors.blue.withOpacity(0.5)
-                    : Colors.grey.withOpacity(0.2),
-                width: _isFocused ? 1.5 : 1.0,
               ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: quill.QuillEditor.basic(
-              controller: _controller,
-              focusNode: _focusNode,
-              config: quill.QuillEditorConfig(
-                placeholder: widget.placeholder,
-                padding: const EdgeInsets.all(12),
-                expands: false,
-                scrollable: true,
-                customStyles: const quill.DefaultStyles(
-                  paragraph: quill.DefaultTextBlockStyle(
-                    TextStyle(
-                      color: Colors.black87,
-                      fontSize: 14,
-                      height: 1.3,
-                    ),
-                    quill.HorizontalSpacing(0, 0),
-                    quill.VerticalSpacing(0, 0),
-                    quill.VerticalSpacing(0, 0),
-                    null,
-                  ),
-                ),
-              ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
+
 }

@@ -61,11 +61,23 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
         // Handle File storage (Native only)
         if (kIsWeb) throw Exception('File access not supported on Web');
         final file = File(widget.localPath!);
-        if (!await file.exists()) throw Exception('File not found');
+        if (!await file.exists()) throw Exception('File not found: ${widget.localPath}');
+
+        final length = await file.length();
+        if (length < 16) throw Exception('File is too small for encryption header');
 
         final bytes = await EncryptionService()
-            .decryptRange(file, 0, await file.length() - 17);
+            .decryptRange(file, 0, length - 17);
         decrypted = Uint8List.fromList(bytes);
+      }
+
+      // Quick check if it's a valid PDF (should start with %PDF-)
+      if (decrypted.length > 5) {
+        final header = String.fromCharCodes(decrypted.sublist(0, 5));
+        if (header != '%PDF-') {
+          debugPrint('PDF Header mismatch: $header');
+          throw Exception('Invalid PDF format after decryption');
+        }
       }
 
       setState(() {
@@ -74,9 +86,17 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       });
     } catch (e) {
       debugPrint('Error loading offline PDF: $e');
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطأ في فتح الملف: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
