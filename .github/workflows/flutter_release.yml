@@ -11,23 +11,22 @@ permissions:
 env:
   APP_NAME: Doraty
 
+# ================= ANDROID BUILD =================
+
 jobs:
 
-  build:
-    name: Build Android + Windows
+  android:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      # Java
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      # Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -36,7 +35,6 @@ jobs:
 
       - run: flutter pub get
 
-      # Decode Android Keystore
       - name: Decode Keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -52,77 +50,50 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
-      # Build APK
       - name: Build APK
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          flutter build apk --release \
-          --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-          --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+        run: flutter build apk --release
 
-      # Build AAB
       - name: Build AAB
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          flutter build appbundle --release \
-          --dart-define=SUPABASE_URL="$SUPABASE_URL" \
-          --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
+        run: flutter build appbundle --release
 
-      # Enable Windows build
-      - name: Enable Windows
-        run: flutter config --enable-windows-desktop
-
-      # Build Windows
-      - name: Build Windows
-        run: flutter build windows --release
-
-      # Zip Windows build
-      - name: Zip Windows
-        run: |
-          cd build/windows/x64/runner/Release
-          zip -r ../../../../../Doraty-Windows.zip .
-
-      # Generate Changelog
-      - name: Generate Changelog
-        run: |
-          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 || echo HEAD^)..HEAD > CHANGELOG.md || echo "Initial release" > CHANGELOG.md
-
-      # Create Release
-      - name: Create GitHub Release
+      - name: Upload APK to Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
           name: Doraty Release ${{ github.run_number }}
-          body_path: CHANGELOG.md
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
-            Doraty-Windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Telegram Notification
-      - name: Send Telegram
+# ================= WINDOWS BUILD =================
+
+  windows:
+    needs: android
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Zip Windows
+        run: powershell Compress-Archive build/windows/x64/runner/Release Doraty-Windows.zip
+
+      - name: Upload Windows to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          files: Doraty-Windows.zip
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          MSG="🚀 Doraty Release ${{ github.run_number }}
-
-          Android APK:
-          https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-release.apk
-
-          Android AAB:
-          https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-release.aab
-
-          Windows:
-          https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/Doraty-Windows.zip
-          "
-
-          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
-          -d chat_id="${TELEGRAM_CHAT_ID}" \
-          -d text="$MSG"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
