@@ -304,13 +304,22 @@ class AppTheme {
   }
 
   static ThemeData get lightTheme {
+    const Color lightSurface = Colors.white;
+
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primaryPurple,
-        brightness: Brightness.light,
+      colorScheme: ColorScheme.light(
+        primary: AppColors.primaryPurple,
+        secondary: AppColors.primaryBlue,
+        surface: lightSurface,
+        onSurface: AppColors.textPrimary,
+        onPrimary: Colors.white,
+        error: AppColors.error,
+        onError: Colors.white,
+        surfaceTint: Colors.transparent,
       ),
       scaffoldBackgroundColor: Colors.transparent,
+      dialogBackgroundColor: lightSurface,
 
       fontFamily: 'Cairo',
       // Arabic Font Support
@@ -466,13 +475,24 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
+    const Color darkSurface = Color(0xFF1A1A2E);
+
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: AppColors.primaryPurple,
-        brightness: Brightness.dark,
+      colorScheme: ColorScheme.dark(
+        primary: AppColors.primaryPurple,
+        secondary: AppColors.primaryBlue,
+        surface: darkSurface,
+        onSurface: Colors.white,
+        onPrimary: Colors.white,
+        error: AppColors.error,
+        onError: Colors.white,
+        surfaceContainerHighest: darkSurface,
+        surfaceContainer: darkSurface,
+        surfaceTint: Colors.transparent,
       ),
       scaffoldBackgroundColor: Colors.transparent,
+      dialogBackgroundColor: darkSurface,
 
       fontFamily: 'Cairo',
       // Arabic Font Support

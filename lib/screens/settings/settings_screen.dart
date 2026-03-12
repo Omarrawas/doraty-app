@@ -792,7 +792,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 final shouldLogout = await showDialog<bool>(
                   context: context,
                   builder: (context) => AlertDialog(
-                    backgroundColor: Colors.white.withOpacity(0.95),
+                    backgroundColor: AppColors.getSurfaceColor(context),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -1351,7 +1351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getSurfaceColor(context),
         title: Text(_t('clear_downloads_confirm_title')),
         content: Text(_t('clear_downloads_confirm_desc')),
         actions: [
@@ -1516,7 +1516,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.getSurfaceColor(context),
         title: Text(
           _t('delete_confirm_title'),
           style:

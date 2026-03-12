@@ -173,7 +173,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             // Forgot Password
                             TextButton(
-                              onPressed: () {},
+                              onPressed: _showForgotPasswordDialog,
                               child: const Text(
                                 'نسيت كلمة المرور؟',
                                 style: TextStyle(
@@ -464,6 +464,174 @@ class _LoginScreenState extends State<LoginScreen> {
         _showErrorSnackBar(_getErrorMessage(e));
       }
     }
+  }
+
+  Future<void> _showForgotPasswordDialog() async {
+    final emailController = TextEditingController(text: _emailController.text);
+    bool isDialogLoading = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              backgroundColor: AppColors.getSurfaceColor(context),
+              title: Text(
+                'استعادة كلمة المرور',
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.getTextColor(context),
+                ),
+                textAlign: TextAlign.right,
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'أدخل بريدك الإلكتروني وسنرسل لك رابطاً لتعيين كلمة مرور جديدة.',
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      color: AppColors.getTextColor(context, secondary: true),
+                    ),
+                    textAlign: TextAlign.right,
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    textDirection: TextDirection.rtl,
+                    style: TextStyle(
+                      color: AppColors.getTextColor(context),
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'البريد الإلكتروني',
+                      hintStyle: TextStyle(
+                        fontFamily: 'Cairo',
+                        color: AppColors.getTextColor(context, secondary: true),
+                      ),
+                      prefixIcon: Icon(
+                        Icons.email_outlined,
+                        color: AppColors.getTextColor(context, secondary: true),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(
+                          color: AppColors.getTextColor(context, secondary: true).withOpacity(0.3),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF7B2CBF),
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text(
+                    'إلغاء',
+                    style: TextStyle(fontFamily: 'Cairo', color: Colors.grey),
+                  ),
+                ),
+                isDialogLoading
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : ElevatedButton(
+                        onPressed: () async {
+                          final email = emailController.text.trim();
+                          if (email.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                  'الرجاء إدخال البريد الإلكتروني',
+                                  textAlign: TextAlign.right,
+                                  style: TextStyle(fontFamily: 'Cairo'),
+                                ),
+                                backgroundColor: Colors.red.shade400,
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          setDialogState(() {
+                            isDialogLoading = true;
+                          });
+                          try {
+                            await AuthService().resetPassword(email);
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني.',
+                                    textAlign: TextAlign.right,
+                                    style: TextStyle(fontFamily: 'Cairo'),
+                                  ),
+                                  backgroundColor: Colors.green,
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            setDialogState(() {
+                              isDialogLoading = false;
+                            });
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    _getErrorMessage(e),
+                                    textAlign: TextAlign.right,
+                                    style: const TextStyle(fontFamily: 'Cairo'),
+                                  ),
+                                  backgroundColor: Colors.red.shade400,
+                                  behavior: SnackBarBehavior.floating,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF7B2CBF),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text(
+                          'إرسال',
+                          style: TextStyle(fontFamily: 'Cairo', color: Colors.white),
+                        ),
+                      ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> _applyScreenSecurity() async {

@@ -1033,6 +1033,99 @@ class DatabaseService {
       rethrow;
     }
   }
+  /// Save a received notification (called on FCM message received)
+  Future<void> saveNotification({
+    required String userId,
+    required String title,
+    required String body,
+    Map<String, dynamic>? data,
+    String? type,
+    String? category,
+    String? imageUrl,
+    String? actionUrl,
+    DateTime? expiresAt,
+  }) async {
+    try {
+      await _client.from('notifications').insert({
+        'user_id': userId,
+        'title': title,
+        'body': body,
+        'data': data,
+        'type': type ?? 'general',
+        'category': category ?? 'announcement',
+        'image_url': imageUrl,
+        'action_url': actionUrl,
+        'expires_at': expiresAt?.toIso8601String(),
+        'is_read': false,
+      });
+    } catch (e) {
+      debugPrint('Error saving notification: $e');
+    }
+  }
+
+  /// Broadcast notification to all users, a course's students, or a single user
+  /// This directly inserts into notifications table for instant in-app delivery
+  Future<int> broadcastNotification({
+    required String title,
+    required String body,
+    required String targetType, // 'all', 'course', 'user'
+    String? targetId, // courseId or userId depending on targetType
+    String? imageUrl,
+    String? actionUrl,
+    String? category,
+  }) async {
+    try {
+      List<String> userIds = [];
+
+      if (targetType == 'all') {
+        // Get all user IDs
+        final response = await _client.from('users').select('id');
+        userIds = (response as List).map((u) => u['id'] as String).toList();
+      } else if (targetType == 'course' && targetId != null) {
+        // Get enrolled user IDs for the course
+        final response = await _client
+            .from('enrollments')
+            .select('user_id')
+            .eq('course_id', targetId);
+        userIds =
+            (response as List).map((e) => e['user_id'] as String).toList();
+      } else if (targetType == 'user' && targetId != null) {
+        userIds = [targetId];
+      }
+
+      if (userIds.isEmpty) return 0;
+
+      // Batch insert notifications for all target users
+      final now = DateTime.now().toIso8601String();
+      final inserts = userIds
+          .map((uid) => {
+                'user_id': uid,
+                'title': title,
+                'body': body,
+                'type': 'general',
+                'category': category ?? 'announcement',
+                'image_url': imageUrl,
+                'action_url': actionUrl,
+                'is_read': false,
+                'created_at': now,
+              })
+          .toList();
+
+      // Insert in batches of 100 to avoid request size limits
+      const batchSize = 100;
+      for (var i = 0; i < inserts.length; i += batchSize) {
+        final batch = inserts.sublist(
+            i, i + batchSize > inserts.length ? inserts.length : i + batchSize);
+        await _client.from('notifications').insert(batch);
+      }
+
+      debugPrint('✅ Broadcasted notification to ${userIds.length} users');
+      return userIds.length;
+    } catch (e) {
+      debugPrint('❌ Error broadcasting notification: $e');
+      rethrow;
+    }
+  }
 
   // ==================== REVIEWS ====================
 
@@ -4541,37 +4634,6 @@ class DatabaseService {
       debugPrint('Error marking all notifications as read: $e');
     }
   }
-
-  /// Save notification to database
-  Future<void> saveNotification({
-    required String userId,
-    required String title,
-    required String body,
-    Map<String, dynamic>? data,
-    String? type,
-    String? category,
-    String? imageUrl,
-    String? actionUrl,
-    DateTime? expiresAt,
-  }) async {
-    try {
-      await _client.from('notifications').insert({
-        'user_id': userId,
-        'title': title,
-        'body': body,
-        'data': data,
-        'type': type,
-        'category': category,
-        'image_url': imageUrl,
-        'action_url': actionUrl,
-        'expires_at': expiresAt?.toIso8601String(),
-        'is_read': false,
-      });
-    } catch (e) {
-      debugPrint('Error saving notification: $e');
-    }
-  }
-
   /// Delete all notifications for current user
   Future<void> deleteAllNotifications() async {
     try {

@@ -159,40 +159,70 @@ class _RichTextEditorState extends State<RichTextEditor> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      quill.QuillSimpleToolbar(
-                        controller: _controller,
-                        config: quill.QuillSimpleToolbarConfig(
-                          multiRowsDisplay: false, // Make it a single row
-                          showSearchButton: false,
-                          showFontFamily: false,
-                          showFontSize: true,
-                          showHeaderStyle: false,
-                          showBoldButton: true,
-                          showItalicButton: true,
-                          showUnderLineButton: true,
-                          showStrikeThrough: false,
-                          showInlineCode: false,
-                          showColorButton: true,
-                          showBackgroundColorButton: true,
-                          showClearFormat: true,
-                          showAlignmentButtons: false,
-                          showLeftAlignment: true,
-                          showCenterAlignment: true,
-                          showRightAlignment: true,
-                          showJustifyAlignment: true,
-                          showListNumbers: false,
-                          showListBullets: false,
-                          showListCheck: false,
-                          showCodeBlock: false,
-                          showQuote: false,
-                          showIndent: false,
-                          showLink: false,
-                          showUndo: true,
-                          showRedo: true,
-                          showDirection: true,
+                      Theme(
+                        data: ThemeData(
+                          brightness: isDark ? Brightness.dark : Brightness.light,
+                          iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
+                          appBarTheme: AppBarTheme(
+                            backgroundColor: Colors.transparent,
+                            iconTheme: IconThemeData(color: isDark ? Colors.white : Colors.black87),
+                          ),
+                        ),
+                        child: quill.QuillSimpleToolbar(
+                          controller: _controller,
+                          config: quill.QuillSimpleToolbarConfig(
+                            multiRowsDisplay: false, // Reverted to false to avoid flex issues
+                            showSearchButton: false,
+                            showFontFamily: false,
+                            showFontSize: true,
+                            showHeaderStyle: false,
+                            showBoldButton: true,
+                            showItalicButton: true,
+                            showUnderLineButton: true,
+                            showStrikeThrough: false,
+                            showInlineCode: false,
+                            showColorButton: true,
+                            showBackgroundColorButton: true,
+                            showClearFormat: true,
+                            showAlignmentButtons: false,
+                            showLeftAlignment: true,
+                            showCenterAlignment: true,
+                            showRightAlignment: true,
+                            showJustifyAlignment: true,
+                            showListNumbers: false,
+                            showListBullets: false,
+                            showListCheck: false,
+                            showCodeBlock: false,
+                            showQuote: false,
+                            showIndent: false,
+                            showLink: false,
+                            showUndo: true,
+                            showRedo: true,
+                            showDirection: true,
+                            color: Colors.transparent, // Ensure toolbar background is transparent
+                            buttonOptions: quill.QuillSimpleToolbarButtonOptions(
+                              base: quill.QuillToolbarBaseButtonOptions(
+                                iconTheme: quill.QuillIconTheme(
+                                  iconButtonSelectedData: quill.IconButtonData(
+                                    color: AppColors.primaryPurple,
+                                    style: IconButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: AppColors.primaryPurple,
+                                    ),
+                                  ),
+                                  iconButtonUnselectedData: quill.IconButtonData(
+                                    color: isDark ? Colors.white70 : Colors.black87,
+                                    style: IconButton.styleFrom(
+                                      foregroundColor: isDark ? Colors.white70 : Colors.black87,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      const Divider(height: 1, color: Colors.white12),
+                      const Divider(height: 1, color: Colors.blueGrey),
                       MathSymbolToolbar(
                         onSymbolSelected: (symbol) {
                           final index = _controller.selection.extentOffset;
