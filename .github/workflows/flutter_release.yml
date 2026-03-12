@@ -2,7 +2,7 @@ name: Doraty Ultimate CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -12,33 +12,30 @@ env:
   APP_NAME: Doraty
 
 jobs:
+
   # ================= ANDROID BUILD =================
   android:
     name: Android Build
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout
       - uses: actions/checkout@v4
-      
-      # 2️⃣ Java 17
-      - name: Setup Java 17
+
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      # 3️⃣ Flutter
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      # 4️⃣ Flutter Pub Get
       - run: flutter pub get
 
-      # 5️⃣ Keystore
+      # Decode keystore
       - name: Decode Keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -54,36 +51,39 @@ jobs:
           keyPassword=$KEY_PASSWORD
           EOF
 
-      # 6️⃣ Build Android
+      # Build APK
       - name: Build APK
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: flutter build apk --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
+      # Build AAB
       - name: Build AAB
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: flutter build appbundle --release --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
-      - name: Build Split APKs
+      # Split APK
+      - name: Build Split APK
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: flutter build apk --release --split-per-abi --dart-define=SUPABASE_URL="$SUPABASE_URL" --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY"
 
-      # 7️⃣ Store Artifacts
       - name: Prepare Android Artifacts
         run: |
-          mkdir -p android-artifacts
+          mkdir android-artifacts
           cp build/app/outputs/bundle/release/app-release.aab android-artifacts/
           cp build/app/outputs/flutter-apk/*-release.apk android-artifacts/ || true
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Android Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: android-build
           path: android-artifacts/
+          retention-days: 1
 
   # ================= WINDOWS BUILD =================
   windows:
@@ -101,6 +101,7 @@ jobs:
 
       - run: flutter config --enable-windows-desktop
       - run: flutter pub get
+
       - name: Build Windows
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -110,12 +111,14 @@ jobs:
       - name: Zip Windows Build
         run: powershell Compress-Archive build/windows/x64/runner/Release Doraty-Windows.zip
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: windows-build
           path: Doraty-Windows.zip
+          retention-days: 1
 
-  # ================= RELEASE + TELEGRAM =================
+  # ================= RELEASE =================
   release:
     name: Release All
     needs: [android, windows]
@@ -127,13 +130,11 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v4
 
-      # Changelog
       - name: Generate Changelog
         run: |
-          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 || echo HEAD^)..HEAD > CHANGELOG.md || echo "No changes found" > CHANGELOG.md
+          git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 || echo HEAD^)..HEAD > CHANGELOG.md || echo "Initial Release" > CHANGELOG.md
 
-      # Create GitHub Release
-      - name: GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ github.run_number }}
@@ -147,27 +148,28 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # Telegram Notification
-      - name: Send Release Links to Telegram
+      - name: Send Telegram Notification
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          MSG="🚀 *تم إصدار نسخة جديدة من Doraty (${{ github.run_number }})*
-          
-          📦 *نسخ الأندرويد (Android):*
-          - [Universal APK](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-release.apk)
-          - [ARM64 APK](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-arm64-v8a-release.apk)
-          - [ARMEABI-v7a APK](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-armeabi-v7a-release.apk)
-          - [AAB (Play Store)](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-release.aab)
+          MSG="🚀 New Doraty Release ${{ github.run_number }}
 
-          💻 *نسخة الويندوز (Windows):*
-          - [Windows ZIP](https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/Doraty-Windows.zip)
-          
-          📄 *لمشاهدة صفحة الإصدار والتفاصيل:*
-          https://github.com/${{ github.repository }}/releases/tag/v${{ github.run_number }}"
+          Android APK:
+          https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-release.apk
 
-          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+          Play Store AAB:
+          https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-release.aab
+
+          Windows:
+          https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/Doraty-Windows.zip
+          "
+
+          curl -s -X POST https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage \
           -d chat_id="${TELEGRAM_CHAT_ID}" \
-          -d parse_mode="Markdown" \
-          -d disable_web_page_preview="true" \
           -d text="$MSG"
+
+      # Delete artifacts after release
+      - name: Delete Artifacts
+        run: |
+          echo "Artifacts will auto-expire in 1 day"
