@@ -1,35 +1,74 @@
 import 'package:flutter/material.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'supabase_service.dart';
 import '../theme/app_colors.dart';
 import 'dart:ui';
+import 'dart:io';
 
 class AppUpdateService {
   static const String _keyLastUpdateCheck = 'last_update_check';
 
-  /// Check for app updates and show dialog if available
+  /// Check for app updates
   Future<void> checkForUpdates(BuildContext context,
       {bool showNoUpdateDialog = false}) async {
+    try {
+      // 1. Handle Android (In-App Update via Google Play)
+      if (Platform.isAndroid) {
+        await _checkAndroidUpdate(context);
+        return;
+      }
+
+      // 2. Handle Other Platforms (Existing Supabase logic for Windows/Web)
+      await _checkGeneralUpdate(context, showNoUpdateDialog: showNoUpdateDialog);
+    } catch (e) {
+      debugPrint('Error checking for updates: $e');
+    }
+  }
+
+  /// Special logic for Android using Google Play In-App Updates
+  Future<void> _checkAndroidUpdate(BuildContext context) async {
+    try {
+      final info = await InAppUpdate.checkForUpdate();
+      
+      if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+        // If the update is important (priority >= 4), force immediate update
+        if (info.updatePriority >= 4 || info.immediateUpdateAllowed) {
+          await InAppUpdate.performImmediateUpdate();
+        } 
+        // Otherwise, allow flexible update (download in background)
+        else if (info.flexibleUpdateAllowed) {
+          await InAppUpdate.startFlexibleUpdate();
+          // After downloading, we prompt to complete
+          await InAppUpdate.completeFlexibleUpdate();
+        }
+      }
+    } catch (e) {
+      debugPrint('Android In-App Update failed: $e');
+      // Fallback to general update if Play Store check fails
+      if (context.mounted) {
+        await _checkGeneralUpdate(context);
+      }
+    }
+  }
+
+  /// General update logic using Supabase (Windows, Web, etc.)
+  Future<void> _checkGeneralUpdate(BuildContext context, {bool showNoUpdateDialog = false}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final lastCheck = prefs.getString(_keyLastUpdateCheck);
       final now = DateTime.now();
 
-      // Check only once per day unless forced/manual check
       if (lastCheck != null && !showNoUpdateDialog) {
         final lastCheckDate = DateTime.parse(lastCheck);
-        if (now.difference(lastCheckDate).inHours < 24) {
-          return;
-        }
+        if (now.difference(lastCheckDate).inHours < 24) return;
       }
 
-      // Get current app version
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
-      // Check for updates from Supabase table 'app_updates'
       final response = await SupabaseService.instance.client
           .from('app_updates')
           .select()
@@ -43,10 +82,8 @@ class AppUpdateService {
         final updateNotes = response['release_notes'] as String?;
         final isMandatory = response['is_mandatory'] as bool? ?? false;
 
-        // Save last check time
         await prefs.setString(_keyLastUpdateCheck, now.toIso8601String());
 
-        // Compare versions
         if (_isNewerVersion(currentVersion, latestVersion)) {
           if (context.mounted) {
             _showUpdateDialog(
@@ -66,27 +103,25 @@ class AppUpdateService {
         }
       }
     } catch (e) {
-      debugPrint('Error checking for updates: $e');
+      debugPrint('General update check failed: $e');
     }
   }
-  
-  /// Compare version strings (e.g., "1.2.3" vs "1.2.4")
+
   bool _isNewerVersion(String current, String latest) {
-    final currentParts = current.split('.').map(int.parse).toList();
-    final latestParts = latest.split('.').map(int.parse).toList();
-    
-    for (int i = 0; i < 3; i++) {
-      final currentPart = i < currentParts.length ? currentParts[i] : 0;
-      final latestPart = i < latestParts.length ? latestParts[i] : 0;
+    try {
+      final currentParts = current.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+      final latestParts = latest.split('.').map((e) => int.tryParse(e) ?? 0).toList();
       
-      if (latestPart > currentPart) return true;
-      if (latestPart < currentPart) return false;
-    }
-    
+      for (int i = 0; i < 3; i++) {
+        final currentPart = i < currentParts.length ? currentParts[i] : 0;
+        final latestPart = i < latestParts.length ? latestParts[i] : 0;
+        if (latestPart > currentPart) return true;
+        if (latestPart < currentPart) return false;
+      }
+    } catch (_) {}
     return false;
   }
-  
-  /// Show update dialog
+
   void _showUpdateDialog(
     BuildContext context, {
     required String latestVersion,

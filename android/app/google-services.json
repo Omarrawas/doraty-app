@@ -1,49 +1,42 @@
 {
   "project_info": {
-    "project_number": "386239634560",
-    "project_id": "atmetny",
-    "storage_bucket": "atmetny.firebasestorage.app"
+    "project_number": "819788297198",
+    "project_id": "doraty-48183",
+    "storage_bucket": "doraty-48183.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:386239634560:android:f32efd991d1a614bfcda65",
+        "mobilesdk_app_id": "1:819788297198:android:7a460ebfbc89bf25ae94ff",
         "android_client_info": {
           "package_name": "com.doraty.app"
         }
       },
       "oauth_client": [
         {
-          "client_id": "386239634560-k2ti393lo4kf6kln08h4fk26sa2ajhk9.apps.googleusercontent.com",
+          "client_id": "819788297198-1s92uajf9i1knolbsgc2qe53fq99n2to.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.doraty.app",
-            "certificate_hash": "6060010b3bcb52e0d6290f4a7581890be0b5ee3c"
+            "certificate_hash": "e8f3366cfb564a1f39e43f5acc0e4f74334f328a"
           }
         },
         {
-          "client_id": "386239634560-n2l3sc43k3j3ipg5ko3nidj63ij161ml.apps.googleusercontent.com",
+          "client_id": "819788297198-l01ajkiqrmbrs11kjl8cstlqriu5ebun.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDAhCOaTZZB3G1JQeuWbGMj1UpaoQ5mgQo"
+          "current_key": "AIzaSyCrvH6auZ7qAml3oQHRI7qtDpSnUyeGluc"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "386239634560-n2l3sc43k3j3ipg5ko3nidj63ij161ml.apps.googleusercontent.com",
+              "client_id": "819788297198-7quqc2v32kh5m6rh58iim0sdmc3ul9u1.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "386239634560-glgef33aeof8hspojlvrtus0bhes4veh.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.Atmetny"
-              }
             }
           ]
         }
