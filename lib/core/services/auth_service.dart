@@ -189,6 +189,8 @@ class AuthService extends ChangeNotifier {
         if (kIsWeb) {
           redirectUrl = 'https://doraty-app.vercel.app/auth/callback';
         } else if (PlatformUtils.isWindows) {
+          redirectUrl = 'doraty://callback';
+        } else {
           redirectUrl = 'com.doraty.app://callback';
         }
 
@@ -221,8 +223,7 @@ class AuthService extends ChangeNotifier {
         throw 'فشل الحصول على رمز الهوية من جوجل';
       }
 
-      // In v7.2.0, accessToken is not in GoogleSignInAuthentication.
-      // We need to request it via the authorization client if Supabase needs it.
+      // Request accessToken via the authorization client if needed.
       final authz = await googleUser.authorizationClient.authorizeScopes([
         'email',
         'openid',
@@ -253,6 +254,9 @@ class AuthService extends ChangeNotifier {
 
       return response;
     } catch (e) {
+      if (e.toString().contains('canceled')) {
+        throw 'تم إلغاء تسجيل الدخول عبر جوجل';
+      }
       rethrow;
     }
   }

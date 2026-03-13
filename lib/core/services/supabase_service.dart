@@ -18,7 +18,6 @@ class SupabaseService {
     }
   }
 
-  /// Initialize Supabase
   static Future<void> initialize({
     required String supabaseUrl,
     required String supabaseAnonKey,
