@@ -201,26 +201,29 @@ class AuthService extends ChangeNotifier {
         return null;
       }
 
-      // Native implementation for Android & iOS
-      final googleSignIn = GoogleSignIn.instance;
+      // Native implementation for Android & iOS (google_sign_in 7.x)
+      final GoogleSignIn googleSignIn = GoogleSignIn.instance;
 
+      debugPrint('🔄 Initializing Google Sign In...');
       await googleSignIn.initialize(
-        clientId: PlatformUtils.isIOS
-            ? Env.googleIosClientId
-            : (PlatformUtils.isAndroid ? Env.googleAndroidClientId : null),
+        clientId: PlatformUtils.isIOS ? Env.googleIosClientId : null,
         serverClientId: Env.googleWebClientId,
       );
 
+      debugPrint('🔄 Requesting Google Sign In...');
       final googleUser = await googleSignIn.authenticate();
+
+      debugPrint('✅ Google User obtained: ${googleUser.email}');
 
       final googleAuth = googleUser.authentication;
       final idToken = googleAuth.idToken;
 
       if (idToken == null) {
+        debugPrint('❌ Error: idToken is null');
         throw 'فشل الحصول على ID Token من جوجل. تأكد من إعداد SHA-1 و Web Client ID بشكل صحيح.';
       }
 
-      debugPrint('✅ Google Auth Success. idToken obtained.');
+      debugPrint('✅ idToken obtained successfully.');
 
       final response = await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,

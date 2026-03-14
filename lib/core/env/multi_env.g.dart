@@ -25,5 +25,5 @@ final class _Env {
   static const String googleAndroidClientId =
       '819788297198-1s92uajf9i1knolbsgc2qe53fq99n2to.apps.googleusercontent.com';
 
-  static const String githubToken = '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';
+  static const String githubToken = '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';
 }
