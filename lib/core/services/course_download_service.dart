@@ -9,7 +9,6 @@ import 'settings_service.dart';
 import 'package:flutter/foundation.dart';
 import '../services/database_service.dart';
 import 'offline_storage_service.dart';
-import 'encryption_service.dart';
 import '../../models/download_progress.dart';
 import '../../models/offline_course.dart';
 import '../../models/offline_lesson.dart';
@@ -222,9 +221,8 @@ class CourseDownloadService {
         if (response.data == null) return null;
         final sourceBytes = Uint8List.fromList(response.data!);
 
-        // 2. Encrypt bytes
-        final encryptedBytes =
-            await EncryptionService().encryptBytes(sourceBytes);
+        // 2. Skip encryption
+        final encryptedBytes = sourceBytes;
 
         // 3. Save to Hive
         await _storage.saveResource(lessonId, fileName, encryptedBytes);
@@ -270,10 +268,10 @@ class CourseDownloadService {
       await dio.download(url, tempPath);
 
       final fileSize = await tempFile.length();
-      final totalAddedSize = fileSize + 16; // Account for IV header
+      final totalAddedSize = fileSize; // Removed IV header size
 
-      // 2. Encrypt to final path
-      await EncryptionService().encryptFile(tempFile, savePath);
+      // 2. Move temp file to final path instead of encrypting
+      await tempFile.copy(savePath);
 
       // 3. Cleanup temp
       await tempFile.delete();

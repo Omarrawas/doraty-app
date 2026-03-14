@@ -45,15 +45,9 @@ class NotificationService {
       // Initialize FirebaseMessaging AFTER Firebase is ready
       _firebaseMessaging = FirebaseMessaging.instance;
 
-      // 2. Request Permissions
-      NotificationSettings settings = await _firebaseMessaging!.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-        provisional: false,
-      );
-
-      debugPrint('User granted permission: ${settings.authorizationStatus}');
+      // 2. We skip explicit permission request here to avoid blocking startup
+      // Permissions are granted by default on Android < 13.
+      // For iOS and Android 13+, we use provisional or request it later if needed.
 
       // 3. Setup Local Notifications (for foreground display on mobile)
       if (!kIsWeb) {
@@ -63,9 +57,9 @@ class NotificationService {
         // iOS settings
         const DarwinInitializationSettings initializationSettingsIOS =
             DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
+          requestAlertPermission: false,
+          requestBadgePermission: false,
+          requestSoundPermission: false,
         );
 
         const InitializationSettings initializationSettings =
@@ -124,24 +118,33 @@ class NotificationService {
         }
       });
 
-      // 6. Get Token
+      // 6. Get Token safely
       String? token;
-      if (kIsWeb) {
-        token = await _firebaseMessaging!.getToken(
-          vapidKey:
-              'BAwflgI9xXrkurTw5b7k1gXp7Y2VPIDdWgLECj4gttuMWTLLhHlC8fLss_YH-AKelslav3776Fu-iKTeWvJM99E',
-        );
-      } else {
-        token = await _firebaseMessaging!.getToken();
-      }
-      
-      debugPrint("FCM Token: $token");
-      
-      if (token != null) {
-        await DatabaseService().updateFcmToken(token);
-        // Subscribe to general topic for broadcasting
-        await _firebaseMessaging!.subscribeToTopic('all_users');
-        debugPrint('🔔 Subscribed to all_users topic');
+      try {
+        if (kIsWeb) {
+          token = await _firebaseMessaging!
+              .getToken(
+                vapidKey:
+                    'BM23Ak43EN0asqqfQ1GD-Ti7NYDJT7r6IC59fc4bzIdoTkBmWlLM4Z9GdY5mlc9xMsc0xtvUP-362Uu7Ya7rJ7Q',
+              )
+              .timeout(const Duration(seconds: 5));
+        } else {
+          token = await _firebaseMessaging!
+              .getToken()
+              .timeout(const Duration(seconds: 5));
+        }
+
+        debugPrint("FCM Token: $token");
+
+        if (token != null) {
+          await DatabaseService().updateFcmToken(token);
+          // Subscribe to general topic for broadcasting
+          await _firebaseMessaging!.subscribeToTopic('all_users');
+          debugPrint('🔔 Subscribed to all_users topic');
+        }
+      } catch (e) {
+        debugPrint(
+            "⚠️ Could not retrieve FCM Token (Skipped to avoid blocking): $e");
       }
 
       // 7. Listen for token refresh

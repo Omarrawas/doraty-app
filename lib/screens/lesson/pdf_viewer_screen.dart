@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
-import '../../core/services/encryption_service.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -56,19 +55,14 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
           throw Exception('Resource not found in Hive');
         }
 
-        decrypted = await EncryptionService().decryptBytes(encryptedData);
+        decrypted = encryptedData;
       } else {
         // Handle File storage (Native only)
         if (kIsWeb) throw Exception('File access not supported on Web');
         final file = File(widget.localPath!);
         if (!await file.exists()) throw Exception('File not found: ${widget.localPath}');
 
-        final length = await file.length();
-        if (length < 16) throw Exception('File is too small for encryption header');
-
-        final bytes = await EncryptionService()
-            .decryptRange(file, 0, length - 17);
-        decrypted = Uint8List.fromList(bytes);
+        decrypted = await file.readAsBytes();
       }
 
       // Quick check if it's a valid PDF (should start with %PDF-)

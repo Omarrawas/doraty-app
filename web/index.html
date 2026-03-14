@@ -118,7 +118,13 @@
       font-weight: 500;
     }
   </style>
-  <script src="assets/packages/flutter_tex/js/flutter_tex.js"></script>
+  <script src="assets/packages/flutter_tex/core/flutter_tex.js"></script>
+  <script src="assets/packages/flutter_tex/core/mathjax_core.js"></script>
+  <!--  PDF Web Support -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+  <script type="text/javascript">
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js";
+  </script>
 </head>
 <body>
   <div id="loading-container">

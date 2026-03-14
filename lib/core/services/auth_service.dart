@@ -200,23 +200,25 @@ class AuthService extends ChangeNotifier {
         return null;
       }
 
-      // Native Android & iOS — Google Sign In 7.x (Singleton pattern)
-      final googleSignIn = GoogleSignIn.instance;
-
-      debugPrint('🔄 Initializing Google Sign In...');
-      await googleSignIn.initialize(
+      // Native Android & iOS — Google Sign In 6.x
+      final GoogleSignIn googleSignIn = GoogleSignIn(
         clientId: PlatformUtils.isIOS ? Env.googleIosClientId : null,
         serverClientId: Env.googleWebClientId,
       );
 
       debugPrint('🔄 Requesting Google Sign In...');
-      final googleUser = await googleSignIn.authenticate();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        debugPrint('❌ Google Sign-In was canceled by the user.');
+        return null; // User canceled the sign-in flow
+      }
 
       debugPrint('✅ Google User obtained: ${googleUser.email}');
 
-      // في النسخة 7.x، .authentication هو sync getter وليس async
-      final googleAuth = googleUser.authentication;
-      final idToken = googleAuth.idToken;
+      // في النسخة 6.x، .authentication هو async
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
 
       if (idToken == null) {
         debugPrint('❌ Error: idToken is null');

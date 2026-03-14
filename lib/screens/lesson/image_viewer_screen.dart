@@ -2,7 +2,6 @@ import 'dart:io' show File;
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import '../../core/services/encryption_service.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../core/theme/app_colors.dart';
 
@@ -54,15 +53,14 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
         final encryptedData = await OfflineStorageService().getResource(lessonId, fileName);
         if (encryptedData == null) throw Exception('Resource not found in Hive');
         
-        decrypted = await EncryptionService().decryptBytes(encryptedData);
+        decrypted = encryptedData;
       } else {
         // Handle File storage
         if (kIsWeb) throw Exception('File access not supported on Web');
         final file = File(widget.localPath!);
         if (!await file.exists()) throw Exception('File not found');
         
-        final bytes = await EncryptionService().decryptRange(file, 0, await file.length() - 17);
-        decrypted = Uint8List.fromList(bytes);
+        decrypted = await file.readAsBytes();
       }
       
       setState(() {

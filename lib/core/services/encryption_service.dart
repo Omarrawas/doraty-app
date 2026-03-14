@@ -132,7 +132,7 @@ class EncryptionService {
 
     if (start < 0) start = 0;
     final raf = await encryptedFile.open();
-    raf.setPosition(0);
+    await raf.setPosition(0);
     List<int> ivBytes = await raf.read(16);
     final baseIV = enc.IV(Uint8List.fromList(ivBytes));
 

@@ -2704,8 +2704,8 @@ class DatabaseService {
                 'name': t['name'],
                 'full_name': t['name'], // Map for admin screen compatibility
                 'email': t['email'],
-                'photo_url':
-                    t['avatar_url'], // Map avatar_url to photo_url for UI
+                'avatar_url': t['avatar_url'], // الاسم الصحيح الذي يبحث عنه الـ UI
+                'photo_url': t['avatar_url'], // احتياطي للتوافق مع بقية الشاشات
                 'bio': t['bio'], // Include bio field
                 'full_name_en': t['full_name_en'],
                 'subjects': t['subjects'],

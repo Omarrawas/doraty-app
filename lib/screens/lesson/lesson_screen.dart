@@ -129,10 +129,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       });
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_t('starting_download'))),
-    );
-
     try {
       final localPath = await CourseDownloadService().downloadResource(
         url: url,
@@ -141,11 +137,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         fileName: fileName,
       );
       await _checkDownloadedResources();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_t('download_success_encrypted'))),
-        );
-      }
       return localPath;
     } catch (e) {
       if (mounted) {

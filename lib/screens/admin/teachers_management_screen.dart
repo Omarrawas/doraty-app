@@ -41,7 +41,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      final teachers = await _db.getAllTeachers();
+      final teachers = await _db.getAllTeachers(forceRefresh: true);
       final courses = await _db.getCourses();
 
       // Load teacher courses for each teacher
