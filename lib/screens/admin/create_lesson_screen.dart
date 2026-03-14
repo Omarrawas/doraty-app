@@ -246,16 +246,13 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                                 context))),
                                   ),
                                 ),
-                                Theme(
-                                  data: ThemeData.light(),
-                                  child: RichTextEditor(
-                                    initialHtml: _descriptionHtml,
-                                    height: 150,
-                                    onContentChanged: (html) {
-                                      _descriptionHtml = html;
-                                    },
-                                    placeholder: 'وصف مختصر عن محتوى الدرس...',
-                                  ),
+                                RichTextEditor(
+                                  initialHtml: _descriptionHtml,
+                                  height: 150,
+                                  onContentChanged: (html) {
+                                    _descriptionHtml = html;
+                                  },
+                                  placeholder: 'وصف مختصر عن محتوى الدرس...',
                                 ),
                               ],
                             ),
@@ -326,16 +323,13 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                                 context))),
                                   ),
                                 ),
-                                Theme(
-                                  data: ThemeData.light(),
-                                  child: RichTextEditor(
-                                    initialHtml: _contentHtml,
-                                    height: 250,
-                                    onContentChanged: (html) {
-                                      _contentHtml = html;
-                                    },
-                                    placeholder: 'شرح نصي، أمثلة، تمارين...',
-                                  ),
+                                RichTextEditor(
+                                  initialHtml: _contentHtml,
+                                  height: 250,
+                                  onContentChanged: (html) {
+                                    _contentHtml = html;
+                                  },
+                                  placeholder: 'شرح نصي، أمثلة، تمارين...',
                                 ),
                               ],
                             ),
@@ -630,7 +624,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            'يجب تعيين GITHUB_TOKEN في ملف .env',
+                            'يجب تعيين DORATY_GITHUB_TOKEN في ملف .env',
                             style: TextStyle(
                                 fontSize: 12, color: Colors.orangeAccent),
                           ),

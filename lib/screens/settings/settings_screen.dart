@@ -19,6 +19,7 @@ import '../../core/constants/app_strings.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/utils/error_utils.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -38,6 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   String? _currentAvatarUrl;
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
+  String _appVersion = '';
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -47,6 +49,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     super.initState();
     _loadSettings();
     _loadUserProfile();
+    _loadAppVersion();
+  }
+
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
+    });
   }
 
   void _loadSettings() {
@@ -248,7 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     _buildSettingCard(
                       icon: Icons.info_outline,
                       title: _t('version'),
-                      subtitle: '1.0.2+4',
+                      subtitle: _appVersion.isNotEmpty ? _appVersion : '...',
                     ),
 
                     _buildSettingCard(

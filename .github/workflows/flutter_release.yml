@@ -10,6 +10,7 @@ permissions:
 
 env:
   APP_NAME: Doraty
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 # ================= ANDROID BUILD =================
 
@@ -34,6 +35,23 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Create .env file
+        shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          DORATY_GITHUB_TOKEN: ${{ secrets.DORATY_GITHUB_TOKEN }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+        run: |
+          echo "SUPABASE_URL=$SUPABASE_URL" > .env
+          echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> .env
+          echo "DORATY_GITHUB_TOKEN=$DORATY_GITHUB_TOKEN" >> .env
+          echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env
+          # Add other env vars if needed
+
+      - name: Run build_runner
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
       - name: Decode Keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -55,6 +73,21 @@ jobs:
       - name: Build AAB
         run: flutter build appbundle --release
 
+      - name: Prepare Release Notes
+        shell: bash
+        run: |
+          mkdir -p distribution/whatsnew
+          if [ -f "whatsnew_ar.txt" ]; then
+            cp whatsnew_ar.txt distribution/whatsnew/whatsnew-ar-SA
+          else
+            echo "تحسينات عامة وإصلاح بعض الأخطاء لضمان تجربة أفضل." > distribution/whatsnew/whatsnew-ar-SA
+          fi
+          if [ -f "whatsnew_en.txt" ]; then
+            cp whatsnew_en.txt distribution/whatsnew/whatsnew-en-US
+          else
+            echo "General improvements and bug fixes for a better experience." > distribution/whatsnew/whatsnew-en-US
+          fi
+
       - name: Deploy to Google Play (Internal)
         uses: r0adkll/upload-google-play@v1
         with:
@@ -64,6 +97,7 @@ jobs:
           track: alpha
           status: completed
           changesNotSentForReview: false
+          whatsNewDirectory: distribution/whatsnew
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v2
         with:
@@ -73,7 +107,7 @@ jobs:
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DORATY_GITHUB_TOKEN }}
 
 # ================= WINDOWS BUILD =================
 
@@ -92,6 +126,22 @@ jobs:
       - run: flutter config --enable-windows-desktop
       - run: flutter pub get
 
+      - name: Create .env file
+        shell: bash
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          DORATY_GITHUB_TOKEN: ${{ secrets.DORATY_GITHUB_TOKEN }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+        run: |
+          echo "SUPABASE_URL=$SUPABASE_URL" > .env
+          echo "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" >> .env
+          echo "DORATY_GITHUB_TOKEN=$DORATY_GITHUB_TOKEN" >> .env
+          echo "ENCRYPTION_KEY=$ENCRYPTION_KEY" >> .env
+
+      - name: Run build_runner
+        run: flutter pub run build_runner build --delete-conflicting-outputs
+
       - name: Build Windows
         run: flutter build windows --release
 
@@ -104,7 +154,7 @@ jobs:
           tag_name: v${{ github.run_number }}
           files: Doraty-Windows.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.DORATY_GITHUB_TOKEN }}
 
       # Telegram Notification
       - name: Send Telegram Notification
@@ -113,15 +163,22 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          MSG="🚀 New Doraty Release ${{ github.run_number }}
-
-          Android APK:
+          NOTES=$(cat whatsnew_ar.txt 2>/dev/null || echo "تحسينات عامة وإصلاح أخطاء")
+          MSG="🚀 إصدار جديد من تطبيق درتي (رقم ${{ github.run_number }})
+          
+          📝 ما الجديد:
+          $NOTES
+          
+          ----------------------------------
+          🔗 روابط التحميل:
+          
+          🤖 Android APK:
           https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-release.apk
-
-          Play Store AAB:
+          
+          📦 Play Store AAB:
           https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/app-release.aab
-
-          Windows:
+          
+          💻 Windows:
           https://github.com/${{ github.repository }}/releases/download/v${{ github.run_number }}/Doraty-Windows.zip
           "
 

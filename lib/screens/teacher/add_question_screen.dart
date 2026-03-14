@@ -127,17 +127,14 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                                           color:
                                               AppColors.getTextColor(context))),
                                 ),
-                                Theme(
-                                  data: ThemeData.light(),
-                                  child: RichTextEditor(
-                                    initialHtml: _questionHtml,
-                                    height: 200,
-                                    textColor: Colors.black,
-                                    onContentChanged: (html) {
-                                      _questionHtml = html;
-                                    },
-                                    placeholder: 'اكتب السؤال هنا...',
-                                  ),
+                                RichTextEditor(
+                                  initialHtml: _questionHtml,
+                                  height: 200,
+                                  textColor: Colors.black,
+                                  onContentChanged: (html) {
+                                    _questionHtml = html;
+                                  },
+                                  placeholder: 'اكتب السؤال هنا...',
                                 ),
                                 const SizedBox(height: 16),
                               ],
@@ -185,18 +182,15 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                                                 context))),
                                   ),
                                 ),
-                                Theme(
-                                  data: ThemeData.light(),
-                                  child: RichTextEditor(
-                                    initialHtml: _explanationHtml,
-                                    height: 120,
-                                    isCompact: true,
-                                    textColor: Colors.black,
-                                    onContentChanged: (html) {
-                                      _explanationHtml = html;
-                                    },
-                                    placeholder: 'شرح الإجابة الصحيحة...',
-                                  ),
+                                RichTextEditor(
+                                  initialHtml: _explanationHtml,
+                                  height: 120,
+                                  isCompact: true,
+                                  textColor: Colors.black,
+                                  onContentChanged: (html) {
+                                    _explanationHtml = html;
+                                  },
+                                  placeholder: 'شرح الإجابة الصحيحة...',
                                 ),
                               ],
                             ),
@@ -540,18 +534,15 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                   activeColor: Colors.green,
                 ),
                 Expanded(
-                  child: Theme(
-                    data: ThemeData.light(),
-                    child: RichTextEditor(
-                      initialHtml: optionHtml,
-                      height: 40,
-                      isCompact: true,
-                      textColor: Colors.black,
-                      onContentChanged: (html) {
-                        _optionHtmls[index] = html;
-                      },
-                      placeholder: 'الخيار ${index + 1}',
-                    ),
+                  child: RichTextEditor(
+                    initialHtml: optionHtml,
+                    height: 40,
+                    isCompact: true,
+                    textColor: Colors.black,
+                    onContentChanged: (html) {
+                      _optionHtmls[index] = html;
+                    },
+                    placeholder: 'الخيار ${index + 1}',
                   ),
                 ),
                 IconButton(

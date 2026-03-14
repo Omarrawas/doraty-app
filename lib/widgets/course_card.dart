@@ -206,103 +206,96 @@ class _CourseCardState extends State<CourseCard>
                       ),
 
                       const SizedBox(height: 12),
-                      // Course Image (Now at the bottom)
+                      // Course Image with overlay button at the bottom
                       Center(
                         child: Hero(
                           tag: widget.heroTag ??
                               'course_image_${widget.course.id}',
                           child: AspectRatio(
-                            aspectRatio:
-                                1.2, // Slightly taller for more presence
+                            aspectRatio: 1.2,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(16),
-                              child: widget.course.imageUrl != null &&
-                                      widget.course.imageUrl!.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: widget.course.imageUrl!,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(
-                                        color: Colors.white10,
-                                        child: const Center(
-                                            child: CircularProgressIndicator(
-                                                strokeWidth: 2)),
-                                      ),
-                                      errorWidget: (context, url, error) =>
-                                          Container(
-                                        color: Colors.white10,
-                                        child: const Icon(
-                                            Icons.image_not_supported,
-                                            color: Colors.white30),
-                                      ),
-                                    )
-                                  : Container(
-                                      color: Colors.white10,
-                                      child: const Icon(
-                                          Icons.image_not_supported,
-                                          color: Colors.white30),
-                                    ),
-                            ),
-                          ),
-                        ),
-                      ),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  // --- Course Image ---
+                                  widget.course.imageUrl != null &&
+                                          widget.course.imageUrl!.isNotEmpty
+                                      ? CachedNetworkImage(
+                                          imageUrl: widget.course.imageUrl!,
+                                          fit: BoxFit.cover,
+                                          placeholder: (context, url) =>
+                                              Container(
+                                            color: Colors.white10,
+                                            child: const Center(
+                                                child:
+                                                    CircularProgressIndicator(
+                                                        strokeWidth: 2)),
+                                          ),
+                                          errorWidget:
+                                              (context, url, error) =>
+                                                  Container(
+                                            color: Colors.white10,
+                                            child: const Icon(
+                                                Icons.image_not_supported,
+                                                color: Colors.white30),
+                                          ),
+                                        )
+                                      : Container(
+                                          color: Colors.white10,
+                                          child: const Icon(
+                                              Icons.image_not_supported,
+                                              color: Colors.white30),
+                                        ),
 
-                      if (widget.showEnrollButton) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      AppColors.primaryPurple.withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CourseDetailsScreen(
-                                        course: widget.course,
-                                        heroTag: widget.heroTag,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const Icon(Icons.visibility_outlined,
-                                          color: Colors.white, size: 16),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        AppStrings.get('view_details', locale),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
+                                  // --- Overlay Button (shown only when showEnrollButton is true) ---
+                                  if (widget.showEnrollButton)
+                                    Positioned(
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 0,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.bottomCenter,
+                                            end: Alignment.topCenter,
+                                            colors: [
+                                              Colors.black.withOpacity(0.85),
+                                              Colors.transparent,
+                                            ],
+                                          ),
+                                        ),
+                                        padding: const EdgeInsets.fromLTRB(
+                                            12, 24, 12, 10),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            const Icon(
+                                                Icons.visibility_outlined,
+                                                color: Colors.white,
+                                                size: 14),
+                                            const SizedBox(width: 6),
+                                            Text(
+                                              AppStrings.get(
+                                                  'view_details', locale),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w700,
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ),
+                                    ),
+                                ],
                               ),
                             ),
                           ),
                         ),
-                      ],
+                      ),
                     ],
                   ),
                 ),

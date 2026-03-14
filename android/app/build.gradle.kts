@@ -88,4 +88,6 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
     // Required when using core library desugaring
     implementation("androidx.multidex:multidex:2.0.1")
+    // Added for Android 15 Edge-to-Edge support
+    implementation("androidx.activity:activity-ktx:1.10.0")
 }

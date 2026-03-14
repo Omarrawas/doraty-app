@@ -116,6 +116,10 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isFullScreen = widget.isYoutube
+        ? (widget.youtubeController?.value.isFullScreen ?? false)
+        : false; // For VideoPlayer, it's usually managed by the parent or orientation
+
     return GestureDetector(
       onTap: _toggleVisibility,
       onDoubleTapDown: (details) {
@@ -135,78 +139,128 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
             AnimatedOpacity(
               opacity: _isVisible ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 300),
-              child: Container(color: Colors.black26),
+              child: Container(color: Colors.black45),
             ),
 
-            if (_isVisible) ...[
-              // Top Bar
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.black54, Colors.transparent],
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(_isLocked ? Icons.lock : Icons.lock_open, color: Colors.white),
-                        onPressed: () {
-                          setState(() {
-                            _isLocked = !_isLocked;
-                            if (!_isLocked) _startHideTimer();
-                          });
-                        },
+            if (_isVisible)
+              SafeArea(
+                child: Stack(
+                  children: [
+                    // Top Bar
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.black54, Colors.transparent],
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: Icon(_isLocked ? Icons.lock : Icons.lock_open,
+                                  color: Colors.white),
+                              onPressed: () {
+                                setState(() {
+                                  _isLocked = !_isLocked;
+                                  if (!_isLocked) _startHideTimer();
+                                });
+                              },
+                            ),
+                            if (!_isLocked) ...[
+                              const Spacer(),
+                              _buildDownloadButton(),
+                              _buildSpeedButton(),
+                            ],
+                          ],
+                        ),
                       ),
-                      const Spacer(),
-                      _buildDownloadButton(),
-                      _buildSpeedButton(),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Center Controls
-              if (!_isLocked)
-                Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildControlButton(Icons.replay_10, () => _seekRelative(-10)),
-                      const SizedBox(width: 40),
-                      _buildPlayPauseButton(),
-                      const SizedBox(width: 40),
-                      _buildControlButton(Icons.forward_10, () => _seekRelative(10)),
-                    ],
-                  ),
-                ),
-
-              // Bottom Progress Bar (Custom)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [Colors.black54, Colors.transparent],
                     ),
-                  ),
-                  child: _buildProgressBar(),
+
+                    // Center Controls
+                    if (!_isLocked)
+                      Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildControlButton(
+                                Icons.replay_10, () => _seekRelative(-10)),
+                            const SizedBox(width: 40),
+                            _buildPlayPauseButton(),
+                            const SizedBox(width: 40),
+                            _buildControlButton(
+                                Icons.forward_10, () => _seekRelative(10)),
+                          ],
+                        ),
+                      ),
+
+                    // Bottom Progress Bar
+                    Positioned(
+                      bottom: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [Colors.black54, Colors.transparent],
+                          ),
+                        ),
+                        child: _buildControlBar(isFullScreen),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildControlBar(bool isFullScreen) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: widget.isYoutube
+                ? (widget.youtubeController != null
+                    ? ProgressBar(
+                        controller: widget.youtubeController!,
+                        colors: const ProgressBarColors(
+                          playedColor: AppColors.primaryPurple,
+                          handleColor: AppColors.primaryPurple,
+                        ),
+                      )
+                    : const SizedBox.shrink())
+                : (widget.videoController != null
+                    ? VideoProgressIndicator(widget.videoController!,
+                        allowScrubbing: true,
+                        colors: const VideoProgressColors(
+                          playedColor: AppColors.primaryPurple,
+                        ))
+                    : const SizedBox.shrink()),
+          ),
+          if (widget.onToggleFullScreen != null)
+            IconButton(
+              icon: Icon(
+                isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                widget.onToggleFullScreen!();
+                _startHideTimer();
+              },
+            ),
+        ],
       ),
     );
   }
@@ -468,40 +522,6 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
             const SizedBox(height: 20),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildProgressBar() {
-    // Note: Simple implementation, usually requires a stateful sync with player
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Expanded(
-            child: widget.isYoutube 
-                ? (widget.youtubeController != null
-                    ? ProgressBar(
-                        controller: widget.youtubeController!,
-                        colors: const ProgressBarColors(
-                          playedColor: AppColors.primaryPurple,
-                          handleColor: AppColors.primaryPurple,
-                        ))
-                    : const SizedBox.shrink())
-                : (widget.videoController != null
-                    ? VideoProgressIndicator(widget.videoController!,
-                        allowScrubbing: true,
-                        colors: const VideoProgressColors(
-                          playedColor: AppColors.primaryPurple,
-                        ))
-                    : const SizedBox.shrink()),
-          ),
-          if (widget.onToggleFullScreen != null)
-            IconButton(
-              icon: const Icon(Icons.fullscreen, color: Colors.white),
-              onPressed: widget.onToggleFullScreen,
-            ),
-        ],
       ),
     );
   }

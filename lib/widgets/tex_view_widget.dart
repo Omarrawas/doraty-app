@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_tex/flutter_tex.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 class TexViewWidget extends StatelessWidget {
   final String content;
@@ -16,19 +16,18 @@ class TexViewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Check if content likely contains LaTeX or similar equation markers
-    // Also check for HTML tags to ensure they are rendered correctly
-    bool hasLatex = content.contains(r'$') ||
-        content.contains(r'\(') ||
-        content.contains(r'\[') ||
-        content.contains(r'\') ||
-        content.contains(r'^') ||
-        content.contains(r'_') ||
-        (content.contains(r'{') && content.contains(r'}'));
+    // 1. اكتشاف نوع المحتوى
+    // LaTeX markers check
+    bool hasLatex = content.contains(r'$$') || 
+                   content.contains(r'\\(') || 
+                   content.contains(r'\\[') ||
+                   (content.contains(r'\\') && (content.contains(r'frac') || content.contains(r'sqrt') || content.contains(r'alpha')));
     
     bool hasHtml = content.contains('<') && content.contains('>');
 
-    // If no latex markers and no HTML, just render text for performance
+    // 2. اختيار الويدجت الأنسب
+    
+    // الحالة الأولى: نص عادي بدون أي أكواد
     if (!hasLatex && !hasHtml) {
       return Text(
         content,
@@ -37,11 +36,22 @@ class TexViewWidget extends StatelessWidget {
       );
     }
 
-    // Force TeX mode for commands by wrapping in $$ if not already wrapped
-    // This is a heuristic: if we have math markers but no obvious delimiters, wrap it.
+    // الحالة الثانية: يحتوي على HTML (مثل النصوص القادمة من Word) ولا يحتاج معادلات معقدة
+    if (hasHtml && !hasLatex) {
+      return HtmlWidget(
+        content,
+        textStyle: style?.copyWith(
+          fontFamily: 'Cairo', // دعم العربية
+          height: 1.5,
+        ) ?? const TextStyle(color: Colors.white, fontSize: 16),
+        renderMode: RenderMode.column,
+      );
+    }
+
+    // الحالة الثالثة: معادلات رياضية (استخدام TeXView)
     String processedContent = content;
-    bool alreadyDelimited = content.contains(r'$') || content.contains(r'\(') || content.contains(r'\[');
-    if (!alreadyDelimited && (content.contains(r'\') || content.contains(r'^') || content.contains(r'_'))) {
+    bool alreadyDelimited = content.contains(r'$') || content.contains(r'\\(') || content.contains(r'\\[');
+    if (!alreadyDelimited && (content.contains(r'\\') || content.contains(r'^') || content.contains(r'_'))) {
        processedContent = r'$$' + content + r'$$';
     }
 
@@ -49,9 +59,9 @@ class TexViewWidget extends StatelessWidget {
       child: TeXViewDocument(
         processedContent,
         style: TeXViewStyle(
-          contentColor: style?.color ?? Colors.black,
+          contentColor: style?.color ?? Colors.white,
           fontStyle: TeXViewFontStyle(
-            fontSize: style?.fontSize?.toInt() ?? 16,
+            fontSize: (style?.fontSize ?? 16).toInt(),
             fontWeight: style?.fontWeight == FontWeight.bold
                 ? TeXViewFontWeight.bold
                 : TeXViewFontWeight.normal,

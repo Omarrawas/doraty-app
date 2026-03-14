@@ -1,0 +1,6 @@
+Major video player and UX update:
+- Full support for vertical videos (Reels/Shorts) with intelligent auto-rotation.
+- Support for new video platforms including Vimeo, Dailymotion, Facebook, and Instagram.
+- Advanced Network Stream support (HLS & DASH) for high-stability playback.
+- Fixed video controls visibility in full-screen mode.
+- General UI improvements and performance optimizations.

@@ -35,7 +35,7 @@ abstract class Env {
   static const String googleAndroidClientId = _Env.googleAndroidClientId;
 
   @EnviedField(
-      varName: 'GITHUB_TOKEN',
+      varName: 'DORATY_GITHUB_TOKEN',
       defaultValue: '')
   static const String githubToken = _Env.githubToken;
 }

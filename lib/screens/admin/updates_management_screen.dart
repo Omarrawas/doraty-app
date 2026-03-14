@@ -5,6 +5,7 @@ import '../../core/services/database_service.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class UpdatesManagementScreen extends StatefulWidget {
   const UpdatesManagementScreen({super.key});
@@ -22,6 +23,20 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
   final _notesController = TextEditingController();
   bool _isMandatory = false;
   bool _isSubmitting = false;
+  String _currentVersion = '1.0.0';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentVersion();
+  }
+
+  Future<void> _loadCurrentVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _currentVersion = packageInfo.version;
+    });
+  }
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -76,7 +91,7 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
                         _buildTextField(
                           controller: _versionController,
                           label: _t('version_name'),
-                          hint: '1.0.5',
+                          hint: _currentVersion,
                           icon: Icons.numbers,
                           validator: (v) => v!.isEmpty ? 'مطلوب' : null,
                         ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -407,15 +408,14 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     if (_isOffline) {
       _isYoutube = false;
       
-      // If it's a localhost URL from LocalServerService, or a local file path
       if (_videoUrl.startsWith('http')) {
-        _videoPlayerController =
-            VideoPlayerController.networkUrl(Uri.parse(_videoUrl));
+        _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(_videoUrl));
       } else {
         _videoPlayerController = VideoPlayerController.file(File(_videoUrl));
       }
 
       _videoPlayerController!.initialize().then((_) {
+        if (!mounted) return;
         setState(() {
           _chewieController = ChewieController(
             videoPlayerController: _videoPlayerController!,
@@ -424,11 +424,20 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             aspectRatio: _videoPlayerController!.value.aspectRatio,
             errorBuilder: (context, errorMessage) {
               return Center(
-                  child: Text(errorMessage,
-                      style: const TextStyle(color: Colors.white)));
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    'خطأ في تشغيل الملف المحلي: $errorMessage',
+                    style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              );
             },
           );
         });
+      }).catchError((error) {
+        debugPrint('Error initializing local video: $error');
       });
       return;
     }
@@ -437,7 +446,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     if (url.contains('youtu.be') || url.contains('youtube.com')) {
       _isYoutube = true;
       if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
-        return; // Skip YouTube controller init on Web/Windows to avoid crashes or freezes
+        return; 
       }
 
       final videoId = YoutubePlayer.convertUrlToId(url);
@@ -456,23 +465,55 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           ),
         );
       }
-    } else {
+    } 
+    // Handle Direct Network Stream (MX Player Style: HLS, DASH, MP4)
+    else {
       _isYoutube = false;
-      _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(url));
+      _videoPlayerController = VideoPlayerController.networkUrl(
+        Uri.parse(url),
+        // For HLS/DASH, video_player's ExoPlayer handles it automatically on Android
+      );
+
       _videoPlayerController!.initialize().then((_) {
+        if (!mounted) return;
         setState(() {
           _chewieController = ChewieController(
             videoPlayerController: _videoPlayerController!,
             autoPlay: false,
             looping: false,
             aspectRatio: _videoPlayerController!.value.aspectRatio,
+            placeholder: Container(
+              color: Colors.black,
+              child: const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple)),
+            ),
             errorBuilder: (context, errorMessage) {
               return Center(
-                  child: Text(errorMessage,
-                      style: const TextStyle(color: Colors.white)));
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.red, size: 40),
+                      const SizedBox(height: 10),
+                      Text(
+                        'فشل تحميل البث المباشر. تأكد من صحة الرابط أو جودة الإنترنت.',
+                        style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
             },
           );
         });
+      }).catchError((error) {
+        debugPrint('Error initializing network stream: $error');
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+             SnackBar(content: Text('خطأ في الاتصال بالبث: $error')),
+           );
+        }
       });
     }
   }
@@ -564,6 +605,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             context,
             videoPlayer: _buildVideoWithOverlay(
               player: player,
+              onToggleFullScreen: () => _handleToggleFullScreen(),
             ),
           );
         },
@@ -575,11 +617,61 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       context,
       videoPlayer: _buildVideoWithOverlay(
         player: playerWidget,
+        onToggleFullScreen: () => _handleToggleFullScreen(),
       ),
     );
   }
 
-  Widget _buildVideoWithOverlay({required Widget player}) {
+  void _handleToggleFullScreen() {
+    final bool isCurrentlyFullScreen = _isYoutube 
+        ? (_youtubePlayerController?.value.isFullScreen ?? false)
+        : (_chewieController?.isFullScreen ?? false);
+
+    double aspectRatio = 16 / 9;
+    if (_isYoutube) {
+      // YouTube metadata might not be ready, default to 16/9 or try to get it
+      aspectRatio = 16 / 9; 
+    } else if (_videoPlayerController != null && _videoPlayerController!.value.isInitialized) {
+      aspectRatio = _videoPlayerController!.value.aspectRatio;
+    }
+
+    if (isCurrentlyFullScreen) {
+      // Exit Full Screen
+      if (_isYoutube) {
+        _youtubePlayerController?.toggleFullScreenMode();
+      } else {
+        _chewieController?.exitFullScreen();
+      }
+      // Reset orientation
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+    } else {
+      // Enter Full Screen
+      // If video is vertical (aspect ratio < 1), lock to portrait
+      if (aspectRatio < 1.0) {
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+        ]);
+      } else {
+        // If video is landscape, lock to landscape
+        SystemChrome.setPreferredOrientations([
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      }
+
+      if (_isYoutube) {
+        _youtubePlayerController?.toggleFullScreenMode();
+      } else {
+        _chewieController?.enterFullScreen();
+      }
+    }
+  }
+
+  Widget _buildVideoWithOverlay(
+      {required Widget player, VoidCallback? onToggleFullScreen}) {
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -590,6 +682,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           videoController: _videoPlayerController,
           lesson: widget.lesson,
           courseTitle: widget.courseTitle,
+          onToggleFullScreen: onToggleFullScreen,
         ),
       ],
     );
@@ -803,19 +896,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           ),
         ),
         bottomNavigationBar: _buildNavigationButtons(),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(_t('ai_assistant_coming_soon'),
-                    textAlign: TextAlign.right),
-                backgroundColor: AppColors.primaryPurple,
-              ),
-            );
-          },
-          backgroundColor: AppColors.primaryPurple,
-          child: const Icon(Icons.auto_awesome, color: Colors.white),
-        ),
+
       ),
     );
   }
@@ -1073,23 +1154,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           const SizedBox(height: 20),
         ],
 
-        // AI Flashcards Section (Placeholder)
-        _buildInteractiveCard(
-          title: _t('flashcards_tab'),
-          description: _t('ai_assistant_coming_soon'),
-          icon: Icons.style_outlined,
-          buttonLabel: _t('discussions_coming_soon'),
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(_t('ai_assistant_coming_soon'),
-                    textAlign: TextAlign.right),
-                backgroundColor: AppColors.primaryPurple,
-              ),
-            );
-          },
-          isAIGenerated: true,
-        ),
+
 
         if (!_hasInteractiveContent())
           Center(

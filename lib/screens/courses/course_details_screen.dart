@@ -24,7 +24,7 @@ import '../../core/utils/error_utils.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
-import 'widgets/discussions_tab.dart';
+
 
 
 class CourseDetailsScreen extends StatefulWidget {
@@ -90,7 +90,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         StringUtils.cleanTeacherName(widget.course.instructorName);
     _currentRating = widget.course.rating;
     _reviewsCount = 0; // Will be updated by _loadReviews
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _selectedTabIndex = _tabController.index;
@@ -1060,7 +1060,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 Tab(text: _t('lessons')),
                 Tab(text: _t('about')),
                 Tab(text: _t('reviews')),
-                Tab(text: _t('discussions')),
               ],
             ),
           ),
@@ -1077,8 +1076,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         return _buildOverviewTab();
       case 2:
         return _buildReviewsTab();
-      case 3:
-        return DiscussionsTab(courseId: widget.course.id);
       default:
         return const SizedBox();
     }

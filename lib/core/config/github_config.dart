@@ -11,7 +11,7 @@ class GitHubConfig {
   static String get token {
     try {
       // Load from .env file
-      return dotenv.env['GITHUB_TOKEN'] ?? '';
+      return dotenv.env['DORATY_GITHUB_TOKEN'] ?? '';
     } catch (e) {
       return '';
     }
