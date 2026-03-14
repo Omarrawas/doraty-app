@@ -1,9 +1,7 @@
 import 'quiz_question.dart';
-import 'flashcard.dart';
 
 enum InteractiveElementType {
   quiz,
-  flashcard,
   exercise,
   simulation,
 }
@@ -47,8 +45,6 @@ class InteractiveElement {
     switch (type) {
       case 'quiz':
         return InteractiveElementType.quiz;
-      case 'flashcard':
-        return InteractiveElementType.flashcard;
       case 'exercise':
         return InteractiveElementType.exercise;
       case 'simulation':
@@ -63,11 +59,5 @@ class InteractiveElement {
     if (type != InteractiveElementType.quiz) return [];
     final questions = data['questions'] as List<dynamic>? ?? [];
     return questions.map((q) => QuizQuestion.fromJson(q)).toList();
-  }
-
-  List<Flashcard> get flashcards {
-    if (type != InteractiveElementType.flashcard) return [];
-    final cards = data['cards'] as List<dynamic>? ?? [];
-    return cards.map((c) => Flashcard.fromJson(c)).toList();
   }
 }

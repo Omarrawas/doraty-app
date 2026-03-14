@@ -186,23 +186,12 @@ class AppStrings {
       'edit_note': 'تعديل الملاحظة',
       'no_video_available': 'لا يوجد فيديو لهذا الدرس',
       'no_interactive_content': 'لا يوجد محتوى تفاعلي مخصص لهذا الدرس',
-      'flashcards_tab': 'بطاقات الاستذكار',
-      'generate_flashcards': 'إنشاء بطاقات ذكية بالذكاء الاصطناعي',
-      'review_flashcards': 'مراجعة البطاقات التعليمية',
-      'flashcards_desc':
-          'بطاقات استذكار ذكية تعتمد على محتوى الدرس لمساعدتك في الحفظ والمراجعة باستخدام نظام التكرار المتباعد.',
-      'generating_flashcards':
-          'جاري إنشاء البطاقات باستخدام الذكاء الاصطناعي...',
-      'flashcards_generated_success':
-          'تم إنشاء البطاقات بنجاح! يمكنك الآن البدء في المراجعة.',
       'recent_exam_attempts': 'أحدث محاولات الطلاب',
       'no_recent_attempts': 'لا توجد محاولات حديثة',
       'must_subscribe': 'يجب الاشتراك في المادة لمشاهدة هذا الدرس',
       'no_exam_at_all': 'لا يوجد اختبار لهذا الدرس. الانتقال للدرس التالي...',
       'must_take_exam': 'يجب اجتياز اختبار هذا الدرس أولاً',
       'start_exam': 'بدء الاختبار',
-      'discussions': 'المناقشات',
-      'discussions_coming_soon': 'ستتاح الميزة في تحديث قادم',
       'ai_assistant': 'المساعد الذكي',
       'ai_assistant_coming_soon': 'ستتاح ميزة الذكاء الاصطناعي في تحديث قادم',
       'ai_features_notice':
@@ -414,22 +403,12 @@ class AppStrings {
       'edit_note': 'Edit Note',
       'no_video_available': 'No video available for this lesson',
       'no_interactive_content': 'No interactive content for this lesson',
-      'flashcards_tab': 'Flashcards',
-      'generate_flashcards': 'Generate AI Flashcards',
-      'review_flashcards': 'Review Flashcards',
-      'flashcards_desc':
-          'Smart flashcards based on lesson content to help you memorize and review using spaced repetition.',
-      'generating_flashcards': 'Generating flashcards using AI...',
-      'flashcards_generated_success':
-          'Flashcards generated successfully! You can now start reviewing.',
       'recent_exam_attempts': 'Recent Student Attempts',
       'no_recent_attempts': 'No recent attempts',
       'must_subscribe': 'You must subscribe to the course to watch this lesson',
       'no_exam_at_all': 'No exam for this lesson. Moving to next...',
       'must_take_exam': 'You must pass the exam for this lesson first',
       'start_exam': 'Start Exam',
-      'discussions': 'Discussions',
-      'discussions_coming_soon': 'Feature available in a future update',
       'ai_assistant': 'AI Assistant',
       'ai_assistant_coming_soon':
           'AI features will be available in a future update',

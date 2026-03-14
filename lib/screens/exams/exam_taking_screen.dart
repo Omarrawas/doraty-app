@@ -26,12 +26,13 @@ class ExamTakingScreen extends StatefulWidget {
 class _ExamTakingScreenState extends State<ExamTakingScreen> {
   int _currentQuestionIndex = 0;
   final Map<int, int> _answers = {};
-  late Timer _timer;
+  Timer? _timer;
   late int _remainingSeconds;
   bool _isSubmitting = false;
   final DatabaseService _db = DatabaseService.instance;
   String? _attemptId;
   bool _isLoading = true;
+  bool _isMuted = true; // Default to muted as per user request
 
   // Sound Players
   final AudioPlayer _tickPlayer = AudioPlayer();
@@ -135,6 +136,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
 
 
   void _startTimer() {
+    _timer?.cancel(); // Cancel any existing timer just in case
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
@@ -151,6 +153,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   }
 
   void _playTick() async {
+    if (_isMuted) return; // Don't play if muted
     try {
       // For frequent sounds, seek(0) and resume is faster
       if (_tickPlayer.state == PlayerState.playing) {
@@ -164,6 +167,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   }
 
   void _playSound(String fileName) async {
+    if (_isMuted) return; // Don't play if muted
     try {
       debugPrint('📣 Attempting to play: $fileName');
       // Use feedback player for short sounds
@@ -176,8 +180,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
+    _tickPlayer.stop();
     _tickPlayer.dispose();
+    _feedbackPlayer.stop();
     _feedbackPlayer.dispose();
     super.dispose();
   }
@@ -189,7 +195,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       _isSubmitting = true;
     });
 
-    _timer.cancel();
+    _timer?.cancel();
     _tickPlayer.stop();
 
     // Show loading indicator
@@ -491,7 +497,56 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                 ),
               ),
 
-              const Spacer(),
+              // Mute/Unmute Toggle
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Icon(
+                            _isMuted ? Icons.volume_mute : Icons.volume_up,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          if (_isMuted)
+                            Transform.rotate(
+                              angle: -0.5,
+                              child: Container(
+                                width: 20,
+                                height: 2,
+                                color: Colors.red,
+                              ),
+                            ),
+                        ],
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isMuted = !_isMuted;
+                        });
+                        // If unmuted, play a feedback sound
+                        if (!_isMuted) {
+                          _playSound('select.mp3');
+                        }
+                      },
+                      tooltip: _isMuted ? 'تشغيل الصوت' : 'كتم الصوت',
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 8),
 
               // Submit Button
               ClipRRect(

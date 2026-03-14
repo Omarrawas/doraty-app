@@ -11,7 +11,6 @@ import '../../models/lesson.dart';
 import '../../models/interactive_element.dart';
 import '../../core/services/database_service.dart';
 import '../../widgets/lesson/rich_content_viewer.dart';
-import '../../widgets/lesson/flashcard_widget.dart';
 import '../lesson/pdf_viewer_screen.dart';
 import '../lesson/interactive_quiz_screen.dart';
 import '../../models/download.dart'; // Add import
@@ -1272,17 +1271,11 @@ class _LessonViewScreenState extends State<LessonViewScreen>
         ),
         const SizedBox(height: 16),
         ...interactiveApps.map((element) {
-          Widget widget;
+          Widget interactiveWidget;
           switch (element.type) {
-            case InteractiveElementType.flashcard:
-              widget = FlashcardWidget(
-                flashcards: element.flashcards,
-                title: element.title,
-              );
-              break;
-            // Add other types here as needed (e.g. simulation)
+            // Add other specific types here as needed (e.g. simulation)
             default:
-              widget = Container(
+              interactiveWidget = Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.1),
@@ -1316,7 +1309,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
           return Padding(
             padding: const EdgeInsets.only(bottom: 20),
-            child: widget,
+            child: interactiveWidget,
           );
         }),
       ],

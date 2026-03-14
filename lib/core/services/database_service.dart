@@ -941,33 +941,6 @@ class DatabaseService {
     }
   }
 
-  // ==================== FORUMS ====================
-
-  /// Get all forums
-  Future<List<Map<String, dynamic>>> getForums() async {
-    try {
-      final response = await _client.from('forums').select();
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Get forum posts
-  Future<List<Map<String, dynamic>>> getForumPosts(String forumId) async {
-    try {
-      final response = await _client
-          .from('forum_posts')
-          .select('*, users(full_name, avatar_url)')
-          .eq('forum_id', forumId)
-          .order('created_at', ascending: false);
-
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
   // ==================== NOTIFICATIONS ====================
   
   /// Update FCM Token for user
@@ -1215,65 +1188,6 @@ class DatabaseService {
       }).eq('id', courseId);
     } catch (e) {
       debugPrint('Error updating course rating: $e');
-    }
-  }
-
-  // ==================== FORUM POSTS ====================
-
-  /// Create a forum post
-  Future<void> createForumPost({
-    required String title,
-    required String content,
-    required String courseId,
-    List<String>? tags,
-  }) async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) throw Exception('User not authenticated');
-
-      await _client.from('forum_posts').insert({
-        'user_id': userId,
-        'title': title,
-        'content': content,
-        'course_id': courseId,
-        'tags': tags,
-      });
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Get comments for a forum post
-  Future<List<Map<String, dynamic>>> getForumComments(String postId) async {
-    try {
-      final response = await _client
-          .from('forum_comments')
-          .select('*, users(full_name, avatar_url)')
-          .eq('post_id', postId)
-          .order('created_at');
-
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Add a comment to a forum post
-  Future<void> addForumComment({
-    required String postId,
-    required String content,
-  }) async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) throw Exception('User not authenticated');
-
-      await _client.from('forum_comments').insert({
-        'user_id': userId,
-        'post_id': postId,
-        'content': content,
-      });
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -1584,84 +1498,6 @@ class DatabaseService {
         'totalEnrollments': 0,
         'items': [],
       };
-    }
-  }
-
-  // ==================== DISCUSSIONS ====================
-
-
-
-  /// Get discussion threads for a course
-  Future<List<Map<String, dynamic>>> getDiscussionThreads(
-      String courseId) async {
-    try {
-      final response = await _client
-          .from('discussion_threads')
-          .select('*, users(full_name, avatar_url)')
-          .eq('course_id', courseId)
-          .order('created_at', ascending: false);
-
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      debugPrint('Error fetching discussion threads: $e');
-      return [];
-    }
-  }
-
-  /// Create a new discussion thread
-  Future<void> createDiscussionThread({
-    required String courseId,
-    required String title,
-    required String content,
-  }) async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) throw Exception('User not authenticated');
-
-      await _client.from('discussion_threads').insert({
-        'course_id': courseId,
-        'user_id': userId,
-        'title': title,
-        'content': content,
-      });
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Get replies for a discussion thread
-  Future<List<Map<String, dynamic>>> getDiscussionReplies(
-      String threadId) async {
-    try {
-      final response = await _client
-          .from('discussion_replies')
-          .select('*, users(full_name, avatar_url)')
-          .eq('thread_id', threadId)
-          .order('created_at', ascending: true);
-
-      return List<Map<String, dynamic>>.from(response);
-    } catch (e) {
-      debugPrint('Error fetching replies: $e');
-      return [];
-    }
-  }
-
-  /// Add a reply to a discussion thread
-  Future<void> addDiscussionReply({
-    required String threadId,
-    required String content,
-  }) async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) throw Exception('User not authenticated');
-
-      await _client.from('discussion_replies').insert({
-        'thread_id': threadId,
-        'user_id': userId,
-        'content': content,
-      });
-    } catch (e) {
-      rethrow;
     }
   }
 
@@ -5091,4 +4927,3 @@ class DatabaseService {
     }
   }
 }
-
