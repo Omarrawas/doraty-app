@@ -1,7 +1,7 @@
 name: doraty
 description: "منصة تعليمية لجميع الطلاب في سوريا"
 publish_to: 'none'
-version: 1.0.5+7
+version: 1.0.6+8
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -143,7 +143,7 @@ flutter:
 
 flutter_launcher_icons:
   android: true
-  ios: false
+  ios: true
   image_path: "assets/icons/logo.png"
   min_sdk_android: 21
   adaptive_icon_background: "#FFFFFF"
@@ -155,7 +155,7 @@ flutter_launcher_icons:
     theme_color: "#7B2CBF"
 
 msix_config:
-  display_name: Doraty
+  display_name: Doraty - أكاديمية دوراتي
   publisher_display_name: Omarrawas
   identity_name: Omarrawas.Doraty
   logo_path: assets/icons/logo.png

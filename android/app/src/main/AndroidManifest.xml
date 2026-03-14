@@ -12,7 +12,7 @@
     <!-- Background & Service Permissions -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <application
-        android:label="doraty"
+        android:label="Doraty - أكاديمية دوراتي"
         android:name="${applicationName}"
         android:icon="@drawable/ic_launcher">
         <activity

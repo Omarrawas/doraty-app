@@ -16,14 +16,26 @@ class TexViewWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 1. اكتشاف نوع المحتوى
-    // LaTeX markers check
-    bool hasLatex = content.contains(r'$$') || 
-                   content.contains(r'\\(') || 
-                   content.contains(r'\\[') ||
-                   (content.contains(r'\\') && (content.contains(r'frac') || content.contains(r'sqrt') || content.contains(r'alpha')));
+    // 1. اكتشاف نوع المحتوى بشكل أكثر دقة
+    final String trimmedContent = content.trim();
     
-    bool hasHtml = content.contains('<') && content.contains('>');
+    // LaTeX markers check - be stricter
+    bool hasLatex = trimmedContent.contains(r'$$') || 
+                   trimmedContent.contains(r'$') || 
+                   trimmedContent.contains(r'\( ') || 
+                   trimmedContent.contains(r'\[ ') ||
+                   (trimmedContent.contains(r'\\') && (
+                     trimmedContent.contains(r'frac') || 
+                     trimmedContent.contains(r'sqrt') || 
+                     trimmedContent.contains(r'alpha') || 
+                     trimmedContent.contains(r'begin') ||
+                     trimmedContent.contains(r'matrix') ||
+                     trimmedContent.contains(r'vector') ||
+                     trimmedContent.contains(r'sum') ||
+                     trimmedContent.contains(r'int')
+                   ));
+    
+    bool hasHtml = trimmedContent.contains('<') && trimmedContent.contains('>');
 
     // 2. اختيار الويدجت الأنسب
     
@@ -33,6 +45,7 @@ class TexViewWidget extends StatelessWidget {
         content,
         style: style,
         textAlign: isTitle ? TextAlign.center : TextAlign.start,
+        textDirection: TextDirection.rtl, // دعم العربية الافتراضي
       );
     }
 
@@ -41,8 +54,9 @@ class TexViewWidget extends StatelessWidget {
       return HtmlWidget(
         content,
         textStyle: style?.copyWith(
-          fontFamily: 'Cairo', // دعم العربية
+          fontFamily: 'Cairo',
           height: 1.5,
+          color: style?.color ?? Colors.white,
         ) ?? const TextStyle(color: Colors.white, fontSize: 16),
         renderMode: RenderMode.column,
       );
@@ -50,9 +64,19 @@ class TexViewWidget extends StatelessWidget {
 
     // الحالة الثالثة: معادلات رياضية (استخدام TeXView)
     String processedContent = content;
-    bool alreadyDelimited = content.contains(r'$') || content.contains(r'\\(') || content.contains(r'\\[');
-    if (!alreadyDelimited && (content.contains(r'\\') || content.contains(r'^') || content.contains(r'_'))) {
-       processedContent = r'$$' + content + r'$$';
+    
+    // تأمين المحتوى ليتناسب مع TeXViewDocument
+    // إذا لم يكن محاطاً بمحددات، نحيطه بـ $$ فقط إذا كان نصاً رياضياً صرفاً
+    bool alreadyDelimited = trimmedContent.startsWith(r'$') || 
+                          trimmedContent.startsWith(r'\( ') || 
+                          trimmedContent.startsWith(r'\[ ');
+                          
+    if (!alreadyDelimited && hasLatex) {
+        // إذا كان هناك علامات لاتيكس متفرقة، نتركها لـ TeXView ليتعامل معها
+        // أو إذا كان المحتوى كله معادلة، نحيطه
+        if (!trimmedContent.contains(' ')) { 
+          processedContent = r'$$' + trimmedContent + r'$$';
+        }
     }
 
     return TeXView(
@@ -60,6 +84,7 @@ class TexViewWidget extends StatelessWidget {
         processedContent,
         style: TeXViewStyle(
           contentColor: style?.color ?? Colors.white,
+          backgroundColor: Colors.transparent,
           fontStyle: TeXViewFontStyle(
             fontSize: (style?.fontSize ?? 16).toInt(),
             fontWeight: style?.fontWeight == FontWeight.bold
@@ -73,7 +98,10 @@ class TexViewWidget extends StatelessWidget {
       style: const TeXViewStyle(
         backgroundColor: Colors.transparent,
       ),
-      loadingWidgetBuilder: (context) => Text(content, style: style),
+      loadingWidgetBuilder: (context) => Padding(
+        padding: const EdgeInsets.all(10),
+        child: Text(content, style: style),
+      ),
     );
   }
 }

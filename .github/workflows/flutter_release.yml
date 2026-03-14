@@ -164,7 +164,7 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
           NOTES=$(cat whatsnew_ar.txt 2>/dev/null || echo "تحسينات عامة وإصلاح أخطاء")
-          MSG="🚀 إصدار جديد من تطبيق درتي (رقم ${{ github.run_number }})
+          MSG="🚀 إصدار جديد من تطبيق دوراتي (رقم ${{ github.run_number }})
           
           📝 ما الجديد:
           $NOTES
