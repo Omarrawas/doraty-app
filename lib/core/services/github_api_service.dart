@@ -1,6 +1,6 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
 import '../env/multi_env.dart';
 
@@ -44,11 +44,14 @@ class GitHubApiService {
       // Get filename for commit message
       final message = commitMessage ?? 'Upload $fileName via Doraty app';
       
+      // Sanitize and encode path segments (important for filenames with spaces)
+      final encodedPath = remotePath.split('/').map((s) => Uri.encodeComponent(s)).join('/');
+      
       // API URL
-      final url = Uri.parse('$apiBaseUrl/repos/$owner/$repo/contents/$remotePath');
+      final url = Uri.parse('$apiBaseUrl/repos/$owner/$repo/contents/$encodedPath');
       
       // Check if file already exists
-      final existingSha = await _getFileSha(remotePath);
+      final existingSha = await _getFileSha(encodedPath);
       
       // Prepare request body
       final body = {
@@ -62,11 +65,11 @@ class GitHubApiService {
         body['sha'] = existingSha;
       }
       
-      // Make API request
+      // Make API request - Use 'Bearer' as it's more standard for GitHub PATs now
       final response = await http.put(
         url,
         headers: {
-          'Authorization': 'token $_token',
+          'Authorization': 'Bearer $_token',
           'Accept': 'application/vnd.github.v3+json',
           'Content-Type': 'application/json',
         },
@@ -75,14 +78,15 @@ class GitHubApiService {
       
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Success - return raw URL
-        final rawUrl = _buildRawUrl(remotePath);
+        final rawUrl = _buildRawUrl(encodedPath);
         return rawUrl;
       } else {
         // Error
         final error = jsonDecode(response.body);
-        throw Exception('GitHub API error: ${error['message'] ?? 'Unknown error'}');
+        throw Exception('GitHub API error (${response.statusCode}): ${error['message'] ?? 'Unknown error'}');
       }
     } catch (e) {
+      debugPrint('GitHub Upload Error: $e');
       throw Exception('Failed to upload file to GitHub: $e');
     }
   }
@@ -95,7 +99,7 @@ class GitHubApiService {
       final response = await http.get(
         url,
         headers: {
-          'Authorization': 'token $_token',
+          'Authorization': 'Bearer $_token',
           'Accept': 'application/vnd.github.v3+json',
         },
       );
@@ -153,7 +157,7 @@ class GitHubApiService {
       final response = await http.get(
         url,
         headers: {
-          'Authorization': 'token $_token',
+          'Authorization': 'Bearer $_token',
           'Accept': 'application/vnd.github.v3+json',
         },
       );
@@ -173,7 +177,7 @@ class GitHubApiService {
         headers: {
           'Accept': 'application/vnd.github.v3+json',
           if (_token != null && _token.isNotEmpty)
-            'Authorization': 'token $_token',
+            'Authorization': 'Bearer $_token',
         },
       );
       

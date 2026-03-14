@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../../core/services/github_storage_service.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/services/image_upload_service.dart';
@@ -275,13 +277,25 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> {
                     CircleAvatar(
                       backgroundColor: Colors.purple.withOpacity(0.3),
                       radius: 28,
-                      backgroundImage: user?['avatar_url'] != null
-                          ? NetworkImage(user!['avatar_url'])
-                          : null,
-                      child: user?['avatar_url'] == null
-                          ? const Icon(Icons.school,
-                              color: Colors.purple, size: 28)
-                          : null,
+                      child: user?['avatar_url'] != null
+                          ? ClipOval(
+                              child: CachedNetworkImage(
+                                imageUrl: GitHubStorageService.toRawUrl(user!['avatar_url']),
+                                fit: BoxFit.cover,
+                                width: 56,
+                                height: 56,
+                                placeholder: (context, url) => const Icon(
+                                    Icons.school,
+                                    color: Colors.purple,
+                                    size: 28),
+                                errorWidget: (context, url, error) => const Icon(
+                                    Icons.school,
+                                    color: Colors.purple,
+                                    size: 28),
+                              ),
+                            )
+                          : const Icon(Icons.school,
+                              color: Colors.purple, size: 28),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
