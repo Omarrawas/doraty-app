@@ -8,6 +8,7 @@ part of 'multi_env.dart';
 
 // coverage:ignore-file
 // ignore_for_file: type=lint
+// generated_from: .env
 final class _Env {
   static const String supabaseUrl = 'https://cstlqyjoflhxtocrtypg.supabase.co';
 
@@ -17,12 +18,12 @@ final class _Env {
   static const String encryptionKey = 'default_encryption_key_32_chars_long!';
 
   static const String googleWebClientId =
-      '535436798827-0rogt5b5beuq7lgsrl5ommvpa49q62bh.apps.googleusercontent.com';
+      '819788297198-l01ajkiqrmbrs11kjl8cstlqriu5ebun.apps.googleusercontent.com';
 
-  static const String googleIosClientId = 'YOUR_GOOGLE_IOS_CLIENT_ID';
+  static const String googleIosClientId = '';
 
   static const String googleAndroidClientId =
-      '535436798827-23an8ocpmvq3aj0ad8v426nqqid0vf14.apps.googleusercontent.com';
+      '819788297198-1s92uajf9i1knolbsgc2qe53fq99n2to.apps.googleusercontent.com';
 
   static const String githubToken = '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';
 }

@@ -54,9 +54,22 @@ android {
             }
             storePassword = keystoreProperties["storePassword"] as String? ?: "changeit"
         }
+        getByName("debug") {
+            keyAlias = keystoreProperties["keyAlias"] as String? ?: "doraty_key"
+            keyPassword = keystoreProperties["keyPassword"] as String? ?: "changeit"
+            storeFile = if (keystoreProperties["storeFile"] != null) {
+                rootProject.file(keystoreProperties["storeFile"])
+            } else {
+                file("key.jks")
+            }
+            storePassword = keystoreProperties["storePassword"] as String? ?: "changeit"
+        }
     }
 
     buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("debug")
+        }
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true

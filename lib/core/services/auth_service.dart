@@ -7,7 +7,6 @@ import 'platform_utils.dart';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _client = SupabaseService.instance.client;
-  static bool _googleSignInInitialized = false;
 
   User? get currentUser => _client.auth.currentUser;
   bool get isAuthenticated => currentUser != null;
@@ -205,14 +204,12 @@ class AuthService extends ChangeNotifier {
       // Native implementation for Android & iOS
       final googleSignIn = GoogleSignIn.instance;
 
-      if (!_googleSignInInitialized) {
-        await googleSignIn.initialize(
-          clientId: Env.googleIosClientId, // Required for iOS
-          serverClientId:
-              Env.googleWebClientId, // Required to get idToken for Supabase
-        );
-        _googleSignInInitialized = true;
-      }
+      await googleSignIn.initialize(
+        clientId: PlatformUtils.isIOS
+            ? Env.googleIosClientId
+            : (PlatformUtils.isAndroid ? Env.googleAndroidClientId : null),
+        serverClientId: Env.googleWebClientId,
+      );
 
       final googleUser = await googleSignIn.authenticate();
 
@@ -220,21 +217,14 @@ class AuthService extends ChangeNotifier {
       final idToken = googleAuth.idToken;
 
       if (idToken == null) {
-        throw 'فشل الحصول على رمز الهوية من جوجل';
+        throw 'فشل الحصول على ID Token من جوجل. تأكد من إعداد SHA-1 و Web Client ID بشكل صحيح.';
       }
 
-      // Request accessToken via the authorization client if needed.
-      final authz = await googleUser.authorizationClient.authorizeScopes([
-        'email',
-        'openid',
-        'profile',
-      ]);
-      final accessToken = authz.accessToken;
+      debugPrint('✅ Google Auth Success. idToken obtained.');
 
       final response = await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
-        accessToken: accessToken,
       );
 
       // Create or update user profile after social login
