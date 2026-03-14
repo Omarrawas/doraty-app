@@ -1,7 +1,7 @@
 name: doraty
 description: " أكاديمية دوراتي التلعيمية"
 publish_to: 'none'
-version: 1.0.8+10
+version: 1.0.9+11
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -37,6 +37,7 @@ dependencies:
   supabase_flutter: ^2.0.0
   # Env loader for runtime secrets
   flutter_dotenv: ^6.0.0
+  google_sign_in: ^6.2.1
   
   # Storage & Cache
   shared_preferences: ^2.2.2

@@ -182,7 +182,7 @@ class AuthService extends ChangeNotifier {
   /// Sign in with Google
   Future<AuthResponse?> signInWithGoogle() async {
     try {
-      // استخدام OAuth للويب والويندوز والماك (المنصات التي لا تدعم google_sign_in مباشرة)
+      // استخدام OAuth للويب والويندوز والماك
       if (kIsWeb || PlatformUtils.isWindows) {
         String? redirectUrl;
         if (kIsWeb) {
@@ -195,14 +195,13 @@ class AuthService extends ChangeNotifier {
 
         await _client.auth.signInWithOAuth(
           OAuthProvider.google,
-          // للويب نستخدم رابط Vercel، للويندوز نستخدم الرابط العميق
           redirectTo: redirectUrl,
         );
         return null;
       }
 
-      // Native implementation for Android & iOS (google_sign_in 7.x)
-      final GoogleSignIn googleSignIn = GoogleSignIn.instance;
+      // Native Android & iOS — Google Sign In 7.x (Singleton pattern)
+      final googleSignIn = GoogleSignIn.instance;
 
       debugPrint('🔄 Initializing Google Sign In...');
       await googleSignIn.initialize(
@@ -215,6 +214,7 @@ class AuthService extends ChangeNotifier {
 
       debugPrint('✅ Google User obtained: ${googleUser.email}');
 
+      // في النسخة 7.x، .authentication هو sync getter وليس async
       final googleAuth = googleUser.authentication;
       final idToken = googleAuth.idToken;
 
@@ -223,14 +223,14 @@ class AuthService extends ChangeNotifier {
         throw 'فشل الحصول على ID Token من جوجل. تأكد من إعداد SHA-1 و Web Client ID بشكل صحيح.';
       }
 
-      debugPrint('✅ idToken obtained successfully.');
+      debugPrint('✅ idToken obtained. Signing in with Supabase...');
 
       final response = await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
       );
 
-      // Create or update user profile after social login
+      // Create or update user profile
       if (response.user != null) {
         await _client.from('users').upsert({
           'id': response.user!.id,
@@ -241,14 +241,18 @@ class AuthService extends ChangeNotifier {
               response.user!.userMetadata?['avatar_url'] ?? googleUser.photoUrl,
           'updated_at': DateTime.now().toIso8601String(),
         });
-        // Reload profile to update state
         await loadUserProfile();
       }
 
       return response;
     } catch (e) {
-      if (e.toString().contains('canceled')) {
+      debugPrint('❌ Google Sign-In Error: $e');
+      if (e.toString().contains('canceled') || e.toString().contains('sign_in_canceled')) {
         throw 'تم إلغاء تسجيل الدخول عبر جوجل';
+      }
+      // إذا كان الخطأ متعلق بالإعدادات، نعطي رسالة أوضح
+      if (e.toString().contains('developer_error') || e.toString().contains('10')) {
+        throw 'خطأ في إعدادات التطبيق (SHA-1/Client ID). يرجى التأكد من مطابقة بيانات Firebase و Supabase.';
       }
       rethrow;
     }
