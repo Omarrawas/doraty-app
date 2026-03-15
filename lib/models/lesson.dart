@@ -5,7 +5,6 @@ class Lesson {
   final String title;
   final String? titleEn; // Added titleEn
   final String description;
-  final String? descriptionEn; // Added descriptionEn
   final String videoUrl;
   final String duration; // stored as string like "45:00"
   final int orderIndex;
@@ -25,7 +24,6 @@ class Lesson {
     required this.title,
     this.titleEn,
     required this.description,
-    this.descriptionEn,
     required this.videoUrl,
     required this.duration,
     required this.orderIndex,
@@ -65,9 +63,7 @@ class Lesson {
       courseId: json['course_id'] ?? '',
       chapterId: json['chapter_id'],
       title: json['title'] ?? '',
-      titleEn: json['title_en'],
       description: json['description'] ?? '',
-      descriptionEn: json['description_en'],
       videoUrl: json['video_url'] ?? '',
       duration: json['duration'] ?? '0:00',
       orderIndex: json['order_index'] ?? 0,
@@ -88,9 +84,7 @@ class Lesson {
       'course_id': courseId,
       'chapter_id': chapterId,
       'title': title,
-      'title_en': titleEn,
       'description': description,
-      'description_en': descriptionEn,
       'video_url': videoUrl,
       'duration': duration,
       'order_index': orderIndex,
@@ -119,7 +113,6 @@ class Lesson {
     String? title,
     String? titleEn,
     String? description,
-    String? descriptionEn,
     String? videoUrl,
     String? duration,
     int? orderIndex,
@@ -139,7 +132,6 @@ class Lesson {
       title: title ?? this.title,
       titleEn: titleEn ?? this.titleEn,
       description: description ?? this.description,
-      descriptionEn: descriptionEn ?? this.descriptionEn,
       videoUrl: videoUrl ?? this.videoUrl,
       duration: duration ?? this.duration,
       orderIndex: orderIndex ?? this.orderIndex,

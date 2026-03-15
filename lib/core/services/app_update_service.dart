@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -16,7 +17,7 @@ class AppUpdateService {
       {bool showNoUpdateDialog = false}) async {
     try {
       // 1. Handle Android (In-App Update via Google Play)
-      if (Platform.isAndroid) {
+      if (!kIsWeb && Platform.isAndroid) {
         await _checkAndroidUpdate(context);
         return;
       }

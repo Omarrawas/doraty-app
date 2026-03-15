@@ -193,7 +193,7 @@ class DatabaseService {
     try {
       // Build query
       var dbQuery = _client.from('courses').select(
-          '*, users!instructor_id(full_name, full_name_en, avatar_url)');
+          '*, users!instructor_id(full_name, avatar_url)');
 
       // Text Search
       if (query != null && query.isNotEmpty) {
@@ -269,15 +269,88 @@ class DatabaseService {
     }
   }
 
-  /// Get teacher courses (Alias for compatibility)
+  /// Get teacher courses with statistics
   Future<List<Map<String, dynamic>>> getTeacherCourses() async {
     try {
       final userId = SupabaseService.instance.currentUserId;
       if (userId == null) return [];
 
-      return await getCoursesByTeacherId(userId);
+      // 1. Get all courses for this teacher
+      final coursesResponse =
+          await _client.from('courses').select().eq('instructor_id', userId);
+
+      final courses = List<Map<String, dynamic>>.from(coursesResponse);
+      final courseIds = courses.map((c) => c['id']).toList();
+
+      if (courseIds.isEmpty) return [];
+
+      // 2. Get enrollments for progress and student count
+      final enrollmentsResponse = await _client
+          .from('enrollments')
+          .select('course_id, progress_percentage')
+          .inFilter('course_id', courseIds);
+
+      final enrollments = List<Map<String, dynamic>>.from(enrollmentsResponse);
+
+      // 3. Get exams count
+      final examsResponse = await _client
+          .from('exams')
+          .select('course_id')
+          .inFilter('course_id', courseIds);
+
+      final allExams = List<Map<String, dynamic>>.from(examsResponse);
+
+      // 4. Get revenue from view
+      final revenueResponse = await _client
+          .from('admin_enrollments_view')
+          .select('course_id, course_price')
+          .inFilter('course_id', courseIds);
+
+      final allRevenue = List<Map<String, dynamic>>.from(revenueResponse);
+
+      // 5. Aggregate data
+      return courses.map((course) {
+        final courseId = course['id'];
+
+        final courseEnrollments =
+            enrollments.where((e) => e['course_id'] == courseId);
+        final studentCount = courseEnrollments.length;
+
+        double avgProgress = 0;
+        if (studentCount > 0) {
+          final totalProgress = courseEnrollments.fold(
+              0.0,
+              (sum, e) =>
+                  sum + (e['progress_percentage'] as num? ?? 0).toDouble());
+          avgProgress = (totalProgress / studentCount);
+        }
+
+        final examCount =
+            allExams.where((e) => e['course_id'] == courseId).length;
+
+        final courseRevenue = allRevenue
+            .where((r) => r['course_id'] == courseId)
+            .fold(0.0,
+                (sum, r) => sum + (r['course_price'] as num? ?? 0).toDouble());
+
+        return {
+          ...course,
+          'student_count': studentCount,
+          'average_progress': avgProgress,
+          'exam_count': examCount,
+          'revenue': courseRevenue,
+        };
+      }).toList();
     } catch (e) {
-      rethrow;
+      debugPrint('Error getting teacher courses with stats: $e');
+      // Fallback to basic list if stats fail
+      try {
+        final userId = SupabaseService.instance.currentUserId;
+        if (userId == null) return [];
+        return await getCoursesByTeacherId(userId);
+      } catch (_) {
+        return [];
+      }
     }
   }
 
@@ -358,7 +431,7 @@ class DatabaseService {
           // Join with junction table to get categories
           var query = _client.from('courses').select('''
                 *, 
-                users!instructor_id(full_name, full_name_en, avatar_url),
+                users!instructor_id(full_name, avatar_url),
                 course_category_junction(category:categories(id, name, name_en))
               ''');
 
@@ -481,7 +554,7 @@ class DatabaseService {
           .from('courses')
           .select('''
             *, 
-            users!instructor_id(full_name, full_name_en, avatar_url),
+            users!instructor_id(full_name, avatar_url),
             course_category_junction(category:categories(id, name, name_en))
           ''')
           .eq('id', courseId)
@@ -494,7 +567,6 @@ class DatabaseService {
       if (user != null) {
         course['instructor_name'] =
             user['full_name'] ?? course['instructor_name'];
-        course['instructor_full_name_en'] = user['full_name_en'];
         course['instructor_photo'] =
             user['avatar_url'] ?? course['instructor_photo'];
       }
@@ -1606,7 +1678,7 @@ class DatabaseService {
       final response = await _client
           .from('enrollments')
           .select(
-              '*, courses(*, users!instructor_id(full_name, full_name_en, avatar_url))')
+              '*, courses(*, users!instructor_id(full_name, avatar_url))')
           .eq('user_id', userId)
           .order('enrolled_at', ascending: false);
 
@@ -1620,7 +1692,6 @@ class DatabaseService {
           if (user != null) {
             course['instructor_name'] =
                 user['full_name'] ?? course['instructor_name'];
-            course['instructor_full_name_en'] = user['full_name_en'];
             course['instructor_photo'] =
                 user['avatar_url'] ?? course['instructor_photo'];
           }
@@ -2363,7 +2434,12 @@ class DatabaseService {
       await _client.from('users').upsert(data);
       
       // Also assign the teacher role if not already assigned
-      await assignRole(userId, 'teacher');
+      try {
+        await assignRole(userId, 'teacher');
+      } catch (e) {
+        debugPrint('⚠️ Could not assign teacher role automatically (permission?): $e');
+        // Don't rethrow as the profile data is already saved
+      }
       
     } catch (e) {
       debugPrint('❌ Error saving teacher profile: $e');
@@ -2383,7 +2459,12 @@ class DatabaseService {
       await _client.from('users').upsert(data);
       
       // Also assign the student role if not already assigned
-      await assignRole(userId, 'student');
+      try {
+        await assignRole(userId, 'student');
+      } catch (e) {
+        debugPrint('⚠️ Could not assign student role automatically (permission?): $e');
+        // Don't rethrow as the profile data is already saved
+      }
       
     } catch (e) {
       debugPrint('❌ Error saving student profile: $e');
@@ -2811,7 +2892,6 @@ class DatabaseService {
                 'avatar_url': t['avatar_url'], // الاسم الصحيح الذي يبحث عنه الـ UI
                 'photo_url': t['avatar_url'], // احتياطي للتوافق مع بقية الشاشات
                 'bio': t['bio'], // Include bio field
-                'full_name_en': t['full_name_en'],
                 'subjects': t['subjects'],
               }
             };

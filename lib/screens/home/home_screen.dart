@@ -510,10 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTeacherItem(Map<String, dynamic> teacher) {
     final userData = teacher['users'] as Map<String, dynamic>?;
     final name = StringUtils.cleanTeacherName(
-        userData?['full_name_en'] != null &&
-                Provider.of<LocaleProvider>(context).locale == 'en'
-            ? userData!['full_name_en']
-            : (userData?['full_name'] ?? userData?['name'] ?? _t('teacher')));
+        userData?['full_name'] ?? userData?['name'] ?? _t('teacher'));
     final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'];
 
     return Padding(

@@ -46,9 +46,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
 CREATE TABLE IF NOT EXISTS public.courses (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     title TEXT NOT NULL,
-    title_en TEXT,
     description TEXT,
-    description_en TEXT,
     instructor_id UUID REFERENCES public.users(id),
     category_id UUID REFERENCES public.categories(id),
     image_url TEXT,
@@ -60,7 +58,6 @@ CREATE TABLE IF NOT EXISTS public.courses (
     is_published BOOLEAN DEFAULT false,
     level TEXT,
     subject TEXT,
-    subject_en TEXT,
     curriculum JSONB, -- Or TEXT[]
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -73,9 +70,7 @@ CREATE TABLE IF NOT EXISTS public.lessons (
     course_id UUID REFERENCES public.courses(id) ON DELETE CASCADE,
     chapter_id UUID, -- Optional grouping
     title TEXT NOT NULL,
-    title_en TEXT,
     description TEXT,
-    description_en TEXT,
     video_url TEXT,
     duration TEXT, -- Stores "00:00" format
     order_index INTEGER DEFAULT 0,

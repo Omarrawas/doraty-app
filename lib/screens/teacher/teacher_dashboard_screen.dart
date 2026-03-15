@@ -603,8 +603,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           _buildEmptyState(context, 'لا توجد دورات مسندة')
         else
           ..._teacherCourses.map((tc) {
-            final course = tc['courses'] as Map<String, dynamic>?;
-            if (course == null) return const SizedBox.shrink();
+            // Check if the data is wrapped in a 'courses' key (from joins) or direct
+            final course = (tc['courses'] is Map<String, dynamic>) 
+                ? tc['courses'] as Map<String, dynamic> 
+                : tc;
 
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -616,45 +618,144 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _buildCourseCard(BuildContext context, Map<String, dynamic> course) {
+    final studentCount = course['student_count'] ?? 0;
+    final avgProgress = (course['average_progress'] as num? ?? 0).toDouble();
+    final examCount = course['exam_count'] ?? 0;
+    final revenue = (course['revenue'] as num? ?? 0).toDouble();
+    final isPublished = course['is_published'] as bool? ?? false;
+
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.getGlassColor(context, opacity: 0.15),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1,
+              color: AppColors.getGlassColor(context, opacity: 0.3),
+              width: 1.5,
             ),
           ),
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.school, color: Colors.blue),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  course['title'] ?? 'دورة',
-                  style: TextStyle(
-                    color: AppColors.getTextColor(context),
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryPurple.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.school, color: Colors.blue[300], size: 24),
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          course['title'] ?? 'دورة',
+                          style: TextStyle(
+                            color: AppColors.getTextColor(context),
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: (isPublished ? Colors.green : Colors.orange)
+                                    .withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                isPublished ? 'منشور' : 'مسودة',
+                                style: TextStyle(
+                                  color: isPublished
+                                      ? Colors.green[300]
+                                      : Colors.orange[300],
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Progress Section
+              Text(
+                'متوسط تقدم الطلاب: ${avgProgress.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  color: AppColors.getTextColor(context).withOpacity(0.7),
+                  fontSize: 12,
                 ),
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: avgProgress / 100,
+                  backgroundColor: Colors.white.withOpacity(0.1),
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[400]!),
+                  minHeight: 6,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Stats Grid
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildMiniStat(context, Icons.people, '$studentCount', 'طالب'),
+                  _buildMiniStat(
+                      context, Icons.assignment, '$examCount', 'اختبار'),
+                  _buildMiniStat(context, Icons.payments,
+                      _currencyFormat.format(revenue), 'دخل'),
+                ],
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMiniStat(
+      BuildContext context, IconData icon, String value, String label) {
+    return Column(
+      children: [
+        Icon(icon, size: 18, color: AppColors.primaryPurple.withOpacity(0.8)),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: AppColors.getTextColor(context),
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            color: AppColors.getTextColor(context).withOpacity(0.5),
+            fontSize: 10,
+          ),
+        ),
+      ],
     );
   }
 

@@ -45,7 +45,6 @@ class _CourseLoaderScreenState extends State<CourseLoaderScreen> {
           categories: List<String>.from(data['categories_names'] ?? []),
           categoryIds: List<String>.from(data['category_ids'] ?? []),
           subject: data['subject'] ?? '',
-          subjectEn: data['subject_en'],
           curriculum: [],
         );
 

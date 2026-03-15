@@ -9,6 +9,7 @@ import '../../core/services/github_storage_service.dart' hide FileType;
 import '../../core/utils/error_utils.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
+import '../../core/services/auth_service.dart';
 import 'package:provider/provider.dart';
 import '../../main.dart';
 
@@ -25,8 +26,8 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
   
-  // State variables for read-only display
-  String _userName = '';
+  // State variables
+  final _fullNameController = TextEditingController();
   String _userEmail = '';
 
   final _specializationController = TextEditingController();
@@ -62,15 +63,28 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
   void _prefillData() {
     final user = SupabaseService.instance.client.auth.currentUser;
     if (user != null) {
+      final authService = Provider.of<AuthService>(context, listen: false);
       setState(() {
         _userEmail = user.email ?? '';
-        _userName = user.userMetadata?['full_name'] ?? '';
+        
+        // Try to get name from multiple sources
+        String? initialName = user.userMetadata?['full_name'] ?? 
+                             user.userMetadata?['display_name'] ?? 
+                             authService.userProfile?['full_name'];
+        
+        // Fallback to email prefix if name is empty
+        if ((initialName == null || initialName.isEmpty) && _userEmail.isNotEmpty) {
+          initialName = _userEmail.split('@').first;
+        }
+        
+        _fullNameController.text = initialName ?? '';
       });
     }
   }
 
   @override
   void dispose() {
+    _fullNameController.dispose();
     _specializationController.dispose();
     super.dispose();
   }
@@ -122,6 +136,8 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
       // Save Student Profile
       await databaseService.saveStudentProfile({
         'id': userId,
+        'full_name': _fullNameController.text.trim(),
+        'email': _userEmail,
         'education_level': _educationLevel,
         'grade': _educationLevel == 'school' ? _selectedGrade : _selectedUniversityYear,
         'specialization': _educationLevel == 'university' ? _specializationController.text.trim() : null,
@@ -130,6 +146,9 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
       });
 
       if (mounted) {
+        // Refresh Auth Profile to ensure the app knows registration is complete
+        await Provider.of<AuthService>(context, listen: false).loadUserProfile();
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('تم إنشاء حساب الطالب بنجاح!'),
@@ -242,29 +261,31 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
   }
 
   Widget _buildUserInfoCard() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
-          child: Column(
-            children: [
-              _buildReadOnlyInfo(Icons.person_outline, _userName),
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: Divider(color: Colors.white24, height: 1),
+    return Column(
+      children: [
+        _buildGlassField(
+          controller: _fullNameController,
+          label: _t('name'),
+          icon: Icons.person_outline,
+          validator: (v) => v!.isEmpty ? _t('required_field') : null,
+        ),
+        const SizedBox(height: 16),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.2)),
               ),
-              _buildReadOnlyInfo(Icons.email_outlined, _userEmail),
-            ],
+              child: _buildReadOnlyInfo(Icons.email_outlined, _userEmail),
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 

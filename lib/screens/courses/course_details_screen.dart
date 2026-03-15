@@ -168,15 +168,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
           _instructorPhoto = profile['avatar_url'];
           final locale =
               Provider.of<LocaleProvider>(context, listen: false).locale;
-          if (locale == 'en' &&
-              profile['full_name_en'] != null &&
-              (profile['full_name_en'] as String).isNotEmpty) {
-            _instructorName =
-                StringUtils.cleanTeacherName(profile['full_name_en']);
-          } else {
-            _instructorName = StringUtils.cleanTeacherName(
-                profile['full_name'] ?? _instructorName);
-          }
+          _instructorName = StringUtils.cleanTeacherName(
+              profile['full_name'] ?? _instructorName);
           debugPrint('📸 Instructor Photo URL: $_instructorPhoto');
         });
       }

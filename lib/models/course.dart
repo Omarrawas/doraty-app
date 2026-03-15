@@ -3,10 +3,8 @@ class Course {
   final String title;
   final String? titleEn; // Added titleEn
   final String? description; // Nullable
-  final String? descriptionEn; // Added descriptionEn
   final String? instructorId; // Added instructorId
   final String instructorName;
-  final String? instructorFullNameEn; // Added for teacher localization
   final String? instructorPhoto; // Nullable in schema
   final String? imageUrl; // Renamed from thumbnail, nullable
   final double price;
@@ -33,10 +31,8 @@ class Course {
     required this.title,
     this.titleEn,
     this.description,
-    this.descriptionEn,
     this.instructorId,
     required this.instructorName,
-    this.instructorFullNameEn,
     this.instructorPhoto,
     this.imageUrl,
     required this.price,
@@ -63,12 +59,9 @@ class Course {
     return Course(
       id: json['id'] ?? '',
       title: json['title'] ?? '',
-      titleEn: json['title_en'],
       description: json['description'],
-      descriptionEn: json['description_en'],
       instructorId: json['instructor_id'],
       instructorName: json['instructor_name'] ?? '',
-      instructorFullNameEn: json['instructor_full_name_en'],
       instructorPhoto: json['instructor_photo'],
       imageUrl:
           json['image_url'] ?? json['thumbnail'], // Handle both for safety
@@ -82,7 +75,6 @@ class Course {
       categoryIds: List<String>.from(json['category_ids'] ??
           (json['category_id'] != null ? [json['category_id']] : [])),
       subject: json['subject'] ?? '',
-      subjectEn: json['subject_en'],
       curriculum: List<String>.from(json['curriculum'] ?? []),
       isEnrolled: json['is_enrolled'] ?? false,
       completedLessons: json['completed_lessons'] ?? 0,
@@ -99,12 +91,9 @@ class Course {
     return {
       'id': id,
       'title': title,
-      'title_en': titleEn,
       'description': description,
-      'description_en': descriptionEn,
       'instructor_id': instructorId,
       'instructor_name': instructorName,
-      'instructor_full_name_en': instructorFullNameEn,
       'instructor_photo': instructorPhoto,
       'image_url': imageUrl,
       'price': price,
@@ -115,7 +104,6 @@ class Course {
       'categories': categories,
       'category_ids': categoryIds,
       'subject': subject,
-      'subject_en': subjectEn,
       'curriculum': curriculum,
       'is_enrolled': isEnrolled,
       'completed_lessons': completedLessons,
@@ -140,19 +128,8 @@ class Course {
     return title;
   }
 
-  String? getLocalizedDescription(String locale) {
-    if (locale == 'en' && descriptionEn != null && descriptionEn!.isNotEmpty) {
-      return descriptionEn;
-    }
-    return description;
-  }
 
   String getLocalizedInstructorName(String locale) {
-    if (locale == 'en' &&
-        instructorFullNameEn != null &&
-        instructorFullNameEn!.isNotEmpty) {
-      return instructorFullNameEn!;
-    }
     return instructorName;
   }
 

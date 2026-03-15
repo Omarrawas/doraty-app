@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_provider.dart' as theme_provider;
@@ -9,9 +9,7 @@ import '../../core/services/auth_service.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/services/settings_service.dart';
 import '../../core/services/database_service.dart';
-
 import '../auth/login_screen.dart';
-
 import '../../core/services/offline_storage_service.dart';
 import 'dart:ui' as ui;
 import 'terms_conditions_screen.dart';
@@ -235,6 +233,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         title: _t('country'),
                         subtitle: _specializedProfile?['country'] ?? 'غير محدد',
                         onTap: () => _showCountryDialog(),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildSettingCard(
+                        icon: Icons.phone_android,
+                        title: _t('phone_number'),
+                        subtitle: _specializedProfile?['phone_number'] ?? _t('not_specified'),
+                        onTap: () => _showPhoneDialog(),
+                      ),
+                      const SizedBox(height: 12),
+                       _buildSettingCard(
+                        icon: Icons.upload_file_rounded,
+                        title: 'السيرة الذاتية (CV)',
+                        subtitle: _specializedProfile?['cv_url'] != null ? 'تم رفع ملف' : 'لم يتم الرفع',
+                        onTap: _pickCV,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildSettingCard(
+                        icon: Icons.workspace_premium_rounded,
+                        title: 'الشهادات العلمية',
+                        subtitle: _specializedProfile?['certificates_url'] != null ? 'تم رفع الملف' : 'لم يتم الرفع',
+                        onTap: _pickCertificates,
                       ),
                       const SizedBox(height: 12),
                       _buildSettingCard(
@@ -1822,5 +1841,120 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  void _showPhoneDialog() {
+    final controller =
+        TextEditingController(text: _specializedProfile?['phone_number']);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('phone_number')),
+        content: TextField(
+          controller: controller,
+          keyboardType: TextInputType.phone,
+          decoration: InputDecoration(hintText: _t('phone_number')),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text(_t('cancel'))),
+          TextButton(
+            onPressed: () {
+              _updateSpecializedProfile({'phone_number': controller.text.trim()});
+              Navigator.pop(context);
+            },
+            child: Text(_t('save')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickCV() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        await _uploadCV(file);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في اختيار الملف: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadCV(File file) async {
+    try {
+      final userId = _userProfile?['id'];
+      if (userId == null) return;
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('جاري رفع السيرة الذاتية...')),
+        );
+      }
+
+      final storageService = StorageService();
+      final cvUrl = await storageService.uploadTeacherDocument(file, userId, 'cv');
+
+      await _updateSpecializedProfile({'cv_url': cvUrl});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في رفع الملف: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickCertificates() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'png'],
+      );
+
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        await _uploadCertificates(file);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في اختيار الملف: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadCertificates(File file) async {
+    try {
+      final userId = _userProfile?['id'];
+      if (userId == null) return;
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('جاري رفع الشهادات...')),
+        );
+      }
+
+      final storageService = StorageService();
+      final certificateUrl = await storageService.uploadTeacherDocument(file, userId, 'certificates');
+
+      await _updateSpecializedProfile({'certificates_url': certificateUrl});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في رفع الملف: $e')),
+        );
+      }
+    }
   }
 }

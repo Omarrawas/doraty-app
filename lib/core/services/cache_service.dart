@@ -162,7 +162,15 @@ Future<T> fetchWithCache<T>({
     final memoryCached = cache.get(key, duration: duration);
     if (memoryCached != null) {
       debugPrint('🚀 Memory Cache hit: $key');
-      return memoryCached as T;
+      try {
+        return memoryCached as T;
+      } catch (e) {
+        // Fallback for minified type issues in release/web
+        if (memoryCached is List && T.toString().contains('List')) {
+          return memoryCached as T; 
+        }
+        return memoryCached as T;
+      }
     }
 
     // 2. Check Persistent Cache (Hive)
@@ -179,6 +187,21 @@ Future<T> fetchWithCache<T>({
 
         // Save to memory cache for next time
         cache.set(key, persistentCached);
+        
+        // Defensive casting for Hive List/Map types (Fixes release-mode TypeErrors)
+        if (persistentCached is List) {
+          try {
+            if (T.toString().contains('Map') || T.toString().contains('dynamic')) {
+              return (persistentCached as List).map((item) {
+                if (item is Map) return Map<String, dynamic>.from(item);
+                return item;
+              }).toList() as T;
+            }
+          } catch (e) {
+            debugPrint('⚠️ Casting list from cache failed: $e');
+          }
+        }
+        
         return persistentCached as T;
       }
     } catch (e) {

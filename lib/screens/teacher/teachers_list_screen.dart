@@ -266,11 +266,8 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
 
   Widget _buildTeacherCard(Map<String, dynamic> teacher) {
     final userData = teacher['users'] as Map<String, dynamic>?;
-        final name = StringUtils.cleanTeacherName(
-        userData?['full_name_en'] != null &&
-                Provider.of<LocaleProvider>(context).locale == 'en'
-            ? userData!['full_name_en']
-            : (userData?['full_name'] ?? userData?['name'] ?? _t('teacher')));
+    final name = StringUtils.cleanTeacherName(
+        userData?['full_name'] ?? userData?['name'] ?? _t('teacher'));
     final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'];
     final bio = userData?['bio'] as String?;
     final subjects = (userData?['subjects'] as List?)?.cast<String>() ?? [];
