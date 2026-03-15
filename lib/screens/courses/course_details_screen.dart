@@ -14,6 +14,7 @@ import '../../core/services/certificate_service.dart';
 import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../teacher/teacher_profile_screen.dart';
 import '../subscription/payment_screen.dart';
+import '../admin/create_course_screen.dart';
 import '../../core/services/course_download_service.dart';
 import '../../core/services/offline_storage_service.dart';
 import '../../models/download_progress.dart';
@@ -912,6 +913,58 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       );
     }
 
+    final currentUserId = SupabaseService.instance.currentUserId;
+    final isInstructor = widget.course.instructorId == currentUserId;
+
+    if (isInstructor && !_isEnrolled) {
+      return Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: Colors.blue.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.blue.withOpacity(0.5),
+            width: 1.5,
+          ),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CreateCourseScreen(
+                    courseId: widget.course.id,
+                    courseData: widget.course.toJson(),
+                  ),
+                ),
+              );
+            },
+            child: Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                   const Icon(Icons.edit_road_outlined, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Text(
+                    _t('manage_course'),
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Container(
       width: double.infinity,
       height: 56,
@@ -944,17 +997,52 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
                 if (_isEnrolled) ...[
                   const Icon(Icons.check_circle, color: Colors.white),
                   const SizedBox(width: 8),
-                ],
-                Text(
-                  _isEnrolled
-                      ? 'متابعة التعلم'
-                      : 'اشترك الآن - ${widget.course.getFormattedPrice(Provider.of<LocaleProvider>(context, listen: false).locale)}',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  Text(
+                    _t('continue_learning'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
+                ] else
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: _t('subscribe_now_prefix'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                        if (widget.course.hasDiscount) ...[
+                          TextSpan(
+                            text: '${widget.course.getFormattedPrice(Provider.of<LocaleProvider>(context, listen: false).locale)} ',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              decoration: TextDecoration.lineThrough,
+                              fontFamily: 'Cairo',
+                            ),
+                          ),
+                        ],
+                        TextSpan(
+                          text: widget.course.hasDiscount
+                              ? '${widget.course.discountedPrice.toStringAsFixed(0)} ${widget.course.currency == 'ل.س' ? (Provider.of<LocaleProvider>(context, listen: false).locale == 'en' ? 'SYP' : 'ل.س') : widget.course.currency}'
+                              : widget.course.getFormattedPrice(Provider.of<LocaleProvider>(context, listen: false).locale),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
@@ -1009,7 +1097,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       context,
       MaterialPageRoute(
         builder: (context) => PaymentScreen(
-          amount: widget.course.price,
+          amount: widget.course.discountedPrice,
           title: widget.course.title,
           course: widget.course,
         ),

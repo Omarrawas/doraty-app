@@ -8,6 +8,8 @@ import '../../core/services/database_service.dart';
 import '../../core/services/image_upload_service.dart';
 import '../../models/category_model.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
 
 class CreateCourseScreen extends StatefulWidget {
   final String? courseId;
@@ -40,6 +42,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   late TextEditingController _instructorController;
   late TextEditingController _displayInstructorController;
   late TextEditingController _durationController;
+  late TextEditingController _discountController;
 
   bool _isPublished = false;
   bool _isSaving = false;
@@ -53,7 +56,27 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   bool _isLoadingCategories = true;
   String _selectedCurrency = 'ل.س';
 
-  @override
+  // Course Setup Implementation
+  final List<String> _availableTags = [
+    'decision_making',
+    'goal_achievement',
+    'self_development',
+    'order_priorities',
+    'body_language'
+  ];
+  final List<String> _availableLevels = [
+    'all_levels',
+    'beginner',
+    'intermediate',
+    'expert'
+  ];
+  List<String> _selectedTags = [];
+  bool _isFree = false;
+  bool _isLoadingTags = false;
+  
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
+@override
   void initState() {
     super.initState();
     _selectedTeacherId =
@@ -69,7 +92,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       text: widget.courseData?['subject'] ?? '', // Load subject from DB
     );
     _levelController = TextEditingController(
-      text: widget.courseData?['level'] ?? 'مبتدئ',
+      text: widget.courseData?['level'] ?? 'beginner',
     );
     _imageUrlController = TextEditingController(
       text: widget.courseData?['image_url'] ?? '',
@@ -83,15 +106,22 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     );
     _displayInstructorController = TextEditingController(
       text: _selectedTeacherId == null
-          ? 'غير محدد'
+          ? _t('unspecified')
           : widget.courseData?['instructor_name'] ?? '',
     );
     _durationController = TextEditingController(
       text: widget.courseData?['duration_hours']?.toString() ?? '0',
     );
+    _discountController = TextEditingController(
+      text: widget.courseData?['discount_percentage']?.toString() ?? '0',
+    );
 
     _isPublished = widget.courseData?['is_published'] ?? false;
     _selectedCurrency = widget.courseData?['currency'] ?? 'ل.س';
+    
+    // Calculate _isFree based on price
+    final priceValue = double.tryParse(_priceController.text) ?? 0.0;
+    _isFree = priceValue == 0;
     
     // Multi-category support
     final categoryIds = widget.courseData?['category_ids'] as List?;
@@ -106,6 +136,24 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     
     _loadTeachers();
     _loadCategories();
+    _loadCourseTags();
+  }
+
+  Future<void> _loadCourseTags() async {
+    if (widget.courseId == null) return;
+    
+    setState(() => _isLoadingTags = true);
+    try {
+      final tags = await _db.getCourseTags(widget.courseId!);
+      if (mounted) {
+        setState(() {
+          _selectedTags = tags;
+          _isLoadingTags = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoadingTags = false);
+    }
   }
 
   Future<void> _loadCategories() async {
@@ -197,6 +245,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     _instructorController.dispose();
     _displayInstructorController.dispose();
     _durationController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
 
@@ -223,20 +272,20 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildGlassContainer(
-                            title: 'المعلومات الأساسية',
+                            title: _t('basic_info_label'),
                             child: Column(
                               children: [
                                 TextFormField(
                                   controller: _titleController,
                                   decoration: _inputDecoration(
-                                    label: 'عنوان الدورة',
-                                    hint: 'مثال: دورة الرياضيات المتقدمة',
+                                    label: _t('course_title_label'),
+                                    hint: _t('course_title_hint'),
                                     icon: Icons.title,
                                   ),
                                   style: const TextStyle(color: Colors.white),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
-                                      return 'الرجاء إدخال عنوان الدورة';
+                                      return _t('error_enter_title');
                                     }
                                     return null;
                                   },
@@ -245,8 +294,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                 TextFormField(
                                   controller: _descriptionController,
                                   decoration: _inputDecoration(
-                                    label: 'وصف الدورة',
-                                    hint: 'وصف مفصل عن محتوى الدورة',
+                                    label: _t('course_description'),
+                                    hint: _t('course_description_hint'),
                                     icon: Icons.description,
                                   ),
                                   style: const TextStyle(color: Colors.white),
@@ -331,15 +380,15 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                       child: TextFormField(
                                         controller: _subjectController,
                                         decoration: _inputDecoration(
-                                          label: 'المادة',
-                                          hint: 'مثال: فيزياء',
+                                          label: _t('subject_label'),
+                                          hint: _t('subject_hint'),
                                           icon: Icons.book,
                                         ),
                                         style: const TextStyle(
                                             color: Colors.white),
                                         validator: (value) {
                                           if (value == null || value.isEmpty) {
-                                            return 'الرجاء إدخال اسم المادة';
+                                            return _t('error_enter_subject');
                                           }
                                           return null;
                                         },
@@ -350,19 +399,18 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                       child: DropdownButtonFormField<String>(
                                         value: _levelController.text.isNotEmpty
                                             ? _levelController.text
-                                            : 'مبتدئ',
+                                            : 'beginner',
                                         decoration: _inputDecoration(
-                                          label: 'المستوى',
+                                          label: _t('level_label'),
                                           icon: Icons.signal_cellular_alt,
                                         ),
                                         dropdownColor: const Color(0xFF1A1A2E),
                                         style: const TextStyle(
                                             color: Colors.white),
-                                        items: ['مبتدئ', 'متوسط', 'متقدم']
-                                            .map((item) {
+                                        items: _availableLevels.map((item) {
                                           return DropdownMenuItem(
                                             value: item,
-                                            child: Text(item),
+                                            child: Text(_t(item)),
                                           );
                                         }).toList(),
                                         onChanged: (value) {
@@ -376,6 +424,61 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 20),
+                                Text(
+                                  _t('tags_optional_label'),
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                _isLoadingTags
+                                    ? const Center(
+                                        child: CircularProgressIndicator())
+                                    : Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: _availableTags.map((tag) {
+                                          final isSelected =
+                                              _selectedTags.contains(tag);
+                                          return FilterChip(
+                                            label: Text(_t(tag)),
+                                            selected: isSelected,
+                                            onSelected: (selected) {
+                                              setState(() {
+                                                if (selected) {
+                                                  _selectedTags.add(tag);
+                                                } else {
+                                                  _selectedTags.remove(tag);
+                                                }
+                                              });
+                                            },
+                                            selectedColor: AppColors
+                                                .primaryPurple
+                                                .withOpacity(0.5),
+                                            checkmarkColor: Colors.white,
+                                            labelStyle: TextStyle(
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : Colors.white70,
+                                              fontSize: 12,
+                                            ),
+                                            backgroundColor:
+                                                Colors.white.withOpacity(0.05),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              side: BorderSide(
+                                                color: isSelected
+                                                    ? AppColors.primaryPurple
+                                                    : Colors.white
+                                                        .withOpacity(0.1),
+                                              ),
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
                               ],
                             ),
                           ),
@@ -433,67 +536,119 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                           ),
                           const SizedBox(height: 20),
                           _buildGlassContainer(
-                            title: 'بيانات التسعير والوقت',
-                            child: Row(
+                            title: _t('pricing_time_data'),
+                            child: Column(
                               children: [
-                                Expanded(
-                                  flex: 3,
-                                  child: TextFormField(
-                                    controller: _priceController,
-                                    decoration: _inputDecoration(
-                                      label: 'السعر',
-                                      hint: '0 للمجاني',
-                                      icon: Icons.attach_money,
-                                    ),
-                                    style: const TextStyle(color: Colors.white),
-                                    keyboardType: TextInputType.number,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  flex: 2,
-                                  child: DropdownButtonFormField<String>(
-                                    value: _selectedCurrency,
-                                    isExpanded: true,
-                                    decoration: _inputDecoration(
-                                      label: 'العملة',
-                                      icon: Icons.payments_outlined,
-                                    ),
-                                    dropdownColor: const Color(0xFF1A1A2E),
-                                    style: const TextStyle(color: Colors.white),
-                                    items: const [
-                                      DropdownMenuItem(
-                                          value: 'ل.س', child: Text('ل.س')),
-                                      DropdownMenuItem(
-                                          value: r'$', child: Text(r'$')),
-                                    ],
-                                    onChanged: (v) {
-                                      if (v != null) {
-                                        setState(() => _selectedCurrency = v);
+                                _buildSwitchTile(
+                                  title: _t('free_course'),
+                                  subtitle: _t('free_course_desc'),
+                                  value: _isFree,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      _isFree = value;
+                                      if (value) {
+                                        _priceController.text = '0';
                                       }
-                                    },
-                                  ),
+                                    });
+                                  },
+                                  icon: Icons.money_off,
+                                  activeColor: Colors.blueAccent,
                                 ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  flex: 3,
-                                  child: TextFormField(
-                                    controller: _durationController,
-                                    decoration: _inputDecoration(
-                                      label: 'الساعات',
-                                      hint: '40',
-                                      icon: Icons.access_time,
+                                const SizedBox(height: 16),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      flex: 3,
+                                      child: TextFormField(
+                                        controller: _priceController,
+                                        enabled: !_isFree,
+                                        decoration: _inputDecoration(
+                                          label: _t('price'),
+                                          hint: _t('price_hint'),
+                                          icon: Icons.attach_money,
+                                        ).copyWith(
+                                          fillColor: _isFree 
+                                              ? Colors.white.withOpacity(0.02)
+                                              : Colors.white.withOpacity(0.05),
+                                        ),
+                                        style: TextStyle(
+                                          color: _isFree ? Colors.white38 : Colors.white,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                      ),
                                     ),
-                                    style: const TextStyle(color: Colors.white),
-                                    keyboardType: TextInputType.number,
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      flex: 2,
+                                      child: DropdownButtonFormField<String>(
+                                        value: _selectedCurrency,
+                                        isExpanded: true,
+                                        decoration: _inputDecoration(
+                                          label: _t('currency'),
+                                          icon: Icons.payments_outlined,
+                                        ),
+                                        dropdownColor: const Color(0xFF1A1A2E),
+                                        style: const TextStyle(color: Colors.white),
+                                        items: const [
+                                          DropdownMenuItem(
+                                              value: 'ل.س', child: Text('ل.س')),
+                                          DropdownMenuItem(
+                                              value: r'$', child: Text(r'$')),
+                                        ],
+                                        onChanged: (v) {
+                                          if (v != null) {
+                                            setState(() => _selectedCurrency = v);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      flex: 3,
+                                      child: TextFormField(
+                                        controller: _durationController,
+                                        decoration: _inputDecoration(
+                                          label: _t('duration_label'),
+                                          hint: '40',
+                                          icon: Icons.access_time,
+                                        ),
+                                        style: const TextStyle(color: Colors.white),
+                                        keyboardType: TextInputType.number,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _discountController,
+                                  enabled: !_isFree,
+                                  decoration: _inputDecoration(
+                                    label: _t('discount_percentage'),
+                                    hint: _t('enter_discount'),
+                                    icon: Icons.percent,
+                                  ).copyWith(
+                                    fillColor: _isFree 
+                                        ? Colors.white.withOpacity(0.02)
+                                        : Colors.white.withOpacity(0.05),
                                   ),
+                                  style: TextStyle(
+                                    color: _isFree ? Colors.white38 : Colors.white,
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) return null;
+                                    final discount = int.tryParse(value);
+                                    if (discount == null) return _t('error_label');
+                                    if (discount < 0 || discount > 100) return _t('discount_range_error');
+                                    return null;
+                                  },
                                 ),
                               ],
                             ),
                           ),
                           const SizedBox(height: 20),
                           _buildGlassContainer(
-                            title: 'المدرس والظهور',
+                            title: _t('instructor_and_visibility'),
                             child: Column(
                               children: [
                                 _isLoadingTeachers
@@ -577,7 +732,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: Text(
-              isEditing ? 'تعديل الدورة' : 'إنشاء دورة جديدة',
+              isEditing ? _t('edit_course') : _t('create_new_course'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.normal,
@@ -666,9 +821,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'اختر المدرس المسئول',
-                  style: TextStyle(
+                Text(
+                  _t('select_teacher'),
+                  style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.normal),
@@ -678,7 +833,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: TextFormField(
                     decoration: _inputDecoration(
-                      label: 'بحث عن مدرس...',
+                      label: _t('search_teacher'),
                       icon: Icons.search,
                     ),
                     style: const TextStyle(color: Colors.white),
@@ -857,7 +1012,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   Icon(isEditing ? Icons.save : Icons.add, color: Colors.white),
                   const SizedBox(width: 8),
                   Text(
-                    isEditing ? 'حفظ التعديلات' : 'إنشاء الدورة',
+                    isEditing ? _t('save_changes') : _t('create_new_course'),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -875,7 +1030,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     if (_selectedCategoryIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('الرجاء اختيار تصنيف واحد على الأقل')),
+        SnackBar(content: Text(_t('select_at_least_one_category'))),
       );
       return;
     }
@@ -898,25 +1053,33 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         'duration_hours': int.tryParse(_durationController.text) ?? 0,
         'is_published': _isPublished,
         'currency': _selectedCurrency,
+        'discount_percentage': int.tryParse(_discountController.text) ?? 0,
         'updated_at': DateTime.now().toIso8601String(),
       };
 
       if (widget.courseId == null) {
         courseData['created_at'] = DateTime.now().toIso8601String();
-        await _db.supabaseClient.from('courses').insert(courseData);
+        final response = await _db.supabaseClient
+            .from('courses')
+            .insert(courseData)
+            .select('id')
+            .single();
+        final newCourseId = response['id'];
+        await _db.addCourseTags(newCourseId, _selectedTags);
       } else {
         await _db.supabaseClient
             .from('courses')
             .update(courseData)
             .eq('id', widget.courseId!);
+        await _db.updateCourseTags(widget.courseId!, _selectedTags);
       }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(widget.courseId == null
-                ? 'تم إنشاء الدورة بنجاح'
-                : 'تم تحديث الدورة بنجاح'),
+                ? _t('course_created_success')
+                : _t('course_updated_success')),
             backgroundColor: Colors.green,
           ),
         );
@@ -926,7 +1089,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('خطأ في حفظ البيانات: $e'),
+            content: Text('${_t('error_saving_data')}: $e'),
             backgroundColor: Colors.red,
           ),
         );

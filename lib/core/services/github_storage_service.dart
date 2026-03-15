@@ -1,9 +1,52 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:http/http.dart' as http;
+import '../env/multi_env.dart';
+
 /// Service for handling GitHub-based file storage
 /// Converts GitHub URLs to raw content URLs and manages file references
 class GitHubStorageService {
   // Base URL for the doraty-files repository
   static const String baseRepoUrl = 'https://github.com/Omarrawas/doraty-files';
   static const String baseRawUrl = 'https://raw.githubusercontent.com/Omarrawas/doraty-files/main';
+  static const String repoOwner = 'Omarrawas';
+  static const String repoName = 'doraty-files';
+
+  /// Upload a file to GitHub repository
+  static Future<String> uploadFile({
+    required File file,
+    required String path,
+    String? commitMessage,
+  }) async {
+    try {
+      final bytes = await file.readAsBytes();
+      final base64Content = base64Encode(bytes);
+      
+      final url = 'https://api.github.com/repos/$repoOwner/$repoName/contents/$path';
+      
+      final response = await http.put(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'token ${Env.githubToken}',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+        body: jsonEncode({
+          'message': commitMessage ?? 'Upload file: $path',
+          'content': base64Content,
+          'branch': 'main',
+        }),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return buildRawUrl(path);
+      } else {
+        final error = jsonDecode(response.body);
+        throw 'فشل الرفع إلى GitHub: ${error['message'] ?? response.statusCode}';
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 
   /// Convert a GitHub URL to a raw content URL
   /// 

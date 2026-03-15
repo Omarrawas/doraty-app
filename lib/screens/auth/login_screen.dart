@@ -6,8 +6,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/services/database_service.dart';
 import '../../core/services/screen_security_service.dart';
 import 'register_screen.dart';
+import 'role_selection_screen.dart';
+import 'student_register_screen.dart';
+import 'teacher_register_screen.dart';
 import '../../core/utils/error_utils.dart';
 import '../../main.dart';
 
@@ -37,12 +41,63 @@ class _LoginScreenState extends State<LoginScreen> {
           setState(() {
             _isLoading = false;
           });
+          
+          final userId = session.user.id;
+          bool hasRole = false;
+          
+          try {
+            final roleResponse = await SupabaseService.instance.client
+                .from('user_roles')
+                .select('id')
+                .eq('user_id', userId)
+                .maybeSingle();
+            hasRole = roleResponse != null;
+          } catch (_) {}
+
           await _applyScreenSecurity();
+          
           if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const MainScreen()),
-            );
+            if (!hasRole) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+              );
+            } else {
+              // Check if profile exists
+              final dbService = DatabaseService.instance;
+              final role = await dbService.getUserRole();
+              
+              if (role == 'student') {
+                final profile = await dbService.getStudentProfile(userId);
+                if (profile == null) {
+                  if (mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const StudentRegisterScreen()),
+                    );
+                  }
+                  return;
+                }
+              } else if (role == 'teacher') {
+                final profile = await dbService.getTeacherProfile(userId);
+                if (profile == null) {
+                  if (mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (context) => const TeacherRegisterScreen()),
+                    );
+                  }
+                  return;
+                }
+              }
+
+              if (mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MainScreen()),
+                );
+              }
+            }
           }
         }
       }

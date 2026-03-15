@@ -8,6 +8,7 @@ import '../../core/theme/theme_provider.dart' as theme_provider;
 import '../../core/services/auth_service.dart';
 import '../../core/services/storage_service.dart';
 import '../../core/services/settings_service.dart';
+import '../../core/services/database_service.dart';
 
 import '../auth/login_screen.dart';
 
@@ -40,6 +41,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   File? _selectedImage;
   final ImagePicker _imagePicker = ImagePicker();
   String _appVersion = '';
+  String? _userRole;
+  Map<String, dynamic>? _specializedProfile;
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -73,11 +76,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadUserProfile() async {
     try {
-      final profile = await AuthService().getUserProfile();
+      final authService = AuthService();
+      final dbService = DatabaseService.instance;
+      
+      final profile = await authService.getUserProfile();
       if (profile != null) {
+        final role = await dbService.getUserRole();
+        Map<String, dynamic>? specialized;
+        
+        if (role == 'student') {
+          specialized = await dbService.getStudentProfile(profile['id']);
+        } else if (role == 'teacher') {
+          specialized = await dbService.getTeacherProfile(profile['id']);
+        }
+
         setState(() {
           _userProfile = profile;
           _currentAvatarUrl = profile['avatar_url'];
+          _userRole = role;
+          _specializedProfile = specialized;
         });
       }
     } catch (e) {
@@ -92,6 +109,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _updateUserProfile(Map<String, dynamic> updates) async {
     try {
       await AuthService().updateUserProfile(updates);
+      await _loadUserProfile(); // Refresh data
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_t('changes_saved'))),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateSpecializedProfile(Map<String, dynamic> updates) async {
+    try {
+      final userId = _userProfile?['id'];
+      if (userId == null) return;
+
+      final dbService = DatabaseService.instance;
+      if (_userRole == 'student') {
+        await dbService.updateStudentProfile(userId, updates);
+      } else if (_userRole == 'teacher') {
+        await dbService.updateTeacherProfile(userId, updates);
+      }
+
       await _loadUserProfile(); // Refresh data
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -148,6 +192,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       onTap: _showNameEditDialog,
                     ),
+
+                    if (_userRole == 'student') ...[
+                      const SizedBox(height: 24),
+                      _buildSectionTitle(_t('educational_info')),
+                      const SizedBox(height: 12),
+                      _buildSettingCard(
+                        icon: Icons.school_outlined,
+                        title: _t('education_level'),
+                        subtitle: _specializedProfile?['education_level'] == 'school' ? 'مدرسة' : 'جامعة',
+                        onTap: () => _showEducationLevelDialog(),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildSettingCard(
+                        icon: Icons.grade_outlined,
+                        title: _t('grade'),
+                        subtitle: _specializedProfile?['grade'] ?? 'غير محدد',
+                        onTap: () => _showGradeDialog(),
+                      ),
+                      if (_specializedProfile?['education_level'] == 'university') ...[
+                        const SizedBox(height: 12),
+                        _buildSettingCard(
+                          icon: Icons.workspace_premium_outlined,
+                          title: _t('specialization'),
+                          subtitle: _specializedProfile?['specialization'] ?? 'غير محدد',
+                          onTap: () => _showSpecializationDialog(),
+                        ),
+                      ],
+                    ] else if (_userRole == 'teacher') ...[
+                      const SizedBox(height: 24),
+                      _buildSectionTitle(_t('professional_info')),
+                      const SizedBox(height: 12),
+                      _buildSettingCard(
+                        icon: Icons.workspace_premium_outlined,
+                        title: _t('specialization'),
+                        subtitle: _specializedProfile?['specialization'] ?? 'غير محدد',
+                        onTap: () => _showSpecializationDialog(),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildSettingCard(
+                        icon: Icons.public_rounded,
+                        title: _t('country'),
+                        subtitle: _specializedProfile?['country'] ?? 'غير محدد',
+                        onTap: () => _showCountryDialog(),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildSettingCard(
+                        icon: Icons.description_outlined,
+                        title: _t('bio'),
+                        subtitle: _specializedProfile?['bio'] ?? 'لا يوجد نبذة',
+                        onTap: () => _showBioDialog(),
+                      ),
+                    ],
 
                     const SizedBox(height: 24),
 
@@ -1573,5 +1669,158 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     }
+  }
+
+  final List<String> _schoolGrades = [
+    'الصف الأول', 'الصف الثاني', 'الصف الثالث',
+    'الصف الرابع', 'الصف الخامس', 'الصف السادس',
+    'الصف السابع', 'الصف الثامن', 'الصف التاسع',
+    'الصف العاشر', 'الحادي عشر', 'البكالوريا'
+  ];
+
+  final List<String> _universityYears = [
+    'السنة الأولى', 'السنة الثانية', 'السنة الثالثة',
+    'السنة الرابعة', 'السنة الخامسة', 'السنة السادسة',
+    'خريج'
+  ];
+
+  void _showEducationLevelDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('education_level')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('مدرسة'),
+              onTap: () {
+                _updateSpecializedProfile({
+                  'education_level': 'school',
+                  'grade': _schoolGrades.first,
+                  'specialization': null
+                });
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              title: const Text('جامعة'),
+              onTap: () {
+                _updateSpecializedProfile({
+                  'education_level': 'university',
+                  'grade': _universityYears.first
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showGradeDialog() {
+    final isSchool = _specializedProfile?['education_level'] == 'school';
+    final items = isSchool ? _schoolGrades : _universityYears;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('grade')),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: items.length,
+            itemBuilder: (context, index) => ListTile(
+              title: Text(items[index]),
+              onTap: () {
+                _updateSpecializedProfile({'grade': items[index]});
+                Navigator.pop(context);
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showSpecializationDialog() {
+    final controller =
+        TextEditingController(text: _specializedProfile?['specialization']);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('specialization')),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(hintText: _t('specialization')),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text(_t('cancel'))),
+          TextButton(
+            onPressed: () {
+              _updateSpecializedProfile(
+                  {'specialization': controller.text.trim()});
+              Navigator.pop(context);
+            },
+            child: Text(_t('save')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCountryDialog() {
+    final controller =
+        TextEditingController(text: _specializedProfile?['country']);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('country')),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(hintText: _t('country')),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text(_t('cancel'))),
+          TextButton(
+            onPressed: () {
+              _updateSpecializedProfile({'country': controller.text.trim()});
+              Navigator.pop(context);
+            },
+            child: Text(_t('save')),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showBioDialog() {
+    final controller = TextEditingController(text: _specializedProfile?['bio']);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('bio')),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: InputDecoration(hintText: _t('bio')),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text(_t('cancel'))),
+          TextButton(
+            onPressed: () {
+              _updateSpecializedProfile({'bio': controller.text.trim()});
+              Navigator.pop(context);
+            },
+            child: Text(_t('save')),
+          ),
+        ],
+      ),
+    );
   }
 }

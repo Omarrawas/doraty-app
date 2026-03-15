@@ -156,6 +156,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.DORATY_GITHUB_TOKEN }}
 
+# ================= NOTIFICATIONS =================
+
+  notify:
+    needs: windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
       # Telegram Notification
       - name: Send Telegram Notification
         shell: bash

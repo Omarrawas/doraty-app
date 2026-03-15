@@ -53,6 +53,29 @@ class StorageService {
     }
   }
 
+  /// Upload teacher document (CV or Certificate)
+  Future<String> uploadTeacherDocument(File file, String userId, String type) async {
+    try {
+      final extension = file.path.split('.').last;
+      final fileName = '${type}_${userId}_${DateTime.now().millisecondsSinceEpoch}.$extension';
+      final path = '$type/$fileName';
+
+      await _client.storage.from('teacher-documents').upload(
+            path,
+            file,
+            fileOptions: const FileOptions(
+              cacheControl: '3600',
+              upsert: true,
+            ),
+          );
+
+      final publicUrl = _client.storage.from('teacher-documents').getPublicUrl(path);
+      return publicUrl;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Delete file from storage
   Future<void> deleteFile(String bucket, String path) async {
     try {

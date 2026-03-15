@@ -408,11 +408,19 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       _videoPlayerController!.initialize().then((_) {
         if (!mounted) return;
         setState(() {
+          final isVertical = _videoPlayerController!.value.aspectRatio < 1.0;
           _chewieController = ChewieController(
             videoPlayerController: _videoPlayerController!,
             autoPlay: false,
             looping: false,
             aspectRatio: _videoPlayerController!.value.aspectRatio,
+            deviceOrientationsOnEnterFullScreen: isVertical
+                ? [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]
+                : [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight],
+            deviceOrientationsAfterFullScreen: const [
+              DeviceOrientation.portraitUp,
+              DeviceOrientation.portraitDown,
+            ],
             errorBuilder: (context, errorMessage) {
               return Center(
                 child: Padding(
@@ -468,11 +476,19 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       _videoPlayerController!.initialize().then((_) {
         if (!mounted) return;
         setState(() {
+          final isVertical = _videoPlayerController!.value.aspectRatio < 1.0;
           _chewieController = ChewieController(
             videoPlayerController: _videoPlayerController!,
             autoPlay: false,
             looping: false,
             aspectRatio: _videoPlayerController!.value.aspectRatio,
+            deviceOrientationsOnEnterFullScreen: isVertical
+                ? [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]
+                : [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight],
+            deviceOrientationsAfterFullScreen: const [
+              DeviceOrientation.portraitUp,
+              DeviceOrientation.portraitDown,
+            ],
             placeholder: Container(
               color: Colors.black,
               child: const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple)),

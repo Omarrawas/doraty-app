@@ -3,6 +3,7 @@ import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/services/screen_security_service.dart';
+import '../auth/role_selection_screen.dart';
 import '../auth/login_screen.dart';
 import '../../main.dart';
 
@@ -63,16 +64,37 @@ class _SplashScreenState extends State<SplashScreen>
           '🔐 Auth check: ${isAuthenticated ? "Authenticated" : "Not authenticated"}');
 
       if (isAuthenticated) {
+        final userId = supabaseService.currentUserId;
+        bool hasRole = false;
+        
+        if (userId != null) {
+          try {
+            final roleResponse = await supabaseService.client
+                .from('user_roles')
+                .select('id')
+                .eq('user_id', userId)
+                .maybeSingle();
+            hasRole = roleResponse != null;
+          } catch (_) {}
+        }
+
         // Check user role and apply screen security
         await _applyScreenSecurity();
 
         if (!mounted) return;
         
-        // User is logged in, go to main screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
+        if (!hasRole) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+          );
+        } else {
+          // User is logged in, go to main screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        }
       } else {
         // User is not logged in, go to login screen
         Navigator.pushReplacement(

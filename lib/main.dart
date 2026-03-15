@@ -13,6 +13,8 @@ import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/services/supabase_service.dart';
 import 'core/env/multi_env.dart';
+import 'screens/teacher/teacher_dashboard_screen.dart';
+import 'screens/admin/admin_dashboard_screen.dart';
 
 import 'models/download.dart';
 import 'core/services/offline_cache_service.dart';
@@ -181,6 +183,26 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWideScreen = screenWidth > 900;
+    final authService = Provider.of<AuthService>(context);
+    final userRole = authService.userProfile?['role'] ??
+        (authService.userProfile?['is_admin'] == true ? 'admin' : 'student');
+
+    final bool isManager = userRole == 'teacher' ||
+        userRole == 'admin' ||
+        userRole == 'super_admin';
+
+    // Build common screens
+    final List<Widget> screens = [
+      const HomeScreen(),
+      const ExploreScreen(),
+      if (isManager) ...[
+        userRole == 'teacher'
+            ? const TeacherDashboardScreen()
+            : const AdminDashboardScreen(),
+      ],
+      const CoursesListScreen(showBackButton: false),
+      const ProfileScreen(),
+    ];
 
     return Scaffold(
       extendBody: true,
@@ -203,7 +225,8 @@ class _MainScreenState extends State<MainScreen> {
                     _currentIndex = index;
                   });
                 },
-                backgroundColor: AppColors.getSurfaceColor(context).withOpacity(0.95),
+                backgroundColor:
+                    AppColors.getSurfaceColor(context).withOpacity(0.95),
                 indicatorColor: AppColors.primaryPurple.withOpacity(0.2),
                 labelType: NavigationRailLabelType.all,
                 useIndicator: true,
@@ -211,17 +234,27 @@ class _MainScreenState extends State<MainScreen> {
                 destinations: [
                   const NavigationRailDestination(
                     icon: Icon(Icons.home_outlined),
-                    selectedIcon: Icon(Icons.home, color: AppColors.primaryPurple),
+                    selectedIcon:
+                        Icon(Icons.home, color: AppColors.primaryPurple),
                     label: Text('الرئيسية', style: TextStyle(fontSize: 12)),
                   ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.manage_search_outlined),
-                    selectedIcon: Icon(Icons.search, color: AppColors.primaryPurple),
+                    selectedIcon:
+                        Icon(Icons.search, color: AppColors.primaryPurple),
                     label: Text('استكشف', style: TextStyle(fontSize: 12)),
                   ),
+                  if (isManager)
+                    const NavigationRailDestination(
+                      icon: Icon(Icons.dashboard_outlined),
+                      selectedIcon: Icon(Icons.dashboard,
+                          color: AppColors.primaryPurple),
+                      label: Text('لوحة التحكم', style: TextStyle(fontSize: 12)),
+                    ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.play_circle_outline),
-                    selectedIcon: Icon(Icons.play_circle, color: AppColors.primaryPurple),
+                    selectedIcon:
+                        Icon(Icons.play_circle, color: AppColors.primaryPurple),
                     label: Text('دوراتي', style: TextStyle(fontSize: 12)),
                   ),
                   NavigationRailDestination(
@@ -232,7 +265,8 @@ class _MainScreenState extends State<MainScreen> {
                         return Container(
                           width: 30,
                           height: 30,
-                          decoration: const BoxDecoration(shape: BoxShape.circle),
+                          decoration:
+                              const BoxDecoration(shape: BoxShape.circle),
                           child: ClipOval(
                             child: (auth.isAuthenticated && photoUrl != null)
                                 ? Image.network(photoUrl, fit: BoxFit.cover)
@@ -252,13 +286,8 @@ class _MainScreenState extends State<MainScreen> {
                 constraints: const BoxConstraints(maxWidth: 1200),
                 child: GradientBackground(
                   child: IndexedStack(
-                    index: _currentIndex,
-                    children: const [
-                      HomeScreen(),
-                      ExploreScreen(),
-                      CoursesListScreen(showBackButton: false),
-                      ProfileScreen(),
-                    ],
+                    index: _currentIndex >= screens.length ? 0 : _currentIndex,
+                    children: screens,
                   ),
                 ),
               ),
@@ -266,79 +295,89 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: isWideScreen ? null : Consumer<LocaleProvider>(
-        builder: (context, localeProvider, child) {
-          return SafeArea(
-            bottom: true,
-            child: CurvedNavigationBar(
-              index: _currentIndex,
-              height: 60.0,
-              items: <Widget>[
-                Icon(Icons.home_outlined,
-                    size: 30,
-                    color: _currentIndex == 0
-                        ? Colors.white
-                        : AppColors.primaryPurple),
-                Icon(Icons.manage_search_outlined,
-                    size: 30,
-                    color: _currentIndex == 1
-                        ? Colors.white
-                        : AppColors.primaryPurple),
-                Icon(Icons.play_circle_outline,
-                    size: 30,
-                    color: _currentIndex == 2
-                        ? Colors.white
-                        : AppColors.primaryPurple),
-                Consumer<AuthService>(
-                  builder: (context, auth, _) {
-                    final photoUrl = auth.userProfile?['avatar_url'] ??
-                        auth.userProfile?['photo_url'];
-                    return Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: _currentIndex == 3
-                            ? Border.all(color: Colors.white, width: 2)
-                            : null,
+      bottomNavigationBar: isWideScreen
+          ? null
+          : Consumer<LocaleProvider>(
+              builder: (context, localeProvider, child) {
+                return SafeArea(
+                  bottom: true,
+                  child: CurvedNavigationBar(
+                    index: _currentIndex >= screens.length ? 0 : _currentIndex,
+                    height: 60.0,
+                    items: <Widget>[
+                      Icon(Icons.home_outlined,
+                          size: 30,
+                          color: _currentIndex == 0
+                              ? Colors.white
+                              : AppColors.primaryPurple),
+                      Icon(Icons.manage_search_outlined,
+                          size: 30,
+                          color: _currentIndex == 1
+                              ? Colors.white
+                              : AppColors.primaryPurple),
+                      if (isManager)
+                        Icon(Icons.dashboard_outlined,
+                            size: 30,
+                            color: _currentIndex == 2
+                                ? Colors.white
+                                : AppColors.primaryPurple),
+                      Icon(Icons.play_circle_outline,
+                          size: 30,
+                          color: _currentIndex == (isManager ? 3 : 2)
+                              ? Colors.white
+                              : AppColors.primaryPurple),
+                      Consumer<AuthService>(
+                        builder: (context, auth, _) {
+                          final photoUrl = auth.userProfile?['avatar_url'] ??
+                              auth.userProfile?['photo_url'];
+                          final profileIndex = isManager ? 4 : 3;
+                          return Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: _currentIndex == profileIndex
+                                  ? Border.all(color: Colors.white, width: 2)
+                                  : null,
+                            ),
+                            child: ClipOval(
+                              child: (auth.isAuthenticated && photoUrl != null)
+                                  ? Image.network(
+                                      photoUrl,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error,
+                                              stackTrace) =>
+                                          Icon(Icons.person_outline,
+                                              size: 30,
+                                              color: _currentIndex == profileIndex
+                                                  ? Colors.white
+                                                  : AppColors.primaryPurple),
+                                    )
+                                  : Icon(Icons.person_outline,
+                                      size: 30,
+                                      color: _currentIndex == profileIndex
+                                          ? Colors.white
+                                          : AppColors.primaryPurple),
+                            ),
+                          );
+                        },
                       ),
-                      child: ClipOval(
-                        child: (auth.isAuthenticated && photoUrl != null)
-                            ? Image.network(
-                                photoUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Icon(Icons.person_outline,
-                                        size: 30,
-                                        color: _currentIndex == 3
-                                            ? Colors.white
-                                            : AppColors.primaryPurple),
-                              )
-                            : Icon(Icons.person_outline,
-                                size: 30,
-                                color: _currentIndex == 3
-                                    ? Colors.white
-                                    : AppColors.primaryPurple),
-                      ),
-                    );
-                  },
-                ),
-              ],
-              color: AppColors.getSurfaceColor(context).withOpacity(0.95),
-              buttonBackgroundColor: AppColors.primaryPurple,
-              backgroundColor: Colors.transparent,
-              animationCurve: Curves.easeInOut,
-              animationDuration: const Duration(milliseconds: 300),
-              onTap: (index) {
-                setState(() {
-                  _currentIndex = index;
-                });
+                    ],
+                    color: AppColors.getSurfaceColor(context).withOpacity(0.95),
+                    buttonBackgroundColor: AppColors.primaryPurple,
+                    backgroundColor: Colors.transparent,
+                    animationCurve: Curves.easeInOut,
+                    animationDuration: const Duration(milliseconds: 300),
+                    onTap: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                    letIndexChange: (index) => true,
+                  ),
+                );
               },
-              letIndexChange: (index) => true,
             ),
-          );
-        },
-      ),
     );
   }
 }

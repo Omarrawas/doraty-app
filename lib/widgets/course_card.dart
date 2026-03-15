@@ -192,13 +192,29 @@ class _CourseCardState extends State<CourseCard>
                                   color: Colors.white.withOpacity(0.5),
                                 ),
                               ),
-                              Text(
-                                widget.course.getFormattedPrice(locale),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  if (widget.course.hasDiscount)
+                                    Text(
+                                      widget.course.getFormattedPrice(locale),
+                                      style: TextStyle(
+                                        color: Colors.white.withOpacity(0.5),
+                                        fontSize: 10,
+                                        decoration: TextDecoration.lineThrough,
+                                      ),
+                                    ),
+                                  Text(
+                                    widget.course.hasDiscount
+                                        ? '${widget.course.discountedPrice.toStringAsFixed(0)} ${widget.course.currency == 'ل.س' ? (locale == 'en' ? 'SYP' : 'ل.س') : widget.course.currency}'
+                                        : widget.course.getFormattedPrice(locale),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -247,6 +263,36 @@ class _CourseCardState extends State<CourseCard>
                                               Icons.image_not_supported,
                                               color: Colors.white30),
                                         ),
+                                  
+                                  // --- Discount Badge ---
+                                  if (widget.course.hasDiscount)
+                                    Positioned(
+                                      top: 10,
+                                      right: 10,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.redAccent.withOpacity(0.9),
+                                          borderRadius: BorderRadius.circular(8),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.2),
+                                              blurRadius: 4,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Text(
+                                          '-${widget.course.discountPercentage}%',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
 
                                   // --- Overlay Button (shown only when showEnrollButton is true) ---
                                   if (widget.showEnrollButton)

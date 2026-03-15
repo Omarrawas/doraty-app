@@ -160,6 +160,22 @@ class DatabaseService {
     }
   }
 
+  /// Update tags for a course (replaces existing tags)
+  Future<void> updateCourseTags(String courseId, List<String> tags) async {
+    try {
+      // Delete existing tags
+      await _client.from('course_tags').delete().eq('course_id', courseId);
+
+      // Add new tags
+      if (tags.isNotEmpty) {
+        await addCourseTags(courseId, tags);
+      }
+    } catch (e) {
+      debugPrint('Error updating course tags: $e');
+      rethrow;
+    }
+  }
+
 
 
   // ==================== SEARCH ====================
@@ -2331,6 +2347,86 @@ class DatabaseService {
           .eq('user_id', userId)
           .eq('role_id', role['id']);
     } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Save teacher profile data
+  Future<void> saveTeacherProfile(Map<String, dynamic> data) async {
+    try {
+      await _client.from('teacher_profiles').upsert(data);
+      
+      // Also assign the teacher role if not already assigned
+      final userId = data['id'];
+      if (userId != null) {
+        await assignRole(userId, 'teacher');
+      }
+    } catch (e) {
+      debugPrint('❌ Error saving teacher profile: $e');
+      rethrow;
+    }
+  }
+
+  /// Save student profile data
+  Future<void> saveStudentProfile(Map<String, dynamic> data) async {
+    try {
+      await _client.from('student_profiles').upsert(data);
+      
+      // Also assign the student role if not already assigned
+      final userId = data['id'];
+      if (userId != null) {
+        await assignRole(userId, 'student');
+      }
+    } catch (e) {
+      debugPrint('❌ Error saving student profile: $e');
+      rethrow;
+    }
+  }
+
+  /// Get student profile by ID
+  Future<Map<String, dynamic>?> getStudentProfile(String userId) async {
+    try {
+      return await _client
+          .from('student_profiles')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+    } catch (e) {
+      debugPrint('❌ Error fetching student profile: $e');
+      return null;
+    }
+  }
+
+  /// Get teacher profile by ID
+  Future<Map<String, dynamic>?> getTeacherProfile(String userId) async {
+    try {
+      return await _client
+          .from('teacher_profiles')
+          .select()
+          .eq('id', userId)
+          .maybeSingle();
+    } catch (e) {
+      debugPrint('❌ Error fetching teacher profile: $e');
+      return null;
+    }
+  }
+
+  /// Update student profile
+  Future<void> updateStudentProfile(String userId, Map<String, dynamic> data) async {
+    try {
+      await _client.from('student_profiles').update(data).eq('id', userId);
+    } catch (e) {
+      debugPrint('❌ Error updating student profile: $e');
+      rethrow;
+    }
+  }
+
+  /// Update teacher profile
+  Future<void> updateTeacherProfile(String userId, Map<String, dynamic> data) async {
+    try {
+      await _client.from('teacher_profiles').update(data).eq('id', userId);
+    } catch (e) {
+      debugPrint('❌ Error updating teacher profile: $e');
       rethrow;
     }
   }

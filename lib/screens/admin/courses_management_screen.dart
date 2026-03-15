@@ -11,6 +11,8 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'create_course_screen.dart';
 import 'lessons_management_screen.dart';
 import 'exams_management_screen.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
 
 class CoursesManagementScreen extends StatefulWidget {
   final String? instructorId; // Added
@@ -29,6 +31,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
   bool _isLoading = true;
   String _searchQuery = '';
   String _filter = 'published'; // all, published, draft
+
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   @override
   void initState() {
@@ -175,8 +180,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
           foregroundColor: Colors.white,
           elevation: 8,
           icon: const Icon(Icons.add),
-          label: const Text('إنشاء دورة',
-              style: TextStyle(fontWeight: FontWeight.normal)),
+          label: Text(_t('create_new_course'),
+              style: const TextStyle(fontWeight: FontWeight.normal)),
         ),
       ),
     );
@@ -213,8 +218,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
               children: [
                 Text(
                   widget.instructorId != null
-                      ? 'إدارة دوراتي'
-                      : 'إدارة الدورات',
+                      ? _t('manage_my_courses')
+                      : _t('manage_courses'),
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.normal,
@@ -222,7 +227,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                   ),
                 ),
                 Text(
-                  'إجمالي ${_courses.length} دورة تعليمية',
+                  _t('total_courses_count')
+                      .replaceAll('{count}', _courses.length.toString()),
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.getTextColor(context).withOpacity(0.7),
@@ -254,11 +260,12 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             child: TextField(
               onChanged: (value) => setState(() => _searchQuery = value),
               style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: 'بحث عن دورة...',
-                hintStyle: TextStyle(color: Colors.white),
-                prefixIcon:
-                    Icon(Icons.search, color: Colors.white),
+              decoration: InputDecoration(
+              hintText: _t('search_hint'),
+              hintStyle:
+                  TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+              prefixIcon: Icon(Icons.search,
+                  color: Colors.white.withOpacity(0.7), size: 18),
                 border: InputBorder.none,
                 contentPadding:
                     EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -378,7 +385,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                               size: 14, color: Colors.white),
                           const SizedBox(width: 4),
                           Text(
-                            course['category'] ?? 'تخصص عام',
+                            course['category'] ?? _t('general_specialization'),
                             style: TextStyle(
                               fontSize: 12,
                               color: AppColors.getTextColor(context),
@@ -389,6 +396,28 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                     ],
                   ),
                 ),
+                if (course['discount_percentage'] != null &&
+                    (course['discount_percentage'] as num) > 0)
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.redAccent.withOpacity(0.5),
+                      ),
+                    ),
+                    child: Text(
+                      '-${course['discount_percentage']}%',
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -405,7 +434,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                     ),
                   ),
                   child: Text(
-                    isPublished ? 'منشور' : 'مسودة',
+                    isPublished ? _t('published') : _t('draft'),
                     style: TextStyle(
                       color: isPublished
                           ? Colors.greenAccent
@@ -433,8 +462,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       course['teacher'] != null
                           ? (course['teacher']['full_name'] ??
                               course['teacher']['name'] ??
-                              'مدرس غير محدد')
-                          : 'مدرس غير محدد',
+                              _t('unspecified_teacher'))
+                          : _t('unspecified_teacher'),
                       style: TextStyle(
                         fontSize: 13,
                         color: AppColors.getTextColor(context).withOpacity(0.7),
@@ -463,14 +492,14 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                   Expanded(
                     child: _buildActionBtn(
                       icon: Icons.list_alt_rounded,
-                      label: 'الدروس',
+                      label: _t('lessons'),
                       onTap: () async {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => LessonsManagementScreen(
                               courseId: course['id'],
-                              courseTitle: course['title'] ?? 'دورة',
+                              courseTitle: course['title'] ?? _t('course'),
                             ),
                           ),
                         );
@@ -483,14 +512,14 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                   Expanded(
                     child: _buildActionBtn(
                       icon: Icons.quiz_rounded,
-                      label: 'الاختبارات',
+                      label: _t('exams'),
                       onTap: () async {
                         final result = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => AdminExamsManagementScreen(
                               courseId: course['id'],
-                              courseTitle: course['title'] ?? 'دورة',
+                              courseTitle: course['title'] ?? _t('course'),
                             ),
                           ),
                         );
@@ -507,7 +536,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                   Expanded(
                     child: _buildActionBtn(
                       icon: Icons.edit_note_rounded,
-                      label: 'تعديل',
+                      label: _t('edit'),
                       onTap: () async {
                         final result = await Navigator.push(
                           context,
@@ -614,7 +643,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'لا توجد دورات حالياً',
+              _t('no_courses_current'),
               style: TextStyle(
                 fontSize: 20,
                 color: AppColors.getTextColor(context),
@@ -623,7 +652,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'ابدأ بإضافة أول دورة تعليمية للمنصة',
+              _t('start_adding_first_course'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
@@ -640,20 +669,18 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('حذف الدورة'),
-        content: const Text(
-          'هل أنت متأكد من حذف هذه الدورة؟ سيتم حذف جميع الدروس المرتبطة بها.',
-        ),
+        title: Text(_t('delete_course_title')),
+        content: Text(_t('delete_course_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child: Text(_t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'حذف',
-              style: TextStyle(color: Colors.red),
+            child: Text(
+              _t('delete'),
+              style: const TextStyle(color: Colors.red),
             ),
           ),
         ],
@@ -667,8 +694,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('تم حذف الدورة'),
+          SnackBar(
+            content: Text(_t('course_removed')),
             backgroundColor: Colors.green,
           ),
         );
@@ -709,28 +736,28 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                 const Icon(Icons.analytics),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text('إحصائيات: ${course['title']}'),
+                  child: Text('${_t('statistics')}: ${course['title']}'),
                 ),
               ],
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildStatRow('المشتركين', '${stats['total_enrollments']}'),
+                _buildStatRow(_t('subscribers'), '${stats['total_enrollments']}'),
                 const Divider(),
-                _buildStatRow('المكملين', '${stats['completed_enrollments']}'),
+                _buildStatRow(_t('completers'), '${stats['completed_enrollments']}'),
                 const Divider(),
-                _buildStatRow('الدروس', '${stats['total_lessons']}'),
+                _buildStatRow(_t('lessons'), '${stats['total_lessons']}'),
                 const Divider(),
-                _buildStatRow('متوسط التقدم', '${stats['average_progress']}%'),
+                _buildStatRow(_t('average_progress_label'), '${stats['average_progress']}%'),
                 const Divider(),
-                _buildStatRow('معدل الإكمال', '${stats['completion_rate']}%'),
+                _buildStatRow(_t('completion_rate_label'), '${stats['completion_rate']}%'),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إغلاق'),
+                child: Text(_t('close')),
               ),
             ],
           ),

@@ -26,6 +26,7 @@ class Course {
   final String currency;
   final bool isFeatured;
   final int featuredOrder;
+  final int discountPercentage;
 
   Course({
     required this.id,
@@ -55,6 +56,7 @@ class Course {
     this.currency = 'ل.س',
     this.isFeatured = false,
     this.featuredOrder = 0,
+    this.discountPercentage = 0,
   });
 
   factory Course.fromJson(Map<String, dynamic> json) {
@@ -89,6 +91,7 @@ class Course {
       currency: json['currency'] ?? 'ل.س',
       isFeatured: json['is_featured'] ?? false,
       featuredOrder: json['featured_order'] ?? 0,
+      discountPercentage: json['discount_percentage'] ?? 0,
     );
   }
 
@@ -121,6 +124,7 @@ class Course {
       'currency': currency,
       'is_featured': isFeatured,
       'featured_order': featuredOrder,
+      'discount_percentage': discountPercentage,
     };
   }
 
@@ -170,4 +174,11 @@ class Course {
   // Backward compatibility getters
   String get category => categories.isNotEmpty ? categories.first : '';
   String get categoryId => categoryIds.isNotEmpty ? categoryIds.first : '';
+
+  double get discountedPrice {
+    if (discountPercentage <= 0) return price;
+    return price * (1 - discountPercentage / 100);
+  }
+
+  bool get hasDiscount => discountPercentage > 0;
 }

@@ -34,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _filteredTeachers = [];
   bool _isLoading = true;
   bool _hasUnreadNotifications = false;
+  Map<String, dynamic> _teacherStats = {};
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -67,8 +68,9 @@ class _HomeScreenState extends State<HomeScreen> {
       _loadFeaturedCourses(forceRefresh: forceRefresh),
       _loadEnrolledCourses(), // Enrollments usually small and fast, can be kept simple
       _loadFeaturedBanner(forceRefresh: forceRefresh),
-      _loadTeachers(forceRefresh: forceRefresh),
+       _loadTeachers(forceRefresh: forceRefresh),
       _checkUnreadNotifications(),
+      _loadTeacherStats(forceRefresh: forceRefresh),
     ]);
 
     if (mounted) setState(() => _isLoading = false);
@@ -285,6 +287,29 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadTeacherStats({bool forceRefresh = false}) async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final userRole = authService.userProfile?['role'];
+    if (userRole != 'teacher' && userRole != 'admin' && userRole != 'super_admin') {
+      return;
+    }
+
+    try {
+      final userId = authService.userProfile?['id'];
+      if (userId != null) {
+        final stats = await _databaseService.getTeacherStatistics(userId,
+            forceRefresh: forceRefresh);
+        if (mounted) {
+          setState(() {
+            _teacherStats = stats;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading teacher stats: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -325,6 +350,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   SliverToBoxAdapter(child: _buildShimmerLoading()),
 
                 if (!_isLoading) ...[
+                  // Teacher Performance Summary (Contextual)
+                  SliverToBoxAdapter(child: _buildTeacherQuickStats()),
+
                   // Continue Learning
                   SliverToBoxAdapter(child: _buildContinueLearning()),
 
@@ -1286,6 +1314,117 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontSize: 14,
                 fontWeight: FontWeight.normal,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTeacherQuickStats() {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final userRole = authService.userProfile?['role'];
+    if (userRole != 'teacher' &&
+        userRole != 'admin' &&
+        userRole != 'super_admin') {
+      return const SizedBox.shrink();
+    }
+
+    if (_teacherStats.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _t('performance_summary'),
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.normal,
+                  color: Colors.white,
+                ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  // Navigate to dashboard if needed
+                },
+                child: Icon(
+                  Icons.arrow_forward_ios,
+                  size: 14,
+                  color: Colors.white.withOpacity(0.5),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              _buildStatCard(
+                _t('total_revenue'),
+                '${_teacherStats['total_revenue'] ?? 0}',
+                Icons.account_balance_wallet_outlined,
+                Colors.greenAccent,
+              ),
+              const SizedBox(width: 15),
+              _buildStatCard(
+                _t('active_students'),
+                '${_teacherStats['total_users'] ?? 0}',
+                Icons.people_outline,
+                Colors.blueAccent,
+              ),
+              const SizedBox(width: 15),
+              _buildStatCard(
+                _t('courses_count'),
+                '${_teacherStats['total_courses'] ?? 0}',
+                Icons.book_outlined,
+                Colors.orangeAccent,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color accentColor) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.getGlassColor(context),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: accentColor.withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: accentColor, size: 20),
+            const SizedBox(height: 10),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.white.withOpacity(0.6),
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
