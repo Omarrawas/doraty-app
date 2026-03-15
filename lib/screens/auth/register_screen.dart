@@ -3,7 +3,12 @@ import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/utils/error_utils.dart';
-import 'role_selection_screen.dart';
+import 'student_register_screen.dart';
+import 'teacher_register_screen.dart';
+import 'package:provider/provider.dart';
+import '../../core/localization/locale_provider.dart';
+
+import '../../core/constants/app_strings.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -22,6 +27,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String _selectedRole = 'student'; // 'student' or 'teacher'
+
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
 
   @override
@@ -69,10 +78,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text(
-              'تم إنشاء الحساب بنجاح! مرحباً بك',
+            content: Text(
+              _t('account_created_success'),
               textAlign: TextAlign.right,
-              style: TextStyle(fontFamily: 'Cairo'),
+              style: const TextStyle(fontFamily: 'Cairo'),
             ),
             backgroundColor: Colors.green.shade400,
             behavior: SnackBarBehavior.floating,
@@ -82,11 +91,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         );
 
-        // Navigate to role selection screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
-        );
+        // Navigate to the appropriate profile completion screen
+        if (_selectedRole == 'student') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const StudentRegisterScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const TeacherRegisterScreen()),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -132,25 +148,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 40),
+                _buildTopBar(),
+                const SizedBox(height: 20),
 
                 // Title
-                const Text(
-                  'إنشاء حساب جديد',
-                  style: TextStyle(
+                Text(
+                  _t('register_title'),
+                  style: const TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
+                    fontFamily: 'Cairo',
                   ),
                 ),
 
                 const SizedBox(height: 8),
 
                 Text(
-                  'انضم إلينا وابدأ رحلتك التعليمية',
+                  _t('register_subtitle'),
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.white.withOpacity(0.8),
+                    fontFamily: 'Cairo',
                   ),
                 ),
 
@@ -159,16 +178,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Name Field
                 _buildTextField(
                   controller: _nameController,
-                  label: 'الاسم الكامل',
+                  label: _t('name'),
                   icon: Icons.person_outline,
                 ),
+
+                const SizedBox(height: 20),
+
+                // Role Selection
+                _buildPremiumRoleSelector(),
 
                 const SizedBox(height: 20),
 
                 // Email Field
                 _buildTextField(
                   controller: _emailController,
-                  label: 'البريد الإلكتروني',
+                  label: _t('email_label'),
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                 ),
@@ -177,7 +201,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Password Field
                 _buildTextField(
                   controller: _passwordController,
-                  label: 'كلمة المرور',
+                  label: _t('password_label'),
                   icon: Icons.lock_outline,
                   obscureText: _obscurePassword,
                   suffixIcon: IconButton(
@@ -200,7 +224,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 // Confirm Password Field
                 _buildTextField(
                   controller: _confirmPasswordController,
-                  label: 'تأكيد كلمة المرور',
+                  label: _t('confirm_password_label'),
                   icon: Icons.lock_outline,
                   obscureText: _obscureConfirmPassword,
                   suffixIcon: IconButton(
@@ -230,23 +254,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'لديك حساب بالفعل؟ ',
+                      _t('already_have_account'),
                       style: TextStyle(
                         color: Colors.white.withOpacity(0.8),
                         fontSize: 14,
+                        fontFamily: 'Cairo',
                       ),
                     ),
                     GestureDetector(
                       onTap: () {
                         Navigator.pop(context);
                       },
-                      child: const Text(
-                        'تسجيل الدخول',
-                        style: TextStyle(
+                      child: Text(
+                        _t('login_now'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           decoration: TextDecoration.underline,
+                          fontFamily: 'Cairo',
                         ),
                       ),
                     ),
@@ -262,8 +288,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Text(
-                        'أو عبر',
-                        style: TextStyle(color: Colors.white.withOpacity(0.6)),
+                        _t('or_via'),
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontFamily: 'Cairo',
+                        ),
                       ),
                     ),
                     Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
@@ -283,6 +312,144 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: 40),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final isArabic = localeProvider.locale == 'ar';
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Back Button
+        IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70),
+          onPressed: () => Navigator.pop(context),
+        ),
+        
+        // Language Toggle
+        GestureDetector(
+          onTap: () {
+            final newLocale = isArabic ? 'en' : 'ar';
+            localeProvider.setLocale(newLocale);
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withOpacity(0.3)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.language_rounded, size: 18, color: Colors.white.withOpacity(0.9)),
+                const SizedBox(width: 8),
+                Text(
+                  isArabic ? 'English' : 'العربية',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPremiumRoleSelector() {
+    final isStudent = _selectedRole == 'student';
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.15),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.25),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Student Option
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedRole = 'student'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: isStudent ? AppColors.primaryGradient : null,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: isStudent 
+                          ? [BoxShadow(color: AppColors.primaryPurple.withOpacity(0.3), blurRadius: 10)]
+                          : [],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.school_rounded, color: isStudent ? Colors.white : Colors.white60, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          _t('student_role'),
+                          style: TextStyle(
+                            color: isStudent ? Colors.white : Colors.white60,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // Teacher Option
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _selectedRole = 'teacher'),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      gradient: !isStudent ? AppColors.primaryGradient : null,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: !isStudent 
+                          ? [BoxShadow(color: AppColors.primaryPurple.withOpacity(0.3), blurRadius: 10)]
+                          : [],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.co_present_rounded, color: !isStudent ? Colors.white : Colors.white60, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          _t('teacher_role'),
+                          style: TextStyle(
+                            color: !isStudent ? Colors.white : Colors.white60,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -380,13 +547,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                         )
-                      : const Text(
-                          'إنشاء حساب',
+                      : Text(
+                          _t('register_action'),
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
+                            fontFamily: 'Cairo',
                           ),
                         ),
                 ),
@@ -444,12 +612,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await authService.signInWithGoogle();
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const RoleSelectionScreen(),
-          ),
-        );
+        // Navigate to the appropriate profile completion screen
+        if (_selectedRole == 'student') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const StudentRegisterScreen()),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const TeacherRegisterScreen()),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

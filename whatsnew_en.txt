@@ -1,6 +1,7 @@
-Important bug fixes and UX update:
-- Fixed Google sign-in issue and updated the library for cross-platform support.
-- Resolved app freeze (infinite loading) on startup caused by delayed FCM token fetch.
-- Removed encryption from attachments (PDFs and Images) for direct and faster viewing.
-- Fixed the red screen error ("Cannot load encrypted file") when opening attachments.
-- Removed mandatory notification permission prompt at startup, allowing background processing default.
+What's New in Version 1.2.0:
+
+1. Refined Registration Flow: A smoother and faster account creation experience.
+2. Language Switcher: Easy-access language toggle (Arabic/English) added directly to the register screen.
+3. Premium Role Selector: Interactive and modern sliding selector for Students and Teachers.
+4. UI/UX Enhancements: Glassmorphism design updates for a more premium look and feel.
+5. Performance & Stability: Bug fixes and improvements to ensure a more stable experience.

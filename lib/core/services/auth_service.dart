@@ -33,7 +33,7 @@ class AuthService extends ChangeNotifier {
     });
   }
 
-  /// Load or refresh user profile from users table
+  /// Load or refresh user profile from users table + role from user_roles
   Future<void> loadUserProfile() async {
     try {
       if (currentUser == null) {
@@ -42,13 +42,43 @@ class AuthService extends ChangeNotifier {
         return;
       }
 
+      // 1. Fetch base profile from the users table
       final response = await _client
           .from('users')
           .select()
           .eq('id', currentUser!.id)
           .maybeSingle();
 
-      _userProfile = response;
+      if (response == null) {
+        _userProfile = null;
+        notifyListeners();
+        return;
+      }
+
+      // 2. Fetch the user's primary role from user_roles → roles
+      String role = 'student'; // default
+      try {
+        final roleResponse = await _client
+            .from('user_roles')
+            .select('roles(name)')
+            .eq('user_id', currentUser!.id)
+            .maybeSingle();
+
+        if (roleResponse != null &&
+            roleResponse['roles'] != null &&
+            roleResponse['roles']['name'] != null) {
+          role = roleResponse['roles']['name'] as String;
+        }
+      } catch (roleErr) {
+        debugPrint('Could not fetch role, defaulting to student: $roleErr');
+      }
+
+      // 3. Merge profile + role into a single map
+      _userProfile = {
+        ...response,
+        'role': role,
+      };
+
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading user profile: $e');

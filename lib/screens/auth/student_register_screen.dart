@@ -5,7 +5,6 @@ import 'package:file_picker/file_picker.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/services/database_service.dart';
-import '../../core/services/auth_service.dart';
 import '../../core/services/github_storage_service.dart' hide FileType;
 import '../../core/utils/error_utils.dart';
 import '../../core/constants/app_strings.dart';
@@ -26,18 +25,13 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
   
-  // Controllers
-  final _usernameController = TextEditingController();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
+  // State variables for read-only display
+  String _userName = '';
+  String _userEmail = '';
+
   final _specializationController = TextEditingController();
 
   bool _isLoading = false;
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
   bool _termsAccepted = true;
   File? _profileImage;
 
@@ -68,27 +62,15 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
   void _prefillData() {
     final user = SupabaseService.instance.client.auth.currentUser;
     if (user != null) {
-      _emailController.text = user.email ?? '';
-      
-      final fullName = user.userMetadata?['full_name'] as String?;
-      if (fullName != null && fullName.contains(' ')) {
-        final parts = fullName.split(' ');
-        _firstNameController.text = parts.first;
-        _lastNameController.text = parts.sublist(1).join(' ');
-      } else if (fullName != null) {
-        _firstNameController.text = fullName;
-      }
+      setState(() {
+        _userEmail = user.email ?? '';
+        _userName = user.userMetadata?['full_name'] ?? '';
+      });
     }
   }
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
     _specializationController.dispose();
     super.dispose();
   }
@@ -118,22 +100,13 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final authService = AuthService();
       final databaseService = DatabaseService();
       
-      String? userId = SupabaseService.instance.currentUserId;
+      final String? userId = SupabaseService.instance.currentUserId;
       
-      // If user is not logged in, we sign them up
       if (userId == null) {
-        final response = await authService.signUp(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-          fullName: '${_firstNameController.text} ${_lastNameController.text}',
-        );
-        userId = response.user?.id;
+        throw 'يجب تسجيل الدخول أولاً لإكمال الملف الشخصي';
       }
-      
-      if (userId == null) throw 'فشل الحصول على معرف المستخدم';
 
       // Upload Profile Image to GitHub
       String? avatarUrl;
@@ -149,10 +122,6 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
       // Save Student Profile
       await databaseService.saveStudentProfile({
         'id': userId,
-        'username': _usernameController.text.trim(),
-        'first_name': _firstNameController.text.trim(),
-        'last_name': _lastNameController.text.trim(),
-        'email': _emailController.text.trim(),
         'education_level': _educationLevel,
         'grade': _educationLevel == 'school' ? _selectedGrade : _selectedUniversityYear,
         'specialization': _educationLevel == 'university' ? _specializationController.text.trim() : null,
@@ -214,46 +183,10 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
                     children: [
                       _buildProfileImagePicker(),
                       const SizedBox(height: 24),
-                       _buildHeader(_t('personal_info')),
-                       _buildGlassField(
-                         controller: _usernameController,
-                         label: '${_t('username_label')} ${_t('required_suffix')}',
-                         icon: Icons.alternate_email_rounded,
-                         validator: (v) => v!.isEmpty ? _t('required_field') : null,
-                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                           Expanded(
-                             child: _buildGlassField(
-                               controller: _firstNameController,
-                               label: '${_t('first_name_label')} ${_t('required_suffix')}',
-                               icon: Icons.person_outline,
-                               validator: (v) => v!.isEmpty ? _t('required_field') : null,
-                             ),
-                           ),
-                           const SizedBox(width: 12),
-                           Expanded(
-                             child: _buildGlassField(
-                               controller: _lastNameController,
-                               label: '${_t('last_name_label')} ${_t('required_suffix')}',
-                               icon: Icons.person_outline,
-                               validator: (v) => v!.isEmpty ? _t('required_field') : null,
-                             ),
-                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                       _buildGlassField(
-                         controller: _emailController,
-                         label: '${_t('email_label')} ${_t('required_suffix')}',
-                         icon: Icons.email_outlined,
-                         keyboardType: TextInputType.emailAddress,
-                         validator: (v) => v!.isEmpty || !v.contains('@') ? _t('invalid_email') : null,
-                       ),
-                      
-                      const SizedBox(height: 32),
-                      _buildHeader(_t('educational_info')),
+                      _buildUserInfoCard(),
+                       
+                       const SizedBox(height: 32),
+                       _buildHeader(_t('educational_info')),
                       _buildEducationTypeSelector(),
                       const SizedBox(height: 20),
                       
@@ -284,33 +217,7 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
                         ),
                       ],
 
-                       if (SupabaseService.instance.client.auth.currentUser == null) ...[
-                         const SizedBox(height: 32),
-                         _buildHeader(_t('security_header')),
-                         _buildGlassField(
-                           controller: _passwordController,
-                           label: _t('password_label'),
-                           icon: Icons.lock_outline,
-                          obscureText: _obscurePassword,
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
-                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-                           ),
-                           validator: (v) => v!.length < 6 ? _t('pass_min_char') : null,
-                         ),
-                         const SizedBox(height: 16),
-                         _buildGlassField(
-                           controller: _confirmPasswordController,
-                           label: _t('confirm_password_label'),
-                           icon: Icons.lock_outline,
-                          obscureText: _obscureConfirmPassword,
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
-                               onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
-                             ),
-                             validator: (v) => v != _passwordController.text ? _t('pass_dont_match') : null,
-                           ),
-                         ],
+
  
                          const SizedBox(height: 24),
                          _buildTermsCheckbox(),
@@ -331,6 +238,49 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildUserInfoCard() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.2)),
+          ),
+          child: Column(
+            children: [
+              _buildReadOnlyInfo(Icons.person_outline, _userName),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Divider(color: Colors.white24, height: 1),
+              ),
+              _buildReadOnlyInfo(Icons.email_outlined, _userEmail),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyInfo(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(icon, color: Colors.white70, size: 20),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+            textAlign: TextAlign.right,
+          ),
+        ),
+      ],
     );
   }
 

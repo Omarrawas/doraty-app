@@ -2354,13 +2354,17 @@ class DatabaseService {
   /// Save teacher profile data
   Future<void> saveTeacherProfile(Map<String, dynamic> data) async {
     try {
-      await _client.from('teacher_profiles').upsert(data);
+      final userId = data['id'];
+      if (userId == null) throw 'User ID is required';
+
+      data['updated_at'] = DateTime.now().toUtc().toIso8601String();
+
+      // Upsert into the unified users table
+      await _client.from('users').upsert(data);
       
       // Also assign the teacher role if not already assigned
-      final userId = data['id'];
-      if (userId != null) {
-        await assignRole(userId, 'teacher');
-      }
+      await assignRole(userId, 'teacher');
+      
     } catch (e) {
       debugPrint('❌ Error saving teacher profile: $e');
       rethrow;
@@ -2370,13 +2374,17 @@ class DatabaseService {
   /// Save student profile data
   Future<void> saveStudentProfile(Map<String, dynamic> data) async {
     try {
-      await _client.from('student_profiles').upsert(data);
+      final userId = data['id'];
+      if (userId == null) throw 'User ID is required';
+
+      data['updated_at'] = DateTime.now().toUtc().toIso8601String();
+
+      // Upsert into the unified users table
+      await _client.from('users').upsert(data);
       
       // Also assign the student role if not already assigned
-      final userId = data['id'];
-      if (userId != null) {
-        await assignRole(userId, 'student');
-      }
+      await assignRole(userId, 'student');
+      
     } catch (e) {
       debugPrint('❌ Error saving student profile: $e');
       rethrow;
@@ -2387,7 +2395,7 @@ class DatabaseService {
   Future<Map<String, dynamic>?> getStudentProfile(String userId) async {
     try {
       return await _client
-          .from('student_profiles')
+          .from('users')
           .select()
           .eq('id', userId)
           .maybeSingle();
@@ -2401,7 +2409,7 @@ class DatabaseService {
   Future<Map<String, dynamic>?> getTeacherProfile(String userId) async {
     try {
       return await _client
-          .from('teacher_profiles')
+          .from('users')
           .select()
           .eq('id', userId)
           .maybeSingle();
@@ -2414,7 +2422,7 @@ class DatabaseService {
   /// Update student profile
   Future<void> updateStudentProfile(String userId, Map<String, dynamic> data) async {
     try {
-      await _client.from('student_profiles').update(data).eq('id', userId);
+      await _client.from('users').update(data).eq('id', userId);
     } catch (e) {
       debugPrint('❌ Error updating student profile: $e');
       rethrow;
@@ -2424,7 +2432,7 @@ class DatabaseService {
   /// Update teacher profile
   Future<void> updateTeacherProfile(String userId, Map<String, dynamic> data) async {
     try {
-      await _client.from('teacher_profiles').update(data).eq('id', userId);
+      await _client.from('users').update(data).eq('id', userId);
     } catch (e) {
       debugPrint('❌ Error updating teacher profile: $e');
       rethrow;

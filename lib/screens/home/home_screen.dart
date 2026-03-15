@@ -17,6 +17,7 @@ import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/supabase_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -288,22 +289,38 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadTeacherStats({bool forceRefresh = false}) async {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final userRole = authService.userProfile?['role'];
-    if (userRole != 'teacher' && userRole != 'admin' && userRole != 'super_admin') {
-      return;
-    }
-
     try {
-      final userId = authService.userProfile?['id'];
-      if (userId != null) {
-        final stats = await _databaseService.getTeacherStatistics(userId,
-            forceRefresh: forceRefresh);
-        if (mounted) {
-          setState(() {
-            _teacherStats = stats;
-          });
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return;
+
+      final authService = Provider.of<AuthService>(context, listen: false);
+      String? userRole = authService.userProfile?['role'];
+
+      if (userRole == null) {
+        // Fallback: Check role directly if AuthService profile isn't loaded yet
+        final roleResponse = await SupabaseService.instance.client
+            .from('user_roles')
+            .select('roles(name)')
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (roleResponse != null && roleResponse['roles'] != null) {
+          userRole = roleResponse['roles']['name'] as String;
         }
+      }
+
+      if (userRole != 'teacher' &&
+          userRole != 'admin' &&
+          userRole != 'super_admin') {
+        return;
+      }
+
+      final stats = await _databaseService.getTeacherStatistics(userId,
+          forceRefresh: forceRefresh);
+      if (mounted) {
+        setState(() {
+          _teacherStats = stats;
+        });
       }
     } catch (e) {
       debugPrint('Error loading teacher stats: $e');
@@ -1322,14 +1339,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTeacherQuickStats() {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final userRole = authService.userProfile?['role'];
-    if (userRole != 'teacher' &&
-        userRole != 'admin' &&
-        userRole != 'super_admin') {
-      return const SizedBox.shrink();
-    }
-
     if (_teacherStats.isEmpty) return const SizedBox.shrink();
 
     return Padding(

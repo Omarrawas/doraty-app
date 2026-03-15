@@ -1043,7 +1043,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         'description': _descriptionController.text,
         'category_id':
             _selectedCategoryIds.first, // Fallback for single category
-        'category_ids': _selectedCategoryIds, // New multi-category field
+        // NOTE: 'category_ids' is NOT a column in `courses` table.
+        // Multi-category is managed through course_category_junction below.
         'subject': _subjectController.text,
         'level': _levelController.text,
         'image_url': _imageUrlController.text,
@@ -1057,6 +1058,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         'updated_at': DateTime.now().toIso8601String(),
       };
 
+      String courseId;
+
       if (widget.courseId == null) {
         courseData['created_at'] = DateTime.now().toIso8601String();
         final response = await _db.supabaseClient
@@ -1064,14 +1067,19 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             .insert(courseData)
             .select('id')
             .single();
-        final newCourseId = response['id'];
-        await _db.addCourseTags(newCourseId, _selectedTags);
+        courseId = response['id'];
+        await _db.addCourseTags(courseId, _selectedTags);
+        // Insert new category junction rows
+        await _updateCourseCategories(courseId, _selectedCategoryIds);
       } else {
+        courseId = widget.courseId!;
         await _db.supabaseClient
             .from('courses')
             .update(courseData)
-            .eq('id', widget.courseId!);
-        await _db.updateCourseTags(widget.courseId!, _selectedTags);
+            .eq('id', courseId);
+        await _db.updateCourseTags(courseId, _selectedTags);
+        // Replace category junction rows
+        await _updateCourseCategories(courseId, _selectedCategoryIds);
       }
 
       if (mounted) {
@@ -1096,6 +1104,31 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  /// Syncs the course_category_junction table for this course.
+  Future<void> _updateCourseCategories(
+      String courseId, List<String> categoryIds) async {
+    try {
+      // Delete old junctions
+      await _db.supabaseClient
+          .from('course_category_junction')
+          .delete()
+          .eq('course_id', courseId);
+
+      // Insert new junctions
+      if (categoryIds.isNotEmpty) {
+        final rows = categoryIds
+            .map((catId) => {'course_id': courseId, 'category_id': catId})
+            .toList();
+        await _db.supabaseClient
+            .from('course_category_junction')
+            .insert(rows);
+      }
+    } catch (e) {
+      debugPrint('Error updating course categories: $e');
+      rethrow;
     }
   }
 
