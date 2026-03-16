@@ -1,23 +1,16 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:cached_network_image/cached_network_image.dart'
-    hide DownloadProgress;
+import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
-import '../../widgets/tex_view_widget.dart';
 import '../../models/lesson.dart';
 import '../../models/chapter.dart';
-import '../../core/services/database_service.dart';
-import '../../core/services/supabase_service.dart';
-import '../../core/services/certificate_service.dart';
 import '../lesson/lesson_screen.dart' as lesson_ui;
-import '../teacher/teacher_profile_screen.dart';
+
+import '../../core/services/database_service.dart';
+import '../../widgets/video_preview_widget.dart';
 import '../subscription/payment_screen.dart';
-import '../admin/create_course_screen.dart';
-import '../../core/services/course_download_service.dart';
-import '../../core/services/offline_storage_service.dart';
-import '../../models/download_progress.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
 import 'package:provider/provider.dart';
@@ -43,10 +36,7 @@ class CourseDetailsScreen extends StatefulWidget {
   State<CourseDetailsScreen> createState() => _CourseDetailsScreenState();
 }
 
-class _CourseDetailsScreenState extends State<CourseDetailsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  int _selectedTabIndex = 0;
+class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   final Map<int, bool> _expandedSections = {};
 
   // Lessons data
@@ -60,24 +50,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
 
   bool _isEnrolled = false;
   Map<String, dynamic>? _userReview;
-  bool _isCheckingEnrollment = true;
-  bool _hasPendingRequest = false;
   String? _instructorPhoto;
   late String _instructorName;
-  late double _currentRating;
-  late int _reviewsCount;
   late int _studentsCount;
   final DatabaseService _databaseService = DatabaseService();
-  String? _currentUserName;
-  bool _isCertificateLoading = false;
-  bool _isCourseCompleted = false;
-
-  // Offline & Downloads
-  bool _isDownloaded = false;
-  DownloadProgress? _downloadProgress;
-  StreamSubscription<DownloadProgress>? _downloadSubscription;
-  final OfflineStorageService _offlineStorage = OfflineStorageService();
-  final CourseDownloadService _downloadService = CourseDownloadService();
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -85,18 +61,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   @override
   void initState() {
     super.initState();
-    _checkOfflineStatus(); // Check if course is downloaded
     _instructorPhoto = widget.course.instructorPhoto;
     _instructorName =
         StringUtils.cleanTeacherName(widget.course.instructorName);
-    _currentRating = widget.course.rating;
-    _reviewsCount = 0; // Will be updated by _loadReviews
-    _tabController = TabController(length: 3, vsync: this);
-    _tabController.addListener(() {
-      setState(() {
-        _selectedTabIndex = _tabController.index;
-      });
-    });
     _loadLessons();
     _loadReviews();
     _checkEnrollment();
@@ -104,7 +71,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     _refreshCourseData();
     _studentsCount = widget.course.studentsCount; // Initialize students count
     _checkUserReview();
-    _fetchUserName();
 
 
     debugPrint(
@@ -133,7 +99,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       final courseData = await _databaseService.getCourseById(widget.course.id);
       if (mounted && courseData != null) {
         setState(() {
-          _currentRating = (courseData['rating'] as num).toDouble();
           _studentsCount = courseData['students_count'] ?? _studentsCount;
         });
       }
@@ -142,21 +107,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     }
   }
 
-  Future<void> _fetchUserName() async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId != null) {
-        final profile = await _databaseService.getUserProfile(userId);
-        if (mounted) {
-          setState(() {
-            _currentUserName = profile['full_name'];
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('Error fetching user name: $e');
-    }
-  }
+
 
   Future<void> _refreshInstructorInfo() async {
     if (widget.course.instructorId == null) return;
@@ -179,22 +130,13 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
   Future<void> _checkEnrollment() async {
     try {
       final isEnrolled = await _databaseService.isEnrolled(widget.course.id);
-      final hasPending =
-          await _databaseService.hasPendingCourseRequest(widget.course.id);
       if (mounted) {
         setState(() {
           _isEnrolled = isEnrolled;
-          _hasPendingRequest = hasPending;
-          _isCheckingEnrollment = false;
         });
       }
     } catch (e) {
       debugPrint('Error checking enrollment: $e');
-      if (mounted) {
-        setState(() {
-          _isCheckingEnrollment = false;
-        });
-      }
     }
   }
 
@@ -213,11 +155,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
           _lessons = lessons;
           _chapters = chapters;
           _isLoadingLessons = false;
-          // Check completion
-          if (lessons.isNotEmpty) {
-            _isCourseCompleted =
-                lessons.every((l) => l['is_completed'] == true);
-          }
         });
       }
     } catch (e) {
@@ -236,7 +173,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       if (mounted) {
         setState(() {
           _reviews = reviews;
-          _reviewsCount = reviews.length;
           _isLoadingReviews = false;
         });
       }
@@ -250,93 +186,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     }
   }
 
-  Future<void> _checkOfflineStatus() async {
-    final offlineCourse = await _offlineStorage.getCourse(widget.course.id);
-    if (mounted) {
-      setState(() {
-        _isDownloaded = offlineCourse != null;
-      });
-    }
-  }
-
-  void _downloadCourse() {
-    // Only allow download if enrolled
-    if (!_isEnrolled) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يجب الاشتراك في الدورة أولاً')),
-      );
-      return;
-    }
-
-    _downloadSubscription?.cancel();
-    _downloadSubscription = _downloadService
-        .downloadCourse(widget.course.id,
-            includeVideos: false) // Optional: confirm/ask user
-        .listen((progress) {
-      if (mounted) {
-        setState(() {
-          _downloadProgress = progress;
-          if (progress.status == DownloadStatus.completed) {
-            _isDownloaded = true;
-            _downloadProgress = null;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('تم تحميل الدورة بنجاح')),
-            );
-          } else if (progress.status == DownloadStatus.failed) {
-            _downloadProgress = null;
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(ErrorUtils.getFriendlyErrorMessage(
-                      progress.error ?? 'Unknown error'))),
-            );
-          }
-        });
-      }
-    });
-  }
-
-  Future<void> _deleteOfflineCourse() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('حذف المحتوى المحلي'),
-        content: const Text(
-            'هل أنت متأكد من حذف هذه الدورة من الجهاز؟ ستحتاج إلى إنترنت لتصفحها مجدداً.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      await _offlineStorage.deleteCourse(widget.course.id);
-      if (mounted) {
-        setState(() {
-          _isDownloaded = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حذف المحتوى المحلي')),
-        );
-      }
-    }
-  }
 
   @override
   void dispose() {
-    _downloadSubscription?.cancel();
-    _tabController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isRTL = Provider.of<LocaleProvider>(context).locale == 'ar';
+    
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -347,128 +206,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
         child: SafeArea(
           child: Column(
             children: [
-              // Header with Course Image
-              _buildHeader(),
-
-              // Content
+              _buildTopNavBar(isRTL),
               Expanded(
                 child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      const SizedBox(height: 20),
-
-                      // Course Title
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          widget.course.getLocalizedTitle(
-                              Provider.of<LocaleProvider>(context,
-                                      listen: false)
-                                  .locale),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-
-                      // Subject Tag
-                      if (widget.course.subject.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              top: 12, left: 20, right: 20),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: AppColors.primaryPurple.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: AppColors.primaryPurple.withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: Text(
-                              widget.course.getLocalizedSubject(
-                                  Provider.of<LocaleProvider>(context).locale),
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                      // Categories Tags
-                      if (widget.course.categories.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(
-                              top: 12, left: 20, right: 20),
-                          child: Wrap(
-                            alignment: WrapAlignment.center,
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: widget.course.categories
-                                .map((cat) => Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.12),
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(
-                                          color: Colors.white.withOpacity(0.15),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Text(
-                                        cat,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ))
-                                .toList(),
-                          ),
-                        ),
-
-                      const SizedBox(height: 20),
-
-                      // Instructor Card
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _buildInstructorCard(),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Subscribe Button
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _buildSubscribeButton(),
-                      ),
-
+                      _buildHeroSection(isRTL),
                       const SizedBox(height: 30),
-
-                      // Tabs
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _buildTabs(),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // Tab Content
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _buildTabContent(),
-                      ),
-
-                      const SizedBox(height: 30),
+                      _buildMainContent(isRTL),
+                      const SizedBox(height: 50),
                     ],
                   ),
                 ),
@@ -480,606 +226,333 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
     );
   }
 
-  Widget _buildHeader() {
-    return Stack(
-      children: [
-        Hero(
-          tag: widget.heroTag ?? 'course_image_${widget.course.id}',
-          child: Container(
+  Widget _buildTopNavBar(bool isRTL) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.2),
+        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Back Button (On the right for RTL)
+          if (!isRTL) _buildNavBackButton(),
+          
+          // Logo
+          Image.asset(
+            'assets/images/logo.png', // Assuming this is the logo path
+            height: 30,
+            errorBuilder: (context, error, stackTrace) => const Text(
+              'DAWRAT',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+          ),
+          
+          if (isRTL) _buildNavBackButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavBackButton() {
+    return IconButton(
+      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+      onPressed: () => Navigator.pop(context),
+    );
+  }
+
+  Widget _buildHeroSection(bool isRTL) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
+        children: [
+          // Video Player
+          if (widget.course.videoUrl != null)
+            VideoPreviewWidget(videoUrl: widget.course.videoUrl!)
+          else
+            _buildCourseImagePlaceholder(),
+          
+          const SizedBox(height: 24),
+          
+          // Course Info Card
+          _buildCourseHeroInfo(isRTL),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCourseImagePlaceholder() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CachedNetworkImage(
+            imageUrl: widget.course.imageUrl ?? '',
             height: 200,
             width: double.infinity,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: widget.course.imageUrl?.isNotEmpty == true
-                    ? CachedNetworkImageProvider(widget.course.imageUrl!)
-                    : const AssetImage('assets/images/logo.png')
-                        as ImageProvider,
-                fit: BoxFit.cover,
-              ),
+            fit: BoxFit.cover,
+            errorWidget: (context, url, error) => Container(color: Colors.grey[900]),
+          ),
+          Container(
+            height: 200,
+            color: Colors.black26,
+            child: const Center(
+              child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 64),
             ),
           ),
-        ),
-        Container(
-          height: 200,
-          width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.3),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-        ),
+        ],
+      ),
+    );
+  }
 
-        // Back Button
-        // Download Button
-        Positioned(
-          top: 10,
-          left: 10,
-          child: _buildDownloadButton(),
+  Widget _buildCourseHeroInfo(bool isRTL) {
+    String locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return Column(
+      crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.course.getLocalizedTitle(locale),
+          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+          textAlign: isRTL ? TextAlign.right : TextAlign.left,
         ),
-
-        // Back Button
-        Positioned(
-          top: 10,
-          right: 10,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.getGlassColor(context),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.getGlassColor(context, opacity: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: IconButton(
-                  icon: Icon(
-                    Provider.of<LocaleProvider>(context).locale == 'ar'
-                        ? Icons.arrow_forward
-                        : Icons.arrow_back,
-                    color: Colors.white,
-                  ),
-                  onPressed: () {
-                    if (Navigator.canPop(context)) {
-                      Navigator.pop(context);
-                    } else {
-                      Navigator.of(context)
-                          .pushNamedAndRemoveUntil('/', (route) => false);
-                    }
-                  },
-                ),
-              ),
-            ),
-          ),
-        ),
-
-        // Premium Badge
-        if (widget.course.price > 0)
-          Positioned(
-            top: 60, // Moved down
-            left: 10,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColors.getGlassColor(context),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppColors.getGlassColor(context, opacity: 0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.workspace_premium,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _t('premium_course'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+        const SizedBox(height: 12),
+        _buildHeroStatsRow(isRTL),
+        const SizedBox(height: 20),
+        _buildInstructorSmallCard(isRTL),
+        const SizedBox(height: 24),
+        _buildEnrollmentSection(isRTL),
       ],
     );
   }
 
-  Widget _buildDownloadButton() {
-    if (_downloadProgress != null) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.6),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(
-                value: _downloadProgress!.percentage,
-                strokeWidth: 2,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              '${(_downloadProgress!.percentage * 100).toInt()}%',
-              style: const TextStyle(color: Colors.white, fontSize: 12),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (!_isEnrolled) return const SizedBox.shrink();
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: _isDownloaded
-                ? Colors.green.withOpacity(0.2)
-                : AppColors.getGlassColor(context),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: _isDownloaded
-                  ? Colors.green.withOpacity(0.5)
-                  : AppColors.getGlassColor(context, opacity: 0.3),
-              width: 1,
-            ),
-          ),
-          child: IconButton(
-            icon: Icon(
-              _isDownloaded ? Icons.download_done : Icons.download,
-              color: _isDownloaded ? Colors.green : Colors.white,
-            ),
-            onPressed: () {
-              if (_isDownloaded) {
-                _deleteOfflineCourse();
-              } else {
-                _downloadCourse();
-              }
-            },
-          ),
-        ),
-      ),
+  Widget _buildHeroStatsRow(bool isRTL) {
+    return Row(
+      mainAxisAlignment: isRTL ? MainAxisAlignment.end : MainAxisAlignment.start,
+      children: [
+        _buildStatBadge(Icons.bar_chart_rounded, widget.course.level ?? _t('all_levels')),
+        const SizedBox(width: 12),
+        _buildStatBadge(Icons.access_time_rounded, '${widget.course.durationHours ?? "0"} ${_t("hours_short")}'),
+        const SizedBox(width: 12),
+        _buildStatBadge(Icons.play_circle_outline_rounded, '${widget.course.lessonsCount} ${_t("lessons")}'),
+      ],
     );
   }
 
-  Widget _buildInstructorCard() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {
-              debugPrint(
-                  '👆 Instructor card tapped. ID: ${widget.course.instructorId}');
-              if (widget.course.instructorId != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => TeacherProfileScreen(
-                      teacherId: widget.course.instructorId!,
-                      teacherName: _instructorName,
-                      teacherPhoto: _instructorPhoto,
-                    ),
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(_t('no_instructor_profile'))),
-                );
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.getGlassColor(context),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppColors.getGlassColor(context, opacity: 0.3),
-                  width: 1.5,
-                ),
-              ),
-              child: Row(
-                children: [
-                  // Instructor Photo
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.4),
-                        width: 2,
-                      ),
-                    ),
-                    child: ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: _instructorPhoto ?? '',
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[300],
-                          child: const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2)),
-                        ),
-                        errorWidget: (context, url, error) => Image.network(
-                          'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_instructorName)}&background=random&color=fff&size=200',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(width: 16),
-
-                  // Instructor Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _t('instructor_title'),
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white70,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _instructorName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Rating
-                  Column(
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.amber,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            _currentRating.toStringAsFixed(1),
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$_reviewsCount ${_t('reviews_label')}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.white70,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '$_studentsCount ${_t('students_count_label')}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
+  Widget _buildStatBadge(IconData icon, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: Colors.white60, size: 14),
+        const SizedBox(width: 4),
+        Text(label, style: const TextStyle(color: Colors.white60, fontSize: 12)),
+      ],
     );
   }
 
-  Widget _buildSubscribeButton() {
-    if (_isCheckingEnrollment) {
-      return const Center(
-        child: CircularProgressIndicator(color: Colors.white),
-      );
-    }
-
-    if (_isCourseCompleted && _isEnrolled) {
-      return Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFFD700), Color(0xFFFFA500)], // Gold for certificate
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.amber.withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: _downloadCertificate,
-            child: Center(
-              child: _isCertificateLoading
-                  ? const CircularProgressIndicator(color: Colors.black)
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.workspace_premium, color: Colors.black),
-                        SizedBox(width: 8),
-                        Text(
-                          'تحميل الشهادة',
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (_hasPendingRequest && !_isEnrolled) {
-      return Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.orange.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.orange.withOpacity(0.5),
-            width: 1.5,
-          ),
-        ),
-        child: const Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.schedule, color: Colors.orange),
-              SizedBox(width: 12),
-              Text(
-                'لقد أرسلت طلب اشتراك للمراجعة',
-                style: TextStyle(
-                  color: Colors.orange,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final currentUserId = SupabaseService.instance.currentUserId;
-    final isInstructor = widget.course.instructorId == currentUserId;
-
-    if (isInstructor && !_isEnrolled) {
-      return Container(
-        width: double.infinity,
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.blue.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Colors.blue.withOpacity(0.5),
-            width: 1.5,
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CreateCourseScreen(
-                    courseId: widget.course.id,
-                    courseData: widget.course.toJson(),
-                  ),
-                ),
-              );
-            },
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                   const Icon(Icons.edit_road_outlined, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  Text(
-                    _t('manage_course'),
-                    style: const TextStyle(
-                      color: Colors.blue,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
+  Widget _buildInstructorSmallCard(bool isRTL) {
     return Container(
-      width: double.infinity,
-      height: 56,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: _isEnrolled
-              ? [Colors.green.shade400, Colors.green.shade600]
-              : [const Color(0xFF7B2CBF), const Color(0xFF5A67D8)],
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: _isEnrolled
-                ? Colors.green.withOpacity(0.4)
-                : const Color(0xFF7B2CBF).withOpacity(0.4),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircleAvatar(
+            radius: 14,
+            backgroundImage: _instructorPhoto != null ? CachedNetworkImageProvider(_instructorPhoto!) : null,
+            child: _instructorPhoto == null ? const Icon(Icons.person, size: 16) : null,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            '${_t("instructor_title")} $_instructorName',
+            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: _handleEnrollment,
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_isEnrolled) ...[
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(
-                    _t('continue_learning'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ] else
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: _t('subscribe_now_prefix'),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Cairo',
-                          ),
-                        ),
-                        if (widget.course.hasDiscount) ...[
-                          TextSpan(
-                            text: '${widget.course.getFormattedPrice(Provider.of<LocaleProvider>(context, listen: false).locale)} ',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              decoration: TextDecoration.lineThrough,
-                              fontFamily: 'Cairo',
-                            ),
-                          ),
-                        ],
-                        TextSpan(
-                          text: widget.course.hasDiscount
-                              ? '${widget.course.discountedPrice.toStringAsFixed(0)} ${widget.course.currency == 'ل.س' ? (Provider.of<LocaleProvider>(context, listen: false).locale == 'en' ? 'SYP' : 'ل.س') : widget.course.currency}'
-                              : widget.course.getFormattedPrice(Provider.of<LocaleProvider>(context, listen: false).locale),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Cairo',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
+    );
+  }
+
+  Widget _buildEnrollmentSection(bool isRTL) {
+    return Column(
+      crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Text(
+          _t('register_and_get'),
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        const SizedBox(height: 12),
+        _buildBenefitItem(Icons.all_inclusive_rounded, _t('unending_views')),
+        _buildBenefitItem(Icons.workspace_premium_rounded, _t('completion_certificate')),
+        _buildBenefitItem(Icons.chat_bubble_outline_rounded, _t('contact_coach')),
+        
+        const SizedBox(height: 30),
+        
+        // Main Subscribe Button
+        ElevatedButton(
+          onPressed: _handleEnrollment,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.primaryPurple,
+            foregroundColor: Colors.white,
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: Text(
+            '${_t("subscribe_now_prefix")}${widget.course.getLocalizedPrice(Provider.of<LocaleProvider>(context).locale)}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
+        
+        const SizedBox(height: 16),
+        Center(child: Text(_t('or'), style: const TextStyle(color: Colors.white60))),
+        const SizedBox(height: 16),
+        
+        // Own Button
+        OutlinedButton(
+          onPressed: () {}, // Action for owning the course
+          style: OutlinedButton.styleFrom(
+            foregroundColor: Colors.white,
+            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          ),
+          child: Text(
+            '${_t("own_this_course")} ${widget.course.getLocalizedPrice(Provider.of<LocaleProvider>(context).locale)}',
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBenefitItem(IconData icon, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: Colors.white70, size: 16),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+        ],
       ),
     );
   }
 
-  Future<void> _downloadCertificate() async {
-    if (_currentUserName == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى تحديث الملف الشخصي أولاً')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isCertificateLoading = true;
-    });
-
-    try {
-      await CertificateService().downloadCertificate(
-        studentName: _currentUserName!,
-        courseName: widget.course.title,
-        instructorName: _instructorName,
-        date: DateTime.now(),
-      );
-    } catch (e) {
-      debugPrint('Error downloading certificate: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('حدث خطأ أثناء تحميل الشهادة: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isCertificateLoading = false;
-        });
-      }
-    }
+  Widget _buildMainContent(bool isRTL) {
+    return Column(
+      children: [
+          _buildDetailSection(_t('about'), widget.course.description ?? '', isRTL),
+          _buildCurriculumSectionVertical(isRTL),
+          if (widget.course.outcomes.isNotEmpty)
+            _buildListSection(_t('course_outcomes'), widget.course.outcomes, isRTL),
+          if (widget.course.targetAudience.isNotEmpty)
+            _buildListSection(_t('target_audience'), widget.course.targetAudience, isRTL),
+          _buildReviewsSection(isRTL),
+      ],
+    );
   }
 
+  Widget _buildDetailSection(String title, String content, bool isRTL) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
+        crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Text(
+            content,
+            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 15, height: 1.6),
+            textAlign: isRTL ? TextAlign.right : TextAlign.left,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListSection(String title, List<String> items, bool isRTL) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
+        crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          Column(
+            children: items.map((item) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Padding(
+                    padding: EdgeInsets.only(top: 6),
+                    child: Icon(Icons.circle, color: Colors.purpleAccent, size: 6),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      item,
+                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 15),
+                    ),
+                  ),
+                ],
+              ),
+            )).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCurriculumSectionVertical(bool isRTL) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Column(
+        crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(_t('course_content'), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          _buildContentTab(), // Reuse existing curriculum builder
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsSection(bool isRTL) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+               Text(_t('reviews'), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+               if (_isEnrolled && _userReview == null)
+                  TextButton(onPressed: _showAddReviewDialog, child: Text(_t('add_review'))),
+            ],
+          ),
+        ),
+        _buildReviewsTab(), // Reuse existing reviews builder
+      ],
+    );
+  }
   Future<void> _handleEnrollment() async {
-    if (_isEnrolled) {
-      _tabController.animateTo(0); // Switch to lessons tab (now at index 0)
+    if (_isEnrolled && _lessons.isNotEmpty) {
+      final firstLesson = Lesson.fromJson(_lessons.first);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => lesson_ui.LessonScreen(
+            lesson: firstLesson,
+            courseTitle: widget.course.title,
+            isEnrolled: true,
+          ),
+        ),
+      );
       return;
     }
 
@@ -1097,105 +570,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       // Re-check enrollment after returning
       _checkEnrollment();
     });
-  }
-
-  Widget _buildTabs() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          height: 54, // Added explicit height
-          decoration: BoxDecoration(
-            color: AppColors.getGlassColor(context),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.getGlassColor(context, opacity: 0.3),
-              width: 1,
-            ),
-          ),
-          child: Material(
-            // Added Material wrapper for better ink effects and hit testing
-            color: Colors.transparent,
-            child: TabBar(
-              controller: _tabController,
-              indicator: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF7B2CBF),
-                    Color(0xFF5A67D8),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              labelColor: Colors.white,
-              unselectedLabelColor: Colors.white70,
-              labelStyle: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'Cairo', // Ensure consistent font
-              ),
-              tabs: [
-                Tab(text: _t('lessons')),
-                Tab(text: _t('about')),
-                Tab(text: _t('reviews')),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTabContent() {
-    switch (_selectedTabIndex) {
-      case 0:
-        return _buildContentTab();
-      case 1:
-        return _buildOverviewTab();
-      case 2:
-        return _buildReviewsTab();
-      default:
-        return const SizedBox();
-    }
-  }
-
-  Widget _buildOverviewTab() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.25),
-                Colors.white.withOpacity(0.15),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1.5,
-            ),
-          ),
-          child: TexViewWidget(
-            widget.course.getLocalizedDescription(
-                    Provider.of<LocaleProvider>(context, listen: false)
-                        .locale) ??
-                _t('no_description'),
-            style: const TextStyle(
-              fontSize: 15,
-              height: 1.8,
-              color: Colors.white,
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   Widget _buildReviewsTab() {
@@ -1581,36 +955,51 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
               Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
                   onTap: () {
                     setState(() {
                       _expandedSections[sectionIndex] = !isExpanded;
                     });
                   },
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                     child: Row(
                       children: [
-                        Icon(
-                          isExpanded
-                              ? Icons.keyboard_arrow_down
-                              : Icons.keyboard_arrow_left,
-                          color: Colors.white,
-                        ),
-                        const SizedBox(width: 12),
                         Expanded(
-                          child: Text(
-                            title,
-                            textAlign:
-                                Provider.of<LocaleProvider>(context).locale ==
-                                        'ar'
-                                    ? TextAlign.right
-                                    : TextAlign.left,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  fontFamily: 'Cairo',
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${lessons.length} ${_t('lessons')}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white.withOpacity(0.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isExpanded
+                                ? Icons.keyboard_arrow_up_rounded
+                                : Icons.keyboard_arrow_down_rounded,
+                            color: Colors.white70,
+                            size: 20,
                           ),
                         ),
                       ],
@@ -1718,57 +1107,83 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
             ),
             child: Row(
               children: [
-                Text(
-                  duration,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.white70,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.right,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                if (isFree)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: Colors.green.withOpacity(0.5),
-                      ),
-                    ),
-                    child: Text(
-                      _t('free'),
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: Colors.greenAccent,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                const SizedBox(width: 8),
+                // Completion Icon
                 Icon(
                   isLocked
-                      ? Icons.lock
+                      ? Icons.lock_outline_rounded
                       : (isCompleted
-                          ? Icons.check_circle
-                          : Icons.play_circle_outline),
+                          ? Icons.check_circle_rounded
+                          : (isFree ? Icons.play_circle_fill_rounded : Icons.play_circle_outline_rounded)),
                   color: isLocked
-                      ? Colors.orange
+                      ? Colors.white24
                       : (isCompleted ? Colors.greenAccent : Colors.white70),
-                  size: 20,
+                  size: 24,
                 ),
+                const SizedBox(width: 16),
+                
+                // Lesson Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: isLocked ? Colors.white38 : Colors.white,
+                        ),
+                        textAlign: locale == 'ar' ? TextAlign.right : TextAlign.left,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            lessonObj.contentType == 'video' 
+                                ? Icons.videocam_outlined 
+                                : Icons.description_outlined,
+                            size: 14,
+                            color: Colors.white38,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            duration,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white38,
+                            ),
+                          ),
+                          if (isFree) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                _t('free'),
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.greenAccent,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Extra indicator or arrow
+                if (!isLocked)
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.white.withOpacity(0.2),
+                    size: 20,
+                  ),
               ],
             ),
           ),

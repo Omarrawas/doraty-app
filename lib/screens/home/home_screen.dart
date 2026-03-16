@@ -354,11 +354,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                // Category Chips
+                // Category Chips (Circular)
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    child: _buildCategoryChips(),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    child: _buildCircularCategories(),
                   ),
                 ),
 
@@ -369,6 +369,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 if (!_isLoading) ...[
                   // Teacher Performance Summary (Contextual)
                   SliverToBoxAdapter(child: _buildTeacherQuickStats()),
+
+                  // Accreditation Section
+                  SliverToBoxAdapter(child: _buildAccreditationSection()),
 
                   // Continue Learning
                   SliverToBoxAdapter(child: _buildContinueLearning()),
@@ -458,7 +461,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       itemCount: _featuredCourses.length,
                                       itemBuilder: (context, index) {
                                         return Padding(
-                                          padding: const EdgeInsets.only(left: 16),
+                                          padding: const EdgeInsetsDirectional.only(start: 16),
                                           child: _buildCourseCard(_featuredCourses[index]),
                                         );
                                       },
@@ -514,7 +517,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'];
 
     return Padding(
-      padding: const EdgeInsets.only(left: 16),
+      padding: const EdgeInsetsDirectional.only(start: 16),
       child: InkWell(
         onTap: () {
           Navigator.push(
@@ -681,116 +684,179 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCategoryChips() {
+  Widget _buildCircularCategories() {
     final locale = Provider.of<LocaleProvider>(context).locale;
-    final List<Map<String, String>> dynamicCategories = [
-      {'key': 'all', 'name': _t('all')},
-      ..._categoryModels
-          .map((e) => {'key': e.id, 'name': e.getLocalizedName(locale)})
+    final List<Map<String, dynamic>> categories = [
+      {'key': 'all', 'name': _t('all'), 'icon': Icons.grid_view_rounded},
+      ..._categoryModels.map((e) => {
+            'key': e.id,
+            'name': e.getLocalizedName(locale),
+            'iconUrl': e.iconUrl,
+          })
     ];
 
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isLargeScreen = screenWidth > 800;
-
-    if (isLargeScreen) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          alignment: WrapAlignment.center,
-          children: dynamicCategories.map((cat) {
-            final isSelected = _selectedCategory == cat['key'];
-            return _buildCategoryChipItem(cat, isSelected);
-          }).toList(),
-        ),
-      );
-    }
-
     return SizedBox(
-      height: 40,
+      height: 110,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: dynamicCategories.length,
+        itemCount: categories.length,
         itemBuilder: (context, index) {
-          final cat = dynamicCategories[index];
-          final isSelected = _selectedCategory == cat['key']; // Compare with key
-          return Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: _buildCategoryChipItem(cat, isSelected),
+          final cat = categories[index];
+          final isSelected = _selectedCategory == cat['key'];
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedCategory = cat['key']!;
+                _filterCourses();
+              });
+            },
+            child: AnimatedPadding(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsetsDirectional.only(start: 16),
+              child: Column(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 65,
+                    height: 65,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isSelected
+                          ? AppColors.primaryPurple
+                          : AppColors.getGlassColor(context, opacity: 0.15),
+                      border: Border.all(
+                        color: isSelected ? Colors.white : Colors.white24,
+                        width: 1.5,
+                      ),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: AppColors.primaryPurple.withOpacity(0.4),
+                                blurRadius: 10,
+                                spreadRadius: 2,
+                              )
+                            ]
+                          : null,
+                    ),
+                    child: cat['key'] == 'all'
+                        ? Icon(cat['icon'], color: Colors.white, size: 30)
+                        : ClipOval(
+                            child: cat['iconUrl'] != null &&
+                                    cat['iconUrl'].toString().isNotEmpty
+                                ? CachedNetworkImage(
+                                    imageUrl: cat['iconUrl'],
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) =>
+                                        const Center(
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2)),
+                                    errorWidget: (context, url, e) =>
+                                        const Icon(Icons.category_outlined,
+                                            color: Colors.white, size: 30),
+                                  )
+                                : const Icon(Icons.category_outlined,
+                                    color: Colors.white, size: 30),
+                          ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    cat['name'],
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.white70,
+                      fontSize: 12,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),
     );
   }
 
-  Widget _buildCategoryChipItem(Map<String, String> cat, bool isSelected) {
-    return ChoiceChip(
-      label: Text(
-        cat['name']!, // Display localized name
-        style: TextStyle(
-          color: isSelected ? Colors.white : AppColors.getTextColor(context),
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
+  Widget _buildAccreditationSection() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.getGlassColor(context, opacity: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white10),
       ),
-      selected: isSelected,
-      onSelected: (selected) {
-        if (selected) {
-          setState(() {
-            _selectedCategory = cat['key']!; // Set internal key
-            _filterCourses();
-          });
-        }
-      },
-      backgroundColor: AppColors.getGlassColor(context, opacity: 0.2),
-      selectedColor: AppColors.primaryPurple.withOpacity(0.8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
-          color: isSelected
-              ? Colors.transparent
-              : AppColors.getGlassColor(context, opacity: 0.3),
-        ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildTrustBadge(Icons.verified_user_outlined, _t('accredited_by')),
+          _buildTrustBadge(Icons.security_outlined, "Verified"),
+          _buildTrustBadge(Icons.payments_outlined, "Secure Pay"),
+        ],
       ),
-      showCheckmark: false,
+    );
+  }
+
+  Widget _buildTrustBadge(IconData icon, String label) {
+    return Column(
+      children: [
+        Icon(icon, color: Colors.white70, size: 24),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(color: Colors.white54, fontSize: 10),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 
   Widget _buildSearchBar() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.getGlassColor(context),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: AppColors.getGlassColor(context, opacity: 0.3),
-              width: 1,
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
-          child: TextField(
-            textAlign: Provider.of<LocaleProvider>(context).locale == 'ar'
-                ? TextAlign.right
-                : TextAlign.left,
-            style: TextStyle(color: AppColors.getTextColor(context)),
-            cursorColor: AppColors.primaryPurple,
-            decoration: InputDecoration(
-              hintText: _t('search_course_hint'),
-              hintStyle: TextStyle(
-                color: AppColors.getTextColor(context, secondary: true),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              color: AppColors.getGlassColor(context, opacity: 0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.1),
+                width: 1,
               ),
-              prefixIcon: Icon(
-                Icons.search,
-                color: AppColors.getTextColor(context, secondary: true),
-              ),
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
-            onChanged: _onSearchChanged,
+            child: TextField(
+              textAlign: Provider.of<LocaleProvider>(context).locale == 'ar'
+                  ? TextAlign.right
+                  : TextAlign.left,
+              style: TextStyle(color: AppColors.getTextColor(context)),
+              cursorColor: AppColors.primaryPurple,
+              decoration: InputDecoration(
+                hintText: _t('search_course_hint'),
+                hintStyle: TextStyle(
+                  color: AppColors.getTextColor(context, secondary: true),
+                ),
+                prefixIcon: Icon(
+                  Icons.search,
+                  color: AppColors.getTextColor(context, secondary: true),
+                ),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              ),
+              onChanged: _onSearchChanged,
+            ),
           ),
         ),
       ),
@@ -1071,7 +1137,7 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: 5,
             itemBuilder: (context, index) => const Padding(
-              padding: EdgeInsets.only(left: 16),
+              padding: EdgeInsetsDirectional.only(start: 16),
               child: Column(
                 children: [
                   ShimmerLoader.circular(height: 65, width: 65),
@@ -1208,13 +1274,28 @@ class _HomeScreenState extends State<HomeScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  course.getFormattedPrice(locale),
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.normal,
-                                  ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (course.hasDiscount)
+                                      Text(
+                                        course.getFormattedPrice(locale),
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.5),
+                                          fontSize: 12,
+                                          decoration:
+                                              TextDecoration.lineThrough,
+                                        ),
+                                      ),
+                                    Text(
+                                      course.getLocalizedPrice(locale),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.normal,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                                 Row(
                                   children: [

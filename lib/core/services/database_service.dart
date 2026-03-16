@@ -171,8 +171,8 @@ class DatabaseService {
         await addCourseTags(courseId, tags);
       }
     } catch (e) {
-      debugPrint('Error updating course tags: $e');
-      rethrow;
+      debugPrint('⚠️ Error updating course tags: $e');
+      // We don't rethrow here to prevent tag issues from blocking course saving
     }
   }
 

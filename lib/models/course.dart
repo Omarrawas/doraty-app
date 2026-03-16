@@ -23,6 +23,9 @@ class Course {
   final String currency;
   final bool isFeatured;
   final int featuredOrder;
+  final List<String> outcomes;
+  final List<String> targetAudience;
+  final String? videoUrl;
   final int discountPercentage;
 
   Course({
@@ -50,6 +53,9 @@ class Course {
     this.currency = 'ل.س',
     this.isFeatured = false,
     this.featuredOrder = 0,
+    this.outcomes = const [],
+    this.targetAudience = const [],
+    this.videoUrl,
     this.discountPercentage = 0,
   });
 
@@ -82,6 +88,9 @@ class Course {
       currency: json['currency'] ?? 'ل.س',
       isFeatured: json['is_featured'] ?? false,
       featuredOrder: json['featured_order'] ?? 0,
+      outcomes: List<String>.from(json['outcomes'] ?? []),
+      targetAudience: List<String>.from(json['target_audience'] ?? []),
+      videoUrl: json['video_url'],
       discountPercentage: json['discount_percentage'] ?? 0,
     );
   }
@@ -112,6 +121,9 @@ class Course {
       'currency': currency,
       'is_featured': isFeatured,
       'featured_order': featuredOrder,
+      'outcomes': outcomes,
+      'target_audience': targetAudience,
+      'video_url': videoUrl,
       'discount_percentage': discountPercentage,
     };
   }
@@ -148,6 +160,15 @@ class Course {
     return '${price.toStringAsFixed(0)} $currencyLabel';
   }
 
+  String getLocalizedPrice(String locale) {
+    final currentPrice = hasDiscount ? discountedPrice : price;
+    String currencyLabel = currency;
+    if (currency == 'ل.س') {
+      currencyLabel = locale == 'en' ? 'SYP' : 'ل.س';
+    }
+    return '${currentPrice.toStringAsFixed(0)} $currencyLabel';
+  }
+
   // Backward compatibility getters
   String get category => categories.isNotEmpty ? categories.first : '';
   String get categoryId => categoryIds.isNotEmpty ? categoryIds.first : '';
@@ -159,3 +180,4 @@ class Course {
 
   bool get hasDiscount => discountPercentage > 0;
 }
+

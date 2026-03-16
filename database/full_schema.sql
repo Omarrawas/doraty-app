@@ -632,7 +632,7 @@ BEGIN
     SELECT 1 FROM public.users u
     JOIN public.user_roles ur ON u.id = ur.user_id
     JOIN public.roles r ON ur.role_id = r.id
-    WHERE u.id = user_uuid AND r.name = 'admin'
+    WHERE u.id = user_uuid AND r.name IN ('admin', 'super_admin')
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

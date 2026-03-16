@@ -6,7 +6,6 @@ import '../models/course.dart';
 import '../screens/courses/course_details_screen.dart';
 import '../core/localization/locale_provider.dart';
 import '../core/constants/app_strings.dart';
-import '../core/theme/app_colors.dart';
 import '../core/utils/string_utils.dart';
 
 class CourseCard extends StatefulWidget {
@@ -92,106 +91,197 @@ class _CourseCardState extends State<CourseCard>
                     ),
                   );
                 },
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Course Info (Now at the top)
-                      Column(
-                        mainAxisSize: MainAxisSize.min,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // --- 1. Top Image with Badge ---
+                    Stack(
+                      children: [
+                        Hero(
+                          tag: widget.heroTag ?? 'course_image_${widget.course.id}',
+                          child: AspectRatio(
+                            aspectRatio: 1.6,
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(24)),
+                              child: widget.course.imageUrl != null &&
+                                      widget.course.imageUrl!.isNotEmpty
+                                  ? CachedNetworkImage(
+                                      imageUrl: widget.course.imageUrl!,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Container(
+                                        color: Colors.white10,
+                                        child: const Center(
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2)),
+                                      ),
+                                    )
+                                  : Container(
+                                      color: Colors.white10,
+                                      child: const Icon(
+                                          Icons.image_not_supported,
+                                          color: Colors.white30),
+                                    ),
+                            ),
+                          ),
+                        ),
+                        // Level Badge
+                        if (widget.course.level != null)
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.pinkAccent.withOpacity(0.85),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                widget.course.level!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        // Duration Badge
+                        if (widget.course.durationHours != null && widget.course.durationHours!.isNotEmpty)
+                          Positioned(
+                            bottom: 12,
+                            left: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.6),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.access_time_rounded,
+                                      color: Colors.white, size: 12),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${widget.course.durationHours} ${AppStrings.get('hours_short', locale)}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+
+                    Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Course Title
+                          // --- 2. Rating Stars ---
+                          Row(
+                            children: List.generate(
+                              5,
+                              (index) => Icon(
+                                index < widget.course.rating.floor()
+                                    ? Icons.star_rounded
+                                    : Icons.star_outline_rounded,
+                                color: Colors.amber,
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+
+                          // --- 3. Course Title ---
                           Text(
                             widget.course.getLocalizedTitle(locale),
                             style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                               color: Colors.white,
+                              height: 1.3,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
+                          const SizedBox(height: 8),
 
+                          // --- 4. Instructor Section ---
                           Row(
                             children: [
-                              if (widget.course.categories.isNotEmpty)
-                                ...widget.course.categories
-                                    .take(1)
-                                    .map((cat) => Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primaryPurple
-                                                .withOpacity(0.3),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            cat,
-                                            style: const TextStyle(
-                                                fontSize: 10,
-                                                color: Colors.white),
-                                          ),
-                                        )),
-                              const Spacer(),
-                              Row(
-                                children: List.generate(
-                                  5,
-                                  (index) => Icon(
-                                    index < widget.course.rating.floor()
-                                        ? Icons.star
-                                        : Icons.star_border,
-                                    color: Colors.amber,
-                                    size: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          Row(
-                            children: [
-                              _buildInstructorAvatar(),
-                              const SizedBox(width: 6),
+                              _buildSimpleAvatar(),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  StringUtils.cleanTeacherName(widget.course
-                                      .getLocalizedInstructorName(locale)),
-                                  style: const TextStyle(
+                                  '${AppStrings.get('by_prefix', locale)} ${StringUtils.cleanTeacherName(widget.course.getLocalizedInstructorName(locale))}',
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.white,
+                                    color: Colors.white.withOpacity(0.7),
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              Icon(Icons.play_circle_outline,
-                                  color: Colors.white.withOpacity(0.6),
-                                  size: 12),
-                              const SizedBox(width: 2),
-                              Text(
-                                '${widget.course.lessonsCount}',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white.withOpacity(0.8),
-                                ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 4),
+
+                          // --- 5. Small Categories/Tags ---
+                          if (widget.course.categories.isNotEmpty)
+                            Text(
+                              widget.course.categories.join('، '),
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.white.withOpacity(0.5),
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8.0),
+                            child: Divider(color: Colors.white12, height: 1),
+                          ),
+
+                          // --- 6. Pricing & Progress Row ---
                           Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                '${widget.course.studentsCount} ${AppStrings.get('students_count_label', locale)}',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white.withOpacity(0.5),
+                              // Progress / Enrollment Info (Simulation of "% محجوز")
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${widget.course.studentsCount} ${AppStrings.get('students_count_label', locale)}',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(4),
+                                      child: LinearProgressIndicator(
+                                        value: (widget.course.studentsCount / 100).clamp(0.01, 1.0),
+                                        backgroundColor: Colors.white10,
+                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.pinkAccent.withOpacity(0.6)),
+                                        minHeight: 3,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                              const SizedBox(width: 12),
+                              // Prices
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
@@ -199,151 +289,57 @@ class _CourseCardState extends State<CourseCard>
                                     Text(
                                       widget.course.getFormattedPrice(locale),
                                       style: TextStyle(
-                                        color: Colors.white.withOpacity(0.5),
+                                        color: Colors.white.withOpacity(0.4),
                                         fontSize: 10,
                                         decoration: TextDecoration.lineThrough,
                                       ),
                                     ),
                                   Text(
-                                    widget.course.hasDiscount
-                                        ? '${widget.course.discountedPrice.toStringAsFixed(0)} ${widget.course.currency == 'ل.س' ? (locale == 'en' ? 'SYP' : 'ل.س') : widget.course.currency}'
-                                        : widget.course.getFormattedPrice(locale),
+                                    widget.course.getLocalizedPrice(locale),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-                      // Course Image with overlay button at the bottom
-                      Center(
-                        child: Hero(
-                          tag: widget.heroTag ??
-                              'course_image_${widget.course.id}',
-                          child: AspectRatio(
-                            aspectRatio: 1.2,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  // --- Course Image ---
-                                  widget.course.imageUrl != null &&
-                                          widget.course.imageUrl!.isNotEmpty
-                                      ? CachedNetworkImage(
-                                          imageUrl: widget.course.imageUrl!,
-                                          fit: BoxFit.cover,
-                                          placeholder: (context, url) =>
-                                              Container(
-                                            color: Colors.white10,
-                                            child: const Center(
-                                                child:
-                                                    CircularProgressIndicator(
-                                                        strokeWidth: 2)),
-                                          ),
-                                          errorWidget:
-                                              (context, url, error) =>
-                                                  Container(
-                                            color: Colors.white10,
-                                            child: const Icon(
-                                                Icons.image_not_supported,
-                                                color: Colors.white30),
-                                          ),
-                                        )
-                                      : Container(
-                                          color: Colors.white10,
-                                          child: const Icon(
-                                              Icons.image_not_supported,
-                                              color: Colors.white30),
-                                        ),
-                                  
-                                  // --- Discount Badge ---
-                                  if (widget.course.hasDiscount)
-                                    Positioned(
-                                      top: 10,
-                                      right: 10,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.redAccent.withOpacity(0.9),
-                                          borderRadius: BorderRadius.circular(8),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(0.2),
-                                              blurRadius: 4,
-                                              offset: const Offset(0, 2),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Text(
-                                          '-${widget.course.discountPercentage}%',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
+                          
+                          if (widget.showEnrollButton) ...[
+                            const SizedBox(height: 12),
+                            // --- 7. Action Button ---
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.pinkAccent.withOpacity(0.5)),
+                              ),
+                              child: Center(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      AppStrings.get('view_details', locale),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-
-                                  // --- Overlay Button (shown only when showEnrollButton is true) ---
-                                  if (widget.showEnrollButton)
-                                    Positioned(
-                                      left: 0,
-                                      right: 0,
-                                      bottom: 0,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.bottomCenter,
-                                            end: Alignment.topCenter,
-                                            colors: [
-                                              Colors.black.withOpacity(0.85),
-                                              Colors.transparent,
-                                            ],
-                                          ),
-                                        ),
-                                        padding: const EdgeInsets.fromLTRB(
-                                            12, 24, 12, 10),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            const Icon(
-                                                Icons.visibility_outlined,
-                                                color: Colors.white,
-                                                size: 14),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              AppStrings.get(
-                                                  'view_details', locale),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 12,
-                                                fontWeight: FontWeight.w700,
-                                                letterSpacing: 0.3,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                ],
+                                    const SizedBox(width: 6),
+                                    const Icon(Icons.arrow_forward_ios, size: 10, color: Colors.white),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        ),
+                          ],
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -353,16 +349,13 @@ class _CourseCardState extends State<CourseCard>
     );
   }
 
-  Widget _buildInstructorAvatar() {
+  Widget _buildSimpleAvatar() {
     return Container(
-      width: 20,
-      height: 20,
+      width: 24,
+      height: 24,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white.withOpacity(0.4),
-          width: 1,
-        ),
+        border: Border.all(color: Colors.white24, width: 1),
       ),
       child: ClipOval(
         child: widget.course.instructorPhoto != null &&
@@ -370,24 +363,11 @@ class _CourseCardState extends State<CourseCard>
             ? CachedNetworkImage(
                 imageUrl: widget.course.instructorPhoto!,
                 fit: BoxFit.cover,
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.white.withOpacity(0.5),
-                  child: const Icon(
-                    Icons.person,
-                    color: Colors.white,
-                    size: 12,
-                  ),
-                ),
+                errorWidget: (context, url, error) => const Icon(Icons.person, size: 14, color: Colors.white30),
               )
-            : Container(
-                color: Colors.white.withOpacity(0.5),
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 12,
-                ),
-              ),
+            : const Icon(Icons.person, size: 14, color: Colors.white30),
       ),
     );
   }
 }
+
