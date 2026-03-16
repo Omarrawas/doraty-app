@@ -166,8 +166,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen>
       if (mounted && profile.isNotEmpty) {
         setState(() {
           _instructorPhoto = profile['avatar_url'];
-          final locale =
-              Provider.of<LocaleProvider>(context, listen: false).locale;
           _instructorName = StringUtils.cleanTeacherName(
               profile['full_name'] ?? _instructorName);
           debugPrint('📸 Instructor Photo URL: $_instructorPhoto');

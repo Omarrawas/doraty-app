@@ -107,7 +107,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
       final query = _searchQuery.toLowerCase();
       filtered = filtered.where((course) {
         return course.title.toLowerCase().contains(query) ||
-            (course.titleEn ?? '').toLowerCase().contains(query) ||
             (course.description ?? '').toLowerCase().contains(query) ||
             course.subject.toLowerCase().contains(query) ||
             course.instructorName.toLowerCase().contains(query);

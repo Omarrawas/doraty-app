@@ -3,7 +3,6 @@ class Lesson {
   final String courseId;
   final String? chapterId; // Added chapterId
   final String title;
-  final String? titleEn; // Added titleEn
   final String description;
   final String videoUrl;
   final String duration; // stored as string like "45:00"
@@ -22,7 +21,6 @@ class Lesson {
     required this.courseId,
     this.chapterId,
     required this.title,
-    this.titleEn,
     required this.description,
     required this.videoUrl,
     required this.duration,
@@ -100,10 +98,11 @@ class Lesson {
   }
 
   String getLocalizedTitle(String locale) {
-    if (locale == 'en' && titleEn != null && titleEn!.isNotEmpty) {
-      return titleEn!;
-    }
     return title;
+  }
+
+  String getLocalizedDescription(String locale) {
+    return description;
   }
 
   Lesson copyWith({
@@ -111,7 +110,6 @@ class Lesson {
     String? courseId,
     String? chapterId,
     String? title,
-    String? titleEn,
     String? description,
     String? videoUrl,
     String? duration,
@@ -130,7 +128,6 @@ class Lesson {
       courseId: courseId ?? this.courseId,
       chapterId: chapterId ?? this.chapterId,
       title: title ?? this.title,
-      titleEn: titleEn ?? this.titleEn,
       description: description ?? this.description,
       videoUrl: videoUrl ?? this.videoUrl,
       duration: duration ?? this.duration,

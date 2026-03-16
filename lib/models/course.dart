@@ -1,7 +1,6 @@
 class Course {
   final String id;
   final String title;
-  final String? titleEn; // Added titleEn
   final String? description; // Nullable
   final String? instructorId; // Added instructorId
   final String instructorName;
@@ -29,7 +28,6 @@ class Course {
   Course({
     required this.id,
     required this.title,
-    this.titleEn,
     this.description,
     this.instructorId,
     required this.instructorName,
@@ -75,6 +73,7 @@ class Course {
       categoryIds: List<String>.from(json['category_ids'] ??
           (json['category_id'] != null ? [json['category_id']] : [])),
       subject: json['subject'] ?? '',
+      subjectEn: json['subject_en'],
       curriculum: List<String>.from(json['curriculum'] ?? []),
       isEnrolled: json['is_enrolled'] ?? false,
       completedLessons: json['completed_lessons'] ?? 0,
@@ -104,6 +103,7 @@ class Course {
       'categories': categories,
       'category_ids': categoryIds,
       'subject': subject,
+      'subject_en': subjectEn,
       'curriculum': curriculum,
       'is_enrolled': isEnrolled,
       'completed_lessons': completedLessons,
@@ -122,12 +122,12 @@ class Course {
   }
 
   String getLocalizedTitle(String locale) {
-    if (locale == 'en' && titleEn != null && titleEn!.isNotEmpty) {
-      return titleEn!;
-    }
     return title;
   }
 
+  String? getLocalizedDescription(String locale) {
+    return description;
+  }
 
   String getLocalizedInstructorName(String locale) {
     return instructorName;

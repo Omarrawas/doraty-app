@@ -149,6 +149,8 @@ class _StudentRegisterScreenState extends State<StudentRegisterScreen> {
         // Refresh Auth Profile to ensure the app knows registration is complete
         await Provider.of<AuthService>(context, listen: false).loadUserProfile();
 
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('تم إنشاء حساب الطالب بنجاح!'),

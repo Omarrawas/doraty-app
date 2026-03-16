@@ -192,7 +192,7 @@ Future<T> fetchWithCache<T>({
         if (persistentCached is List) {
           try {
             if (T.toString().contains('Map') || T.toString().contains('dynamic')) {
-              return (persistentCached as List).map((item) {
+              return persistentCached.map((item) {
                 if (item is Map) return Map<String, dynamic>.from(item);
                 return item;
               }).toList() as T;

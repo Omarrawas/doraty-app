@@ -186,6 +186,8 @@ class _TeacherRegisterScreenState extends State<TeacherRegisterScreen> {
         // Refresh Auth Profile to ensure the app knows registration is complete
         await Provider.of<AuthService>(context, listen: false).loadUserProfile();
 
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(_t('success_submit_teacher')),
