@@ -188,24 +188,38 @@ Future<T> fetchWithCache<T>({
         // Save to memory cache for next time
         cache.set(key, persistentCached);
         
-        // Defensive casting for Hive List/Map types (Fixes release-mode TypeErrors)
-        if (persistentCached is List) {
-          try {
-            if (T.toString().contains('Map') || T.toString().contains('dynamic')) {
-              return persistentCached.map((item) {
-                if (item is Map) return Map<String, dynamic>.from(item);
-                return item;
-              }).toList() as T;
-            }
-          } catch (e) {
-            debugPrint('⚠️ Casting list from cache failed: $e');
+        // --- Robust Type Casting for Persistent Data ---
+        
+        // Case 1: Expected List of Strings
+        if (T.toString() == 'List<String>' || T.toString() == 'Set<String>') {
+          if (persistentCached is List) {
+            final list = persistentCached.map((e) => e.toString()).toList();
+            return (T.toString() == 'Set<String>' ? list.toSet() : list) as T;
           }
         }
         
+        // Case 2: Expected List of Maps (Common for Supabase responses)
+        if (T.toString().contains('List<Map<String, dynamic>>')) {
+          if (persistentCached is List) {
+            return persistentCached.map((item) {
+              if (item is Map) return Map<String, dynamic>.from(item);
+              return item;
+            }).toList().cast<Map<String, dynamic>>() as T;
+          }
+        }
+
+        // Case 3: Expected Single Map
+        if (T.toString().contains('Map<String, dynamic>')) {
+          if (persistentCached is Map) {
+            return Map<String, dynamic>.from(persistentCached) as T;
+          }
+        }
+
+        // Default cast
         return persistentCached as T;
       }
     } catch (e) {
-      debugPrint('⚠️ Error reading persistent cache: $e');
+      debugPrint('⚠️ Error reading or casting persistent cache: $e');
     }
   }
 

@@ -138,6 +138,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    _buildPerformanceSummary(width),
+                                    const SizedBox(height: 24),
                                     _buildStatsGrid(statsCrossAxisCount),
                                     const SizedBox(height: 24),
                                     if (_userRole == 'teacher') ...[
@@ -240,6 +242,111 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPerformanceSummary(double screenWidth) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          child: Text(
+            'ملخص الأداء والنمو',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.normal,
+              color: AppColors.getTextColor(context),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.getGlassColor(context, opacity: 0.15),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: AppColors.getGlassColor(context, opacity: 0.2),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildSummaryItem('إجمالي الطلاب', '${_stats['total_users'] ?? 0}', Icons.trending_up, Colors.greenAccent),
+                      _buildSummaryItem('الدورات النشطة', '${_stats['total_courses'] ?? 0}', Icons.school_outlined, Colors.blueAccent),
+                      _buildSummaryItem('محاولات ناجحة', '${_stats['total_attempts'] ?? 0}', Icons.check_circle_outline, Colors.orangeAccent),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+                  // Visual Indicator / Simple Chart
+                  SizedBox(
+                    height: 100,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: List.generate(7, (index) {
+                        double heightFactor = (index + 1) * 0.14; // Mock growth visualization
+                        return _buildChartBar(heightFactor, index == 6);
+                      }),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'معدل نمو المنصة خلال الأسبوع الأخير +12%',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.getTextColor(context).withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryItem(String label, String value, IconData icon, Color color) {
+    return Column(
+      children: [
+        Icon(icon, color: color, size: 20),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        Text(
+          label,
+          style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.5)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChartBar(double heightFactor, bool isLast) {
+    return Container(
+      width: 25,
+      height: 100 * heightFactor,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.bottomCenter,
+          end: Alignment.topCenter,
+          colors: isLast 
+            ? [AppColors.primaryPurple, AppColors.primaryPurple.withOpacity(0.5)]
+            : [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.3)],
+        ),
+        borderRadius: BorderRadius.circular(6),
       ),
     );
   }

@@ -2628,36 +2628,18 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     await _saveProgressBeforeExit();
                     if (!mounted) return;
 
-                    // CHECK FOR EXAMS GATING
+                    // CHECK FOR EXAMS
                     final examsResult =
                         await _db.getExamsForLesson(widget.lesson.id);
 
+                    if (!mounted) return;
+
                     if (examsResult.isNotEmpty) {
                       final examData = examsResult.first;
-                      final attempts = examData['attempts'] as List?;
-                      final bool hasPassed = attempts != null &&
-                          attempts.any((a) => a['is_passed'] == true);
-
-                      if (hasPassed) {
-                        _goToNextLesson(nextLesson);
-                      } else {
-                        // User hasn't passed the exam yet
-                        if (mounted) {
-                          _showExamRequirementDialog(examData, nextLesson);
-                        }
-                      }
+                      _showExamRecommendationDialog(examData, nextLesson);
                     } else {
-                      // No exam for this lesson - show info and move on
-                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(_t('no_exam_at_all'),
-                                textAlign: TextAlign.right),
-                            duration: const Duration(seconds: 2),
-                          ),
-                        );
-                        _goToNextLesson(nextLesson);
-                      }
+                      // No exam for this lesson - show dialog as requested
+                      _showNoExamDialog(nextLesson);
                     }
                   },
                 ),
@@ -2683,57 +2665,116 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     );
   }
 
-  void _showExamRequirementDialog(
+  void _showNoExamDialog(Lesson nextLesson) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.primaryDark,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text('تنبيه', textAlign: TextAlign.right, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            SizedBox(width: 8),
+            Icon(Icons.info_outline, color: Colors.blueAccent),
+          ],
+        ),
+        content: const Text(
+          'لا يوجد اختبار مرتبط بهذا الدرس حالياً. يمكنك الانتقال للدرس التالي مباشرة.',
+          textAlign: TextAlign.right,
+          style: TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _goToNextLesson(nextLesson);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('الانتقال للدرس التالي'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExamRecommendationDialog(
       Map<String, dynamic> examData, Lesson nextLesson) {
     final exam = Exam.fromJson(examData);
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppColors.primaryPurple,
+        backgroundColor: AppColors.primaryDark,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          _t('must_take_exam'),
-          textAlign: TextAlign.right,
-          style:
-              const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        title: const Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Text('يوجد اختبار', textAlign: TextAlign.right, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            SizedBox(width: 8),
+            Icon(Icons.assignment_outlined, color: Colors.orangeAccent),
+          ],
         ),
         content: Text(
-          'يجب إكمال واجتياز اختبار "${exam.title}" للانتقال للدرس التالي.',
+          'هذا الدرس يحتوي على اختبار بعنوان "${exam.title}". هل تود خوض الاختبار الآن أم الانتقال للدرس التالي؟',
           textAlign: TextAlign.right,
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(_t('cancel'),
-                style: const TextStyle(color: Colors.white60)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ExamTakingScreen(
-                    exam: exam,
-                    onCompleted: () {
-                      // When exam is finished, go back to this lesson screen
-                      // or directly to the next one if they passed?
-                      // The current ExamResultScreen returns to lesson.
-                      // If they pass, they can click 'Next' again.
-                    },
+          Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ExamTakingScreen(
+                          exam: exam,
+                          onNext: () {
+                            _goToNextLesson(nextLesson);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryPurple,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
+                  child: const Text('بدء الاختبار الآن'),
                 ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: AppColors.primaryPurple,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text(_t('start_exam')),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _goToNextLesson(nextLesson);
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white70,
+                  ),
+                  child: const Text('تخطي والانتقال للدرس التالي'),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+              ),
+            ],
           ),
         ],
       ),

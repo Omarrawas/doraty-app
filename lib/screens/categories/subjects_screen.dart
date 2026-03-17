@@ -123,11 +123,17 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: MediaQuery.of(context).size.width > 1200
+                              ? 5
+                              : MediaQuery.of(context).size.width > 800
+                                  ? 4
+                                  : MediaQuery.of(context).size.width > 550
+                                      ? 2
+                                      : 1,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
-                          childAspectRatio: 0.85,
+                          childAspectRatio: MediaQuery.of(context).size.width < 550 ? 2.2 : 0.85,
                         ),
                         itemCount: _categories.length,
                         itemBuilder: (context, index) {

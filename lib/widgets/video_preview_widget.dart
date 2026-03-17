@@ -4,10 +4,12 @@ import 'dart:ui';
 
 class VideoPreviewWidget extends StatefulWidget {
   final String videoUrl;
+  final bool showHeader; // Added
 
   const VideoPreviewWidget({
     super.key,
     required this.videoUrl,
+    this.showHeader = true, // Default to true
   });
 
   @override
@@ -63,31 +65,37 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(
-                  children: [
-                    Icon(Icons.play_circle,
-                        color: Colors.white.withOpacity(0.7)),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'معاينة الفيديو',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+              if (widget.showHeader)
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.play_circle,
+                          color: Colors.white.withOpacity(0.7)),
+                      const SizedBox(width: 8),
+                      const Text(
+                        'معاينة الفيديو',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(16),
-                  bottomRight: Radius.circular(16),
-                ),
-                child: YoutubePlayer(
-                  controller: _controller!,
-                  showVideoProgressIndicator: true,
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: widget.showHeader 
+                      ? const BorderRadius.only(
+                          bottomLeft: Radius.circular(16),
+                          bottomRight: Radius.circular(16),
+                        )
+                      : BorderRadius.circular(16),
+                  child: YoutubePlayer(
+                    controller: _controller!,
+                    showVideoProgressIndicator: true,
+                    aspectRatio: widget.showHeader ? 16 / 9 : 1, // Change aspect ratio based on header
+                  ),
                 ),
               ),
             ],

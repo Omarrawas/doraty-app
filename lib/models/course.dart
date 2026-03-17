@@ -27,6 +27,7 @@ class Course {
   final List<String> targetAudience;
   final String? videoUrl;
   final int discountPercentage;
+  final List<String> tags; // Added tags field
 
   Course({
     required this.id,
@@ -57,6 +58,7 @@ class Course {
     this.targetAudience = const [],
     this.videoUrl,
     this.discountPercentage = 0,
+    this.tags = const [],
   });
 
   factory Course.fromJson(Map<String, dynamic> json) {
@@ -92,6 +94,7 @@ class Course {
       targetAudience: List<String>.from(json['target_audience'] ?? []),
       videoUrl: json['video_url'],
       discountPercentage: json['discount_percentage'] ?? 0,
+      tags: List<String>.from(json['tags'] ?? []),
     );
   }
 
@@ -125,6 +128,7 @@ class Course {
       'target_audience': targetAudience,
       'video_url': videoUrl,
       'discount_percentage': discountPercentage,
+      'tags': tags,
     };
   }
 

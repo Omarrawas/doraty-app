@@ -1,5 +1,6 @@
 {
     "cmake.sourceDirectory": "C:/Users/omarr/Downloads/D/doraty-app/linux",
     // تعطيل التحقق من أسماء الـ Secrets (تحذيرات كاذبة من الإضافة)
-    "github-actions.workflows.pinned.refresh.enabled": false
+    "github-actions.workflows.pinned.refresh.enabled": false,
+    "cmake.ignoreCMakeListsMissing": true
 }

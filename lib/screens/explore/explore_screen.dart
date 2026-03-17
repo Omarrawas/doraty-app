@@ -140,15 +140,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    int crossAxisCount = 2;
-    double childAspectRatio = 0.65;
+    int crossAxisCount = 1;
+    double childAspectRatio = 1.1; // Wider for single column on mobile
 
     if (screenWidth > 1200) {
       crossAxisCount = 4;
-      childAspectRatio = 0.75;
+      childAspectRatio = 0.72;
     } else if (screenWidth > 800) {
       crossAxisCount = 3;
-      childAspectRatio = 0.7;
+      childAspectRatio = 0.68;
+    } else if (screenWidth > 550) {
+      crossAxisCount = 2;
+      childAspectRatio = 0.62;
     }
 
     return Scaffold(

@@ -6,6 +6,8 @@ import '../../core/services/screen_security_service.dart';
 import '../auth/role_selection_screen.dart';
 import '../auth/login_screen.dart';
 import '../../main.dart';
+import 'package:provider/provider.dart';
+import '../../core/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -57,39 +59,34 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     try {
-      final supabaseService = SupabaseService.instance;
-      final isAuthenticated = supabaseService.isAuthenticated;
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final isAuthenticated = authService.isAuthenticated;
 
       debugPrint(
           '🔐 Auth check: ${isAuthenticated ? "Authenticated" : "Not authenticated"}');
 
       if (isAuthenticated) {
-        final userId = supabaseService.currentUserId;
-        bool hasRole = false;
+        // Load user profile (handles caching internally now)
+        await authService.loadUserProfile();
         
-        if (userId != null) {
-          try {
-            final roleResponse = await supabaseService.client
-                .from('user_roles')
-                .select('id')
-                .eq('user_id', userId)
-                .maybeSingle();
-            hasRole = roleResponse != null;
-          } catch (_) {}
-        }
+        // Wait a bit to ensure profile is loaded from cache/network
+        final profile = authService.userProfile;
+        final hasRole = profile != null && profile['role'] != null;
 
-        // Check user role and apply screen security
+        // Apply screen security
         await _applyScreenSecurity();
 
         if (!mounted) return;
         
         if (!hasRole) {
+          // If we are definitely online and have no role, go to selection
+          // If we are offline and have no cached role, we're stuck anyway, but selection screen is better than nothing
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
           );
         } else {
-          // User is logged in, go to main screen
+          // User is logged in and has a role (cached or fetched), go to main screen
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const MainScreen()),

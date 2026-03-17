@@ -4,12 +4,16 @@ import 'supabase_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../env/multi_env.dart';
 import 'platform_utils.dart';
+import 'offline_cache_service.dart';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _client = SupabaseService.instance.client;
 
   User? get currentUser => _client.auth.currentUser;
   bool get isAuthenticated => currentUser != null;
+
+  bool _isOffline = false;
+  bool get isOffline => _isOffline;
 
   Map<String, dynamic>? _userProfile;
   Map<String, dynamic>? get userProfile => _userProfile;
@@ -70,7 +74,12 @@ class AuthService extends ChangeNotifier {
           role = roleResponse['roles']['name'] as String;
         }
       } catch (roleErr) {
-        debugPrint('Could not fetch role, defaulting to student: $roleErr');
+        debugPrint('Could not fetch role, attempting to use cached role: $roleErr');
+        // Try to get role from cached profile if network fails
+        final cached = await OfflineCacheService().getCachedUserData('user_profile_${currentUser!.id}');
+        if (cached != null && cached['role'] != null) {
+          role = cached['role'];
+        }
       }
 
       // 3. Merge profile + role into a single map
@@ -79,9 +88,23 @@ class AuthService extends ChangeNotifier {
         'role': role,
       };
 
+      // 4. CACHE: Save profile for offline use
+      await OfflineCacheService().cacheUserData('user_profile_${currentUser!.id}', _userProfile);
+
+      _isOffline = false;
       notifyListeners();
     } catch (e) {
       debugPrint('Error loading user profile: $e');
+      _isOffline = true;
+      
+      // Try to load from cache if network fails
+      if (currentUser != null) {
+        final cached = await OfflineCacheService().getCachedUserData('user_profile_${currentUser!.id}');
+        if (cached != null) {
+          _userProfile = Map<String, dynamic>.from(cached);
+          notifyListeners();
+        }
+      }
     }
   }
 
@@ -151,6 +174,9 @@ class AuthService extends ChangeNotifier {
   /// Sign out
   Future<void> signOut() async {
     try {
+      if (currentUser != null) {
+        await OfflineCacheService().clearAllCache(); // Or just specifically the user data
+      }
       await _client.auth.signOut();
     } catch (e) {
       rethrow;

@@ -11,8 +11,10 @@ import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../../core/services/database_service.dart';
 import '../../widgets/video_preview_widget.dart';
 import '../subscription/payment_screen.dart';
+import '../teacher/teacher_profile_screen.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
+import 'course_content_screen.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/error_utils.dart';
 import '../../core/localization/locale_provider.dart';
@@ -263,26 +265,73 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Widget _buildHeroSection(bool isRTL) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      child: Column(
-        children: [
-          // Video Player
-          if (widget.course.videoUrl != null)
-            VideoPreviewWidget(videoUrl: widget.course.videoUrl!)
-          else
-            _buildCourseImagePlaceholder(),
-          
-          const SizedBox(height: 24),
-          
-          // Course Info Card
-          _buildCourseHeroInfo(isRTL),
-        ],
-      ),
+    return LayoutBuilder(builder: (context, constraints) {
+      bool isWide = constraints.maxWidth > 800;
+
+      if (isWide) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 30),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              if (!isRTL) ...[
+                Expanded(
+                  flex: 5,
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: _buildMediaPreview(isSquare: false),
+                  ),
+                ),
+                const SizedBox(width: 40),
+                Expanded(
+                  flex: 6,
+                  child: _buildCourseHeroInfo(isRTL, isWide: true),
+                ),
+              ] else ...[
+                Expanded(
+                  flex: 6,
+                  child: _buildCourseHeroInfo(isRTL, isWide: true),
+                ),
+                const SizedBox(width: 40),
+                Expanded(
+                  flex: 5,
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: _buildMediaPreview(isSquare: false),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      }
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: Column(
+          children: [
+            _buildMediaPreview(),
+            const SizedBox(height: 24),
+            _buildCourseHeroInfo(isRTL),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildMediaPreview({bool isSquare = false}) {
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: widget.course.videoUrl != null && widget.course.videoUrl!.isNotEmpty
+          ? VideoPreviewWidget(
+              videoUrl: widget.course.videoUrl!,
+              showHeader: !isSquare, // Hide header if square (side-by-side)
+            )
+          : _buildCourseImagePlaceholder(isSquare: isSquare),
     );
   }
 
-  Widget _buildCourseImagePlaceholder() {
+  Widget _buildCourseImagePlaceholder({bool isSquare = false}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: Stack(
@@ -290,16 +339,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         children: [
           CachedNetworkImage(
             imageUrl: widget.course.imageUrl ?? '',
-            height: 200,
             width: double.infinity,
             fit: BoxFit.cover,
-            errorWidget: (context, url, error) => Container(color: Colors.grey[900]),
+            errorWidget: (context, url, error) =>
+                Container(color: Colors.grey[900]),
           ),
           Container(
-            height: 200,
             color: Colors.black26,
             child: const Center(
-              child: Icon(Icons.play_circle_fill_rounded, color: Colors.white, size: 64),
+              child: Icon(Icons.play_circle_fill_rounded,
+                  color: Colors.white, size: 64),
             ),
           ),
         ],
@@ -307,22 +356,45 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
   }
 
-  Widget _buildCourseHeroInfo(bool isRTL) {
+  Widget _buildCourseHeroInfo(bool isRTL, {bool isWide = false}) {
     String locale = Provider.of<LocaleProvider>(context, listen: false).locale;
     return Column(
-      crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment:
+          isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
           widget.course.getLocalizedTitle(locale),
-          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(
+              fontSize: isWide ? 32 : 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white),
           textAlign: isRTL ? TextAlign.right : TextAlign.left,
         ),
+        if (widget.course.categories.isNotEmpty || widget.course.tags.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(top: 8, bottom: 4),
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              alignment: isRTL ? WrapAlignment.end : WrapAlignment.start,
+              children: [
+                ...widget.course.categories
+                    .map((cat) => _buildTinyTag(cat, Colors.blueAccent)),
+                ...widget.course.tags.map((tag) => _buildTinyTag(
+                    '#${AppStrings.get(tag, locale)}', Colors.purpleAccent)),
+              ],
+            ),
+          ),
         const SizedBox(height: 12),
         _buildHeroStatsRow(isRTL),
         const SizedBox(height: 20),
         _buildInstructorSmallCard(isRTL),
         const SizedBox(height: 24),
-        _buildEnrollmentSection(isRTL),
+        if (!_isEnrolled)
+          _buildEnrollmentSection(isRTL)
+        else
+          _buildContinueLearningButton(isRTL),
       ],
     );
   }
@@ -331,7 +403,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     return Row(
       mainAxisAlignment: isRTL ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
-        _buildStatBadge(Icons.bar_chart_rounded, widget.course.level ?? _t('all_levels')),
+        _buildStatBadge(Icons.bar_chart_rounded, _t(widget.course.level ?? 'all_levels')),
         const SizedBox(width: 12),
         _buildStatBadge(Icons.access_time_rounded, '${widget.course.durationHours ?? "0"} ${_t("hours_short")}'),
         const SizedBox(width: 12),
@@ -352,26 +424,54 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Widget _buildInstructorSmallCard(bool isRTL) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircleAvatar(
-            radius: 14,
-            backgroundImage: _instructorPhoto != null ? CachedNetworkImageProvider(_instructorPhoto!) : null,
-            child: _instructorPhoto == null ? const Icon(Icons.person, size: 16) : null,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            '${_t("instructor_title")} $_instructorName',
-            style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-        ],
+    return InkWell(
+      onTap: () {
+        if (widget.course.instructorId != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TeacherProfileScreen(
+                teacherId: widget.course.instructorId!,
+                teacherName: _instructorName,
+                teacherPhoto: _instructorPhoto,
+              ),
+            ),
+          );
+        }
+      },
+      borderRadius: BorderRadius.circular(30),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundImage: _instructorPhoto != null
+                  ? CachedNetworkImageProvider(_instructorPhoto!)
+                  : null,
+              child: _instructorPhoto == null
+                  ? const Icon(Icons.person, size: 16, color: Colors.white)
+                  : null,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${_t("instructor_title")} $_instructorName',
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white.withOpacity(0.5), size: 10),
+          ],
+        ),
       ),
     );
   }
@@ -399,29 +499,63 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             foregroundColor: Colors.white,
             minimumSize: const Size(double.infinity, 56),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            elevation: 8,
+            shadowColor: AppColors.primaryPurple.withOpacity(0.5),
           ),
           child: Text(
             '${_t("subscribe_now_prefix")}${widget.course.getLocalizedPrice(Provider.of<LocaleProvider>(context).locale)}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
-        
-        const SizedBox(height: 16),
-        Center(child: Text(_t('or'), style: const TextStyle(color: Colors.white60))),
-        const SizedBox(height: 16),
-        
-        // Own Button
-        OutlinedButton(
-          onPressed: () {}, // Action for owning the course
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.white,
-            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+      ],
+    );
+  }
+
+  Widget _buildContinueLearningButton(bool isRTL) {
+    return Column(
+      crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.green.withOpacity(0.3)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+              const SizedBox(width: 12),
+              Text(
+                _t('enrolled_already'),
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        ElevatedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CourseContentScreen(
+                  course: widget.course,
+                  lessonsData: _lessons,
+                  chapters: _chapters,
+                  isEnrolled: true,
+                ),
+              ),
+            );
+          },
+          icon: const Icon(Icons.play_arrow_rounded),
+          label: Text(_t('enter_course')),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: AppColors.primaryPurple,
             minimumSize: const Size(double.infinity, 56),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-          child: Text(
-            '${_t("own_this_course")} ${widget.course.getLocalizedPrice(Provider.of<LocaleProvider>(context).locale)}',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
       ],
@@ -445,14 +579,64 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Widget _buildMainContent(bool isRTL) {
     return Column(
       children: [
-          _buildDetailSection(_t('about'), widget.course.description ?? '', isRTL),
-          _buildCurriculumSectionVertical(isRTL),
-          if (widget.course.outcomes.isNotEmpty)
-            _buildListSection(_t('course_outcomes'), widget.course.outcomes, isRTL),
-          if (widget.course.targetAudience.isNotEmpty)
-            _buildListSection(_t('target_audience'), widget.course.targetAudience, isRTL),
-          _buildReviewsSection(isRTL),
+        _buildDetailSection(
+            _t('about'), widget.course.description ?? '', isRTL),
+        if (!_isEnrolled) _buildCurriculumSectionVertical(isRTL),
+        if (_isEnrolled) _buildEnterCourseSection(isRTL),
+        if (widget.course.outcomes.isNotEmpty)
+          _buildListSection(
+              _t('course_outcomes'), widget.course.outcomes, isRTL),
+        if (widget.course.targetAudience.isNotEmpty)
+          _buildListSection(
+              _t('target_audience'), widget.course.targetAudience, isRTL),
+        _buildReviewsSection(isRTL),
       ],
+    );
+  }
+
+  Widget _buildEnterCourseSection(bool isRTL) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Column(
+        crossAxisAlignment:
+            isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(_t('course_content'),
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CourseContentScreen(
+                    course: widget.course,
+                    lessonsData: _lessons,
+                    chapters: _chapters,
+                    isEnrolled: true,
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.video_library_rounded),
+            label: Text(_t('enter_course')),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 60),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                    color: AppColors.primaryPurple.withOpacity(0.5)),
+              ),
+              elevation: 0,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -597,7 +781,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               child: ElevatedButton.icon(
                 onPressed: _showAddReviewDialog,
                 icon: const Icon(Icons.rate_review),
-                label: const Text('أضف تقييمك'),
+                label: Text(_t('add_review')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryPurple,
                   foregroundColor: Colors.white,
@@ -618,14 +802,14 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.green.withOpacity(0.5)),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle, color: Colors.greenAccent),
-                  SizedBox(width: 8),
+                  const Icon(Icons.check_circle, color: Colors.greenAccent),
+                  const SizedBox(width: 8),
                   Text(
-                    'لقد قمت بتقييم هذه الدورة',
-                    style: TextStyle(
+                    _t('reviewed_already'),
+                    style: const TextStyle(
                         color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ],
@@ -633,9 +817,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             ),
 
         if (_reviews.isEmpty)
-          const ProfessionalEmptyState(
-            title: 'لا توجد تقييمات بعد',
-            message: 'كن أول من يقيم هذه الدورة ويشارك تجربته مع الآخرين.',
+          ProfessionalEmptyState(
+            title: _t('no_reviews_yet'),
+            message: _t('be_first_to_review'),
             icon: Icons.star_outline_rounded,
           )
         else
@@ -646,7 +830,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 
   Widget _buildReviewCard(Map<String, dynamic> review) {
     final user = review['users'] ?? {};
-    final userName = user['full_name'] ?? 'مستخدم';
+    final userName = user['full_name'] ?? _t('anonymous_user');
     final userImage = user['avatar_url'];
     final rating = (review['rating'] as num).toDouble();
     final comment = review['comment'] ?? '';
@@ -1187,6 +1371,25 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTinyTag(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

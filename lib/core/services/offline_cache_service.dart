@@ -17,7 +17,7 @@ class OfflineCacheService {
   // Cache expiry times (in milliseconds)
   static const int courseCacheDuration = 24 * 60 * 60 * 1000; // 24 hours
   static const int lessonCacheDuration = 7 * 24 * 60 * 60 * 1000; // 7 days
-  static const int userDataCacheDuration = 60 * 60 * 1000; // 1 hour
+  static const int userDataCacheDuration = 30 * 24 * 60 * 60 * 1000; // 30 days
 
   Future<void> init() async {
     _coursesBox = await Hive.openBox<Map>('courses_cache');

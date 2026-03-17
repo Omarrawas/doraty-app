@@ -101,6 +101,21 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    int crossAxisCount = 1;
+    double childAspectRatio = 1.5;
+
+    if (screenWidth > 1200) {
+      crossAxisCount = 4;
+      childAspectRatio = 0.75;
+    } else if (screenWidth > 800) {
+      crossAxisCount = 3;
+      childAspectRatio = 0.75;
+    } else if (screenWidth > 550) {
+      crossAxisCount = 2;
+      childAspectRatio = 0.75;
+    }
+
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: () => _loadTeachers(forceRefresh: true),
@@ -144,10 +159,9 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
                             )
                           : GridView.builder(
                               padding: const EdgeInsets.all(16),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 2,
-                                childAspectRatio: 0.75,
+                              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: crossAxisCount,
+                                childAspectRatio: childAspectRatio,
                                 crossAxisSpacing: 16,
                                 mainAxisSpacing: 16,
                               ),

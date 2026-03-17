@@ -10,12 +10,14 @@ class ExamResultScreen extends StatefulWidget {
   final Exam exam;
   final Map<int, int>? userAnswers;
   final VoidCallback? onFinish;
+  final VoidCallback? onNext;
 
   const ExamResultScreen({
     super.key,
     required this.exam,
     this.userAnswers,
     this.onFinish,
+    this.onNext,
   });
 
   @override
@@ -514,36 +516,59 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          child: _buildActionButton(
-            label: 'العودة للدرس',
-            icon: Icons.play_lesson,
-            onTap: () {
-              if (widget.onFinish != null) {
-                widget.onFinish!();
-              } else {
-                Navigator.pop(context);
-              }
-            },
+        if (widget.onNext != null) ...[
+          SizedBox(
+            width: double.infinity,
+            child: _buildActionButton(
+              label: 'الانتقال للدرس التالي',
+              icon: Icons.arrow_forward_ios,
+              isPrimary: true,
+              onTap: () {
+                Navigator.pop(context); // Close results
+                widget.onNext!();
+              },
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildActionButton(
-            label: 'إعادة الاختبار',
-            icon: Icons.refresh,
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ExamTakingScreen(exam: widget.exam),
-                ),
-              );
-            },
-            isPrimary: true,
-          ),
+          const SizedBox(height: 12),
+        ],
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionButton(
+                label: 'العودة للدرس',
+                icon: Icons.play_lesson,
+                onTap: () {
+                  if (widget.onFinish != null) {
+                    widget.onFinish!();
+                  } else {
+                    Navigator.pop(context);
+                  }
+                },
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildActionButton(
+                label: 'إعادة الاختبار',
+                icon: Icons.refresh,
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ExamTakingScreen(
+                        exam: widget.exam,
+                        onFinish: widget.onFinish,
+                        onNext: widget.onNext,
+                      ),
+                    ),
+                  );
+                },
+                isPrimary: widget.onNext == null, // Make retry primary only if no next lesson option
+              ),
+            ),
+          ],
         ),
       ],
     );

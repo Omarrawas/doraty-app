@@ -11,13 +11,16 @@ import '../../widgets/tex_view_widget.dart';
 
 class ExamTakingScreen extends StatefulWidget {
   final Exam exam;
-  final VoidCallback? onCompleted;
+  final VoidCallback? onFinish;
+  final VoidCallback? onNext;
 
   const ExamTakingScreen({
     super.key,
     required this.exam,
-    this.onCompleted,
-  });
+    VoidCallback? onFinish,
+    this.onNext,
+    @Deprecated('Use onFinish') VoidCallback? onCompleted,
+  }) : onFinish = onFinish ?? onCompleted;
 
   @override
   State<ExamTakingScreen> createState() => _ExamTakingScreenState();
@@ -273,7 +276,8 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
             builder: (context) => ExamResultScreen(
               exam: completedExam,
               userAnswers: _answers,
-              onFinish: widget.onCompleted,
+              onFinish: widget.onFinish,
+              onNext: widget.onNext,
             ),
           ),
         );

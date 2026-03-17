@@ -38,6 +38,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       _subjectController; // Renamed from _categoryController
   late TextEditingController _levelController;
   late TextEditingController _imageUrlController;
+  late TextEditingController _videoUrlController; // Added
   late TextEditingController _priceController;
   late TextEditingController _instructorController;
   late TextEditingController _displayInstructorController;
@@ -111,6 +112,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     );
     _durationController = TextEditingController(
       text: widget.courseData?['duration_hours']?.toString() ?? '0',
+    );
+    _videoUrlController = TextEditingController(
+      text: widget.courseData?['video_url'] ?? '',
     );
     _discountController = TextEditingController(
       text: widget.courseData?['discount_percentage']?.toString() ?? '0',
@@ -241,6 +245,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     _subjectController.dispose();
     _levelController.dispose();
     _imageUrlController.dispose();
+    _videoUrlController.dispose();
     _priceController.dispose();
     _instructorController.dispose();
     _displayInstructorController.dispose();
@@ -413,6 +418,12 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                             child: Text(_t(item)),
                                           );
                                         }).toList(),
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return _t('error_select_level');
+                                          }
+                                          return null;
+                                        },
                                         onChanged: (value) {
                                           if (value != null) {
                                             setState(() {
@@ -488,14 +499,28 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                             child: Row(
                               children: [
                                 Expanded(
-                                  child: TextFormField(
-                                    controller: _imageUrlController,
-                                    decoration: _inputDecoration(
-                                      label: 'رابط صورة الدورة',
-                                      hint: 'https://example.com/image.jpg',
-                                      icon: Icons.image,
-                                    ),
-                                    style: const TextStyle(color: Colors.white),
+                                  child: Column(
+                                    children: [
+                                      TextFormField(
+                                        controller: _imageUrlController,
+                                        decoration: _inputDecoration(
+                                          label: _t('image_url_label'),
+                                          hint: _t('image_url_hint'),
+                                          icon: Icons.image_rounded,
+                                        ),
+                                        style: const TextStyle(color: Colors.white),
+                                      ),
+                                      const SizedBox(height: 16),
+                                      TextFormField(
+                                        controller: _videoUrlController,
+                                        decoration: _inputDecoration(
+                                          label: _t('video_url_label'),
+                                          hint: _t('video_url_hint'),
+                                          icon: Icons.video_collection_rounded,
+                                        ),
+                                        style: const TextStyle(color: Colors.white),
+                                      ),
+                                    ],
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -1048,6 +1073,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         'subject': _subjectController.text,
         'level': _levelController.text,
         'image_url': _imageUrlController.text,
+        'video_url': _videoUrlController.text,
         'price': double.tryParse(_priceController.text) ?? 0.0,
         'instructor_name': _instructorController.text,
         'instructor_id': _selectedTeacherId,

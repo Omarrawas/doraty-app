@@ -149,15 +149,18 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    int crossAxisCount = 2;
-    double childAspectRatio = 0.85; // Much shorter cards
+    int crossAxisCount = 1;
+    double childAspectRatio = 1.15; // Increased height for mobile
 
     if (screenWidth > 1200) {
       crossAxisCount = 4;
-      childAspectRatio = 0.95;
+      childAspectRatio = 0.85;
     } else if (screenWidth > 800) {
       crossAxisCount = 3;
-      childAspectRatio = 0.9;
+      childAspectRatio = 0.8;
+    } else if (screenWidth > 550) {
+      crossAxisCount = 2;
+      childAspectRatio = 0.75;
     }
 
     return Scaffold(

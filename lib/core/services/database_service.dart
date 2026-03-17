@@ -186,6 +186,7 @@ class DatabaseService {
     String? category,
     String? categoryId, // Added categoryId support
     String? subject,
+    String? level, // Added
     double? minPrice,
     double? maxPrice,
     double? minRating,
@@ -199,6 +200,11 @@ class DatabaseService {
       if (query != null && query.isNotEmpty) {
         // Search in title and description using ilike (case-insensitive)
         dbQuery = dbQuery.or('title.ilike.%$query%,description.ilike.%$query%');
+      }
+
+      // Level Filter
+      if (level != null && level != 'all_levels' && level != 'الكل') {
+        dbQuery = dbQuery.eq('level', level);
       }
 
       // Category Filter
@@ -270,88 +276,94 @@ class DatabaseService {
   }
 
   /// Get teacher courses with statistics
-  Future<List<Map<String, dynamic>>> getTeacherCourses() async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) return [];
+  Future<List<Map<String, dynamic>>> getTeacherCourses(
+      {bool forceRefresh = false}) async {
+    final userId = SupabaseService.instance.currentUserId;
+    if (userId == null) return [];
 
-      // 1. Get all courses for this teacher
-      final coursesResponse =
-          await _client.from('courses').select().eq('instructor_id', userId);
+    return fetchWithCache(
+      key: 'teacher_courses_$userId',
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 1),
+      fetcher: () async {
+        try {
+          // 1. Get all courses for this teacher
+          final coursesResponse = await _client
+              .from('courses')
+              .select()
+              .eq('instructor_id', userId);
 
-      final courses = List<Map<String, dynamic>>.from(coursesResponse);
-      final courseIds = courses.map((c) => c['id']).toList();
+          final courses = List<Map<String, dynamic>>.from(coursesResponse);
+          final courseIds = courses.map((c) => c['id']).toList();
 
-      if (courseIds.isEmpty) return [];
+          if (courseIds.isEmpty) return [];
 
-      // 2. Get enrollments for progress and student count
-      final enrollmentsResponse = await _client
-          .from('enrollments')
-          .select('course_id, progress_percentage')
-          .inFilter('course_id', courseIds);
+          // 2. Get enrollments for progress and student count
+          final enrollmentsResponse = await _client
+              .from('enrollments')
+              .select('course_id, progress_percentage')
+              .inFilter('course_id', courseIds);
 
-      final enrollments = List<Map<String, dynamic>>.from(enrollmentsResponse);
+          final enrollments =
+              List<Map<String, dynamic>>.from(enrollmentsResponse);
 
-      // 3. Get exams count
-      final examsResponse = await _client
-          .from('exams')
-          .select('course_id')
-          .inFilter('course_id', courseIds);
+          // 3. Get exams count
+          final examsResponse = await _client
+              .from('exams')
+              .select('course_id')
+              .inFilter('course_id', courseIds);
 
-      final allExams = List<Map<String, dynamic>>.from(examsResponse);
+          final allExams = List<Map<String, dynamic>>.from(examsResponse);
 
-      // 4. Get revenue from view
-      final revenueResponse = await _client
-          .from('admin_enrollments_view')
-          .select('course_id, course_price')
-          .inFilter('course_id', courseIds);
+          // 4. Get revenue from view
+          final revenueResponse = await _client
+              .from('admin_enrollments_view')
+              .select('course_id, course_price')
+              .inFilter('course_id', courseIds);
 
-      final allRevenue = List<Map<String, dynamic>>.from(revenueResponse);
+          final allRevenue = List<Map<String, dynamic>>.from(revenueResponse);
 
-      // 5. Aggregate data
-      return courses.map((course) {
-        final courseId = course['id'];
+          // 5. Aggregate data
+          return courses.map((course) {
+            final courseId = course['id'];
 
-        final courseEnrollments =
-            enrollments.where((e) => e['course_id'] == courseId);
-        final studentCount = courseEnrollments.length;
+            final courseEnrollments =
+                enrollments.where((e) => e['course_id'] == courseId);
+            final studentCount = courseEnrollments.length;
 
-        double avgProgress = 0;
-        if (studentCount > 0) {
-          final totalProgress = courseEnrollments.fold(
-              0.0,
-              (sum, e) =>
-                  sum + (e['progress_percentage'] as num? ?? 0).toDouble());
-          avgProgress = (totalProgress / studentCount);
+            double avgProgress = 0;
+            if (studentCount > 0) {
+              final totalProgress = courseEnrollments.fold(
+                  0.0,
+                  (sum, e) =>
+                      sum + (e['progress_percentage'] as num? ?? 0).toDouble());
+              avgProgress = (totalProgress / studentCount);
+            }
+
+            final examCount =
+                allExams.where((e) => e['course_id'] == courseId).length;
+
+            final courseRevenue = allRevenue
+                .where((r) => r['course_id'] == courseId)
+                .fold(
+                    0.0,
+                    (sum, r) =>
+                        sum + (r['course_price'] as num? ?? 0).toDouble());
+
+            return {
+              ...course,
+              'student_count': studentCount,
+              'average_progress': avgProgress,
+              'exam_count': examCount,
+              'revenue': courseRevenue,
+            };
+          }).toList();
+        } catch (e) {
+          debugPrint('Error in getTeacherCourses: $e');
+          rethrow;
         }
-
-        final examCount =
-            allExams.where((e) => e['course_id'] == courseId).length;
-
-        final courseRevenue = allRevenue
-            .where((r) => r['course_id'] == courseId)
-            .fold(0.0,
-                (sum, r) => sum + (r['course_price'] as num? ?? 0).toDouble());
-
-        return {
-          ...course,
-          'student_count': studentCount,
-          'average_progress': avgProgress,
-          'exam_count': examCount,
-          'revenue': courseRevenue,
-        };
-      }).toList();
-    } catch (e) {
-      debugPrint('Error getting teacher courses with stats: $e');
-      // Fallback to basic list if stats fail
-      try {
-        final userId = SupabaseService.instance.currentUserId;
-        if (userId == null) return [];
-        return await getCoursesByTeacherId(userId);
-      } catch (_) {
-        return [];
-      }
-    }
+      },
+    );
   }
 
   /// Get teacher exams
@@ -432,7 +444,8 @@ class DatabaseService {
           var query = _client.from('courses').select('''
                 *, 
                 users!instructor_id(full_name, avatar_url),
-                course_category_junction(category:categories(id, name, name_en))
+                course_category_junction(category:categories(id, name, name_en)),
+                course_tags(tag)
               ''');
 
           if (instructorId != null) {
@@ -504,6 +517,12 @@ class DatabaseService {
               }
             }
 
+            // Map tags
+            final tagsList = course['course_tags'] as List?;
+            if (tagsList != null) {
+              course['tags'] = tagsList.map((t) => t['tag'] as String).toList();
+            }
+
             return course;
           }).toList();
 
@@ -530,87 +549,99 @@ class DatabaseService {
     String? instructorId,
     bool includeDrafts = false,
   }) async {
-    var query = _client.from('courses').select();
-    if (instructorId != null) {
-      query = query.eq('instructor_id', instructorId);
+    try {
+      var query = _client.from('courses').select();
+      if (instructorId != null) {
+        query = query.eq('instructor_id', instructorId);
+      }
+      if (categoryId != null) {
+        query = query.eq('category_id', categoryId);
+      } else if (category != null) {
+        query = query.eq('category', category);
+      }
+      if (subject != null) {
+        query = query.eq('subject', subject);
+      }
+      if (!includeDrafts) {
+        query = query.eq('is_published', true);
+      }
+
+      final response = await query.order('created_at', ascending: false);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error in _getCoursesSimple: $e');
+      return [];
     }
-    if (categoryId != null) {
-      query = query.eq('category_id', categoryId);
-    } else if (category != null) {
-      query = query.eq('category', category);
-    }
-    if (subject != null) query = query.eq('subject', subject);
-    if (!includeDrafts) {
-      query = query.eq('is_published', true);
-    }
-    final response = await query;
-    return List<Map<String, dynamic>>.from(response);
   }
 
-  /// Get course by ID
-  Future<Map<String, dynamic>?> getCourseById(String courseId) async {
-    try {
-      final response = await _client
-          .from('courses')
-          .select('''
-            *, 
-            users!instructor_id(full_name, avatar_url),
-            course_category_junction(category:categories(id, name, name_en))
-          ''')
-          .eq('id', courseId)
-          .maybeSingle();
+  /// Get course by ID with join
+  Future<Map<String, dynamic>?> getCourseById(String courseId,
+      {bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: CacheKeys.course(courseId),
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 1),
+      fetcher: () async {
+        try {
+          final response = await _client.from('courses').select('''
+                *, 
+                users!instructor_id(full_name, avatar_url, full_name_en),
+                course_category_junction(category:categories(id, name, name_en)),
+                chapters:chapters(*, lessons:lessons(*)),
+                course_tags(tag)
+              ''').eq('id', courseId).single();
 
-      if (response == null) return null;
+          final course = Map<String, dynamic>.from(response);
 
-      final course = Map<String, dynamic>.from(response);
-      final user = course['users'];
-      if (user != null) {
-        course['instructor_name'] =
-            user['full_name'] ?? course['instructor_name'];
-        course['instructor_photo'] =
-            user['avatar_url'] ?? course['instructor_photo'];
-      }
+          // Map instructor data
+          final user = course['users'];
+          if (user != null) {
+            course['instructor_name'] =
+                user['full_name'] ?? course['instructor_name'];
+            course['instructor_photo'] =
+                user['avatar_url'] ?? course['instructor_photo'];
+            course['instructor_name_en'] = user['full_name_en'];
+          }
 
-      // Map categories from junction
-      final junction = course['course_category_junction'] as List?;
-      if (junction != null) {
-        final categories = junction
-            .map((j) {
-              final cat = j['category'] as Map?;
-              return cat?['name'] as String? ?? '';
-            })
-            .where((name) => name.isNotEmpty)
-            .toList();
+          // Map categories
+          final junction = course['course_category_junction'] as List?;
+          if (junction != null) {
+            final categories =
+                junction.map((j) => j['category']['name'] as String).toList();
+            final categoriesEn = junction
+                .map((j) => j['category']['name_en'] as String)
+                .toList();
+            final categoryIds =
+                junction.map((j) => j['category']['id'] as String).toList();
+            course['categories_names'] = categories;
+            course['categories_names_en'] = categoriesEn;
+            course['category_ids'] = categoryIds;
+            if (categories.isNotEmpty) course['category'] = categories.first;
+          }
 
-        final categoryIds = junction
-            .map((j) {
-              final cat = j['category'] as Map?;
-              return cat?['id'] as String? ?? '';
-            })
-            .where((id) => id.isNotEmpty)
-            .toList();
+          // Map tags
+          final tagsList = course['course_tags'] as List?;
+          if (tagsList != null) {
+            course['tags'] = tagsList.map((t) => t['tag'] as String).toList();
+          }
 
-        course['categories_names'] = categories;
-        course['category_ids'] = categoryIds;
-
-        if (categories.isNotEmpty) {
-          course['category'] = categories.first;
+          return course;
+        } catch (e) {
+          debugPrint('Error getting course by id: $e');
+          // Fallback to simple select
+          try {
+            final res = await _client
+                .from('courses')
+                .select()
+                .eq('id', courseId)
+                .single();
+            return Map<String, dynamic>.from(res);
+          } catch (_) {
+            return null;
+          }
         }
-      }
-
-      return course;
-    } catch (e) {
-      debugPrint('Error getting course by id with join: $e');
-      try {
-        return await _client
-            .from('courses')
-            .select()
-            .eq('id', courseId)
-            .single();
-      } catch (_) {
-        return null;
-      }
-    }
+      },
+    );
   }
 
   /// Get lessons for a course with progress
@@ -1094,6 +1125,7 @@ class DatabaseService {
       rethrow;
     }
   }
+
   /// Save a received notification (called on FCM message received)
   Future<void> saveNotification({
     required String userId,
@@ -2487,17 +2519,25 @@ class DatabaseService {
   }
 
   /// Get teacher profile by ID
-  Future<Map<String, dynamic>?> getTeacherProfile(String userId) async {
-    try {
-      return await _client
-          .from('users')
-          .select()
-          .eq('id', userId)
-          .maybeSingle();
-    } catch (e) {
-      debugPrint('❌ Error fetching teacher profile: $e');
-      return null;
-    }
+  Future<Map<String, dynamic>?> getTeacherProfile(String userId,
+      {bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: 'teacher_profile_$userId',
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 1),
+      fetcher: () async {
+        try {
+          return await _client
+              .from('users')
+              .select()
+              .eq('id', userId)
+              .maybeSingle();
+        } catch (e) {
+          debugPrint('❌ Error fetching teacher profile: $e');
+          return null;
+        }
+      },
+    );
   }
 
   /// Update student profile
@@ -2919,109 +2959,6 @@ class DatabaseService {
     );
   }
 
-  /// Get system statistics (Admin only)
-  Future<Map<String, dynamic>> getSystemStatistics() async {
-    try {
-      final totalUsers = await _client.from('users').select('id');
-      final totalCourses = await _client.from('courses').select('id');
-      final totalExams = await _client.from('exams').select('id');
-      final totalAttempts = await _client.from('exam_attempts').select('id');
-
-      return {
-        'total_users': totalUsers.length,
-        'total_courses': totalCourses.length,
-        'total_exams': totalExams.length,
-        'total_attempts': totalAttempts.length,
-      };
-    } catch (e) {
-      return {
-        'total_users': 0,
-        'total_courses': 0,
-        'total_exams': 0,
-        'total_attempts': 0,
-      };
-    }
-  }
-
-  Future<Map<String, dynamic>> getTeacherStatistics(String teacherId,
-      {bool forceRefresh = false}) async {
-    return fetchWithCache(
-      key: 'teacher_stats_$teacherId',
-      forceRefresh: forceRefresh,
-      duration: const Duration(minutes: 30),
-      fetcher: () async {
-        try {
-          // Courses owned by this teacher
-          final teacherCourses = await _client
-              .from('courses')
-              .select('id')
-              .eq('instructor_id', teacherId);
-          final courseIds = teacherCourses.map((c) => c['id']).toList();
-
-          if (courseIds.isEmpty) {
-            return {
-              'total_users': 0,
-              'total_courses': 0,
-              'total_exams': 0,
-              'total_attempts': 0,
-            };
-          }
-
-          // Total exams in teacher's courses
-          final exams = await _client
-              .from('exams')
-              .select('id')
-              .inFilter('course_id', courseIds);
-
-          // Total students (distinct users) enrolled in teacher's courses
-          final enrollments = await _client
-              .from('enrollments')
-              .select('user_id')
-              .inFilter('course_id', courseIds);
-
-          final distinctUserIds = enrollments.map((e) => e['user_id']).toSet();
-
-          // Total attempts in teacher's courses
-          final examIdsForAttempts = exams.map((e) => e['id']).toList();
-          List<Map<String, dynamic>> attempts = [];
-          if (examIdsForAttempts.isNotEmpty) {
-            final attemptsResponse = await _client
-                .from('exam_attempts')
-                .select('id')
-                .inFilter('exam_id', examIdsForAttempts);
-            attempts = List<Map<String, dynamic>>.from(attemptsResponse);
-          }
-
-          // Total revenue for teacher's courses
-          final revenueResponse = await _client
-              .from('admin_enrollments_view')
-              .select('course_price')
-              .eq('instructor_id', teacherId);
-
-          double totalRevenue = 0;
-          for (var row in revenueResponse) {
-            totalRevenue += (row['course_price'] as num? ?? 0).toDouble();
-          }
-
-          return {
-            'total_users': distinctUserIds.length,
-            'total_courses': courseIds.length,
-            'total_exams': exams.length,
-            'total_attempts': attempts.length,
-            'total_revenue': totalRevenue,
-          };
-        } catch (e) {
-          debugPrint('Error getting teacher statistics: $e');
-          return {
-            'total_users': 0,
-            'total_courses': 0,
-            'total_exams': 0,
-            'total_attempts': 0,
-          };
-        }
-      },
-    );
-  }
 
   /// Get teacher statistics for a specific date range (for monthly reports)
   Future<Map<String, dynamic>> getTeacherMonthlyStatistics(
@@ -4616,12 +4553,11 @@ class DatabaseService {
 
       final response = await _client
           .from('notifications')
-          .select()
+          .select('id')
           .eq('user_id', userId)
-          .eq('is_read', false)
-          .count();
+          .eq('is_read', false);
 
-      return response.count;
+      return (response as List).length;
     } catch (e) {
       debugPrint('Error getting unread count: $e');
       return 0;
@@ -5109,5 +5045,101 @@ class DatabaseService {
       debugPrint('Error adding app update: $e');
       rethrow;
     }
+  }
+
+  // ==================== STATISTICS ====================
+
+  /// Get general system statistics for admin
+  Future<Map<String, dynamic>> getSystemStatistics({bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: 'system_stats_all',
+      forceRefresh: forceRefresh,
+      duration: const Duration(minutes: 30),
+      fetcher: () async {
+        try {
+          // Get counts using the correct Supabase 2.x syntax or by length
+          final usersResponse = await _client.from('profiles').select('id');
+          final coursesResponse = await _client.from('courses').select('id');
+          final examsResponse = await _client.from('exams').select('id');
+          final attemptsResponse = await _client.from('exam_attempts').select('id');
+          
+          // Get total revenue
+          final revenueRes = await _client.from('enrollments').select('paid_amount');
+          double totalRevenue = 0;
+          
+          final List<dynamic> rows = revenueRes as List<dynamic>;
+          for (var row in rows) {
+            totalRevenue += (row['paid_amount'] as num? ?? 0).toDouble();
+          }
+
+          return {
+            'total_users': (usersResponse as List).length,
+            'total_courses': (coursesResponse as List).length,
+            'total_exams': (examsResponse as List).length,
+            'total_attempts': (attemptsResponse as List).length,
+            'total_revenue': totalRevenue,
+          };
+        } catch (e) {
+          debugPrint('Error fetching system stats: $e');
+          return {
+            'total_users': 0,
+            'total_courses': 0,
+            'total_exams': 0,
+            'total_attempts': 0,
+            'total_revenue': 0,
+          };
+        }
+      },
+    );
+  }
+
+  /// Get statistics for a specific teacher
+  Future<Map<String, dynamic>> getTeacherStatistics(String teacherId, {bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: 'teacher_stats_$teacherId',
+      forceRefresh: forceRefresh,
+      duration: const Duration(minutes: 30),
+      fetcher: () async {
+        try {
+          // 1. Get courses count by this teacher
+          final coursesResponse = await _client.from('courses')
+              .select('id')
+              .eq('instructor_id', teacherId);
+          
+          final List<dynamic> teacherCourses = coursesResponse as List<dynamic>;
+          final List<String> courseIds = teacherCourses.map((c) => c['id'] as String).toList();
+          
+          int studentCount = 0;
+          double totalRevenue = 0;
+          
+          if (courseIds.isNotEmpty) {
+            final enrollmentsRes = await _client.from('enrollments')
+                .select('user_id, paid_amount')
+                .inFilter('course_id', courseIds);
+            
+            final List<dynamic> enrollmentsList = enrollmentsRes as List<dynamic>;
+            final uniqueStudents = enrollmentsList.map((e) => e['user_id']).toSet();
+            studentCount = uniqueStudents.length;
+            
+            for (var e in enrollmentsList) {
+              totalRevenue += (e['paid_amount'] as num? ?? 0).toDouble();
+            }
+          }
+
+          return {
+            'total_courses': teacherCourses.length,
+            'total_users': studentCount,
+            'total_revenue': totalRevenue,
+          };
+        } catch (e) {
+          debugPrint('Error fetching teacher stats: $e');
+          return {
+            'total_courses': 0,
+            'total_users': 0,
+            'total_revenue': 0,
+          };
+        }
+      },
+    );
   }
 }

@@ -10,6 +10,7 @@ import '../teacher/teacher_profile_screen.dart';
 import '../teacher/teachers_list_screen.dart'; // Added import
 import '../notifications/notifications_screen.dart';
 import '../../widgets/shimmer_loader.dart';
+import '../../core/services/sync_service.dart';
 import '../../models/category_model.dart';
 import '../../widgets/empty_state.dart';
 import 'package:provider/provider.dart';
@@ -57,6 +58,16 @@ class _HomeScreenState extends State<HomeScreen> {
     _bannerController = PageController(viewportFraction: 0.85);
     _startBannerAutoPlay();
     _refreshData();
+    
+    // Listen to sync completion
+    SyncService().addListener(_onSyncUpdate);
+  }
+
+  void _onSyncUpdate() {
+    if (mounted && !SyncService().isSyncing) {
+      debugPrint('🔄 Sync completed, refreshing UI...');
+      _refreshData(forceRefresh: false); // Reload from now-updated cache
+    }
   }
 
   Future<void> _refreshData({bool forceRefresh = false}) async {
@@ -79,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    SyncService().removeListener(_onSyncUpdate);
     _bannerController.dispose();
     super.dispose();
   }
@@ -293,37 +305,39 @@ class _HomeScreenState extends State<HomeScreen> {
       final userId = SupabaseService.instance.currentUserId;
       if (userId == null) return;
 
+      // Access the profile from AuthService if available, otherwise fetch manually
       final authService = Provider.of<AuthService>(context, listen: false);
       String? userRole = authService.userProfile?['role'];
 
+      // If role is still null, we might need a small delay or fetch it once
       if (userRole == null) {
-        // Fallback: Check role directly if AuthService profile isn't loaded yet
-        final roleResponse = await SupabaseService.instance.client
-            .from('user_roles')
-            .select('roles(name)')
-            .eq('user_id', userId)
-            .maybeSingle();
-
-        if (roleResponse != null && roleResponse['roles'] != null) {
-          userRole = roleResponse['roles']['name'] as String;
-        }
+        final profile = await _databaseService.getUserProfile(userId);
+        userRole = profile['role'];
       }
 
-      if (userRole != 'teacher' &&
-          userRole != 'admin' &&
-          userRole != 'super_admin') {
+      if (userRole == null) return;
+
+      Map<String, dynamic> stats = {};
+
+      if (userRole == 'admin' || userRole == 'super_admin') {
+        // Admin sees global stats
+        stats = await _databaseService.getSystemStatistics(forceRefresh: forceRefresh);
+      } else if (userRole == 'teacher') {
+        // Teacher sees only their stats
+        stats = await _databaseService.getTeacherStatistics(userId, forceRefresh: forceRefresh);
+      } else {
+        // Regular student doesn't see this section
+        if (mounted) setState(() => _teacherStats = {});
         return;
       }
 
-      final stats = await _databaseService.getTeacherStatistics(userId,
-          forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
           _teacherStats = stats;
         });
       }
     } catch (e) {
-      debugPrint('Error loading teacher stats: $e');
+      debugPrint('Error loading stats in HomeScreen: $e');
     }
   }
 

@@ -300,84 +300,103 @@ class _MainScreenState extends State<MainScreen> {
           : Consumer<LocaleProvider>(
               builder: (context, localeProvider, child) {
                 return SafeArea(
-                  bottom: true,
-                  child: CurvedNavigationBar(
-                    index: _currentIndex >= screens.length ? 0 : _currentIndex,
-                    height: 60.0,
-                    items: <Widget>[
-                      Icon(Icons.home_outlined,
-                          size: 30,
-                          color: _currentIndex == 0
-                              ? Colors.white
-                              : AppColors.primaryPurple),
-                      Icon(Icons.manage_search_outlined,
-                          size: 30,
-                          color: _currentIndex == 1
-                              ? Colors.white
-                              : AppColors.primaryPurple),
-                      if (isManager)
-                        Icon(Icons.dashboard_outlined,
-                            size: 30,
-                            color: _currentIndex == 2
-                                ? Colors.white
-                                : AppColors.primaryPurple),
-                      Icon(Icons.play_circle_outline,
-                          size: 30,
-                          color: _currentIndex == (isManager ? 3 : 2)
-                              ? Colors.white
-                              : AppColors.primaryPurple),
-                      Consumer<AuthService>(
-                        builder: (context, auth, _) {
-                          final photoUrl = auth.userProfile?['avatar_url'] ??
-                              auth.userProfile?['photo_url'];
-                          final profileIndex = isManager ? 4 : 3;
-                          return Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: _currentIndex == profileIndex
-                                  ? Border.all(color: Colors.white, width: 2)
-                                  : null,
-                            ),
-                            child: ClipOval(
-                              child: (auth.isAuthenticated && photoUrl != null)
-                                  ? Image.network(
-                                      photoUrl,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (context, error,
-                                              stackTrace) =>
-                                          Icon(Icons.person_outline,
-                                              size: 30,
-                                              color: _currentIndex == profileIndex
-                                                  ? Colors.white
-                                                  : AppColors.primaryPurple),
-                                    )
-                                  : Icon(Icons.person_outline,
-                                      size: 30,
-                                      color: _currentIndex == profileIndex
-                                          ? Colors.white
-                                          : AppColors.primaryPurple),
-                            ),
-                          );
-                        },
-                      ),
-                    ],
-                    color: AppColors.getSurfaceColor(context).withOpacity(0.95),
-                    buttonBackgroundColor: AppColors.primaryPurple,
-                    backgroundColor: Colors.transparent,
-                    animationCurve: Curves.easeInOut,
-                    animationDuration: const Duration(milliseconds: 300),
-                    onTap: (index) {
-                      setState(() {
-                        _currentIndex = index;
-                      });
-                    },
-                    letIndexChange: (index) => true,
+                  maintainBottomViewPadding: true,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: CurvedNavigationBar(
+                      index: _currentIndex >= screens.length ? 0 : _currentIndex,
+                      height: 60.0,
+                      items: <Widget>[
+                        _buildNavItem(Icons.home_outlined, 0, isManager),
+                        _buildNavItem(Icons.manage_search_outlined, 1, isManager),
+                        if (isManager)
+                          _buildNavItem(Icons.dashboard_outlined, 2, isManager),
+                        _buildNavItem(Icons.play_circle_outline, isManager ? 3 : 2, isManager),
+                        _buildProfileTab(context, isManager ? 4 : 3, isManager),
+                      ],
+                      color: AppColors.getSurfaceColor(context).withOpacity(0.95),
+                      buttonBackgroundColor: AppColors.primaryPurple,
+                      backgroundColor: Colors.transparent,
+                      animationCurve: Curves.easeInOut,
+                      animationDuration: const Duration(milliseconds: 300),
+                      onTap: (index) {
+                        setState(() {
+                          _currentIndex = index;
+                        });
+                      },
+                    ),
                   ),
                 );
               },
             ),
+    );
+  }
+
+  Widget _buildNavItem(IconData icon, int index, bool isManager) {
+    bool isSelected = _currentIndex == index;
+    double iconSize = isManager ? 24 : 28;
+    
+    return Container(
+      width: 44, // Slightly wider base for better touch and centering
+      height: 44,
+      alignment: Alignment.center,
+      child: Icon(
+        icon,
+        size: iconSize,
+        color: isSelected ? Colors.white : AppColors.primaryPurple,
+      ),
+    );
+  }
+
+  Widget _buildProfileTab(BuildContext context, int index, bool isManager) {
+    bool isSelected = _currentIndex == index;
+    double containerSize = isManager ? 32 : 36;
+
+    return Consumer<AuthService>(
+      builder: (context, auth, _) {
+        final photoUrl = auth.userProfile?['avatar_url'] ?? auth.userProfile?['photo_url'];
+        return Container(
+          width: 44, // Consistent with _buildNavItem
+          height: 44,
+          alignment: Alignment.center,
+          child: Container(
+            width: containerSize,
+            height: containerSize,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
+            ),
+            child: ClipOval(
+              child: (auth.isAuthenticated && photoUrl != null)
+                  ? Image.network(
+                      photoUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.person_outline,
+                        size: isManager ? 22 : 26,
+                        color: isSelected ? Colors.white : AppColors.primaryPurple,
+                      ),
+                    )
+                  : Icon(
+                      Icons.person_outline,
+                      size: isManager ? 22 : 26,
+                      color: isSelected ? Colors.white : AppColors.primaryPurple,
+                    ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
