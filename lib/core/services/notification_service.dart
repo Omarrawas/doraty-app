@@ -139,7 +139,7 @@ class NotificationService {
         if (token != null) {
           await DatabaseService().updateFcmToken(token);
           // Subscribe to general topic for broadcasting
-          await _firebaseMessaging!.subscribeToTopic('all_users');
+          await subscribeToTopic('all_users');
           debugPrint('🔔 Subscribed to all_users topic');
         }
       } catch (e) {
@@ -156,6 +156,28 @@ class NotificationService {
       _isInitialized = true;
     } catch (e) {
       debugPrint('Error initializing notifications: $e');
+    }
+  }
+
+  Future<void> subscribeToTopic(String topic) async {
+    if (!kIsWeb && _firebaseMessaging != null) {
+      try {
+        await _firebaseMessaging!.subscribeToTopic(topic);
+        debugPrint('🔔 Subscribed to topic: $topic');
+      } catch (e) {
+        debugPrint('⚠️ Error subscribing to topic $topic: $e');
+      }
+    }
+  }
+
+  Future<void> unsubscribeFromTopic(String topic) async {
+    if (!kIsWeb && _firebaseMessaging != null) {
+      try {
+        await _firebaseMessaging!.unsubscribeFromTopic(topic);
+        debugPrint('🔕 Unsubscribed from topic: $topic');
+      } catch (e) {
+        debugPrint('⚠️ Error unsubscribing from topic $topic: $e');
+      }
     }
   }
 

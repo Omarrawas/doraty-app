@@ -11,13 +11,13 @@ import '../core/utils/string_utils.dart';
 class CourseCard extends StatefulWidget {
   final Course course;
   final String? heroTag;
-  final bool showEnrollButton;
+  final double? progress;
 
   const CourseCard({
     super.key,
     required this.course,
     this.heroTag,
-    this.showEnrollButton = false,
+    this.progress,
   });
 
   @override
@@ -107,16 +107,21 @@ class _CourseCardState extends State<CourseCard>
                                   top: Radius.circular(24)),
                               child: widget.course.imageUrl != null &&
                                       widget.course.imageUrl!.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: widget.course.imageUrl!,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(
-                                        color: Colors.white10,
-                                        child: const Center(
-                                            child: CircularProgressIndicator(
-                                                strokeWidth: 2)),
-                                      ),
-                                    )
+                                    ? CachedNetworkImage(
+                                        imageUrl: widget.course.imageUrl!,
+                                        fit: BoxFit.cover,
+                                        placeholder: (context, url) => Container(
+                                          color: Colors.white10,
+                                          child: const Center(
+                                              child: CircularProgressIndicator(
+                                                  strokeWidth: 2)),
+                                        ),
+                                        errorWidget: (context, url, error) => Container(
+                                          color: Colors.white10,
+                                          child: const Icon(Icons.broken_image,
+                                              color: Colors.white24, size: 30),
+                                        ),
+                                      )
                                   : Container(
                                       color: Colors.white10,
                                       child: const Icon(
@@ -267,23 +272,43 @@ class _CourseCardState extends State<CourseCard>
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      '${widget.course.studentsCount} ${AppStrings.get('students_count_label', locale)}',
-                                      style: const TextStyle(
-                                        color: Colors.white60,
-                                        fontSize: 8,
+                                    if (widget.progress != null) ...[
+                                      Text(
+                                        '${(widget.progress! * 100).toInt()}% ${AppStrings.get('completed', locale)}',
+                                        style: const TextStyle(
+                                          color: Colors.white60,
+                                          fontSize: 8,
+                                        ),
                                       ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(1),
-                                      child: LinearProgressIndicator(
-                                        value: (widget.course.studentsCount / 100).clamp(0.01, 1.0),
-                                        backgroundColor: Colors.white10,
-                                        valueColor: AlwaysStoppedAnimation<Color>(Colors.pinkAccent.withOpacity(0.4)),
-                                        minHeight: 1.5,
+                                      const SizedBox(height: 2),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(1),
+                                        child: LinearProgressIndicator(
+                                          value: widget.progress,
+                                          backgroundColor: Colors.white10,
+                                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                                          minHeight: 2,
+                                        ),
                                       ),
-                                    ),
+                                    ] else ...[
+                                      Text(
+                                        '${widget.course.studentsCount} ${AppStrings.get('students_count_label', locale)}',
+                                        style: const TextStyle(
+                                          color: Colors.white60,
+                                          fontSize: 8,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      ClipRRect(
+                                        borderRadius: BorderRadius.circular(1),
+                                        child: LinearProgressIndicator(
+                                          value: (widget.course.studentsCount / 100).clamp(0.01, 1.0),
+                                          backgroundColor: Colors.white10,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.pinkAccent.withOpacity(0.4)),
+                                          minHeight: 1.5,
+                                        ),
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -313,35 +338,6 @@ class _CourseCardState extends State<CourseCard>
                               ),
                             ],
                           ),
-                          
-                          if (widget.showEnrollButton)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              margin: const EdgeInsets.only(top: 6),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: Colors.pinkAccent.withOpacity(0.2)),
-                                color: Colors.white.withOpacity(0.04),
-                              ),
-                              child: Center(
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      AppStrings.get('view_details', locale),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 2),
-                                    const Icon(Icons.arrow_forward_ios, size: 6, color: Colors.white),
-                                  ],
-                                ),
-                              ),
-                            ),
                         ],
                       ),
                     ),

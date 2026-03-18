@@ -205,6 +205,12 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
   Future<void> _checkOfflineLesson() async {
     try {
+      // YouTube videos are never offline
+      final url = (widget.lesson.videoUrl as String?) ?? '';
+      if (url.contains('youtu.be') || url.contains('youtube.com')) {
+        return;
+      }
+
       // 1. Check OfflineStorageService (Old system)
       final offlineLesson = await _offlineStorage.getLesson(widget.lesson.id);
       if (offlineLesson != null && offlineLesson.isDownloaded) {
@@ -395,7 +401,35 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     final url = _videoUrl;
     if (url.isEmpty) return;
 
-    // Handle local/offline file
+    // 1. Handle Online/YouTube Link FIRST
+    if (url.contains('youtu.be') || url.contains('youtube.com')) {
+      _isYoutube = true;
+      _isOffline = false; // YouTube cannot be offline
+      
+      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+        return; 
+      }
+
+      final videoId = YoutubePlayer.convertUrlToId(url);
+      if (videoId != null) {
+        _youtubePlayerController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: false,
+            mute: false,
+            forceHD: true,
+            enableCaption: false,
+            isLive: false,
+            disableDragSeek: false,
+            hideControls: true, 
+            hideThumbnail: true,
+          ),
+        );
+      }
+      return; // Handled as YouTube
+    }
+
+    // 2. Handle local/offline file
     if (_isOffline) {
       _isYoutube = false;
       
@@ -441,36 +475,20 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       return;
     }
 
-    // Handle Online/YouTube
-    if (url.contains('youtu.be') || url.contains('youtube.com')) {
-      _isYoutube = true;
-      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
-        return; 
-      }
-
-      final videoId = YoutubePlayer.convertUrlToId(url);
-      if (videoId != null) {
-        _youtubePlayerController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            mute: false,
-            forceHD: true,
-            enableCaption: false,
-            isLive: false,
-            disableDragSeek: false,
-            hideControls: true, 
-            hideThumbnail: true,
-          ),
-        );
-      }
-    } 
-    // Handle Direct Network Stream (MX Player Style: HLS, DASH, MP4)
+    // 3. Handle Direct Network Stream (MX Player Style: HLS, DASH, MP4)
     else {
       _isYoutube = false;
+      
+      // Sanitize URL: handle spaces and Arabic characters
+      final sanitizedUrl = _sanitizeUrl(url);
+
       _videoPlayerController = VideoPlayerController.networkUrl(
-        Uri.parse(url),
-        // For HLS/DASH, video_player's ExoPlayer handles it automatically on Android
+        Uri.parse(sanitizedUrl),
+        // Add headers to avoid some servers blocking the request (e.g. GitHub raw, Supabase)
+        httpHeaders: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Referer': 'https://supabase.co',
+        },
       );
 
       _videoPlayerController!.initialize().then((_) {
@@ -523,6 +541,30 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         }
       });
     }
+  }
+
+  /// Sanitize URL to handle special characters and spaces
+  String _sanitizeUrl(String url) {
+    if (url.isEmpty) return url;
+    try {
+      // If it's already an encoded URI, just return it
+      if (url.contains('%')) return url;
+      
+      final uri = Uri.parse(url);
+      final encodedUri = uri.replace(
+        path: _encodePath(uri.path),
+        queryParameters: uri.queryParameters.isNotEmpty ? uri.queryParameters : null,
+      );
+      return encodedUri.toString();
+    } catch (e) {
+      // Fallback: simple character replacement for most common issues
+      return url.replaceAll(' ', '%20');
+    }
+  }
+
+  String _encodePath(String path) {
+    if (path.isEmpty) return path;
+    return path.split('/').map((segment) => Uri.encodeComponent(segment)).join('/');
   }
 
   // Removed _initWebView and _wrapHtmlContent in favor of separate screen

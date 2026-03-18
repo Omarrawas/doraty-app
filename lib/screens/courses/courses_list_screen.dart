@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:ui' as ui;
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
-import '../../core/services/offline_storage_service.dart';
-import 'course_details_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../widgets/course_card.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
@@ -27,9 +25,7 @@ class CoursesListScreen extends StatefulWidget {
 
 class _CoursesListScreenState extends State<CoursesListScreen> {
   final DatabaseService _databaseService = DatabaseService();
-  final OfflineStorageService _offlineStorage = OfflineStorageService();
   List<Map<String, dynamic>> _enrolledCourses = [];
-  Set<String> _offlineCourseIds = {};
   bool _isLoading = true;
   int _selectedTab = 0; // 0: Current, 1: Completed
 
@@ -40,16 +36,6 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
   void initState() {
     super.initState();
     _loadEnrolledCourses();
-    _loadOfflineStatus();
-  }
-
-  Future<void> _loadOfflineStatus() async {
-    final courses = await _offlineStorage.getAllCourses();
-    if (mounted) {
-      setState(() {
-        _offlineCourseIds = courses.map((c) => c.id).toSet();
-      });
-    }
   }
 
   @override
@@ -57,7 +43,6 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     super.didUpdateWidget(oldWidget);
     // Reload courses when widget updates
     _loadEnrolledCourses();
-    _loadOfflineStatus();
   }
 
 
@@ -149,8 +134,8 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    int crossAxisCount = 1;
-    double childAspectRatio = 1.15; // Increased height for mobile
+    int crossAxisCount;
+    double childAspectRatio;
 
     if (screenWidth > 1200) {
       crossAxisCount = 4;
@@ -161,6 +146,9 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     } else if (screenWidth > 550) {
       crossAxisCount = 2;
       childAspectRatio = 0.75;
+    } else {
+      crossAxisCount = 2; // Show 2 per row even on mobile
+      childAspectRatio = 0.65;
     }
 
     return Scaffold(
@@ -261,8 +249,29 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                               ?.toDouble() ??
                                           0;
 
-                                  return _buildCourseCard(
-                                      course, progress, index);
+                                  return Dismissible(
+                                    key: Key(course.id),
+                                    direction: DismissDirection.endToStart,
+                                    background: Container(
+                                      alignment: Alignment.centerLeft,
+                                      padding: const EdgeInsets.only(left: 20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withOpacity(0.8),
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      child: const Icon(Icons.delete,
+                                          color: Colors.white, size: 32),
+                                    ),
+                                    confirmDismiss: (direction) async =>
+                                        await _showDeleteConfirmation(),
+                                    onDismissed: (direction) =>
+                                        _unenrollCourse(course.id, index),
+                                    child: CourseCard(
+                                      course: course,
+                                      progress: progress,
+                                      heroTag: 'course_list_image_${course.id}',
+                                    ),
+                                  );
                                 },
                                 childCount: filteredCourses.length,
                               ),
@@ -296,7 +305,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
                   decoration: BoxDecoration(
                     color: AppColors.getGlassColor(context),
@@ -374,168 +383,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     );
   }
 
-  Widget _buildCourseCard(Course course, double progress, int index) {
-    final locale = Provider.of<LocaleProvider>(context).locale;
 
-    return Dismissible(
-      key: Key(course.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerLeft,
-        padding: const EdgeInsets.only(left: 20),
-        decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.8),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: const Icon(Icons.delete, color: Colors.white, size: 32),
-      ),
-      confirmDismiss: (direction) async => await _showDeleteConfirmation(),
-      onDismissed: (direction) => _unenrollCourse(course.id, index),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.25),
-                  Colors.white.withOpacity(0.15),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(24),
-                onTap: course.isPublished
-                    ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                CourseDetailsScreen(course: course),
-                          ),
-                        );
-                      }
-                    : null,
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Course Info (Top)
-                      Text(
-                        course.getLocalizedTitle(locale),
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        course.getLocalizedInstructorName(locale),
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.white.withOpacity(0.6),
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      // Progress Bar
-                      const SizedBox(height: 8),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                '${progress.toInt()}%',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              if (_offlineCourseIds.contains(course.id))
-                                Icon(Icons.offline_pin,
-                                    color: Colors.greenAccent.shade400,
-                                    size: 12),
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10),
-                            child: LinearProgressIndicator(
-                              value: progress / 100,
-                              backgroundColor: Colors.white.withOpacity(0.1),
-                              valueColor: const AlwaysStoppedAnimation<Color>(
-                                AppColors.primaryPurple,
-                              ),
-                              minHeight: 4,
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 8),
-                      // Course Image (Bottom)
-                      Expanded(
-                        child: Center(
-                          child: Hero(
-                            tag: 'course_list_image_${course.id}',
-                            child: AspectRatio(
-                              aspectRatio: 1.8, // Shorter image to save space
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(16),
-                                child: CachedNetworkImage(
-                                  imageUrl: course.imageUrl ?? '',
-                                  fit: BoxFit.cover,
-                                  errorWidget: (context, url, error) =>
-                                      Container(
-                                    color: Colors.white10,
-                                    child: const Icon(Icons.image,
-                                        color: Colors.white24, size: 30),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      if (!course.isPublished)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(
-                            _t('course_unavailable_label'),
-                            style: const TextStyle(
-                                color: Colors.redAccent, fontSize: 10),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildTab({
     required String title,

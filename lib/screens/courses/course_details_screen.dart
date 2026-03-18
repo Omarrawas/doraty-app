@@ -39,12 +39,9 @@ class CourseDetailsScreen extends StatefulWidget {
 }
 
 class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
-  final Map<int, bool> _expandedSections = {};
-
   // Lessons data
   List<Map<String, dynamic>> _lessons = [];
   List<Chapter> _chapters = [];
-  bool _isLoadingLessons = true;
 
   // Reviews data
   List<Map<String, dynamic>> _reviews = [];
@@ -156,16 +153,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         setState(() {
           _lessons = lessons;
           _chapters = chapters;
-          _isLoadingLessons = false;
         });
       }
     } catch (e) {
       debugPrint('Error loading lessons or chapters: $e');
-      if (mounted) {
-        setState(() {
-          _isLoadingLessons = false;
-        });
-      }
     }
   }
 
@@ -326,6 +317,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           ? VideoPreviewWidget(
               videoUrl: widget.course.videoUrl!,
               showHeader: !isSquare, // Hide header if square (side-by-side)
+              thumbnailUrl: widget.course.imageUrl, // تمرير صورة الدورة
             )
           : _buildCourseImagePlaceholder(isSquare: isSquare),
     );
@@ -581,8 +573,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       children: [
         _buildDetailSection(
             _t('about'), widget.course.description ?? '', isRTL),
-        if (!_isEnrolled) _buildCurriculumSectionVertical(isRTL),
-        if (_isEnrolled) _buildEnterCourseSection(isRTL),
+        _buildCourseContentButton(isRTL),
         if (widget.course.outcomes.isNotEmpty)
           _buildListSection(
               _t('course_outcomes'), widget.course.outcomes, isRTL),
@@ -594,51 +585,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
   }
 
-  Widget _buildEnterCourseSection(bool isRTL) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Column(
-        crossAxisAlignment:
-            isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          Text(_t('course_content'),
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CourseContentScreen(
-                    course: widget.course,
-                    lessonsData: _lessons,
-                    chapters: _chapters,
-                    isEnrolled: true,
-                  ),
-                ),
-              );
-            },
-            icon: const Icon(Icons.video_library_rounded),
-            label: Text(_t('enter_course')),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
-              foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 60),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(
-                    color: AppColors.primaryPurple.withOpacity(0.5)),
-              ),
-              elevation: 0,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   Widget _buildDetailSection(String title, String content, bool isRTL) {
     return Padding(
@@ -692,7 +639,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
   }
 
-  Widget _buildCurriculumSectionVertical(bool isRTL) {
+  Widget _buildCourseContentButton(bool isRTL) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Column(
@@ -700,7 +647,33 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         children: [
           Text(_t('course_content'), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
-          _buildContentTab(), // Reuse existing curriculum builder
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CourseContentScreen(
+                    course: widget.course,
+                    lessonsData: _lessons,
+                    chapters: _chapters,
+                    isEnrolled: _isEnrolled, // تمرير حالة الاشتراك
+                  ),
+                ),
+              );
+            },
+            icon: const Icon(Icons.list_alt_rounded),
+            label: Text(_t('course_content')),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
+              foregroundColor: Colors.white,
+              minimumSize: const Size(double.infinity, 60),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: AppColors.primaryPurple.withOpacity(0.5)),
+              ),
+              elevation: 0,
+            ),
+          ),
         ],
       ),
     );
@@ -1027,354 +1000,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
   }
 
-  Widget _buildContentTab() {
-    if (_isLoadingLessons) {
-      return Column(
-        children: List.generate(
-          5,
-          (index) => const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: ShimmerLoader.rectangular(height: 60),
-          ),
-        ),
-      );
-    }
 
-    if (_lessons.isEmpty) {
-      return ProfessionalEmptyState(
-        title: _t('no_lessons_yet'),
-        message: _t('course_content_working'),
-        icon: Icons.auto_stories_rounded,
-      );
-    }
-
-    // Group lessons by chapters
-    final sections = <Map<String, dynamic>>[];
-
-    if (_chapters.isNotEmpty) {
-      // 1. Group by Chapters
-      // Sort chapters by orderIndex
-      _chapters.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
-
-      for (var chapter in _chapters) {
-        final chapterLessons = _lessons.where((l) {
-          return l['chapter_id'] == chapter.id;
-        }).toList();
-
-        if (chapterLessons.isNotEmpty) {
-          sections.add({
-            'title': chapter.title,
-            'lessons': chapterLessons,
-          });
-        }
-      }
-
-      // 2. Add lessons without chapter (Uncategorized)
-      final uncategorizedLessons = _lessons.where((l) {
-        return l['chapter_id'] == null;
-      }).toList();
-
-      if (uncategorizedLessons.isNotEmpty) {
-        sections.add({
-          'title': _t('other_lessons'),
-          'lessons': uncategorizedLessons,
-        });
-      }
-    } else {
-      // Fallback: If no chapters, show as one list or keep old logic if preferred.
-      // Current preference: Move away from "every 5".
-      // If purely no chapters defined, show all in one "Course Content" section
-      // unless the list is huge? Let's just show all.
-      sections.add({
-        'title': _t('course_content'),
-        'lessons': _lessons,
-      });
-    }
-
-    return Column(
-      children: sections.asMap().entries.map((entry) {
-        final index = entry.key;
-        final section = entry.value;
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _buildCurriculumSection(
-            title: section['title'],
-            lessons: List<Map<String, dynamic>>.from(section['lessons']),
-            sectionIndex: index,
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildCurriculumSection({
-    required String title,
-    required List<Map<String, dynamic>> lessons,
-    required int sectionIndex,
-  }) {
-    final isExpanded = _expandedSections[sectionIndex] ?? false;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.25),
-                Colors.white.withOpacity(0.15),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1.5,
-            ),
-          ),
-          child: Column(
-            children: [
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      _expandedSections[sectionIndex] = !isExpanded;
-                    });
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                title,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontFamily: 'Cairo',
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${lessons.length} ${_t('lessons')}',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white.withOpacity(0.5),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isExpanded
-                                ? Icons.keyboard_arrow_up_rounded
-                                : Icons.keyboard_arrow_down_rounded,
-                            color: Colors.white70,
-                            size: 20,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              if (isExpanded)
-                ...lessons.map((lesson) => _buildLessonItem(lesson)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLessonItem(Map<String, dynamic> lesson) {
-    final locale = Provider.of<LocaleProvider>(context).locale;
-    final lessonObj = Lesson.fromJson(lesson);
-    final title = lessonObj.getLocalizedTitle(locale);
-    final duration = lesson['duration'] ?? '0:00';
-    final isCompleted = lesson['is_completed'] ?? false;
-    final isFree = lesson['is_free'] ?? false;
-    final orderIndex = lesson['order_index'] ?? 0;
-
-    // Check if this lesson is locked
-    bool isLocked = false;
-    String lockReason = '';
-
-    if (!isFree && !_isEnrolled) {
-      isLocked = true;
-      lockReason = _t('must_subscribe');
-    } else if (orderIndex > 1 && !isFree) {
-      // Find the previous lesson
-      final previousLesson = _lessons.firstWhere(
-        (l) => (l['order_index'] ?? 0) == orderIndex - 1,
-        orElse: () => {},
-      );
-
-      // Lock if previous lesson is not completed
-      if (previousLesson.isNotEmpty) {
-        if (!(previousLesson['is_completed'] ?? false)) {
-          isLocked = true;
-          lockReason = _t('must_complete_previous');
-        }
-      }
-    }
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: isLocked
-            ? () {
-                // Show message that lesson is locked
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      lockReason,
-                      textAlign: TextAlign.right,
-                      style: const TextStyle(fontFamily: 'Cairo'),
-                    ),
-                    backgroundColor: Colors.orange.shade400,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              }
-            : () async {
-                // Convert lesson map to Lesson object
-                final lessonObj = Lesson.fromJson(lesson);
-
-                // Convert all lessons to Lesson objects
-                final allLessons =
-                    _lessons.map((l) => Lesson.fromJson(l)).toList();
-
-                // Navigate to lesson view
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => lesson_ui.LessonScreen(
-                      lesson: lessonObj,
-                      allLessons: allLessons,
-                      courseTitle: widget.course.getLocalizedTitle(locale),
-                      isEnrolled: _isEnrolled,
-                    ),
-                  ),
-                );
-
-                // Reload lessons after returning to update progress
-                _loadLessons();
-              },
-        child: Opacity(
-          opacity: isLocked ? 0.5 : 1.0,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: AppColors.getGlassColor(context, opacity: 0.2),
-                  width: 1,
-                ),
-              ),
-            ),
-            child: Row(
-              children: [
-                // Completion Icon
-                Icon(
-                  isLocked
-                      ? Icons.lock_outline_rounded
-                      : (isCompleted
-                          ? Icons.check_circle_rounded
-                          : (isFree ? Icons.play_circle_fill_rounded : Icons.play_circle_outline_rounded)),
-                  color: isLocked
-                      ? Colors.white24
-                      : (isCompleted ? Colors.greenAccent : Colors.white70),
-                  size: 24,
-                ),
-                const SizedBox(width: 16),
-                
-                // Lesson Info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w500,
-                          color: isLocked ? Colors.white38 : Colors.white,
-                        ),
-                        textAlign: locale == 'ar' ? TextAlign.right : TextAlign.left,
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            lessonObj.contentType == 'video' 
-                                ? Icons.videocam_outlined 
-                                : Icons.description_outlined,
-                            size: 14,
-                            color: Colors.white38,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            duration,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.white38,
-                            ),
-                          ),
-                          if (isFree) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.green.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                _t('free'),
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.greenAccent,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                
-                // Extra indicator or arrow
-                if (!isLocked)
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: Colors.white.withOpacity(0.2),
-                    size: 20,
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildTinyTag(String label, Color color) {
     return Container(

@@ -140,8 +140,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
-    int crossAxisCount = 1;
-    double childAspectRatio = 1.1; // Wider for single column on mobile
+    int crossAxisCount = 2; // Default to 2 columns for better mobile experience
+    double childAspectRatio = 0.65; // Balanced for 2 columns
 
     if (screenWidth > 1200) {
       crossAxisCount = 4;
@@ -307,7 +307,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                       course: _filteredCourses[index],
                                       heroTag:
                                           'explore_course_image_${_filteredCourses[index].id}',
-                                      showEnrollButton: true,
                                     );
                                   },
                                   childCount: _filteredCourses.length,

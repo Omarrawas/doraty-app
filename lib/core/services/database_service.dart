@@ -27,6 +27,19 @@ class DatabaseService {
   // Quick access to current user ID
   String? get currentUserId => _client.auth.currentUser?.id;
 
+  /// Helper to ensure avatar URLs are full URLs
+  String? _formatAvatarUrl(String? avatarUrl, {String? userId}) {
+    if (avatarUrl == null || avatarUrl.isEmpty) return null;
+    
+    // If it's already a full URL, return it
+    if (avatarUrl.startsWith('http')) return avatarUrl;
+    
+    // If it's a relative path, assume it's in the old Supabase storage 'avatars' bucket
+    // Format: user_id/filename.jpg
+    final baseUrl = 'https://cstlqyjoflhxtocrtypg.supabase.co/storage/v1/object/public/avatars/';
+    return '$baseUrl$avatarUrl';
+  }
+
   // ==================== CATEGORIES (NEW) ====================
   // Added CRUD for admin management
 
@@ -585,7 +598,7 @@ class DatabaseService {
         try {
           final response = await _client.from('courses').select('''
                 *, 
-                users!instructor_id(full_name, avatar_url, full_name_en),
+                users!instructor_id(full_name, avatar_url),
                 course_category_junction(category:categories(id, name, name_en)),
                 chapters:chapters(*, lessons:lessons(*)),
                 course_tags(tag)
@@ -600,7 +613,7 @@ class DatabaseService {
                 user['full_name'] ?? course['instructor_name'];
             course['instructor_photo'] =
                 user['avatar_url'] ?? course['instructor_photo'];
-            course['instructor_name_en'] = user['full_name_en'];
+            course['instructor_name'] = user['full_name'];
           }
 
           // Map categories
@@ -1388,6 +1401,12 @@ class DatabaseService {
           .select('full_name, avatar_url')
           .eq('id', userId)
           .single();
+      
+      // Ensure avatar_url is a full URL
+      if (response['avatar_url'] != null) {
+        response['avatar_url'] = _formatAvatarUrl(response['avatar_url'], userId: userId);
+      }
+      
       return response;
     } catch (e) {
       debugPrint('Error getting user profile: $e');
@@ -2922,6 +2941,7 @@ class DatabaseService {
 
           // Transform flattened data to nested structure expected by UI
           return data.map((t) {
+            final avatar = _formatAvatarUrl(t['avatar_url'], userId: t['user_id']);
             return {
               'user_id': t['user_id'],
               'users': {
@@ -2929,8 +2949,8 @@ class DatabaseService {
                 'name': t['name'],
                 'full_name': t['name'], // Map for admin screen compatibility
                 'email': t['email'],
-                'avatar_url': t['avatar_url'], // الاسم الصحيح الذي يبحث عنه الـ UI
-                'photo_url': t['avatar_url'], // احتياطي للتوافق مع بقية الشاشات
+                'avatar_url': avatar, // الاسم الصحيح الذي يبحث عنه الـ UI
+                'photo_url': avatar, // احتياطي للتوافق مع بقية الشاشات
                 'bio': t['bio'], // Include bio field
                 'subjects': t['subjects'],
               }
@@ -5058,7 +5078,7 @@ class DatabaseService {
       fetcher: () async {
         try {
           // Get counts using the correct Supabase 2.x syntax or by length
-          final usersResponse = await _client.from('profiles').select('id');
+          final usersResponse = await _client.from('users').select('id');
           final coursesResponse = await _client.from('courses').select('id');
           final examsResponse = await _client.from('exams').select('id');
           final attemptsResponse = await _client.from('exam_attempts').select('id');
@@ -5101,18 +5121,31 @@ class DatabaseService {
       duration: const Duration(minutes: 30),
       fetcher: () async {
         try {
-          // 1. Get courses count by this teacher
-          final coursesResponse = await _client.from('courses')
+          // 1. Get courses count by this teacher from both the course itself and the junction table
+          final directCourses = await _client.from('courses')
               .select('id')
               .eq('instructor_id', teacherId);
           
-          final List<dynamic> teacherCourses = coursesResponse as List<dynamic>;
-          final List<String> courseIds = teacherCourses.map((c) => c['id'] as String).toList();
+          final junctionCourses = await _client.from('teacher_courses')
+              .select('course_id')
+              .eq('teacher_id', teacherId);
+          
+          final List<dynamic> directList = directCourses as List<dynamic>;
+          final List<dynamic> junctionList = junctionCourses as List<dynamic>;
+          
+          final Set<String> courseIdsSet = {
+            ...directList.map((c) => c['id'] as String),
+            ...junctionList.map((c) => c['course_id'] as String),
+          };
+          
+          final List<String> courseIds = courseIdsSet.toList();
           
           int studentCount = 0;
           double totalRevenue = 0;
+          int attemptsCount = 0;
           
           if (courseIds.isNotEmpty) {
+            // 2. Get enrollments for student count and revenue
             final enrollmentsRes = await _client.from('enrollments')
                 .select('user_id, paid_amount')
                 .inFilter('course_id', courseIds);
@@ -5124,12 +5157,20 @@ class DatabaseService {
             for (var e in enrollmentsList) {
               totalRevenue += (e['paid_amount'] as num? ?? 0).toDouble();
             }
+
+            // 3. Get exam attempts for stats
+            final attemptsRes = await _client.from('exam_attempts')
+                .select('id, exams!inner(course_id)')
+                .inFilter('exams.course_id', courseIds);
+            
+            attemptsCount = (attemptsRes as List).length;
           }
 
           return {
-            'total_courses': teacherCourses.length,
+            'total_courses': courseIds.length,
             'total_users': studentCount,
             'total_revenue': totalRevenue,
+            'total_attempts': attemptsCount,
           };
         } catch (e) {
           debugPrint('Error fetching teacher stats: $e');

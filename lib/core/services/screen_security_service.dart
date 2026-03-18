@@ -87,12 +87,15 @@ class ScreenSecurityService {
   }
 
   /// Apply screen security based on user role and app settings
+  /// [role] is the role of the current user (admin, super_admin, teacher, student)
   /// Returns true if protection was applied, false otherwise
-  Future<bool> applySecurityPolicy({required bool isAdmin}) async {
-    // Admins always have screenshots allowed
+  Future<bool> applySecurityPolicy({required String? role}) async {
+    // Admins and Super Admins always have screenshots allowed
+    final isAdmin = role == 'admin' || role == 'super_admin';
+    
     if (isAdmin) {
       await disableScreenSecurity();
-      debugPrint('👑 Admin user - Screenshots allowed');
+      debugPrint('👑 Admin/SuperAdmin user ($role) - Screenshots allowed');
       return false;
     }
 
@@ -101,11 +104,11 @@ class ScreenSecurityService {
     
     if (protectionEnabled) {
       await enableScreenSecurity();
-      debugPrint('🔒 Regular user - Screenshots blocked (policy enabled)');
+      debugPrint('🔒 Regular user ($role) - Screenshots blocked (policy enabled)');
       return true;
     } else {
       await disableScreenSecurity();
-      debugPrint('📸 Regular user - Screenshots allowed (policy disabled by admin)');
+      debugPrint('📸 Regular user ($role) - Screenshots allowed (policy disabled by admin)');
       return false;
     }
   }

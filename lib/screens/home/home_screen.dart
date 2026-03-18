@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
@@ -11,7 +10,8 @@ import '../teacher/teachers_list_screen.dart'; // Added import
 import '../notifications/notifications_screen.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../core/services/sync_service.dart';
-import '../../models/category_model.dart';
+import '../../widgets/course_card.dart';
+
 import '../../widgets/empty_state.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
@@ -41,12 +41,9 @@ class _HomeScreenState extends State<HomeScreen> {
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
-  String _searchQuery = '';
-  String _selectedCategory = 'all';
   Set<String> _enrolledCourseIds = {};
   final Map<String, double> _enrollmentProgress = {}; // courseId -> progress %
   final Map<String, String> _enrollmentIds = {}; // courseId -> enrollmentId
-  List<CategoryModel> _categoryModels = [];
 
   late PageController _bannerController;
   int _currentBannerPage = 0;
@@ -71,21 +68,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _refreshData({bool forceRefresh = false}) async {
-    if (forceRefresh) {
-      if (mounted) setState(() => _isLoading = true);
+    try {
+      if (forceRefresh) {
+        if (mounted) setState(() => _isLoading = true);
+      }
+
+      await Future.wait([
+        _loadFeaturedCourses(forceRefresh: forceRefresh),
+        _loadEnrolledCourses(), // Enrollments usually small and fast, can be kept simple
+        _loadFeaturedBanner(forceRefresh: forceRefresh),
+        _loadTeachers(forceRefresh: forceRefresh),
+        _checkUnreadNotifications(),
+        _loadTeacherStats(forceRefresh: forceRefresh),
+      ]);
+    } catch (e) {
+      debugPrint('Error refreshing home data: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    await Future.wait([
-      _loadCategories(forceRefresh: forceRefresh),
-      _loadFeaturedCourses(forceRefresh: forceRefresh),
-      _loadEnrolledCourses(), // Enrollments usually small and fast, can be kept simple
-      _loadFeaturedBanner(forceRefresh: forceRefresh),
-       _loadTeachers(forceRefresh: forceRefresh),
-      _checkUnreadNotifications(),
-      _loadTeacherStats(forceRefresh: forceRefresh),
-    ]);
-
-    if (mounted) setState(() => _isLoading = false);
   }
 
   @override
@@ -123,29 +123,13 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) {
         setState(() {
           _allTeachers = teachers;
-          _filterCourses(); // Re-run filter to include teachers
+          _filteredTeachers = _allTeachers; // Show all on home
         });
       }
     } catch (e) {
       debugPrint('Error loading teachers: $e');
     }
   }
-
-  Future<void> _loadCategories({bool forceRefresh = false}) async {
-    try {
-      final categoriesData =
-          await _databaseService.getCategories(forceRefresh: forceRefresh);
-      if (mounted) {
-        setState(() {
-          _categoryModels =
-              categoriesData.map((e) => CategoryModel.fromJson(e)).toList();
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading categories: $e');
-    }
-  }
-
 
   Future<void> _loadEnrolledCourses() async {
     try {
@@ -173,66 +157,14 @@ class _HomeScreenState extends State<HomeScreen> {
           _allCourses = coursesData
               .map((data) => Course.fromJson(data))
               .toList();
-          _filterCourses();
+          
+          final seenIds = <String>{};
+          _featuredCourses = _allCourses.where((c) => seenIds.add(c.id)).take(10).toList();
         });
       }
     } catch (e) {
       debugPrint('Error loading courses: $e');
     }
-  }
-
-  void _filterCourses() {
-    List<Course> filteredCourses = _allCourses;
-    List<Map<String, dynamic>> filteredTeachers = _allTeachers;
-
-    // Filter by category chip
-    if (_selectedCategory != 'all') {
-      // Updated condition
-      filteredCourses = filteredCourses.where((course) {
-        // Match by subject or any category name
-        final locale =
-            Provider.of<LocaleProvider>(context, listen: false).locale;
-        final localizedSubject = course.getLocalizedSubject(locale);
-
-        return localizedSubject.toLowerCase() ==
-                _selectedCategory.toLowerCase() ||
-            course.subject.toLowerCase() == _selectedCategory.toLowerCase() ||
-            course.categories.any(
-                (cat) => cat.toLowerCase() == _selectedCategory.toLowerCase());
-      }).toList();
-
-      // For teachers, we just show all teachers if a category is selected OR
-      // we could implement teacher categories later. For now, keep all teachers
-      // or filter if needed. Let's keep all for better UX unless search is active.
-      filteredTeachers = _allTeachers;
-    } else {
-      // Reset teachers to all if category is 'all'
-      filteredTeachers = _allTeachers;
-    }
-
-    // Then apply search filter
-    if (_searchQuery.isNotEmpty) {
-      filteredCourses = filteredCourses.where((course) {
-        return course.title
-                .toLowerCase()
-                .contains(_searchQuery.toLowerCase()) ||
-            (course.description ?? '')
-                .toLowerCase()
-                .contains(_searchQuery.toLowerCase()) ||
-            course.subject.toLowerCase().contains(_searchQuery.toLowerCase());
-      }).toList();
-
-      filteredTeachers = filteredTeachers.where((teacher) {
-        final userData = teacher['users'] as Map<String, dynamic>?;
-        final name = userData?['name'] as String? ?? '';
-        return name.toLowerCase().contains(_searchQuery.toLowerCase());
-      }).toList();
-    }
-
-    // Ensure unique courses by ID
-    final seenIds = <String>{};
-    _featuredCourses = filteredCourses.where((c) => seenIds.add(c.id)).toList();
-    _filteredTeachers = filteredTeachers;
   }
 
   Future<void> _loadFeaturedBanner({bool forceRefresh = false}) async {
@@ -278,13 +210,6 @@ class _HomeScreenState extends State<HomeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     // Profile is managed by provider, no need for manual local state updates here
-  }
-
-  void _onSearchChanged(String query) {
-    setState(() {
-      _searchQuery = query;
-      _filterCourses();
-    });
   }
 
   Future<void> _checkUnreadNotifications() async {
@@ -359,22 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Premium Header
                 SliverToBoxAdapter(child: _buildHeader()),
 
-                // Search Bar
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    child: _buildSearchBar(),
-                  ),
-                ),
 
-                // Category Chips (Circular)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    child: _buildCircularCategories(),
-                  ),
-                ),
 
                 // Loading State (Shimmer)
                 if (_isLoading)
@@ -457,26 +367,32 @@ class _HomeScreenState extends State<HomeScreen> {
                           sliver: isWideScreen
                               ? SliverGrid(
                                   delegate: SliverChildBuilderDelegate(
-                                    (context, index) => _buildCourseCard(_featuredCourses[index]),
+                                    (context, index) => CourseCard(
+                                      course: _featuredCourses[index],
+                                      heroTag: 'home_course_image_${_featuredCourses[index].id}',
+                                    ),
                                     childCount: _featuredCourses.length,
                                   ),
                                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                     crossAxisCount: 3,
-                                    childAspectRatio: 0.75,
+                                    childAspectRatio: 0.8,
                                     crossAxisSpacing: 20,
                                     mainAxisSpacing: 20,
                                   ),
                                 )
                               : SliverToBoxAdapter(
                                   child: SizedBox(
-                                    height: 500,
+                                    height: 420,
                                     child: ListView.builder(
                                       scrollDirection: Axis.horizontal,
                                       itemCount: _featuredCourses.length,
                                       itemBuilder: (context, index) {
                                         return Padding(
                                           padding: const EdgeInsetsDirectional.only(start: 16),
-                                          child: _buildCourseCard(_featuredCourses[index]),
+                                          child: CourseCard(
+                                            course: _featuredCourses[index],
+                                            heroTag: 'home_course_image_${_featuredCourses[index].id}',
+                                          ),
                                         );
                                       },
                                     ),
@@ -574,14 +490,18 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.black, width: 2),
-                  image: DecorationImage(
-                    image: avatarUrl != null && avatarUrl.toString().isNotEmpty
-                        ? CachedNetworkImageProvider(avatarUrl) as ImageProvider
-                        : NetworkImage(
-                            'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=random&color=fff'),
-                    fit: BoxFit.cover,
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                  color: Colors.white10,
+                ),
+                child: ClipOval(
+                  child: avatarUrl != null && avatarUrl.toString().isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: avatarUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => ShimmerLoader.circular(height: 65, width: 65),
+                          errorWidget: (context, url, error) => _buildAvatarPlaceholder(name),
+                        )
+                      : _buildAvatarPlaceholder(name),
                 ),
               ),
             ),
@@ -698,99 +618,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCircularCategories() {
-    final locale = Provider.of<LocaleProvider>(context).locale;
-    final List<Map<String, dynamic>> categories = [
-      {'key': 'all', 'name': _t('all'), 'icon': Icons.grid_view_rounded},
-      ..._categoryModels.map((e) => {
-            'key': e.id,
-            'name': e.getLocalizedName(locale),
-            'iconUrl': e.iconUrl,
-          })
-    ];
 
-    return SizedBox(
-      height: 110,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        itemCount: categories.length,
-        itemBuilder: (context, index) {
-          final cat = categories[index];
-          final isSelected = _selectedCategory == cat['key'];
-          return GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedCategory = cat['key']!;
-                _filterCourses();
-              });
-            },
-            child: AnimatedPadding(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsetsDirectional.only(start: 16),
-              child: Column(
-                children: [
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 65,
-                    height: 65,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isSelected
-                          ? AppColors.primaryPurple
-                          : AppColors.getGlassColor(context, opacity: 0.15),
-                      border: Border.all(
-                        color: isSelected ? Colors.white : Colors.white24,
-                        width: 1.5,
-                      ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: AppColors.primaryPurple.withOpacity(0.4),
-                                blurRadius: 10,
-                                spreadRadius: 2,
-                              )
-                            ]
-                          : null,
-                    ),
-                    child: cat['key'] == 'all'
-                        ? Icon(cat['icon'], color: Colors.white, size: 30)
-                        : ClipOval(
-                            child: cat['iconUrl'] != null &&
-                                    cat['iconUrl'].toString().isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: cat['iconUrl'],
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) =>
-                                        const Center(
-                                            child: CircularProgressIndicator(
-                                                strokeWidth: 2)),
-                                    errorWidget: (context, url, e) =>
-                                        const Icon(Icons.category_outlined,
-                                            color: Colors.white, size: 30),
-                                  )
-                                : const Icon(Icons.category_outlined,
-                                    color: Colors.white, size: 30),
-                          ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    cat['name'],
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.white70,
-                      fontSize: 12,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   Widget _buildAccreditationSection() {
     return Container(
@@ -826,56 +654,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppColors.getGlassColor(context, opacity: 0.2),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
-              ),
-            ),
-            child: TextField(
-              textAlign: Provider.of<LocaleProvider>(context).locale == 'ar'
-                  ? TextAlign.right
-                  : TextAlign.left,
-              style: TextStyle(color: AppColors.getTextColor(context)),
-              cursorColor: AppColors.primaryPurple,
-              decoration: InputDecoration(
-                hintText: _t('search_course_hint'),
-                hintStyle: TextStyle(
-                  color: AppColors.getTextColor(context, secondary: true),
-                ),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: AppColors.getTextColor(context, secondary: true),
-                ),
-                border: InputBorder.none,
-                contentPadding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              ),
-              onChanged: _onSearchChanged,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildContinueLearning() {
     // Show only if there are enrolled courses
@@ -1179,257 +958,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildCourseBadge(Course course) {
-    // Show "Most Popular" badge if course has 50+ students
-    if (course.studentsCount >= 50) {
-      return Positioned(
-        top: 10,
-        right: 10,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.orangeAccent,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4)],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.star, color: Colors.white, size: 12),
-              const SizedBox(width: 4),
-              Text(
-                _t('most_popular'), // Replaced hardcoded string
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.normal),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    return const SizedBox.shrink();
-  }
-
-  Widget _buildCourseCard(Course course) {
-    final locale = Provider.of<LocaleProvider>(context).locale;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          width: 280,
-          decoration: BoxDecoration(
-            color: AppColors.getGlassColor(context, opacity: 0.25),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppColors.getGlassColor(context, opacity: 0.3),
-              width: 1.5,
-            ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CourseDetailsScreen(
-                      course: course,
-                      heroTag: 'home_course_image_${course.id}',
-                    ),
-                  ),
-                );
-              },
-              child: Stack(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Course Title
-                            Text(
-                              course.getLocalizedTitle(locale),
-                              textAlign: locale == 'ar'
-                                  ? TextAlign.right
-                                  : TextAlign.left,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.normal,
-                                color: Colors.white,
-                              ),
-                            ),
-
-                            const SizedBox(height: 8),
-
-                            // Instructor
-                            Text(
-                              course.getLocalizedInstructorName(locale),
-                              textAlign: locale == 'ar'
-                                  ? TextAlign.right
-                                  : TextAlign.left,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white.withOpacity(0.8),
-                              ),
-                            ),
-
-                            const SizedBox(height: 12),
-
-                            // Rating and Price
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (course.hasDiscount)
-                                      Text(
-                                        course.getFormattedPrice(locale),
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.5),
-                                          fontSize: 12,
-                                          decoration:
-                                              TextDecoration.lineThrough,
-                                        ),
-                                      ),
-                                    Text(
-                                      course.getLocalizedPrice(locale),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    Text(
-                                      course.rating.toStringAsFixed(1),
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.9),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.normal,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Icon(
-                                      Icons.star,
-                                      color: Colors.amber,
-                                      size: 18,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // Course Image (Now at the bottom as a square)
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Center(
-                            child: Hero(
-                              tag: 'home_course_image_${course.id}',
-                              child: AspectRatio(
-                                aspectRatio: 1.0,
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: CachedNetworkImage(
-                                    imageUrl: course.imageUrl ?? '',
-                                    fit: BoxFit.cover,
-                                    errorWidget: (context, url, error) =>
-                                        Container(
-                                      color: Colors.white.withOpacity(0.2),
-                                      child: const Icon(
-                                        Icons.image,
-                                        color: Colors.white,
-                                        size: 40,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: _buildEnrollButton(course),
-                      ),
-                    ],
-                  ),
-                  _buildCourseBadge(course),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEnrollButton(Course course) {
-    final isEnrolled = _enrolledCourseIds.contains(course.id);
-
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CourseDetailsScreen(course: course),
-            ),
-          ).then((_) {
-            // Reload enrolled courses when returning from details
-            _loadEnrolledCourses();
-          });
-        },
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isEnrolled
-              ? Colors.green.withOpacity(0.8)
-              : AppColors.primaryPurple,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isEnrolled ? Icons.check_circle : Icons.visibility_outlined,
-              size: 16,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              isEnrolled ? 'مضافة' : 'اطلاع',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildTeacherQuickStats() {
     if (_teacherStats.isEmpty) return const SizedBox.shrink();
 
@@ -1530,6 +1058,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAvatarPlaceholder(String name) {
+    return Image.network(
+      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=random&color=fff',
+      fit: BoxFit.cover,
     );
   }
 }

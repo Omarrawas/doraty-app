@@ -10,6 +10,7 @@ import 'offline_cache_service.dart';
 import 'supabase_service.dart';
 import 'auth_service.dart';
 import '../../models/course.dart';
+import 'notification_service.dart';
 
 class SyncService extends ChangeNotifier {
   static final SyncService _instance = SyncService._internal();
@@ -83,6 +84,14 @@ class SyncService extends ChangeNotifier {
       final enrollments = await _db.getUserEnrollmentsWithProgress(userId);
       await OfflineCacheService().cacheEnrolledCourses(enrollments);
 
+      // 3. Subscribe to course topics for push notifications
+      for (final enrollment in enrollments) {
+        final courseId = enrollment['id'] ?? enrollment['course_id'];
+        if (courseId != null) {
+          await NotificationService().subscribeToTopic('course_$courseId');
+        }
+      }
+
       // Sync Home Content (Featured/Latest)
       final homeCoursesData =
           await _db.getCourses(forceRefresh: true); // Get some initial courses
@@ -126,14 +135,16 @@ class SyncService extends ChangeNotifier {
   }
 
   /// Initialize sync trigger (e.g. on app start)
-  void init() {
+  void init({bool skipInitialSync = false}) {
     _connectivity.onConnectivityChanged.listen((results) {
       if (results.contains(ConnectivityResult.wifi)) {
         syncAll();
       }
     });
 
-    // Run initial check
-    syncAll();
+    // Run initial check if not skipped
+    if (!skipInitialSync) {
+      syncAll();
+    }
   }
 }

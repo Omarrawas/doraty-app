@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
-import '../../core/services/supabase_service.dart';
 import '../../core/services/screen_security_service.dart';
 import '../auth/role_selection_screen.dart';
 import '../auth/login_screen.dart';
@@ -113,23 +112,12 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _applyScreenSecurity() async {
     try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) return;
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final profile = authService.userProfile;
+      final role = profile?['role'] as String?;
 
-      // Check if user is admin
-      final response = await SupabaseService.instance.client
-          .from('user_roles')
-          .select('roles(name)')
-          .eq('user_id', userId);
-
-      final roles = response as List;
-      final isAdmin = roles.any((role) {
-        final roleData = role['roles'] as Map<String, dynamic>?;
-        return roleData?['name'] == 'admin';
-      });
-
-      // Apply screen security based on role and app settings
-      await ScreenSecurityService().applySecurityPolicy(isAdmin: isAdmin);
+      // Apply screen security based on role and app settings (handled by service)
+      await ScreenSecurityService().applySecurityPolicy(role: role);
     } catch (e) {
       debugPrint('⚠️ Error applying screen security: $e');
       // On error, enable security by default for safety

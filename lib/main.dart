@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
@@ -38,8 +39,9 @@ void main() async {
   configureUrlStrategy();
   
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Hive
+  
+  // Initialize services in parallel where possible
+  // We initialize Hive first as it's a prerequisite for some adapters
   await Hive.initFlutter();
 
   // Register Hive adapters
@@ -48,14 +50,16 @@ void main() async {
   Hive.registerAdapter(OfflineCourseAdapter());
   Hive.registerAdapter(OfflineLessonAdapter());
 
-  // Initialize DownloadManager
-  await DownloadManager().init();
+  final List<Future> remainingInitializations = [
+    OfflineCacheService().init(),
+    SettingsService().init(),
+  ];
 
-  // Initialize OfflineCacheService
-  await OfflineCacheService().init();
+  if (!kIsWeb) {
+    remainingInitializations.add(DownloadManager().init());
+  }
 
-  // Initialize SettingsService
-  await SettingsService().init();
+  await Future.wait(remainingInitializations);
 
   // Initialize Supabase
   // In CI/GitHub Actions builds, SUPABASE_URL & SUPABASE_ANON_KEY are injected
@@ -90,10 +94,13 @@ void main() async {
   }
 
   // Initialize SyncService (Background) - AFTER Supabase
-  SyncService().init();
+  // On web, we only initialize but don't force a full sync on start to keep it light
+  SyncService().init(skipInitialSync: kIsWeb);
 
   // Initialize Notification Service - AFTER Supabase (Non-blocking)
-  NotificationService().init();
+  if (!kIsWeb) {
+    NotificationService().init();
+  }
 
   // Set system UI overlay style
   SystemChrome.setSystemUIOverlayStyle(
@@ -300,11 +307,9 @@ class _MainScreenState extends State<MainScreen> {
           : Consumer<LocaleProvider>(
               builder: (context, localeProvider, child) {
                 return SafeArea(
-                  maintainBottomViewPadding: true,
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.2),
@@ -312,11 +317,14 @@ class _MainScreenState extends State<MainScreen> {
                           offset: const Offset(0, 5),
                         ),
                       ],
+                      borderRadius: BorderRadius.circular(30),
                     ),
-                    clipBehavior: Clip.antiAlias,
-                    child: CurvedNavigationBar(
-                      index: _currentIndex >= screens.length ? 0 : _currentIndex,
-                      height: 60.0,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      clipBehavior: Clip.none, // يجب ألا نقص حتى لا نقتطع الدائرة العلوية
+                      child: CurvedNavigationBar(
+                        index: _currentIndex >= screens.length ? 0 : _currentIndex,
+                        height: 60.0,
                       items: <Widget>[
                         _buildNavItem(Icons.home_outlined, 0, isManager),
                         _buildNavItem(Icons.manage_search_outlined, 1, isManager),
@@ -327,7 +335,7 @@ class _MainScreenState extends State<MainScreen> {
                       ],
                       color: AppColors.getSurfaceColor(context).withOpacity(0.95),
                       buttonBackgroundColor: AppColors.primaryPurple,
-                      backgroundColor: Colors.transparent,
+                      backgroundColor: Colors.transparent, // اللون المحيط حول الشريط
                       animationCurve: Curves.easeInOut,
                       animationDuration: const Duration(milliseconds: 300),
                       onTap: (index) {
@@ -336,11 +344,12 @@ class _MainScreenState extends State<MainScreen> {
                         });
                       },
                     ),
-                  ),
-                );
-              },
-            ),
-    );
+                  ), // closes ClipRRect
+                ), // closes Container
+              ); // closes SafeArea
+            }, // closes builder
+          ), // closes Consumer
+    ); // closes Scaffold
   }
 
   Widget _buildNavItem(IconData icon, int index, bool isManager) {

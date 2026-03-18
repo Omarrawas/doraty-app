@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
-import '../../core/env/multi_env.dart';
 import '../../models/course.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
@@ -138,41 +135,11 @@ class _NotificationsManagementScreenState
         category: 'announcement',
       );
 
-      // 3. Trigger FCM Push Notification via Supabase Edge Function
-      try {
-        final session = SupabaseService.instance.client.auth.currentSession;
-        if (session != null) {
-          final url = Uri.parse(
-              '${Env.supabaseUrl}/functions/v1/push-notification');
-
-          final Map<String, dynamic> payload = {
-            'title': _title,
-            'body': _body,
-            'targetType': _targetType,
-          };
-          
-          if (_selectedTargetId != null) {
-            payload['targetId'] = _selectedTargetId;
-          }
-
-          final response = await http.post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ${session.accessToken}',
-            },
-            body: jsonEncode(payload),
-          );
-
-          if (response.statusCode != 200) {
-            debugPrint('FCM Edge Function Error: ${response.body}');
-          } else {
-            debugPrint('FCM triggered successfully.');
-          }
-        }
-      } catch (e) {
-        debugPrint('Error triggering FCM edge function: $e');
-      }
+      // 3. Trigger FCM Push Notification
+      // Note: This is now handled automatically by a Supabase Database Webhook 
+      // on the 'admin_notifications' table which triggers the 'send-push' edge function.
+      // The direct call was redundant and used a mismatched slug.
+      debugPrint('FCM push triggered automatically via DB webhook on admin_notifications');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

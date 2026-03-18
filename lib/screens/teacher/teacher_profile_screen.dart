@@ -207,6 +207,10 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   }
 
   Widget _buildCoursesList() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final int crossAxisCount = screenWidth > 900 ? 3 : (screenWidth > 600 ? 2 : 2); // 2 on mobile
+    final double childAspectRatio = screenWidth > 900 ? 0.8 : (screenWidth > 600 ? 0.75 : 0.65); // Adjusted for 2 columns
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -242,16 +246,19 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
             ),
           )
         else
-          ListView.builder(
+          GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 20),
             itemCount: _teacherCourses.length,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: childAspectRatio,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 20,
+            ),
             itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: CourseCard(course: _teacherCourses[index]),
-              );
+              return CourseCard(course: _teacherCourses[index]);
             },
           ),
       ],
