@@ -2,16 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'offline_cache_service.dart';
 
 /// Service for caching data to reduce Supabase bandwidth usage
-/// 
-/// الباقة المجانية في Supabase:
-/// - Bandwidth: 2 GB/شهر
-/// - Database: 500 MB
-/// - Storage: 1 GB
-/// 
-/// هذا الـ Service يساعد في توفير الـ Bandwidth من خلال:
-/// 1. تخزين البيانات محلياً لفترة معينة
-/// 2. عدم تحميل نفس البيانات مرتين
-/// 3. مسح الـ Cache التلقائي عند انتهاء المدة
 class CacheService {
   static final CacheService _instance = CacheService._internal();
   factory CacheService() => _instance;
@@ -32,9 +22,6 @@ class CacheService {
   }
 
   /// جلب بيانات من الـ Cache
-  /// يرجع null إذا:
-  /// - المفتاح غير موجود
-  /// - انتهت مدة صلاحية الـ Cache
   dynamic get(String key, {Duration? duration}) {
     if (!_cache.containsKey(key)) {
       debugPrint('❌ Cache miss: $key');
@@ -75,183 +62,56 @@ class CacheService {
 
   /// مسح كل الـ Cache
   void clear() {
-    final count = _cache.length;
     _cache.clear();
     _cacheTimes.clear();
-    debugPrint('🗑️ Cleared cache: $count items removed');
-  }
-
-  /// مسح الـ Cache المنتهية الصلاحية فقط
-  void clearExpired({Duration? duration}) {
-    final cacheDuration = duration ?? _defaultDuration;
-    final now = DateTime.now();
-    final keysToRemove = <String>[];
-
-    _cacheTimes.forEach((key, time) {
-      if (now.difference(time) > cacheDuration) {
-        keysToRemove.add(key);
-      }
-    });
-
-    for (var key in keysToRemove) {
-      _cache.remove(key);
-      _cacheTimes.remove(key);
-    }
-
-    if (keysToRemove.isNotEmpty) {
-      debugPrint('🗑️ Cleared expired cache: ${keysToRemove.length} items');
-    }
-  }
-
-  /// إحصائيات الـ Cache
-  Map<String, dynamic> getStats() {
-    final now = DateTime.now();
-    final ages = _cacheTimes.values
-        .map((time) => now.difference(time).inSeconds)
-        .toList();
-
-    final avgAge = ages.isEmpty ? 0 : ages.reduce((a, b) => a + b) / ages.length;
-
-    return {
-      'total_items': _cache.length,
-      'average_age_seconds': avgAge.round(),
-      'oldest_item_seconds': ages.isEmpty ? 0 : ages.reduce((a, b) => a > b ? a : b),
-      'newest_item_seconds': ages.isEmpty ? 0 : ages.reduce((a, b) => a < b ? a : b),
-    };
-  }
-
-  /// عرض معلومات الـ Cache (للتطوير)
-  void printStats() {
-    final stats = getStats();
-    debugPrint('📊 Cache Stats:');
-    debugPrint('  Total items: ${stats['total_items']}');
-    debugPrint('  Average age: ${stats['average_age_seconds']}s');
-    debugPrint('  Oldest: ${stats['oldest_item_seconds']}s');
-    debugPrint('  Newest: ${stats['newest_item_seconds']}s');
+    debugPrint('🗑️ Cleared cache');
   }
 }
 
-/// Helper functions لتسهيل الاستخدام
-
-/// دالة مساعدة لجلب البيانات مع Cache
-/// 
-/// مثال:
-/// ```dart
-/// final courses = await fetchWithCache(
-///   key: 'courses_page_0',
-///   fetcher: () => dbService.getCourses(page: 0),
-///   duration: Duration(minutes: 15),
-/// );
-/// ```
-/// دالة مساعدة لجلب البيانات مع Cache (Persistent & Memory)
-///
-/// [forceRefresh]: إذا كان true، سيتم تجاهل الـ Cache وجلب البيانات من المصدر مباشرة
-/// [staleWhileRevalidate]: إذا كان true، سيتم إرجاع البيانات المخزنة فوراً ثم تحديثها في الخلفية
-Future<T> fetchWithCache<T>({
-  required String key,
-  required Future<T> Function() fetcher,
-  Duration? duration,
-  bool forceRefresh = false,
-  bool staleWhileRevalidate = true,
-}) async {
-  final cache = CacheService();
-  final offlineCache = OfflineCacheService();
-  
-  // 1. Check Memory Cache first (fastest)
-  if (!forceRefresh) {
-    final memoryCached = cache.get(key, duration: duration);
-    if (memoryCached != null) {
-      debugPrint('🚀 Memory Cache hit: $key');
-      try {
-        return memoryCached as T;
-      } catch (e) {
-        // Fallback for minified type issues in release/web
-        if (memoryCached is List && T.toString().contains('List')) {
-          return memoryCached as T; 
-        }
-        return memoryCached as T;
-      }
-    }
-
-    // 2. Check Persistent Cache (Hive)
-    try {
-      final persistentCached = await offlineCache.getCachedUserData(key);
-      if (persistentCached != null) {
-        debugPrint('📦 Persistent Cache hit: $key');
-
-        // If we found persistent data, we can return it and optionally refresh in background
-        if (staleWhileRevalidate) {
-          // Trigger background refresh
-          _backgroundFetch(key, fetcher, duration);
-        }
-
-        // Save to memory cache for next time
-        cache.set(key, persistentCached);
-        
-        // --- Robust Type Casting for Persistent Data ---
-        
-        // Case 1: Expected List of Strings
-        if (T.toString() == 'List<String>' || T.toString() == 'Set<String>') {
-          if (persistentCached is List) {
-            final list = persistentCached.map((e) => e.toString()).toList();
-            return (T.toString() == 'Set<String>' ? list.toSet() : list) as T;
-          }
-        }
-        
-        // Case 2: Expected List of Maps (Common for Supabase responses)
-        if (T.toString().contains('List<Map<String, dynamic>>')) {
-          if (persistentCached is List) {
-            return persistentCached.map((item) {
-              if (item is Map) return Map<String, dynamic>.from(item);
-              return item;
-            }).toList().cast<Map<String, dynamic>>() as T;
-          }
-        }
-
-        // Case 3: Expected Single Map
-        if (T.toString().contains('Map<String, dynamic>')) {
-          if (persistentCached is Map) {
-            return Map<String, dynamic>.from(persistentCached) as T;
-          }
-        }
-
-        // Default cast
-        return persistentCached as T;
-      }
-    } catch (e) {
-      debugPrint('⚠️ Error reading or casting persistent cache: $e');
-    }
-  }
-
-  // 3. Fetch from source if not found or forced
+/// Helper for robust type casting (especially for Web minified builds)
+T _safeCast<T>(dynamic data) {
   try {
-    debugPrint('🌐 Fetching from source: $key');
-    final data = await fetcher();
+    // 1. Direct match
+    if (data is T) return data;
 
-    // 4. Update both caches
-    cache.set(key, data, duration: duration);
-    await offlineCache.cacheUserData(key, data);
+    final typeStr = T.toString();
 
-    return data;
-  } catch (e) {
-    debugPrint('❌ Network fetch failed for: $key ($e)');
-
-    // 5. CRITICAL: On failure, search persistent cache AGAIN even if duration expired
-    // but we only reach here if step 2 failed (expired/not found) or forceRefresh was true
-    try {
-      final fallbackData = await offlineCache.getCachedUserData(key);
-      if (fallbackData != null) {
-        debugPrint('📦 Fallback to persistent cache for: $key');
-        return fallbackData as T;
+    // 2. Handle List of Maps (Common in Supabase)
+    if (typeStr.contains('List<Map<String, dynamic>>')) {
+      if (data is List) {
+        final casted = data.map((item) {
+          if (item is Map) return Map<String, dynamic>.from(item);
+          return item;
+        }).toList().cast<Map<String, dynamic>>();
+        return casted as T;
       }
-    } catch (_) {}
+    }
 
-    // If no cache, rethrow relative to the original error
-    rethrow;
+    // 3. Handle Single Map
+    if (typeStr.contains('Map<String, dynamic>')) {
+      if (data is Map) {
+        return Map<String, dynamic>.from(data) as T;
+      }
+    }
+
+    // 4. Handle List/Set of Strings
+    if (typeStr.contains('List<String>') || typeStr.contains('Set<String>')) {
+      if (data is Iterable) {
+        final list = data.map((e) => e.toString()).toList();
+        if (typeStr.contains('Set')) return list.toSet() as T;
+        return list as T;
+      }
+    }
+
+    // 5. Fallback for primitives or untracked types
+    return data as T;
+  } catch (e) {
+    debugPrint('🚨 SafeCast failed for type $T: $e');
+    return data as T;
   }
 }
 
-/// Helper for background fetching without blocking the UI
+/// Background fetching helper
 void _backgroundFetch<T>(
     String key, Future<T> Function() fetcher, Duration? duration) async {
   try {
@@ -265,33 +125,87 @@ void _backgroundFetch<T>(
   }
 }
 
-/// مفاتيح الـ Cache الشائعة
+/// Main fetch helper with Cache
+Future<T> fetchWithCache<T>({
+  required String key,
+  required Future<T> Function() fetcher,
+  Duration? duration,
+  bool forceRefresh = false,
+  bool staleWhileRevalidate = true,
+}) async {
+  final cache = CacheService();
+  final offlineCache = OfflineCacheService();
+  
+  // 1. Check Memory Cache
+  if (!forceRefresh) {
+    final memoryCached = cache.get(key, duration: duration);
+    if (memoryCached != null) {
+      debugPrint('🚀 Memory Cache hit: $key');
+      try {
+        return _safeCast<T>(memoryCached);
+      } catch (e) {
+        debugPrint('⚠️ Memory cast failed: $e');
+      }
+    }
+
+    // 2. Check Persistent Cache
+    try {
+      final persistentCached = await offlineCache.getCachedUserData(key);
+      if (persistentCached != null) {
+        debugPrint('📦 Persistent Cache hit: $key');
+
+        if (staleWhileRevalidate) {
+          _backgroundFetch<T>(key, fetcher, duration);
+        }
+
+        cache.set(key, persistentCached);
+        return _safeCast<T>(persistentCached);
+      }
+    } catch (e) {
+      debugPrint('⚠️ Persistent cache error: $e');
+    }
+  }
+
+  // 3. Fetch from source
+  try {
+    debugPrint('🌐 Fetching from source: $key');
+    final data = await fetcher();
+
+    cache.set(key, data, duration: duration);
+    await offlineCache.cacheUserData(key, data);
+
+    return data;
+  } catch (e) {
+    debugPrint('❌ Fetch failed for $key: $e');
+    
+    // Final fallback to any persistent data even if expired
+    try {
+      final fallbackData = await offlineCache.getCachedUserData(key);
+      if (fallbackData != null) return _safeCast<T>(fallbackData);
+    } catch (_) {}
+    
+    rethrow;
+  }
+}
+
+/// Cache keys constants
 class CacheKeys {
-  // الدورات
   static String courses({int page = 0}) => 'courses_page_$page';
   static String course(String id) => 'course_$id';
-  static String courseLessons(String courseId) => 'course_${courseId}_lessons';
-  
-  // الدروس
-  static String lesson(String id) => 'lesson_$id';
-  static String lessonQuestions(String lessonId) => 'lesson_${lessonId}_questions';
-  static String lessonNotes(String lessonId) => 'lesson_${lessonId}_notes';
-  
-  // الامتحانات
-  static String exams({int page = 0}) => 'exams_page_$page';
-  static String exam(String id) => 'exam_$id';
-  static String examQuestions(String examId) => 'exam_${examId}_questions';
-  
-  // الاشتراكات
-  static String subscriptionPlans = 'subscription_plans';
-  static String userSubscription(String userId) => 'user_${userId}_subscription';
-  
-  // حسابات الدفع
-  static String paymentAccounts = 'payment_accounts';
-  
-  // المستخدم
-  static String userProfile(String userId) => 'user_${userId}_profile';
-  static String userCourses(String userId) => 'user_${userId}_courses';
+  static String coursesV2({
+    String? categoryId,
+    String? teacherId,
+    String? level,
+    String? query,
+    bool? isFree,
+  }) {
+    return 'courses_v2_${categoryId ?? "all"}_${teacherId ?? "all"}_${level ?? "all"}_${query ?? "all"}_${isFree ?? "false"}';
+  }
+  static String userEnrolledIds(String userId) => 'user_${userId}_enrolled_ids';
+  static String userEnrollments(String userId) => 'user_${userId}_enrollments_v2';
   static String teachers = 'teachers_list';
   static String featuredCourses = 'featured_courses_banner';
+  static String categories = 'categories_all';
+  static String systemStats = 'system_stats_all';
+  static String teacherStats(String id) => 'teacher_stats_$id';
 }
