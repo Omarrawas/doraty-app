@@ -8,6 +8,8 @@ import '../../models/chapter.dart';
 import '../../models/payment_account.dart';
 import 'offline_cache_service.dart';
 import 'cache_service.dart';
+import 'local_database.dart';
+import '../../models/course.dart';
 
 class DatabaseService {
   // Singleton pattern
@@ -109,14 +111,13 @@ class DatabaseService {
       final updates = <String, dynamic>{};
       if (name != null) updates['name'] = name;
       if (slug != null) updates['slug'] = slug;
+      
+      // Explicitly check for parentId to allow null (removing parent)
       if (parentId != null) {
-        updates['parent_id'] = parentId; // Allow changing parent
+        updates['parent_id'] = parentId.isEmpty ? null : parentId;
       }
+      
       if (iconUrl != null) updates['icon_url'] = iconUrl;
-
-      // If we want to remove parent, we might need logic for null,
-      // but usually updates ignore nulls unless specific object "unnset" pattern used.
-      // For simple usage, assuming non-null values for updates.
 
       if (updates.isNotEmpty) {
         await _client.from('categories').update(updates).eq('id', id);
@@ -134,6 +135,240 @@ class DatabaseService {
     } catch (e) {
       debugPrint('Error deleting category: $e');
       rethrow;
+    }
+  }
+
+  // ==================== BUNDLES (NEW) ====================
+
+  /// Get all bundles with their associated courses
+  Future<List<Map<String, dynamic>>> getBundles({bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: 'bundles_all',
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 12),
+      fetcher: () async {
+        try {
+          // Fetch bundles
+          final response = await _client.from('bundles').select().order('created_at', ascending: false);
+          final List<Map<String, dynamic>> bundles = List<Map<String, dynamic>>.from(response);
+          
+          // For each bundle, fetch course IDs and full course details
+          final List<Map<String, dynamic>> enrichedBundles = [];
+          for (var bundle in bundles) {
+            final bundleCoursesResponse = await _client
+                .from('bundle_courses')
+                .select('course_id')
+                .eq('bundle_id', bundle['id']);
+            
+            final List<String> courseIds = (bundleCoursesResponse as List)
+                .map((e) => e['course_id'] as String)
+                .toList();
+            
+            // Fetch the actual courses (limit to relevant fields)
+            final coursesResponse = await _client
+                .from('courses')
+                .select()
+                .inFilter('id', courseIds);
+            
+            bundle['courses'] = coursesResponse;
+            enrichedBundles.add(bundle);
+          }
+          return enrichedBundles;
+        } catch (e) {
+          debugPrint('Error getting bundles: $e');
+          return [];
+        }
+      },
+    );
+  }
+
+  /// Create a new bundle and link it to courses
+  Future<void> createBundle({
+    required String title,
+    String? description,
+    String? imageUrl,
+    required double price,
+    int discountPercentage = 0,
+    required List<String> courseIds,
+  }) async {
+    try {
+      final response = await _client.from('bundles').insert({
+        'title': title,
+        'description': description,
+        'image_url': imageUrl,
+        'price': price,
+        'discount_percentage': discountPercentage,
+      }).select().single();
+      
+      final String bundleId = response['id'];
+      
+      if (courseIds.isNotEmpty) {
+        final links = courseIds.map((cid) => {
+          'bundle_id': bundleId,
+          'course_id': cid,
+        }).toList();
+        await _client.from('bundle_courses').insert(links);
+      }
+      
+      // Clear cache
+      await LocalDatabase().remove('bundles_all');
+    } catch (e) {
+      debugPrint('Error creating bundle: $e');
+      rethrow;
+    }
+  }
+
+  /// Update an existing bundle and its course links
+  Future<void> updateBundle({
+    required String id,
+    String? title,
+    String? description,
+    String? imageUrl,
+    double? price,
+    int? discountPercentage,
+    List<String>? courseIds,
+  }) async {
+    try {
+      final updates = <String, dynamic>{};
+      if (title != null) updates['title'] = title;
+      if (description != null) updates['description'] = description;
+      if (imageUrl != null) updates['image_url'] = imageUrl;
+      if (price != null) updates['price'] = price;
+      if (discountPercentage != null) updates['discount_percentage'] = discountPercentage;
+
+      if (updates.isNotEmpty) {
+        await _client.from('bundles').update(updates).eq('id', id);
+      }
+      
+      if (courseIds != null) {
+        // Replace links: delete and re-insert
+        await _client.from('bundle_courses').delete().eq('bundle_id', id);
+        if (courseIds.isNotEmpty) {
+          final links = courseIds.map((cid) => {
+            'bundle_id': id,
+            'course_id': cid,
+          }).toList();
+          await _client.from('bundle_courses').insert(links);
+        }
+      }
+      
+      // Clear cache
+      await LocalDatabase().remove('bundles_all');
+    } catch (e) {
+      debugPrint('Error updating bundle: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a bundle
+  Future<void> deleteBundle(String id) async {
+    try {
+      await _client.from('bundles').delete().eq('id', id);
+      // Clear cache
+      await LocalDatabase().remove('bundles_all');
+    } catch (e) {
+      debugPrint('Error deleting bundle: $e');
+      rethrow;
+    }
+  }
+
+  // ==================== TIPS (NEW) ====================
+
+  /// Get all tips with optional linked course data
+  Future<List<Map<String, dynamic>>> getTips({bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: CacheKeys.tips, // Make sure to add this to CacheKeys
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 6),
+      fetcher: () async {
+        try {
+          final response = await _client
+              .from('tips')
+              .select('*, courses(*)')
+              .order('created_at', ascending: false);
+          return List<Map<String, dynamic>>.from(response);
+        } catch (e) {
+          debugPrint('Error getting tips: $e');
+          return [];
+        }
+      },
+    );
+  }
+
+  /// Create a new tip
+  Future<void> createTip({
+    required String title,
+    required String videoUrl,
+    String? thumbnailUrl,
+    String? courseId,
+    String? instructorId,
+  }) async {
+    try {
+      await _client.from('tips').insert({
+        'title': title,
+        'video_url': videoUrl,
+        'thumbnail_url': thumbnailUrl,
+        'course_id': courseId,
+        'instructor_id': instructorId,
+      });
+      await LocalDatabase().remove(CacheKeys.tips);
+    } catch (e) {
+      debugPrint('Error creating tip: $e');
+      rethrow;
+    }
+  }
+
+  /// Update an existing tip
+  Future<void> updateTip({
+    required String id,
+    String? title,
+    String? videoUrl,
+    String? thumbnailUrl,
+    String? courseId,
+    String? instructorId,
+  }) async {
+    try {
+      final updates = <String, dynamic>{};
+      if (title != null) updates['title'] = title;
+      if (videoUrl != null) updates['video_url'] = videoUrl;
+      if (thumbnailUrl != null) updates['thumbnail_url'] = thumbnailUrl;
+      if (courseId != null) updates['course_id'] = courseId;
+      if (instructorId != null) updates['instructor_id'] = instructorId;
+
+      if (updates.isNotEmpty) {
+        await _client.from('tips').update(updates).eq('id', id);
+        await LocalDatabase().remove(CacheKeys.tips);
+      }
+    } catch (e) {
+      debugPrint('Error updating tip: $e');
+      rethrow;
+    }
+  }
+
+  /// Delete a tip
+  Future<void> deleteTip(String id) async {
+    try {
+      await _client.from('tips').delete().eq('id', id);
+      await LocalDatabase().remove(CacheKeys.tips);
+    } catch (e) {
+      debugPrint('Error deleting tip: $e');
+      rethrow;
+    }
+  }
+
+  /// Increment view count for a tip
+  Future<void> incrementTipView(String id) async {
+    try {
+      await _client.rpc('increment_tip_view', params: {'tip_id': id});
+    } catch (e) {
+      // If RPC fails, try manual update (less efficient but reliable)
+      try {
+        final tip = await _client.from('tips').select('views_count').eq('id', id).single();
+        final currentViews = tip['views_count'] ?? 0;
+        await _client.from('tips').update({'views_count': currentViews + 1}).eq('id', id);
+      } catch (err) {
+        debugPrint('Error incrementing tip view: $err');
+      }
     }
   }
 
@@ -1696,6 +1931,97 @@ class DatabaseService {
       await _updateCourseEnrollmentCount(courseId);
     } catch (e) {
       rethrow;
+    }
+  }
+
+  // ==================== FAVORITES (NEW) ====================
+
+  /// Check if course is in favorites
+  Future<bool> isFavorite(String courseId) async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return false;
+
+      final response = await _client
+          .from('course_favorites')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('course_id', courseId)
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      debugPrint('Error checking favorite status: $e');
+      return false;
+    }
+  }
+
+  /// Toggle favorite status
+  Future<bool> toggleFavorite(String courseId, bool shouldBeFavorite) async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) throw Exception('User not authenticated');
+
+      if (shouldBeFavorite) {
+        // Add to favorites
+        await _client.from('course_favorites').upsert({
+          'user_id': userId,
+          'course_id': courseId,
+        });
+        return true;
+      } else {
+        // Remove from favorites
+        await _client
+            .from('course_favorites')
+            .delete()
+            .eq('user_id', userId)
+            .eq('course_id', courseId);
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error toggling favorite: $e');
+      rethrow;
+    }
+  }
+
+  /// Get user's favorite courses
+  Future<List<Map<String, dynamic>>> getFavoriteCourses() async {
+    try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return [];
+
+      final response = await _client
+          .from('course_favorites')
+          .select('*, courses(*, users!instructor_id(full_name, avatar_url))')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+
+      final data = List<Map<String, dynamic>>.from(response);
+      return data.map((fav) => fav['courses'] as Map<String, dynamic>).toList();
+    } catch (e) {
+      debugPrint('Error getting favorite courses: $e');
+      return [];
+    }
+  }
+
+  /// Get similar courses based on category
+  Future<List<Course>> getSimilarCourses(String courseId, List<String> categoryIds) async {
+    try {
+      if (categoryIds.isEmpty) return [];
+
+      final response = await _client
+          .from('courses')
+          .select('*, users!instructor_id(full_name, avatar_url)')
+          .inFilter('category_id', categoryIds)
+          .neq('id', courseId)
+          .eq('is_published', true)
+          .limit(6);
+
+      final data = List<Map<String, dynamic>>.from(response);
+      return data.map((json) => Course.fromJson(json)).toList();
+    } catch (e) {
+      debugPrint('Error getting similar courses: $e');
+      return [];
     }
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:ui';
+import 'lesson/video_player_controls.dart';
 
 class VideoPreviewWidget extends StatefulWidget {
   final String videoUrl;
@@ -56,6 +57,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
           enableCaption: false,
           isLive: false,
           disableDragSeek: false,
+          hideControls: true, // إخفاء أزرار اليوتيوب الأصلية
           hideThumbnail: true, // نخفي Thumbnail اليوتيوب لنعرض thumbnail المخصصة
         ),
       );
@@ -127,13 +129,8 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
       },
       player: YoutubePlayer(
         controller: _controller!,
-        showVideoProgressIndicator: true,
+        showVideoProgressIndicator: false, // يُدار بواسطة VideoPlayerControls
         aspectRatio: 16 / 9,
-        bottomActions: const [
-          CurrentPosition(),
-          ProgressBar(isExpanded: true),
-        ],
-        topActions: const [],
       ),
       builder: (context, player) {
         // ── وضع Fullscreen ──
@@ -149,31 +146,13 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                 fit: StackFit.expand,
                 children: [
                   Center(child: player),
-                  Positioned(
-                    top: MediaQuery.of(context).padding.top + 8,
-                    right: 16,
-                    child: SafeArea(
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: _exitFullScreen,
-                          borderRadius: BorderRadius.circular(30),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.fullscreen_exit_rounded,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                        ),
-                      ),
+                  if (_hasStarted)
+                    VideoPlayerControls(
+                      isYoutube: true,
+                      youtubeController: _controller,
+                      onToggleFullScreen: _exitFullScreen,
+                      courseTitle: 'معاينة الفيديو',
                     ),
-                  ),
                 ],
               ),
             ),
@@ -247,6 +226,15 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                         children: [
                           // الفيديو الفعلي
                           player,
+
+                          // التحكم المخصص (يظهر فقط بعد بدء التشغيل)
+                          if (_hasStarted)
+                            VideoPlayerControls(
+                              isYoutube: true,
+                              youtubeController: _controller,
+                              onToggleFullScreen: _enterFullScreen,
+                              courseTitle: 'معاينة الفيديو',
+                            ),
 
                           // ── Thumbnail + Play Button Overlay ──
                           // يظهر فقط قبل بدء التشغيل
@@ -345,28 +333,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                                 ],
                               ),
                             ),
-
-                          // زر تكبير في حالة عدم وجود header وبعد بدء التشغيل
-                          if (!widget.showHeader && _hasStarted)
-                            Positioned(
-                              bottom: 8,
-                              right: 8,
-                              child: GestureDetector(
-                                onTap: _enterFullScreen,
-                                child: Container(
-                                  padding: const EdgeInsets.all(4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.5),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Icon(
-                                    Icons.fullscreen_rounded,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ),
+                            // أزلنا زر التكبير القديم لأن VideoPlayerControls أصبح يتكفل به
                         ],
                       ),
                     ),

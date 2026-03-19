@@ -171,12 +171,29 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                   fontSize: 16,
                 ),
               ),
-              subtitle: Text(
-                cat.slug,
-                style: TextStyle(
-                  color: AppColors.getTextColor(context).withOpacity(0.6),
-                  fontSize: 12,
-                ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    cat.slug,
+                    style: TextStyle(
+                      color: AppColors.getTextColor(context).withOpacity(0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                  if (cat.parentId != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        'ينتمي إلى: ${_categories.firstWhere((c) => c.id == cat.parentId, orElse: () => CategoryModel(id: '', name: 'غير معروف', slug: '')).name}',
+                        style: TextStyle(
+                          color: AppColors.primaryPurple.withOpacity(0.8),
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -205,6 +222,10 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
     final nameController = TextEditingController(text: category?.name ?? '');
     final slugController = TextEditingController(text: category?.slug ?? '');
     final iconController = TextEditingController(text: category?.iconUrl ?? '');
+    String? selectedParentId = category?.parentId;
+
+    // Filter categories to avoid self-selection or deep nesting (if needed)
+    final parentOptions = _categories.where((c) => c.id != category?.id).toList();
 
     await showDialog(
       context: context,
@@ -228,7 +249,25 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                 controller: iconController,
                 decoration: const InputDecoration(labelText: 'رابط الأيقونة (اختياري)'),
               ),
-               // Note: Parent selection omitted for brevity, can be added if needed
+              DropdownButtonFormField<String?>(
+                value: selectedParentId,
+                decoration: const InputDecoration(
+                  labelText: 'التصنيف الأب (اختياري)',
+                  hintText: 'تصنيف رئيسي',
+                ),
+                dropdownColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : Colors.white,
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('بدون (تصنيف رئيسي)', style: TextStyle(color: Colors.grey)),
+                  ),
+                  ...parentOptions.map((c) => DropdownMenuItem<String?>(
+                    value: c.id,
+                    child: Text(c.name),
+                  )),
+                ],
+                onChanged: (val) => selectedParentId = val,
+              ),
             ],
           ),
         ),
@@ -257,12 +296,14 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                     name: nameController.text,
                     slug: slugController.text,
                     iconUrl: iconController.text.isEmpty ? null : iconController.text,
+                    parentId: selectedParentId ?? '', // Signal null-out if empty-like logic used, or handle explicitly
                   );
                 } else {
                   await _db.createCategory(
                     name: nameController.text,
                     slug: slugController.text,
                     iconUrl: iconController.text.isEmpty ? null : iconController.text,
+                    parentId: selectedParentId,
                   );
                 }
                 _loadCategories(); // Refresh

@@ -27,7 +27,8 @@ class Course {
   final List<String> targetAudience;
   final String? videoUrl;
   final int discountPercentage;
-  final List<String> tags; // Added tags field
+  final List<String> tags; // Restored tags field
+  final DateTime? createdAt; // Added createdAt field
 
   Course({
     required this.id,
@@ -59,6 +60,7 @@ class Course {
     this.videoUrl,
     this.discountPercentage = 0,
     this.tags = const [],
+    this.createdAt,
   });
 
   factory Course.fromJson(Map<String, dynamic> json) {
@@ -95,6 +97,9 @@ class Course {
       videoUrl: json['video_url'],
       discountPercentage: json['discount_percentage'] ?? 0,
       tags: List<String>.from(json['tags'] ?? []),
+      createdAt: json['created_at'] != null 
+          ? DateTime.tryParse(json['created_at'].toString()) 
+          : null,
     );
   }
 
@@ -129,12 +134,18 @@ class Course {
       'video_url': videoUrl,
       'discount_percentage': discountPercentage,
       'tags': tags,
+      'created_at': createdAt?.toIso8601String(),
     };
   }
 
   double get progress {
     if (lessonsCount == 0) return 0;
     return completedLessons / lessonsCount;
+  }
+
+  bool get isNew {
+    if (createdAt == null) return false;
+    return DateTime.now().difference(createdAt!).inDays < 30;
   }
 
   String getLocalizedTitle(String locale) {

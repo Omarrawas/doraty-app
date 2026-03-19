@@ -27,6 +27,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   bool _isLoading = true;
   String? _selectedCategoryId;
   String _searchQuery = '';
+  String _selectedType = 'الكل';
+  String? _selectedLevel;
 
   String _t(String key) =>
       AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -113,7 +115,19 @@ class _ExploreScreenState extends State<ExploreScreen> {
       }).toList();
     }
 
-    // Ensure unique courses by ID
+    // Filter by Type
+    if (_selectedType != 'الكل') {
+      filtered = filtered.where((course) {
+        return course.tags.contains(_selectedType) || course.tags.isEmpty; // soft return if tags are empty placeholder
+      }).toList();
+    }
+
+    // Filter by Level
+    if (_selectedLevel != null && _selectedLevel != 'الكل') {
+      filtered = filtered.where((course) {
+        return course.level == _selectedLevel || course.level == null; // soft return if null placeholder
+      }).toList();
+    } // Ensure unique courses by ID
     final seenIds = <String>{};
     _filteredCourses = filtered.where((c) => seenIds.add(c.id)).toList();
   }
@@ -202,30 +216,66 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     sliver: SliverToBoxAdapter(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: AppColors.getGlassColor(context, opacity: 0.1),
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(
-                            color: AppColors.getGlassColor(context, opacity: 0.2),
-                          ),
-                        ),
-                        child: TextField(
-                          style: TextStyle(color: AppColors.getTextColor(context)),
-                          cursorColor: AppColors.primaryPurple,
-                          decoration: InputDecoration(
-                            hintText: _t('search_course_hint'),
-                            hintStyle: TextStyle(
-                              color: AppColors.getTextColor(context, secondary: true),
+                      child: Column(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: AppColors.getGlassColor(context, opacity: 0.1),
+                              borderRadius: BorderRadius.circular(15),
+                              border: Border.all(
+                                color: AppColors.getGlassColor(context, opacity: 0.2),
+                              ),
                             ),
-                            prefixIcon: Icon(Icons.search,
-                                color: AppColors.getTextColor(context, secondary: true)),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
+                            child: TextField(
+                              style: TextStyle(color: AppColors.getTextColor(context)),
+                              cursorColor: AppColors.primaryPurple,
+                              decoration: InputDecoration(
+                                hintText: _t('search_course_hint'),
+                                hintStyle: TextStyle(
+                                  color: AppColors.getTextColor(context, secondary: true),
+                                ),
+                                prefixIcon: Icon(Icons.search,
+                                    color: AppColors.getTextColor(context, secondary: true)),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 14),
+                              ),
+                              onChanged: _onSearchChanged,
+                            ),
                           ),
-                          onChanged: _onSearchChanged,
-                        ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildDropdown(
+                                  'النوع',
+                                  _selectedType,
+                                  ['الكل', 'مسجلة', 'بث مباشر', 'حضورية'],
+                                  (val) {
+                                    setState(() {
+                                      _selectedType = val!;
+                                      _applyFilters();
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildDropdown(
+                                  'المستوى',
+                                  _selectedLevel ?? 'الكل',
+                                  ['الكل', 'مبتدئ', 'متوسط', 'متقدم'],
+                                  (val) {
+                                    setState(() {
+                                      _selectedLevel = val == 'الكل' ? null : val;
+                                      _applyFilters();
+                                    });
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -385,6 +435,34 @@ class _ExploreScreenState extends State<ExploreScreen> {
            ),
         );
       },
+    );
+  }
+
+  Widget _buildDropdown(
+      String label, String value, List<String> options, ValueChanged<String?> onChanged) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.getGlassColor(context, opacity: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.2)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value,
+          isExpanded: true,
+          dropdownColor: AppColors.primaryPurple,
+          icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          onChanged: onChanged,
+          items: options.map((opt) {
+            return DropdownMenuItem<String>(
+              value: opt,
+              child: Text(opt),
+            );
+          }).toList(),
+        ),
+      ),
     );
   }
 }

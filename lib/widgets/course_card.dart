@@ -7,6 +7,9 @@ import '../screens/courses/course_details_screen.dart';
 import '../core/localization/locale_provider.dart';
 import '../core/constants/app_strings.dart';
 import '../core/utils/string_utils.dart';
+import '../core/theme/app_colors.dart';
+
+import '../core/services/database_service.dart';
 
 class CourseCard extends StatefulWidget {
   final Course course;
@@ -28,6 +31,8 @@ class _CourseCardState extends State<CourseCard>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  bool _isFavorite = false;
+  final DatabaseService _databaseService = DatabaseService();
 
   @override
   void initState() {
@@ -39,6 +44,34 @@ class _CourseCardState extends State<CourseCard>
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
+    _checkFavoriteStatus();
+  }
+
+  Future<void> _checkFavoriteStatus() async {
+    try {
+      final status = await _databaseService.isFavorite(widget.course.id);
+      if (mounted) setState(() => _isFavorite = status);
+    } catch (e) {
+      debugPrint('Error checking favorite status: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    try {
+      final newStatus = await _databaseService.toggleFavorite(widget.course.id, !_isFavorite);
+      if (mounted) {
+        setState(() => _isFavorite = newStatus);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isFavorite ? AppStrings.get('added_to_favorites', Provider.of<LocaleProvider>(context, listen: false).locale) : AppStrings.get('removed_from_favorites', Provider.of<LocaleProvider>(context, listen: false).locale)),
+            duration: const Duration(seconds: 1),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error toggling favorite: $e');
+    }
   }
 
   @override
@@ -131,60 +164,82 @@ class _CourseCardState extends State<CourseCard>
                             ),
                           ),
                         ),
-                        // Level Badge
-                        if (widget.course.level != null)
-                          Positioned(
-                            top: 10,
-                            right: 10,
+                        // Wishlist Icon (Top Right)
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: GestureDetector(
+                            onTap: _toggleFavorite,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 3),
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: (widget.course.level == 'expert'
-                                        ? Colors.redAccent
-                                        : (widget.course.level == 'intermediate'
-                                            ? Colors.orangeAccent
-                                            : Colors.teal))
-                                    .withOpacity(0.85),
-                                borderRadius: BorderRadius.circular(8),
+                                color: Colors.black.withOpacity(0.3),
+                                shape: BoxShape.circle,
                               ),
-                              child: Text(
-                                AppStrings.get(widget.course.level ?? 'beginner', locale),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              child: Icon(
+                                _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                                color: _isFavorite ? Colors.redAccent : Colors.white,
+                                size: 18,
                               ),
                             ),
                           ),
-                        // Duration Badge
+                        ),
+                        // Duration Badge (Bottom Right)
                         if (widget.course.durationHours != null && widget.course.durationHours!.isNotEmpty)
                           Positioned(
-                            bottom: 10,
-                            left: 10,
+                            bottom: 12,
+                            right: 12,
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 3),
+                                  horizontal: 10, vertical: 6),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
-                                borderRadius: BorderRadius.circular(6),
+                                color: Colors.black.withOpacity(0.7),
+                                borderRadius: BorderRadius.circular(10),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   const Icon(Icons.access_time_rounded,
-                                      color: Colors.white, size: 10),
+                                      color: Colors.white, size: 12),
                                   const SizedBox(width: 4),
                                   Text(
                                     '${widget.course.durationHours} ${AppStrings.get('hours_short', locale)}',
                                     style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.normal,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                 ],
+                              ),
+                            ),
+                          ),
+                        // "New" Badge (Top Left)
+                        if (widget.course.isNew)
+                          Positioned(
+                            top: 12,
+                            left: 12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.redAccent.withOpacity(0.9),
+                                borderRadius: BorderRadius.circular(10),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.redAccent.withOpacity(0.4),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                AppStrings.get('new_badge', locale) == 'new_badge' ? 'جديد' : AppStrings.get('new_badge', locale),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -192,150 +247,122 @@ class _CourseCardState extends State<CourseCard>
                     ),
 
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 4, 10, 6),
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // --- Line 1: Instructor & Rating ---
+                          // --- Line 1: Course Title ---
+                          Text(
+                            widget.course.getLocalizedTitle(locale),
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 8),
+
+                          // --- Line 2: Instructor ---
                           Row(
                             children: [
                               _buildSimpleAvatar(),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
                                   '${AppStrings.get('by_prefix', locale)} ${StringUtils.cleanTeacherName(widget.course.getLocalizedInstructorName(locale))}',
                                   style: TextStyle(
-                                    fontSize: 9,
-                                    color: Colors.white.withOpacity(0.6),
+                                    fontSize: 11,
+                                    color: Colors.white.withOpacity(0.7),
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              Row(
-                                children: List.generate(
-                                  5,
-                                  (index) => Icon(
-                                    index < widget.course.rating.floor()
-                                        ? Icons.star_rounded
-                                        : Icons.star_outline_rounded,
-                                    color: Colors.amber,
-                                    size: 10,
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 12),
 
-                          // --- Line 2: Course Title ---
-                          Text(
-                            widget.course.getLocalizedTitle(locale),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1.1,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-
-                          // --- Line 3: Small Categories & Tags ---
-                          if (widget.course.categories.isNotEmpty || widget.course.tags.isNotEmpty)
-                            Wrap(
-                              spacing: 3,
-                              runSpacing: 3,
-                              children: [
-                                ...widget.course.categories.take(1).map((cat) => _buildMiniTag(
-                                    cat, 
-                                    Colors.blue.withOpacity(0.1), 
-                                    Colors.blueAccent)),
-                                ...widget.course.tags.take(1).map((tag) => _buildMiniTag(
-                                    '#${AppStrings.get(tag, locale)}', 
-                                    Colors.purple.withOpacity(0.1), 
-                                    Colors.purpleAccent)),
-                              ],
-                            ),
-
-                          const SizedBox(height: 6),
-                          
-                          // --- Line 4: Pricing & Progress Row ---
+                          // --- Line 3: Pricing and Progress/Subscribe Action ---
                           Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              // Progress/Students
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (widget.progress != null) ...[
+                              if (widget.progress != null)
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
                                       Text(
                                         '${(widget.progress! * 100).toInt()}% ${AppStrings.get('completed', locale)}',
                                         style: const TextStyle(
                                           color: Colors.white60,
-                                          fontSize: 8,
+                                          fontSize: 10,
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: 4),
                                       ClipRRect(
-                                        borderRadius: BorderRadius.circular(1),
+                                        borderRadius: BorderRadius.circular(4),
                                         child: LinearProgressIndicator(
                                           value: widget.progress,
                                           backgroundColor: Colors.white10,
                                           valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
-                                          minHeight: 2,
-                                        ),
-                                      ),
-                                    ] else ...[
-                                      Text(
-                                        '${widget.course.studentsCount} ${AppStrings.get('students_count_label', locale)}',
-                                        style: const TextStyle(
-                                          color: Colors.white60,
-                                          fontSize: 8,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(1),
-                                        child: LinearProgressIndicator(
-                                          value: (widget.course.studentsCount / 100).clamp(0.01, 1.0),
-                                          backgroundColor: Colors.white10,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.pinkAccent.withOpacity(0.4)),
-                                          minHeight: 1.5,
+                                          minHeight: 4,
                                         ),
                                       ),
                                     ],
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              // Prices
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  if (widget.course.hasDiscount)
-                                    Text(
-                                      widget.course.getFormattedPrice(locale),
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.3),
-                                        fontSize: 8,
-                                        decoration: TextDecoration.lineThrough,
+                                  ),
+                                )
+                              else ...[
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (widget.course.hasDiscount)
+                                        Text(
+                                          widget.course.getFormattedPrice(locale),
+                                          style: TextStyle(
+                                            color: Colors.white.withOpacity(0.3),
+                                            fontSize: 10,
+                                            decoration: TextDecoration.lineThrough,
+                                          ),
+                                        ),
+                                      Text(
+                                        widget.course.getLocalizedPrice(locale),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                  Text(
-                                    widget.course.getLocalizedPrice(locale),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.primaryGradient,
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primaryPurple.withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    AppStrings.get('buy_now', locale),
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ],
                           ),
                         ],
@@ -372,23 +399,5 @@ class _CourseCardState extends State<CourseCard>
     );
   }
 
-  Widget _buildMiniTag(String label, Color bgColor, Color textColor) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: textColor.withOpacity(0.3), width: 0.5),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: textColor,
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
 }
 

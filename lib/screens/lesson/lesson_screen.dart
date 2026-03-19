@@ -421,7 +421,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             enableCaption: false,
             isLive: false,
             disableDragSeek: false,
-            hideControls: true, 
+            hideControls: true,  // إخفاء أزرار YouTube الأصلية (بما فيها الشعار القابل للنقر)
             hideThumbnail: true,
           ),
         );
@@ -645,9 +645,24 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         !kIsWeb &&
         defaultTargetPlatform != TargetPlatform.windows) {
       return YoutubePlayerBuilder(
+        onEnterFullScreen: () {
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]);
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+        },
+        onExitFullScreen: () {
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
+              overlays: SystemUiOverlay.values);
+        },
         player: YoutubePlayer(
           controller: _youtubePlayerController!,
-          showVideoProgressIndicator: false,
+          showVideoProgressIndicator: false, // يُدار من VideoPlayerControls
         ),
         builder: (context, player) {
           return _buildScaffold(

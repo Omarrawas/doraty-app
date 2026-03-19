@@ -48,11 +48,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   bool _isLoadingReviews = true;
 
   bool _isEnrolled = false;
+  bool _isFavorite = false;
+  bool _isDescriptionExpanded = false; // Added for Read More
   Map<String, dynamic>? _userReview;
   String? _instructorPhoto;
   late String _instructorName;
   late int _studentsCount;
   final DatabaseService _databaseService = DatabaseService();
+  
+  List<Course> _similarCourses = []; // Added for similar courses
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -70,6 +74,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     _refreshCourseData();
     _studentsCount = widget.course.studentsCount; // Initialize students count
     _checkUserReview();
+    _checkFavoriteStatus();
+    _loadSimilarCourses();
 
 
     debugPrint(
@@ -139,6 +145,46 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     }
   }
 
+  Future<void> _checkFavoriteStatus() async {
+    try {
+      final isFavorite = await _databaseService.isFavorite(widget.course.id);
+      if (mounted) {
+        setState(() {
+          _isFavorite = isFavorite;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error checking favorite status: $e');
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    try {
+      final newStatus = await _databaseService.toggleFavorite(
+        widget.course.id,
+        !_isFavorite,
+      );
+      if (mounted) {
+        setState(() {
+          _isFavorite = newStatus;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_isFavorite ? 'تمت الإضافة للمفضلة' : 'تمت الإزالة من المفضلة'),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('فشل تحديث المفضلة: ${ErrorUtils.getFriendlyErrorMessage(e)}')),
+        );
+      }
+    }
+  }
+
   Future<void> _loadLessons() async {
     try {
       final results = await Future.wait([
@@ -190,6 +236,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     bool isRTL = Provider.of<LocaleProvider>(context).locale == 'ar';
     
     return Scaffold(
+      bottomNavigationBar: _isEnrolled ? null : _buildStickyBuyBar(isRTL),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -219,9 +266,23 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
   }
 
+  Future<void> _loadSimilarCourses() async {
+    try {
+      final courses = await _databaseService.getSimilarCourses(
+          widget.course.id, widget.course.categoryIds);
+      if (mounted) {
+        setState(() {
+          _similarCourses = courses;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading similar courses: $e');
+    }
+  }
+
   Widget _buildTopNavBar(bool isRTL) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.black.withOpacity(0.2),
         border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
@@ -229,12 +290,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Back Button (On the right for RTL)
-          if (!isRTL) _buildNavBackButton(),
+          // Left Actions Group
+          Row(
+            children: isRTL 
+              ? [_buildActionButtons(isRTL)] 
+              : [_buildNavBackButton()],
+          ),
           
           // Logo
           Image.asset(
-            'assets/images/logo.png', // Assuming this is the logo path
+            'assets/images/logo.png',
             height: 30,
             errorBuilder: (context, error, stackTrace) => const Text(
               'DAWRAT',
@@ -242,15 +307,60 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             ),
           ),
           
-          if (isRTL) _buildNavBackButton(),
+          // Right Actions Group
+          Row(
+            children: isRTL 
+              ? [_buildNavBackButton()] 
+              : [_buildActionButtons(isRTL)],
+          ),
         ],
       ),
     );
   }
 
+  Widget _buildActionButtons(bool isRTL) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.share_rounded, color: Colors.white, size: 22),
+          onPressed: () {
+            // Placeholder for share functionality
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('ميزة المشاركة ستتوفر قريباً')),
+            );
+          },
+        ),
+        IconButton(
+          icon: Icon(
+            _isFavorite ? Icons.favorite_rounded : Icons.favorite_outline_rounded,
+            color: _isFavorite ? Colors.redAccent : Colors.white,
+            size: 22,
+          ),
+          onPressed: _toggleFavorite,
+        ),
+        IconButton(
+          icon: const Icon(Icons.dark_mode_rounded, color: Colors.white, size: 22),
+          onPressed: () {
+            // Theme toggle is global, but we can show feedback
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('تغيير السمة متاح من القائمة الجانبية')),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildNavBackButton() {
     return IconButton(
-      icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 20),
+      icon: Icon(
+        Provider.of<LocaleProvider>(context, listen: false).locale == 'ar'
+            ? Icons.arrow_forward_ios_rounded
+            : Icons.arrow_back_ios_new_rounded,
+        color: Colors.white,
+        size: 20,
+      ),
       onPressed: () => Navigator.pop(context),
     );
   }
@@ -432,37 +542,57 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         }
       },
       borderRadius: BorderRadius.circular(30),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircleAvatar(
-              radius: 14,
-              backgroundImage: _instructorPhoto != null
-                  ? CachedNetworkImageProvider(_instructorPhoto!)
-                  : null,
-              child: _instructorPhoto == null
-                  ? const Icon(Icons.person, size: 16, color: Colors.white)
-                  : null,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
-            const SizedBox(width: 8),
-            Text(
-              '${_t("instructor_title")} $_instructorName',
-              style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              textDirection: isRTL ? TextDirection.rtl : TextDirection.ltr,
+              children: [
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
+                  backgroundImage: _instructorPhoto != null
+                      ? CachedNetworkImageProvider(_instructorPhoto!)
+                      : null,
+                  child: _instructorPhoto == null
+                      ? const Icon(Icons.person, size: 18, color: Colors.white)
+                      : null,
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _instructorName,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      _t("instructor_title"),
+                      style: TextStyle(
+                          color: Colors.white.withOpacity(0.6),
+                          fontSize: 11),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Icon(isRTL ? Icons.arrow_back_ios_new_rounded : Icons.arrow_forward_ios_rounded,
+                    color: Colors.white.withOpacity(0.3), size: 12),
+              ],
             ),
-            const SizedBox(width: 4),
-            Icon(Icons.arrow_forward_ios_rounded,
-                color: Colors.white.withOpacity(0.5), size: 10),
-          ],
+          ),
         ),
       ),
     );
@@ -504,53 +634,24 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Widget _buildContinueLearningButton(bool isRTL) {
-    return Column(
-      crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.green.withOpacity(0.3)),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.green.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.green.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+          const SizedBox(width: 12),
+          Text(
+            _t('enrolled_already'),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
-              const SizedBox(width: 12),
-              Text(
-                _t('enrolled_already'),
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 20),
-        ElevatedButton.icon(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CourseContentScreen(
-                  course: widget.course,
-                  lessonsData: _lessons,
-                  chapters: _chapters,
-                  isEnrolled: true,
-                ),
-              ),
-            );
-          },
-          icon: const Icon(Icons.play_arrow_rounded),
-          label: Text(_t('enter_course')),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: AppColors.primaryPurple,
-            minimumSize: const Size(double.infinity, 56),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -571,8 +672,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Widget _buildMainContent(bool isRTL) {
     return Column(
       children: [
-        _buildDetailSection(
-            _t('about'), widget.course.description ?? '', isRTL),
+        _buildDescriptionSection(isRTL),
+        const SizedBox(height: 30),
         _buildCourseContentButton(isRTL),
         if (widget.course.outcomes.isNotEmpty)
           _buildListSection(
@@ -581,29 +682,416 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           _buildListSection(
               _t('target_audience'), widget.course.targetAudience, isRTL),
         _buildReviewsSection(isRTL),
+        const SizedBox(height: 40),
+        _buildSimilarCoursesSection(isRTL),
+        _buildAccreditationSection(isRTL),
+        _buildInstructorFullSection(isRTL),
+        const SizedBox(height: 80),
       ],
     );
   }
 
-
-
-  Widget _buildDetailSection(String title, String content, bool isRTL) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+  Widget _buildInstructorFullSection(bool isRTL) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Column(
-        crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
+          CircleAvatar(
+            radius: 50,
+            backgroundImage: widget.course.instructorPhoto != null
+                ? CachedNetworkImageProvider(widget.course.instructorPhoto!)
+                : null,
+            backgroundColor: Colors.grey[800],
+            child: widget.course.instructorPhoto == null
+                ? const Icon(Icons.person, color: Colors.white54, size: 50)
+                : null,
+          ),
+          const SizedBox(height: 16),
           Text(
-            content,
-            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 15, height: 1.6),
-            textAlign: isRTL ? TextAlign.right : TextAlign.left,
+            widget.course.instructorName,
+            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _t('teacher'),
+            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+          ),
+          const SizedBox(height: 24),
+          TextButton.icon(
+            onPressed: () {},
+            icon: Icon(isRTL ? Icons.arrow_back : Icons.arrow_forward, color: Colors.white70, size: 18),
+            label: Text(
+              _t('read_more'),
+              style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold),
+            ),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+                side: BorderSide(color: Colors.white.withOpacity(0.2)),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildDescriptionSection(bool isRTL) {
+    final description = widget.course.description ?? '';
+    if (description.isEmpty) return const SizedBox.shrink();
+
+    bool isLong = description.length > 200;
+    String displayContent = isLong && !_isDescriptionExpanded
+        ? '${description.substring(0, 200)}...'
+        : description;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(
+            _t('course_content'), // Using 'course_content' or similar for 'About'
+            style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            displayContent,
+            style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 15, height: 1.6),
+            textAlign: isRTL ? TextAlign.right : TextAlign.left,
+          ),
+          if (isLong)
+            TextButton(
+              onPressed: () => setState(() => _isDescriptionExpanded = !_isDescriptionExpanded),
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: Text(
+                _isDescriptionExpanded ? _t('read_less') : _t('read_more'),
+                style: const TextStyle(color: AppColors.primaryPurple, fontWeight: FontWeight.bold),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSimilarCoursesSection(bool isRTL) {
+    if (_similarCourses.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text(
+            _t('similar_courses'),
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 290,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _similarCourses.length,
+            itemBuilder: (context, index) {
+              final course = _similarCourses[index];
+              return Container(
+                width: 200,
+                margin: const EdgeInsets.only(right: 12),
+                child: _buildSimilarCourseCard(course),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSimilarCourseCard(Course course) {
+    return InkWell(
+      onTap: () => Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => CourseDetailsScreen(course: course)),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.1)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  child: AspectRatio(
+                    aspectRatio: 16 / 9,
+                    child: CachedNetworkImage(
+                      imageUrl: course.imageUrl ?? '',
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(color: Colors.grey[900]),
+                      errorWidget: (context, url, error) => Container(color: Colors.grey[900]),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.5),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.favorite_border_rounded, color: Colors.white, size: 16),
+                  ),
+                ),
+                if (course.durationHours != null)
+                  Positioned(
+                    bottom: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.6),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        course.durationHours!,
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    course.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'تقديم ${course.instructorName}',
+                    style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryPurple,
+                      foregroundColor: Colors.white,
+                      minimumSize: const Size(double.infinity, 36),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: EdgeInsets.zero,
+                      elevation: 0,
+                    ),
+                    child: Text(_t('buy_now'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccreditationSection(bool isRTL) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 40),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        border: Border.symmetric(
+          horizontal: BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.transparent, Colors.white.withOpacity(0.2)],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 15),
+                child: Text(
+                  _t('accredited_by'),
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+              Container(
+                width: 40,
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.white.withOpacity(0.2), Colors.transparent],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 35),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildAccreditationLogo('assets/images/logo.png', 'CPD'),
+                const SizedBox(width: 40),
+                _buildAccreditationLogo('assets/images/logo.png', 'PAAET'),
+                const SizedBox(width: 40),
+                _buildAccreditationLogo('assets/images/logo.png', 'MOE'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAccreditationLogo(String assetPath, String label) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Opacity(
+          opacity: 0.7,
+          child: Image.asset(
+            assetPath,
+            height: 45,
+            errorBuilder: (context, error, stackTrace) => Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.verified_user_rounded, color: Colors.white24, size: 30),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10, fontWeight: FontWeight.bold),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStickyBuyBar(bool isRTL) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 15, 20, MediaQuery.of(context).padding.bottom + 15),
+      decoration: BoxDecoration(
+        color: const Color(0xFF161621), // Darkest theme color
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _t('course_price') == 'course_price' ? 'سعر الدورة' : _t('course_price'),
+                  style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.course.discountPercentage > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Text(
+                          '${widget.course.price} ${widget.course.currency}',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.3),
+                            fontSize: 14,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ),
+                    Text(
+                      widget.course.getLocalizedPrice(Provider.of<LocaleProvider>(context, listen: false).locale),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            flex: 2,
+            child: ElevatedButton(
+              onPressed: _handleEnrollment,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 8,
+                shadowColor: AppColors.primaryPurple.withOpacity(0.5),
+              ),
+              child: Text(
+                _t('enroll_now') == 'enroll_now' ? 'اشترك الآن' : _t('enroll_now'),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
 
   Widget _buildListSection(String title, List<String> items, bool isRTL) {
     return Padding(
@@ -681,19 +1169,32 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 
   Widget _buildReviewsSection(bool isRTL) {
     return Column(
+      crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-               Text(_t('reviews'), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-               if (_isEnrolled && _userReview == null)
-                  TextButton(onPressed: _showAddReviewDialog, child: Text(_t('add_review'))),
-            ],
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Text(
+            _t('reviews_tab'),
+            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ),
-        _buildReviewsTab(), // Reuse existing reviews builder
+        _buildReviewsTab(),
+        if (_reviews.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: OutlinedButton(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.white.withOpacity(0.2)),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: Text(
+                _t('view_all_reviews'),
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -807,88 +1308,51 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     final userImage = user['avatar_url'];
     final rating = (review['rating'] as num).toDouble();
     final comment = review['comment'] ?? '';
-    final date = review['created_at'] != null
-        ? DateTime.parse(review['created_at']).toString().split(' ')[0]
-        : '';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.getGlassColor(context, opacity: 0.2),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: AppColors.getGlassColor(context, opacity: 0.2),
-                width: 1,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage:
-                          userImage != null ? NetworkImage(userImage) : null,
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      child: userImage == null
-                          ? const Icon(Icons.person, color: Colors.white)
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            userName,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            date,
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Row(
-                      children: List.generate(5, (index) {
-                        return Icon(
-                          index < rating ? Icons.star : Icons.star_border,
-                          color: index < rating ? Colors.amber : Colors.grey,
-                          size: 16,
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-                if (comment.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    comment,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              return Icon(
+                Icons.star_rounded,
+                color: index < rating ? Colors.amber : Colors.white10,
+                size: 24,
+              );
+            }),
           ),
-        ),
+          const SizedBox(height: 20),
+          Text(
+            comment,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 15, height: 1.6),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                userName,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              const SizedBox(width: 12),
+              CircleAvatar(
+                radius: 18,
+                backgroundImage: userImage != null ? CachedNetworkImageProvider(userImage) : null,
+                backgroundColor: Colors.white10,
+                child: userImage == null ? const Icon(Icons.person, color: Colors.white54, size: 18) : null,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

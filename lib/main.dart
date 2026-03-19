@@ -6,21 +6,21 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/app_colors.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/explore/explore_screen.dart';
-import 'screens/courses/courses_list_screen.dart';
 import 'screens/profile/profile_screen.dart';
+import 'screens/tips/all_tips_screen.dart';
+import 'screens/categories/subjects_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'widgets/gradient_background.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/services/supabase_service.dart';
 import 'core/env/multi_env.dart';
-import 'screens/teacher/teacher_dashboard_screen.dart';
-import 'screens/admin/admin_dashboard_screen.dart';
 
 import 'models/download.dart';
 import 'core/services/offline_cache_service.dart';
 import 'core/services/settings_service.dart';
 import 'core/localization/locale_provider.dart';
+import 'core/services/local_database.dart';
 // import 'core/constants/app_strings.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
@@ -52,6 +52,7 @@ void main() async {
 
   final List<Future> remainingInitializations = [
     OfflineCacheService().init(),
+    LocalDatabase().init(),
     SettingsService().init(),
   ];
 
@@ -190,24 +191,14 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWideScreen = screenWidth > 900;
-    final authService = Provider.of<AuthService>(context);
-    final userRole = authService.userProfile?['role'] ??
-        (authService.userProfile?['is_admin'] == true ? 'admin' : 'student');
-
-    final bool isManager = userRole == 'teacher' ||
-        userRole == 'admin' ||
-        userRole == 'super_admin';
+    // userRole and isManager are now handled by the Sidebar Drawer for dashboard access
 
     // Build common screens
     final List<Widget> screens = [
       const HomeScreen(),
       const ExploreScreen(),
-      if (isManager) ...[
-        userRole == 'teacher'
-            ? const TeacherDashboardScreen()
-            : const AdminDashboardScreen(),
-      ],
-      const CoursesListScreen(showBackButton: false),
+      const AllTipsScreen(showAppBar: false),
+      const SubjectsScreen(showBackButton: false),
       const ProfileScreen(),
     ];
 
@@ -251,18 +242,17 @@ class _MainScreenState extends State<MainScreen> {
                         Icon(Icons.search, color: AppColors.primaryPurple),
                     label: Text('استكشف', style: TextStyle(fontSize: 12)),
                   ),
-                  if (isManager)
-                    const NavigationRailDestination(
-                      icon: Icon(Icons.dashboard_outlined),
-                      selectedIcon: Icon(Icons.dashboard,
-                          color: AppColors.primaryPurple),
-                      label: Text('لوحة التحكم', style: TextStyle(fontSize: 12)),
-                    ),
                   const NavigationRailDestination(
-                    icon: Icon(Icons.play_circle_outline),
+                    icon: Icon(Icons.lightbulb_outline),
                     selectedIcon:
-                        Icon(Icons.play_circle, color: AppColors.primaryPurple),
-                    label: Text('دوراتي', style: TextStyle(fontSize: 12)),
+                        Icon(Icons.lightbulb, color: AppColors.primaryPurple),
+                    label: Text('نصائح', style: TextStyle(fontSize: 12)),
+                  ),
+                  const NavigationRailDestination(
+                    icon: Icon(Icons.category_outlined),
+                    selectedIcon:
+                        Icon(Icons.category, color: AppColors.primaryPurple),
+                    label: Text('الأقسام', style: TextStyle(fontSize: 12)),
                   ),
                   NavigationRailDestination(
                     icon: Consumer<AuthService>(
@@ -326,12 +316,11 @@ class _MainScreenState extends State<MainScreen> {
                         index: _currentIndex >= screens.length ? 0 : _currentIndex,
                         height: 60.0,
                       items: <Widget>[
-                        _buildNavItem(Icons.home_outlined, 0, isManager),
-                        _buildNavItem(Icons.manage_search_outlined, 1, isManager),
-                        if (isManager)
-                          _buildNavItem(Icons.dashboard_outlined, 2, isManager),
-                        _buildNavItem(Icons.play_circle_outline, isManager ? 3 : 2, isManager),
-                        _buildProfileTab(context, isManager ? 4 : 3, isManager),
+                        _buildNavItem(Icons.home_outlined, 0),
+                        _buildNavItem(Icons.manage_search_outlined, 1),
+                        _buildNavItem(Icons.lightbulb_outline, 2),
+                        _buildNavItem(Icons.category_outlined, 3),
+                        _buildProfileTab(context, 4),
                       ],
                       color: AppColors.getSurfaceColor(context).withOpacity(0.95),
                       buttonBackgroundColor: AppColors.primaryPurple,
@@ -352,9 +341,9 @@ class _MainScreenState extends State<MainScreen> {
     ); // closes Scaffold
   }
 
-  Widget _buildNavItem(IconData icon, int index, bool isManager) {
+  Widget _buildNavItem(IconData icon, int index) {
     bool isSelected = _currentIndex == index;
-    double iconSize = isManager ? 24 : 28;
+    double iconSize = 26;
     
     return Container(
       width: 44, // Slightly wider base for better touch and centering
@@ -368,9 +357,9 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildProfileTab(BuildContext context, int index, bool isManager) {
+  Widget _buildProfileTab(BuildContext context, int index) {
     bool isSelected = _currentIndex == index;
-    double containerSize = isManager ? 32 : 36;
+    double containerSize = 34;
 
     return Consumer<AuthService>(
       builder: (context, auth, _) {
@@ -393,13 +382,13 @@ class _MainScreenState extends State<MainScreen> {
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Icon(
                         Icons.person_outline,
-                        size: isManager ? 22 : 26,
+                        size: 24,
                         color: isSelected ? Colors.white : AppColors.primaryPurple,
                       ),
                     )
                   : Icon(
                       Icons.person_outline,
-                      size: isManager ? 22 : 26,
+                      size: 24,
                       color: isSelected ? Colors.white : AppColors.primaryPurple,
                     ),
             ),

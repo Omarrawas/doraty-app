@@ -12,7 +12,7 @@ class VideoPlayerControls extends StatefulWidget {
   final VideoPlayerController? videoController;
   final bool isYoutube;
   final VoidCallback? onToggleFullScreen;
-  final Lesson lesson;
+  final Lesson? lesson;
   final String courseTitle;
 
   const VideoPlayerControls({
@@ -21,7 +21,7 @@ class VideoPlayerControls extends StatefulWidget {
     this.videoController,
     required this.isYoutube,
     this.onToggleFullScreen,
-    required this.lesson,
+    this.lesson,
     this.courseTitle = '',
   });
 
@@ -174,7 +174,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                             ),
                             if (!_isLocked) ...[
                               const Spacer(),
-                              _buildDownloadButton(),
+                              if (widget.lesson != null) _buildDownloadButton(),
                               _buildSpeedButton(),
                             ],
                           ],
@@ -294,15 +294,17 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
   }
 
   Widget _buildDownloadButton() {
+    if (widget.lesson == null) return const SizedBox.shrink();
+    
     return AnimatedBuilder(
       animation: DownloadManager(),
       builder: (context, child) {
         final downloadManager = DownloadManager();
-        final isDownloaded = downloadManager.isDownloaded(widget.lesson.id);
+        final isDownloaded = downloadManager.isDownloaded(widget.lesson!.id);
 
         // Check if currently downloading
         final activeDownload = downloadManager.activeDownloads.firstWhere(
-          (d) => d.lessonId == widget.lesson.id,
+          (d) => d.lessonId == widget.lesson!.id,
           orElse: () => DownloadedLesson(
             id: '',
             lessonId: '',
@@ -338,7 +340,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
           ),
           onPressed: () {
             if (isDownloaded) {
-              _showDeleteConfirm(context, downloadManager, widget.lesson.id);
+              _showDeleteConfirm(context, downloadManager, widget.lesson!.id);
             } else {
               _showQualitySelectionDialog(context);
             }
@@ -376,14 +378,16 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
   }
 
   Future<void> _showQualitySelectionDialog(BuildContext context) async {
+    if (widget.lesson == null) return;
+    
     if (!widget.isYoutube) {
       // Direct download
       DownloadManager().startDownload(DownloadedLesson(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
-        lessonId: widget.lesson.id,
-        courseId: widget.lesson.courseId,
-        title: widget.lesson.title,
-        videoUrl: widget.lesson.videoUrl,
+        lessonId: widget.lesson!.id,
+        courseId: widget.lesson!.courseId,
+        title: widget.lesson!.title,
+        videoUrl: widget.lesson!.videoUrl,
         localPath: '',
         fileSize: 0,
         downloadedAt: DateTime.now(),
@@ -411,7 +415,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
     try {
       final manifest =
-          await DownloadManager().getYouTubeStreams(widget.lesson.videoUrl);
+          await DownloadManager().getYouTubeStreams(widget.lesson!.videoUrl);
       if (!context.mounted) return;
       navigator.pop(); // Close loading
 
@@ -439,13 +443,14 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                       '${stream.videoQualityLabel} (${stream.videoResolution})'),
                   subtitle: Text(
                       'الحجم: $sizeMB MB • ${stream.container.name.toUpperCase()}'),
-                  onTap: () {
+                onTap: () {
                     Navigator.pop(context);
+                    if (widget.lesson == null) return;
                     DownloadManager().startDownload(DownloadedLesson(
                       id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      lessonId: widget.lesson.id,
-                      courseId: widget.lesson.courseId,
-                      title: widget.lesson.title,
+                      lessonId: widget.lesson!.id,
+                      courseId: widget.lesson!.courseId,
+                      title: widget.lesson!.title,
                       videoUrl: stream.url.toString(),
                       localPath: '',
                       fileSize: stream.size.totalBytes,

@@ -18,6 +18,8 @@ import 'notifications_management_screen.dart';
 import 'qr_management_screen.dart';
 import 'updates_management_screen.dart';
 import 'security_settings_screen.dart';
+import 'bundles_management_screen.dart';
+import 'tips_management_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -484,6 +486,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               context,
               MaterialPageRoute(
                   builder: (context) => const TeachersManagementScreen())),
+        },
+        {
+          'icon': Icons.collections_bookmark_rounded,
+          'title': 'الباقات',
+          'subtitle': 'إدارة باقات الدورات',
+          'color': Colors.indigoAccent,
+          'onTap': () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const BundlesManagementScreen())),
+        },
+        {
+          'icon': Icons.lightbulb_rounded,
+          'title': 'نصائح',
+          'subtitle': 'إدارة نصائح الفيديو القصيرة',
+          'color': Colors.amberAccent,
+          'onTap': () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const TipsManagementScreen())),
         },
       ],
       {

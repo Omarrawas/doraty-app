@@ -6,19 +6,28 @@ import '../../core/services/database_service.dart';
 import '../courses/course_details_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../teacher/teacher_profile_screen.dart';
-import '../teacher/teachers_list_screen.dart'; // Added import
+import '../teacher/teachers_list_screen.dart'; 
+import '../../models/category_model.dart';
+import '../explore/widgets/category_card.dart';
+import '../explore/explore_screen.dart';
+import '../packages/package_screen.dart';
+import '../packages/all_packages_screen.dart';
+import '../tips/all_tips_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../core/services/sync_service.dart';
 import '../../widgets/course_card.dart';
+import 'widgets/home_drawer.dart';
 
-import '../../widgets/empty_state.dart';
 import 'package:provider/provider.dart';
-import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/utils/string_utils.dart';
+import '../../core/localization/locale_provider.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/supabase_service.dart';
+import '../../core/utils/string_utils.dart';
+import '../../models/tip.dart';
+import '../../models/bundle.dart';
+import '../../widgets/vertical_tip_player.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -29,11 +38,13 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final DatabaseService _databaseService = DatabaseService();
-  List<Course> _featuredCourses = [];
   List<Course> _allCourses = [];
   List<Course> _featuredCoursesForBanner = [];
   List<Map<String, dynamic>> _allTeachers = [];
   List<Map<String, dynamic>> _filteredTeachers = [];
+  List<CategoryModel> _categories = [];
+  List<Tip> _tips = [];
+  List<Bundle> _bundles = [];
   bool _isLoading = true;
   bool _hasUnreadNotifications = false;
   Map<String, dynamic> _teacherStats = {};
@@ -74,12 +85,15 @@ class _HomeScreenState extends State<HomeScreen> {
       }
 
       await Future.wait([
-        _loadFeaturedCourses(forceRefresh: forceRefresh),
-        _loadEnrolledCourses(), // Enrollments usually small and fast, can be kept simple
+        _loadCourses(forceRefresh: forceRefresh),
+        _loadEnrolledCourses(),
         _loadFeaturedBanner(forceRefresh: forceRefresh),
         _loadTeachers(forceRefresh: forceRefresh),
         _checkUnreadNotifications(),
         _loadTeacherStats(forceRefresh: forceRefresh),
+        _loadCategories(forceRefresh: forceRefresh),
+        _loadTips(forceRefresh: forceRefresh),
+        _loadBundles(forceRefresh: forceRefresh),
       ]);
     } catch (e) {
       debugPrint('Error refreshing home data: $e');
@@ -131,6 +145,45 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _loadCategories({bool forceRefresh = false}) async {
+    try {
+      final categoriesData = await _databaseService.getCategories(forceRefresh: forceRefresh);
+      if (mounted) {
+        setState(() {
+          _categories = categoriesData.map((e) => CategoryModel.fromJson(e)).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading categories: $e');
+    }
+  }
+
+  Future<void> _loadTips({bool forceRefresh = false}) async {
+    try {
+      final tipsData = await _databaseService.getTips(forceRefresh: forceRefresh);
+      if (mounted) {
+        setState(() {
+          _tips = tipsData.map((e) => Tip.fromJson(e)).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading tips: $e');
+    }
+  }
+
+  Future<void> _loadBundles({bool forceRefresh = false}) async {
+    try {
+      final bundlesData = await _databaseService.getBundles(forceRefresh: forceRefresh);
+      if (mounted) {
+        setState(() {
+          _bundles = bundlesData.map((e) => Bundle.fromJson(e)).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading bundles: $e');
+    }
+  }
+
   Future<void> _loadEnrolledCourses() async {
     try {
       final enrolledIds = await _databaseService.getEnrolledCourseIds();
@@ -146,9 +199,8 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadFeaturedCourses({bool forceRefresh = false}) async {
+  Future<void> _loadCourses({bool forceRefresh = false}) async {
     try {
-      // getCourses internally caches to OfflineCacheService
       final coursesData =
           await _databaseService.getCourses(forceRefresh: forceRefresh);
       
@@ -157,9 +209,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _allCourses = coursesData
               .map((data) => Course.fromJson(data))
               .toList();
-          
-          final seenIds = <String>{};
-          _featuredCourses = _allCourses.where((c) => seenIds.add(c.id)).take(10).toList();
         });
       }
     } catch (e) {
@@ -272,6 +321,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool isWideScreen = screenWidth > 900;
 
     return Scaffold(
+      drawer: HomeDrawer(categories: _categories),
       body: RefreshIndicator(
         onRefresh: () => _refreshData(forceRefresh: true),
         color: AppColors.primaryPurple,
@@ -281,10 +331,17 @@ class _HomeScreenState extends State<HomeScreen> {
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                // Premium Header
-                SliverToBoxAdapter(child: _buildHeader()),
-
-
+                // Premium Sticky Header
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _HomeHeaderDelegate(
+                    userName: Provider.of<AuthService>(context).userProfile?['full_name'] ?? Provider.of<AuthService>(context).userProfile?['name'],
+                    hasUnreadNotifications: _hasUnreadNotifications,
+                    t: _t,
+                    onMenuTap: () => Scaffold.of(context).openDrawer(),
+                    onNotificationTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen())),
+                  ),
+                ),
 
                 // Loading State (Shimmer)
                 if (_isLoading)
@@ -294,16 +351,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   // Teacher Performance Summary (Contextual)
                   SliverToBoxAdapter(child: _buildTeacherQuickStats()),
 
-                  // Accreditation Section
-                  SliverToBoxAdapter(child: _buildAccreditationSection()),
-
                   // Continue Learning
                   SliverToBoxAdapter(child: _buildContinueLearning()),
 
                   // Banner Carousel
                   SliverToBoxAdapter(child: _buildBannerCarousel()),
 
-                  // Teachers Section
+                  // Categories
+                  if (_categories.isNotEmpty) _buildCategoriesSection(),
+
+                  // New Courses
+                  if (_allCourses.isNotEmpty) _buildNewCoursesSection(isWideScreen),
+
+                  // Most Watched
+                  if (_allCourses.isNotEmpty) _buildMostWatchedSection(isWideScreen),
+
+                  // Tips Section
+                  _buildTipsSection(),
+
+                  // Featured Packages
+                  _buildPackagesSection(isWideScreen),
+
+                  // Recorded Courses
+                  if (_allCourses.isNotEmpty) _buildRecordedCoursesSection(isWideScreen),
+
+                  // Top Teachers
                   if (_filteredTeachers.isNotEmpty) ...[
                     _buildSectionHeader(_t('top_teachers'), () {
                       Navigator.push(
@@ -338,67 +410,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                     ),
                   ],
-
-                  // Featured Courses Section Header
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 30, 20, 16),
-                    sliver: SliverToBoxAdapter(
-                      child: Text(
-                        _t('featured_courses'),
-                        style: TextStyle(
-                          fontSize: isWideScreen ? 26 : 22,
-                          fontWeight: FontWeight.normal,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  _featuredCourses.isEmpty
-                      ? SliverToBoxAdapter(
-                          child: ProfessionalEmptyState(
-                            title: _t('no_courses_found'),
-                            message: _t('no_featured_courses_message'),
-                            icon: Icons.auto_awesome_motion_rounded,
-                          ),
-                        )
-                      : SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          sliver: isWideScreen
-                              ? SliverGrid(
-                                  delegate: SliverChildBuilderDelegate(
-                                    (context, index) => CourseCard(
-                                      course: _featuredCourses[index],
-                                      heroTag: 'home_course_image_${_featuredCourses[index].id}',
-                                    ),
-                                    childCount: _featuredCourses.length,
-                                  ),
-                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    childAspectRatio: 0.8,
-                                    crossAxisSpacing: 20,
-                                    mainAxisSpacing: 20,
-                                  ),
-                                )
-                              : SliverToBoxAdapter(
-                                  child: SizedBox(
-                                    height: 420,
-                                    child: ListView.builder(
-                                      scrollDirection: Axis.horizontal,
-                                      itemCount: _featuredCourses.length,
-                                      itemBuilder: (context, index) {
-                                        return Padding(
-                                          padding: const EdgeInsetsDirectional.only(start: 16),
-                                          child: CourseCard(
-                                            course: _featuredCourses[index],
-                                            heroTag: 'home_course_image_${_featuredCourses[index].id}',
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ),
-                        ),
                 ],
               ],
             ),
@@ -518,142 +529,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildHeader() {
-    return Consumer<AuthService>(
-      builder: (context, auth, _) {
-        final userName =
-            auth.userProfile?['full_name'] ?? auth.userProfile?['name'];
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Logo & Greeting (Left Side)
-              Expanded(
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.getGlassColor(context),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        width: 24,
-                        height: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            userName != null
-                                ? '${_t('welcome_with_name')} $userName 👋'
-                                : '${_t('welcome')} 👋',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.normal,
-                              color: Colors.white,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            _t('ready_to_learn'),
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.5),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Notifications (Right Side)
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const NotificationsScreen(),
-                    ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.getGlassColor(context),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Stack(
-                    children: [
-                      const Icon(Icons.notifications_outlined,
-                          color: Colors.white, size: 24),
-                      if (_hasUnreadNotifications)
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                                color: Colors.red, shape: BoxShape.circle),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-
-
-  Widget _buildAccreditationSection() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.getGlassColor(context, opacity: 0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildTrustBadge(Icons.verified_user_outlined, _t('accredited_by')),
-          _buildTrustBadge(Icons.security_outlined, "Verified"),
-          _buildTrustBadge(Icons.payments_outlined, "Secure Pay"),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTrustBadge(IconData icon, String label) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white70, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: const TextStyle(color: Colors.white54, fontSize: 10),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
+  }  // Removed _buildHeader as it's replaced by _HomeHeaderDelegate
 
 
   Widget _buildContinueLearning() {
@@ -1066,5 +942,554 @@ class _HomeScreenState extends State<HomeScreen> {
       'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=random&color=fff',
       fit: BoxFit.cover,
     );
+  }
+
+  // --- New Sections ---
+
+  Widget _buildCategoriesSection() {
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+            child: Text(
+              _t('categories') != 'categories' ? _t('categories') : 'الفئات', // Fallback
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.normal,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 110,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              scrollDirection: Axis.horizontal,
+              itemCount: _categories.length,
+              itemBuilder: (context, index) {
+                final cat = _categories[index];
+                return CategoryCard(
+                  category: cat,
+                  onTap: () {
+                    // Could navigate to ExploreScreen and pass the category.
+                    // For now, push ExploreScreen if it exists.
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ExploreScreen(),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewCoursesSection(bool isWideScreen) {
+    // Assuming _allCourses are ordered by creation descending
+    final newCourses = _allCourses.take(10).toList();
+    if (newCourses.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+    return _buildCourseSection(
+      title: 'الدورات الجديدة', // _t('new_courses')
+      courses: newCourses,
+      isWideScreen: isWideScreen,
+      heroTagPrefix: 'new_course_',
+    );
+  }
+
+  Widget _buildMostWatchedSection(bool isWideScreen) {
+    // Sort all courses by studentsCount descending
+    final sortedCourses = List<Course>.from(_allCourses)
+      ..sort((a, b) => b.studentsCount.compareTo(a.studentsCount));
+    final mostWatched = sortedCourses.take(10).toList();
+
+    if (mostWatched.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+    return _buildCourseSection(
+      title: 'الأكثر مشاهدة', // _t('most_watched')
+      courses: mostWatched,
+      isWideScreen: isWideScreen,
+      heroTagPrefix: 'watched_course_',
+    );
+  }
+
+  Widget _buildCourseSection({
+    required String title,
+    required List<Course> courses,
+    required bool isWideScreen,
+    required String heroTagPrefix,
+  }) {
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.normal,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 280,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: courses.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 16),
+                  child: SizedBox(
+                    width: 220,
+                    child: CourseCard(
+                      course: courses[index],
+                      heroTag: '$heroTagPrefix${courses[index].id}',
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+
+  
+
+  Widget _buildRecordedCoursesSection(bool isWideScreen) {
+    // We just take some courses as a placeholder for recorded courses.
+    final recordedCourses = _allCourses.take(10).toList();
+    
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+            child: Text(
+              'دورات مسجلة',
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.normal,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 280,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: recordedCourses.length + 1, // Include 'See All' card
+              itemBuilder: (context, index) {
+                if (index == recordedCourses.length) {
+                  return GestureDetector(
+                    onTap: () {
+                      // Navigate to ExploreScreen as requested
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ExploreScreen()));
+                    },
+                    child: Container(
+                      width: 200,
+                      margin: const EdgeInsetsDirectional.only(start: 16),
+                      decoration: BoxDecoration(
+                        color: AppColors.getGlassColor(context).withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColors.primaryPurple.withOpacity(0.2),
+                              ),
+                              child: const Icon(Icons.arrow_forward_rounded, color: AppColors.primaryPurple, size: 40),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'عرض جميع\nالدورات',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                return Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 16),
+                  child: SizedBox(
+                    width: 220,
+                    child: CourseCard(
+                      course: recordedCourses[index],
+                      heroTag: 'recorded_course_${recordedCourses[index].id}',
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTipsSection() {
+    if (_tips.isEmpty) return const SizedBox.shrink();
+
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('نصائح دوراتي', () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const AllTipsScreen()));
+          }),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 220,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              scrollDirection: Axis.horizontal,
+              itemCount: _tips.length,
+              itemBuilder: (context, index) => _buildTipThumbnail(_tips[index], index),
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTipThumbnail(Tip tip, int index) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => VerticalTipPlayer(tips: _tips, initialIndex: index)));
+      },
+      child: Container(
+        width: 140,
+        margin: const EdgeInsetsDirectional.only(end: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          image: (tip.thumbnailUrl != null && tip.thumbnailUrl!.isNotEmpty)
+              ? DecorationImage(image: NetworkImage(tip.thumbnailUrl!), fit: BoxFit.cover)
+              : null,
+          color: Colors.white10,
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              const Center(child: Icon(Icons.play_circle_outline, color: Colors.white70, size: 45)),
+              // View Count Badge
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.black45,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.visibility, color: Colors.white, size: 10),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${tip.viewsCount}',
+                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 12, left: 10, right: 10,
+                child: Text(tip.title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPackagesSection(bool isWideScreen) {
+    if (_bundles.isEmpty) return const SizedBox.shrink();
+
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader('باقات دوراتي المميزة', () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const AllPackagesScreen()));
+          }),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 150,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              scrollDirection: Axis.horizontal,
+              itemCount: _bundles.length,
+              itemBuilder: (context, index) {
+                final bundle = _bundles[index];
+                return _buildBundleThumbnail(bundle);
+              },
+            ),
+          ),
+          const SizedBox(height: 30),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBundleThumbnail(Bundle bundle) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PackageScreen(
+              packageTitle: bundle.title,
+              courses: bundle.courses,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 280,
+        margin: const EdgeInsetsDirectional.only(end: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: const LinearGradient(
+            colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                bundle.title,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.library_books, color: Colors.white70, size: 14),
+                  const SizedBox(width: 6),
+                  Text('${bundle.courses.length} دورات تدريبية', style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                ],
+              ),
+              const Spacer(),
+              Align(
+                alignment: AlignmentDirectional.bottomEnd,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                  child: const Text('عرض الباقة', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final String? userName;
+  final bool hasUnreadNotifications;
+  final String Function(String) t;
+  final VoidCallback onMenuTap;
+  final VoidCallback onNotificationTap;
+
+  _HomeHeaderDelegate({
+    required this.userName,
+    required this.hasUnreadNotifications,
+    required this.t,
+    required this.onMenuTap,
+    required this.onNotificationTap,
+  });
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final double topPadding = MediaQuery.of(context).padding.top;
+    final double currentOpacity = (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.getGlassColor(context).withOpacity(currentOpacity),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+        boxShadow: shrinkOffset > 20 
+          ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))]
+          : [],
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(20, topPadding + 10, 20, 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Menu & Greeting
+                Expanded(
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: onMenuTap,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.menu, color: Colors.white, size: 24),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              userName != null ? '${t('welcome_with_name')} $userName 👋' : '${t('welcome')} 👋',
+                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              t('ready_to_learn'),
+                              style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.5)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // Theme Toggle & Notifications
+                Row(
+                  children: [
+                    // Theme Toggle (Quick Access)
+                    IconButton(
+                      icon: const Icon(Icons.light_mode_rounded, color: Colors.white, size: 20),
+                      onPressed: () {
+                        // Feedback for theme toggle (as per previous logic)
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('تغيير السمة متاح من القائمة الجانبية')),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: onNotificationTap,
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Stack(
+                          children: [
+                            const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+                            if (hasUnreadNotifications)
+                              Positioned(
+                                top: 0,
+                                right: 0,
+                                child: Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            
+            // Search Bar (Dawrat Style)
+            if (shrinkOffset < (maxExtent - minExtent) / 2)
+              Padding(
+                padding: const EdgeInsets.only(top: 15),
+                child: Hero(
+                  tag: 'search_bar_home',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        // Navigate to explore/search
+                      },
+                      borderRadius: BorderRadius.circular(15),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.search, color: Colors.white54, size: 20),
+                            const SizedBox(width: 10),
+                            Text(
+                              t('search_placeholder') == 'search_placeholder' ? 'ابحث عن دورة...' : t('search_placeholder'),
+                              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => 140.0; // Dynamic height based on search bar
+
+  @override
+  double get minExtent => 90.0;
+
+  @override
+  bool shouldRebuild(covariant _HomeHeaderDelegate oldDelegate) {
+    return oldDelegate.userName != userName || 
+           oldDelegate.hasUnreadNotifications != hasUnreadNotifications;
   }
 }

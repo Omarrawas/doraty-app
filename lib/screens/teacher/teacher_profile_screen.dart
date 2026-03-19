@@ -3,9 +3,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/services/database_service.dart';
 import '../../models/course.dart';
 import '../../widgets/course_card.dart';
-import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/string_utils.dart';
 import '../../core/theme/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../../core/localization/locale_provider.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   final String teacherId;
@@ -25,7 +26,7 @@ class TeacherProfileScreen extends StatefulWidget {
   State<TeacherProfileScreen> createState() => _TeacherProfileScreenState();
 }
 
-class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
+class _TeacherProfileScreenState extends State<TeacherProfileScreen> with SingleTickerProviderStateMixin {
   final DatabaseService _databaseService = DatabaseService();
   List<Course> _teacherCourses = [];
   bool _isLoading = true;
@@ -34,10 +35,12 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
   String? _teacherBio;
   String? _teacherPhoto;
   String _teacherName = '';
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _teacherName = StringUtils.cleanTeacherName(widget.teacherName);
     _teacherPhoto = widget.teacherPhoto;
     _teacherBio = widget.bio;
@@ -45,9 +48,14 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     _loadTeacherCourses();
   }
 
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadTeacherData({bool forceRefresh = false}) async {
     try {
-      // Get complete teacher data from database
       final userData = await _databaseService.getUserById(widget.teacherId,
           forceRefresh: forceRefresh);
       if (mounted && userData != null) {
@@ -62,7 +70,6 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
       }
     } catch (e) {
       debugPrint('Error loading teacher data: $e');
-      // Keep using widget data if loading fails
     }
   }
 
@@ -96,35 +103,53 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool isRTL = Provider.of<LocaleProvider>(context).locale == 'ar';
+    
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: AppColors.getBackgroundGradient(context),
         ),
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refreshProfile,
-        color: AppColors.primaryPurple,
-        backgroundColor: Colors.white,
-        child: DynamicGradientBackground(
+        child: RefreshIndicator(
+          onRefresh: _refreshProfile,
+          color: AppColors.primaryPurple,
           child: _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white))
-              : SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(top: 80, bottom: 20),
-                  child: Column(
+              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              : NestedScrollView(
+                  headerSliverBuilder: (context, innerBoxIsScrolled) {
+                    return [
+                      // Header Section
+                      SliverToBoxAdapter(
+                        child: _buildHeader(context, isRTL),
+                      ),
+                      
+                      // Tab Bar
+                      SliverPersistentHeader(
+                        pinned: true,
+                        delegate: _SliverAppBarDelegate(
+                          TabBar(
+                            controller: _tabController,
+                            indicatorColor: AppColors.primaryPurple,
+                            indicatorWeight: 3,
+                            labelColor: Colors.white,
+                            unselectedLabelColor: Colors.white.withOpacity(0.5),
+                            tabs: [
+                              Tab(text: isRTL ? 'الرئيسية' : 'Home'),
+                              Tab(text: isRTL ? 'الدورات' : 'Courses'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ];
+                  },
+                  body: TabBarView(
+                    controller: _tabController,
                     children: [
-                      // Teacher Info
-                      _buildTeacherInfo(),
-                      const SizedBox(height: 30),
-
-                      // Courses
-                      _buildCoursesList(),
+                      // Bio/About Section
+                      _buildBioSection(isRTL),
+                      
+                      // Courses Section
+                      _buildCoursesGrid(context),
                     ],
                   ),
                 ),
@@ -133,135 +158,178 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> {
     );
   }
 
-  Widget _buildTeacherInfo() {
-    return Column(
-      children: [
-        // Avatar
-        Container(
-          width: 120,
-          height: 120,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 3),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.2),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+  Widget _buildHeader(BuildContext context, bool isRTL) {
+    final topPadding = MediaQuery.of(context).padding.top;
+    
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, topPadding + 10, 20, 30),
+      child: Column(
+        children: [
+          // Custom Back Button
+          Align(
+            alignment: isRTL ? Alignment.centerRight : Alignment.centerLeft,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+          
+          // Avatar
+          Container(
+            width: 110,
+            height: 110,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withOpacity(0.2), width: 4),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: _teacherPhoto != null && _teacherPhoto!.isNotEmpty
+                  ? CachedNetworkImage(
+                      imageUrl: _teacherPhoto!,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(color: Colors.white10),
+                      errorWidget: (context, url, error) => Image.network(
+                        'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_teacherName)}&background=random&color=fff&size=200',
+                      ),
+                    )
+                  : Image.network(
+                      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_teacherName)}&background=random&color=fff&size=200',
+                    ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // Name & Type
+          Text(
+            _teacherName,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            isRTL ? 'مدرب' : 'Trainer',
+            style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6), fontWeight: FontWeight.w500),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Stats Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildStatItem(
+                isRTL ? 'دورة' : 'Courses',
+                _teacherCourses.length.toString(),
+                Icons.library_books_outlined,
+              ),
+              const SizedBox(width: 40),
+              _buildStatItem(
+                isRTL ? 'طالب' : 'Students',
+                '1.2k+', // Placeholder or load from DB if available
+                Icons.people_outline_rounded,
               ),
             ],
           ),
-          child: ClipOval(
-            child: _teacherPhoto != null && _teacherPhoto!.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: _teacherPhoto!,
-                    fit: BoxFit.cover,
-                    placeholder: (context, url) => Container(
-                      color: Colors.grey[300],
-                      child: const Center(
-                          child: CircularProgressIndicator(strokeWidth: 2)),
-                    ),
-                    errorWidget: (context, url, error) => Image.network(
-                      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_teacherName)}&background=random&color=fff&size=200',
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                : Image.network(
-                    'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_teacherName)}&background=random&color=fff&size=200',
-                    fit: BoxFit.cover,
-                  ),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Name
-        Text(
-          _teacherName,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-
-        const SizedBox(height: 8),
-
-        // Bio
-        if (_teacherBio != null && _teacherBio!.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(
-              _teacherBio!,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 15,
-                height: 1.5,
-              ),
-            ),
-          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: AppColors.primaryPurple, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
+        ),
       ],
     );
   }
 
-  Widget _buildCoursesList() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final int crossAxisCount = screenWidth > 900 ? 3 : (screenWidth > 600 ? 2 : 2); // 2 on mobile
-    final double childAspectRatio = screenWidth > 900 ? 0.8 : (screenWidth > 600 ? 0.75 : 0.65); // Adjusted for 2 columns
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            children: [
-              const Icon(Icons.library_books, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Text(
-                'دورات المدرس (${_teacherCourses.length})',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ],
+  Widget _buildBioSection(bool isRTL) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+      child: Column(
+        crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(
+            isRTL ? 'نبذة عن المدرب' : 'About the Trainer',
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
           ),
-        ),
-        const SizedBox(height: 16),
-        if (_teacherCourses.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(40),
-            child: Center(
-              child: Text(
-                'لا توجد دورات متاحة حالياً',
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          )
-        else
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            itemCount: _teacherCourses.length,
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: crossAxisCount,
-              childAspectRatio: childAspectRatio,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 20,
-            ),
-            itemBuilder: (context, index) {
-              return CourseCard(course: _teacherCourses[index]);
-            },
+          const SizedBox(height: 16),
+          Text(
+            _teacherBio ?? (isRTL ? 'لا توجد نبذة متاحة حالياً.' : 'No bio available at the moment.'),
+            style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.8), height: 1.6),
+            textAlign: isRTL ? TextAlign.right : TextAlign.left,
           ),
-      ],
+        ],
+      ),
     );
+  }
+
+  Widget _buildCoursesGrid(BuildContext context) {
+    if (_teacherCourses.isEmpty) {
+      return Center(
+        child: Text(
+          Provider.of<LocaleProvider>(context).locale == 'ar' ? 'لا توجد دورات متاحة' : 'No courses available',
+          style: const TextStyle(color: Colors.white54),
+        ),
+      );
+    }
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final int crossAxisCount = screenWidth > 600 ? 3 : 2;
+    final double childAspectRatio = screenWidth > 600 ? 0.75 : 0.68;
+
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+      itemCount: _teacherCourses.length,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        childAspectRatio: childAspectRatio,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 20,
+      ),
+      itemBuilder: (context, index) {
+        return CourseCard(course: _teacherCourses[index]);
+      },
+    );
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate(this._tabBar);
+
+  final TabBar _tabBar;
+
+  @override
+  double get minExtent => _tabBar.preferredSize.height;
+  @override
+  double get maxExtent => _tabBar.preferredSize.height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return Container(
+      color: const Color(0xFF1E1E2C).withOpacity(0.9), // Match theme or use blurring
+      child: _tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverAppBarDelegate oldDelegate) {
+    return false;
   }
 }
