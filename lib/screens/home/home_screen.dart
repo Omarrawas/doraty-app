@@ -344,10 +344,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 // Loading State (Shimmer)
-                if (_isLoading)
+                if (_isLoading && _allCourses.isEmpty)
                   SliverToBoxAdapter(child: _buildShimmerLoading()),
 
-                if (!_isLoading) ...[
+                if (!_isLoading || _allCourses.isNotEmpty) ...[
                   // 1. Top Banner (Carousel)
                   SliverToBoxAdapter(child: _buildBannerCarousel()),
 

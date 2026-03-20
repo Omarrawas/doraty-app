@@ -32,7 +32,9 @@ class Tip {
       courseId: json['course_id'],
       instructorId: json['instructor_id'],
       viewsCount: json['views_count'] ?? 0,
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: json['created_at'] != null 
+          ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
+          : DateTime.now(),
       linkedCourse: json['courses'] != null ? Course.fromJson(json['courses']) : null,
     );
   }

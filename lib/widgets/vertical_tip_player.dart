@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../models/tip.dart';
 import '../../core/theme/app_colors.dart';
 import 'course_preview_modal.dart';
@@ -72,22 +73,47 @@ class TipPlayerItem extends StatefulWidget {
 }
 
 class _TipPlayerItemState extends State<TipPlayerItem> {
-  late VideoPlayerController _controller;
+  VideoPlayerController? _videoController;
+  YoutubePlayerController? _youtubeController;
   bool _isInitialized = false;
+  bool _isYouTube = false;
 
   @override
   void initState() {
     super.initState();
+    _isYouTube = widget.tip.videoUrl.contains('youtube.com') || 
+                 widget.tip.videoUrl.contains('youtu.be') ||
+                 widget.tip.videoUrl.contains('shorts');
     _initializePlayer();
   }
 
   Future<void> _initializePlayer() async {
-    _controller = VideoPlayerController.networkUrl(Uri.parse(widget.tip.videoUrl));
+    if (_isYouTube) {
+      final videoId = YoutubePlayer.convertUrlToId(widget.tip.videoUrl);
+      if (videoId != null) {
+        _youtubeController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: false,
+            loop: true,
+            mute: false,
+            hideControls: true,
+          ),
+        );
+        if (widget.isActive) {
+          _youtubeController!.play();
+        }
+        setState(() => _isInitialized = true);
+        return;
+      }
+    }
+
+    _videoController = VideoPlayerController.networkUrl(Uri.parse(widget.tip.videoUrl));
     try {
-      await _controller.initialize();
-      _controller.setLooping(true);
+      await _videoController!.initialize();
+      _videoController!.setLooping(true);
       if (widget.isActive) {
-        _controller.play();
+        _videoController!.play();
       }
       setState(() => _isInitialized = true);
     } catch (e) {
@@ -99,15 +125,16 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
   void didUpdateWidget(TipPlayerItem oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isActive && !oldWidget.isActive) {
-      _controller.play();
+      _isYouTube ? _youtubeController?.play() : _videoController?.play();
     } else if (!widget.isActive && oldWidget.isActive) {
-      _controller.pause();
+      _isYouTube ? _youtubeController?.pause() : _videoController?.pause();
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _videoController?.dispose();
+    _youtubeController?.dispose();
     super.dispose();
   }
 
@@ -121,21 +148,31 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
           GestureDetector(
             onTap: () {
               setState(() {
-                _controller.value.isPlaying ? _controller.pause() : _controller.play();
+                if (_isYouTube) {
+                  _youtubeController!.value.isPlaying ? _youtubeController!.pause() : _youtubeController!.play();
+                } else {
+                  _videoController!.value.isPlaying ? _videoController!.pause() : _videoController!.play();
+                }
               });
             },
             child: Center(
-              child: AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
-                child: VideoPlayer(_controller),
-              ),
+              child: _isYouTube 
+                ? YoutubePlayer(
+                    controller: _youtubeController!,
+                    showVideoProgressIndicator: true,
+                    progressIndicatorColor: AppColors.primaryPurple,
+                  )
+                : AspectRatio(
+                    aspectRatio: _videoController!.value.aspectRatio,
+                    child: VideoPlayer(_videoController!),
+                  ),
             ),
           )
         else
           const Center(child: CircularProgressIndicator(color: Colors.white)),
 
         // Play/Pause Icon Overlay
-        if (_isInitialized && !_controller.value.isPlaying)
+        if (_isInitialized && !(_isYouTube ? _youtubeController!.value.isPlaying : _videoController!.value.isPlaying))
           const Center(
             child: Icon(Icons.play_arrow, size: 80, color: Colors.white54),
           ),
@@ -197,11 +234,15 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
               ),
               const SizedBox(height: 20),
               _buildSideAction(
-                icon: _controller.value.volume == 0 ? Icons.volume_off : Icons.volume_up,
+                icon: (_isYouTube ? (_youtubeController?.value.volume ?? 100) == 0 : (_videoController?.value.volume ?? 1.0) == 0) ? Icons.volume_off : Icons.volume_up,
                 label: 'كتم',
                 onTap: () {
                   setState(() {
-                    _controller.setVolume(_controller.value.volume == 0 ? 1.0 : 0.0);
+                    if (_isYouTube) {
+                      _youtubeController!.value.volume == 0 ? _youtubeController!.unMute() : _youtubeController!.mute();
+                    } else {
+                      _videoController!.setVolume(_videoController!.value.volume == 0 ? 1.0 : 0.0);
+                    }
                   });
                 },
               ),
