@@ -149,35 +149,35 @@ class LocalDatabase {
     // Direct match check - fastest
     if (data is T) return data;
 
-    // Use runtimeType.toString() for T since it's a type parameter
-    debugPrint('🔎 LocalDatabase: Casting ${data.runtimeType} to $T');
+    // Use runtimeType.toString() for logging
+    debugPrint('🔎 LocalDatabase: SafeCast conversion needed. Input: ${data.runtimeType}, Target: $T');
 
     try {
       // 1. Check for List/Iterable types
       if (data is Iterable) {
         final list = data.toList();
         
-        // If T expects a List of Maps (common in Supabase responses)
-        if (const <Map<String, dynamic>>[] is T || 
-            const <Map<dynamic, dynamic>>[] is T ||
-            const <Map>[] is T) {
-          
-          final mapped = list.map((item) => _deepConvert(item)).toList();
-          
-          if (mapped is T) return mapped as T;
-          return mapped.cast<Map<String, dynamic>>() as T;
+        // If T is List<Map<String, dynamic>> (Most common in Supabase results)
+        if (const <Map<String, dynamic>>[] is T) {
+          final List<Map<String, dynamic>> result = [];
+          for (final item in list) {
+            if (item is Map) {
+              result.add(Map<String, dynamic>.from(_deepConvert(item)));
+            } else {
+              result.add(<String, dynamic>{});
+            }
+          }
+          return result as T;
         }
 
-        // If T expects a List of Strings
+        // Specific List<String> conversion
         if (const <String>[] is T) {
-          final mapped = list.map((e) => e?.toString() ?? '').toList();
-          if (mapped is T) return mapped as T;
-          return mapped.cast<String>() as T;
+          return List<String>.from(list.map((e) => e?.toString() ?? '')) as T;
         }
 
-        // If T expects any generic List
+        // Generic List fallback
         if (const <dynamic>[] is T) {
-           return list as T;
+          return List<dynamic>.from(list) as T;
         }
       }
 
@@ -186,22 +186,22 @@ class LocalDatabase {
         final converted = _deepConvert(data);
         if (converted is T) return converted;
         
-        // Special case for T = Map<String, dynamic>
+        // Ensure result is Map<String, dynamic> if requested
         if (const <String, dynamic>{} is T) {
-          return converted as T;
+          return Map<String, dynamic>.from(converted) as T;
         }
       }
 
       // 3. Check for Set types
       if (data is Iterable && const <String>{} is T) {
-        return data.map((e) => e?.toString() ?? '').toSet() as T;
+        return Set<String>.from(data.map((e) => e?.toString() ?? '')) as T;
       }
 
       // Final attempt at direct cast
       return data as T;
     } catch (e) {
-      debugPrint('🚨 LocalDatabase SafeCast error - Target: $T, Data: ${data.runtimeType}: $e');
-      // If all else fails, attempt one last standard cast
+      debugPrint('🚨 LocalDatabase SafeCast Error - Target: $T, Current: ${data.runtimeType}: $e');
+      // If we are in debug mode, rethrow to catch logic issues
       try {
         return data as T;
       } catch (_) {
@@ -212,8 +212,14 @@ class LocalDatabase {
 
   /// Deeply converts Maps to `Map<String, dynamic>` and handles nested Lists
   static dynamic _deepConvert(dynamic input) {
+    if (input == null) return null;
+
     if (input is Map) {
-      return input.map((k, v) => MapEntry(k.toString(), _deepConvert(v)));
+      final Map<String, dynamic> result = {};
+      input.forEach((key, value) {
+        result[key.toString()] = _deepConvert(value);
+      });
+      return result;
     } else if (input is List) {
       return input.map((e) => _deepConvert(e)).toList();
     }

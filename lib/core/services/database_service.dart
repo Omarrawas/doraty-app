@@ -515,7 +515,7 @@ class DatabaseService {
               user['avatar_url'] ?? course['instructor_photo'];
         }
         return course;
-      }).toList();
+      }).toList().cast<Map<String, dynamic>>();
     } catch (e) {
       debugPrint('Error searching courses: $e');
       rethrow;
@@ -622,7 +622,7 @@ class DatabaseService {
               'exam_count': examCount,
               'revenue': courseRevenue,
             };
-          }).toList();
+          }).toList().cast<Map<String, dynamic>>();
         } catch (e) {
           debugPrint('Error in getTeacherCourses: $e');
           rethrow;
@@ -793,7 +793,7 @@ class DatabaseService {
             }
 
             return course;
-          }).toList();
+          }).toList().cast<Map<String, dynamic>>();
 
           return coursesMapList;
         } catch (e) {
@@ -2150,9 +2150,8 @@ class DatabaseService {
               .select('course_id')
               .eq('user_id', userId);
 
-          return (response as List)
-              .map((e) => e['course_id'] as String)
-              .toList();
+          return List<String>.from((response as List)
+              .map((e) => e['course_id'] as String));
         },
       );
 
@@ -3302,7 +3301,7 @@ class DatabaseService {
                 'subjects': t['subjects'],
               }
             };
-          }).toList();
+          }).toList().cast<Map<String, dynamic>>();
         } catch (e) {
           // Fallback to old method if RPC not exists (though it will fail for students due to RLS)
           try {
@@ -4790,7 +4789,7 @@ class DatabaseService {
                   user['avatar_url'] ?? course['instructor_photo'];
             }
             return course;
-          }).toList();
+          }).toList().cast<Map<String, dynamic>>();
         } catch (e) {
           debugPrint('Error fetching featured courses: $e');
           return [];
