@@ -85,11 +85,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
     // Filter by category
     if (_selectedCategoryId != null) {
-      filtered = filtered.where((course) {
-        // Check if the course belongs to this category via category IDs
-        if (course.categoryIds.contains(_selectedCategoryId)) return true;
+      // Find all subcategories for the selected category
+      final subCatIds = _categories
+          .where((c) => c.parentId == _selectedCategoryId)
+          .map((c) => c.id)
+          .toList();
 
-        // Also check the category names against the selected category model
+      filtered = filtered.where((course) {
+        // Check if the course belongs to this category or its subcategories via category IDs
+        if (course.categoryIds.contains(_selectedCategoryId)) return true;
+        
+        // Also check if the course belongs to any subcategory of the selected one
+        if (course.categoryIds.any((cid) => subCatIds.contains(cid))) return true;
+
+        // Also check the category names against the selected category model (fallback)
         final selectedCat =
             _categories.where((c) => c.id == _selectedCategoryId).firstOrNull;
         if (selectedCat != null) {

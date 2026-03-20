@@ -11,6 +11,7 @@ import '../teacher/teachers_list_screen.dart';
 import '../../models/category_model.dart';
 import '../explore/widgets/category_card.dart';
 import '../explore/explore_screen.dart';
+import '../categories/category_courses_screen.dart';
 import '../search/search_screen.dart';
 import '../packages/package_screen.dart';
 import '../packages/all_packages_screen.dart';
@@ -25,7 +26,6 @@ import 'package:provider/provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/services/auth_service.dart';
-import '../../core/services/supabase_service.dart';
 import '../../core/utils/string_utils.dart';
 import '../../models/tip.dart';
 import '../../models/bundle.dart';
@@ -48,6 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Tip> _tips = [];
   List<Bundle> _bundles = [];
   bool _isLoading = true;
+  bool _isRefreshing = false;
   bool _hasUnreadNotifications = false;
 
   String _t(String key) => AppStrings.get(
@@ -79,27 +80,65 @@ class _HomeScreenState extends State<HomeScreen> {
       _refreshData(forceRefresh: false); // Reload from now-updated cache
     }
   }
-
   Future<void> _refreshData({bool forceRefresh = false}) async {
+    if (_isRefreshing) return;
+    setState(() => _isRefreshing = true);
+
     try {
-      if (forceRefresh) {
-        if (mounted) setState(() => _isLoading = true);
+      debugPrint('🔄 HomeScreen: Refreshing data (force: $forceRefresh)...');
+      
+      if (SyncService().isSyncing) {
+        debugPrint('⏳ Sync in progress, waiting for critical items...');
       }
 
-      await Future.wait([
-        _loadCourses(forceRefresh: forceRefresh),
-        _loadEnrolledCourses(),
-        _loadFeaturedBanner(forceRefresh: forceRefresh),
-        _loadTeachers(forceRefresh: forceRefresh),
-        _checkUnreadNotifications(),
-        _loadCategories(forceRefresh: forceRefresh),
-        _loadTips(forceRefresh: forceRefresh),
-        _loadBundles(forceRefresh: forceRefresh),
-      ]);
-    } catch (e) {
-      debugPrint('Error refreshing home data: $e');
+      // Load all data points in parallel with individual error catching
+      final List<Future> loaders = [
+        _loadTeachers(forceRefresh: forceRefresh).catchError((e) {
+          debugPrint('❌ HomeScreen: Error loading teachers: $e');
+          return null;
+        }),
+        _loadCategories(forceRefresh: forceRefresh).catchError((e) { // Renamed from _loadSubjects to _loadCategories
+          debugPrint('❌ HomeScreen: Error loading categories: $e');
+          return null;
+        }),
+        _loadCourses(forceRefresh: forceRefresh).catchError((e) {
+          debugPrint('❌ HomeScreen: Error loading courses: $e');
+          return null;
+        }),
+        _loadEnrolledCourses().catchError((e) {
+          debugPrint('❌ HomeScreen: Error loading enrolled courses: $e');
+          return null;
+        }),
+        _loadFeaturedBanner(forceRefresh: forceRefresh).catchError((e) { // Added back _loadFeaturedBanner
+          debugPrint('❌ HomeScreen: Error loading featured banner: $e');
+          return null;
+        }),
+        _loadTips(forceRefresh: forceRefresh).catchError((e) { // Added back _loadTips
+          debugPrint('❌ HomeScreen: Error loading tips: $e');
+          return null;
+        }),
+        _loadBundles(forceRefresh: forceRefresh).catchError((e) { // Added back _loadBundles
+          debugPrint('❌ HomeScreen: Error loading bundles: $e');
+          return null;
+        }),
+        _checkUnreadNotifications().catchError((e) { // Renamed from _loadUnreadNotifications to _checkUnreadNotifications
+          debugPrint('❌ HomeScreen: Error loading notifications: $e');
+          return null;
+        }),
+      ];
+
+      await Future.wait(loaders);
+      debugPrint('✅ HomeScreen: Data refresh complete');
+    } catch (e, stack) {
+      debugPrint('🚨 HomeScreen: Critical error in _refreshData: $e');
+      debugPrint('StackTrace: $stack');
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isRefreshing = false;
+        });
+      }
     }
   }
 
@@ -933,12 +972,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 return CategoryCard(
                   category: cat,
                   onTap: () {
-                    // Could navigate to ExploreScreen and pass the category.
-                    // For now, push ExploreScreen if it exists.
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ExploreScreen(),
+                        builder: (context) => CategoryCoursesScreen(category: cat),
                       ),
                     );
                   },

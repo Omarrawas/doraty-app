@@ -19,6 +19,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final DatabaseService _databaseService = DatabaseService();
   CategoryModel? _selectedCategory;
   double _minPrice = 0;
   double _maxPrice = 100000;
@@ -67,7 +68,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
   }
 
-  final DatabaseService _databaseService = DatabaseService();
+
   bool _isLoading = false;
 
   void _performSearch() async {
@@ -222,61 +223,67 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildSearchBar() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: TextField(
-            controller: _searchController,
-            textAlign: TextAlign.right,
-            style: const TextStyle(color: Colors.black87),
-            onSubmitted: (_) => _performSearch(),
-            decoration: InputDecoration(
-              hintText: 'ابحث عن الدورات والمواد',
-              hintStyle: const TextStyle(
-                color: Colors.black54,
-                fontSize: 15,
-              ),
-              prefixIcon: IconButton(
-                icon: const Icon(
-                  Icons.search,
-                  color: Colors.black54,
+    return Hero(
+      tag: 'search_bar_home',
+      child: Material(
+        color: Colors.transparent,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
                 ),
-                onPressed: _performSearch,
-              ),
-              suffixIcon: _searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.clear,
-                        color: Colors.black54,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          _searchController.clear();
-                          _searchResults.clear();
-                        });
-                      },
-                    )
-                  : null,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 16,
+            ),
+            child: TextField(
+              controller: _searchController,
+              textAlign: TextAlign.right,
+              style: const TextStyle(color: Colors.black87),
+              onSubmitted: (_) => _performSearch(),
+              decoration: InputDecoration(
+                hintText: 'ابحث عن الدورات والمواد',
+                hintStyle: const TextStyle(
+                  color: Colors.black54,
+                  fontSize: 15,
+                ),
+                prefixIcon: IconButton(
+                  icon: const Icon(
+                    Icons.search,
+                    color: Colors.black54,
+                  ),
+                  onPressed: _performSearch,
+                ),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(
+                          Icons.clear,
+                          color: Colors.black54,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchResults.clear();
+                          });
+                        },
+                      )
+                    : null,
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
               ),
             ),
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   Widget _buildFilterToggle() {

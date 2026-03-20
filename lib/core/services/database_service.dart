@@ -79,6 +79,20 @@ class DatabaseService {
     }
   }
 
+  /// Get subcategory IDs for a parent ID
+  Future<List<String>> getSubCategoryIds(String parentId) async {
+    try {
+      final response = await _client
+          .from('categories')
+          .select('id')
+          .eq('parent_id', parentId);
+      return (response as List).map((e) => e['id'] as String).toList();
+    } catch (e) {
+      debugPrint('Error getting subcategory IDs: $e');
+      return [];
+    }
+  }
+
   /// Create a new category
   Future<void> createCategory({
     required String name,
@@ -457,9 +471,12 @@ class DatabaseService {
 
       // Category Filter
       if (categoryId != null) {
-        // Search in course_category_junction
-        dbQuery = dbQuery.filter(
-            'course_category_junction.category_id', 'eq', categoryId);
+        final subCatIds = await getSubCategoryIds(categoryId);
+        if (subCatIds.isNotEmpty) {
+          dbQuery = dbQuery.inFilter('course_category_junction.category_id', [categoryId, ...subCatIds]);
+        } else {
+          dbQuery = dbQuery.filter('course_category_junction.category_id', 'eq', categoryId);
+        }
       } else if (category != null && category != 'الكل') {
         dbQuery = dbQuery.filter('category', 'eq', category);
       }
@@ -701,8 +718,12 @@ class DatabaseService {
           }
 
           if (categoryId != null) {
-            query = query.filter(
-                'course_category_junction.category_id', 'eq', categoryId);
+            final subCatIds = await getSubCategoryIds(categoryId);
+            if (subCatIds.isNotEmpty) {
+              query = query.inFilter('course_category_junction.category_id', [categoryId, ...subCatIds]);
+            } else {
+              query = query.filter('course_category_junction.category_id', 'eq', categoryId);
+            }
           } else if (category != null) {
             query = query.eq('category', category);
           }
