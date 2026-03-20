@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../models/course.dart';
 import '../../core/services/database_service.dart';
 import '../courses/course_details_screen.dart';
@@ -10,6 +11,7 @@ import '../teacher/teachers_list_screen.dart';
 import '../../models/category_model.dart';
 import '../explore/widgets/category_card.dart';
 import '../explore/explore_screen.dart';
+import '../search/search_screen.dart';
 import '../packages/package_screen.dart';
 import '../packages/all_packages_screen.dart';
 import '../tips/all_tips_screen.dart';
@@ -47,7 +49,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Bundle> _bundles = [];
   bool _isLoading = true;
   bool _hasUnreadNotifications = false;
-  Map<String, dynamic> _teacherStats = {};
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -57,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final Map<String, String> _enrollmentIds = {}; // courseId -> enrollmentId
 
   late PageController _bannerController;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentBannerPage = 0;
 
   @override
@@ -90,7 +92,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadFeaturedBanner(forceRefresh: forceRefresh),
         _loadTeachers(forceRefresh: forceRefresh),
         _checkUnreadNotifications(),
-        _loadTeacherStats(forceRefresh: forceRefresh),
         _loadCategories(forceRefresh: forceRefresh),
         _loadTips(forceRefresh: forceRefresh),
         _loadBundles(forceRefresh: forceRefresh),
@@ -274,53 +275,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadTeacherStats({bool forceRefresh = false}) async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) return;
-
-      // Access the profile from AuthService if available, otherwise fetch manually
-      final authService = Provider.of<AuthService>(context, listen: false);
-      String? userRole = authService.userProfile?['role'];
-
-      // If role is still null, we might need a small delay or fetch it once
-      if (userRole == null) {
-        final profile = await _databaseService.getUserProfile(userId);
-        userRole = profile['role'];
-      }
-
-      if (userRole == null) return;
-
-      Map<String, dynamic> stats = {};
-
-      if (userRole == 'admin' || userRole == 'super_admin') {
-        // Admin sees global stats
-        stats = await _databaseService.getSystemStatistics(forceRefresh: forceRefresh);
-      } else if (userRole == 'teacher') {
-        // Teacher sees only their stats
-        stats = await _databaseService.getTeacherStatistics(userId, forceRefresh: forceRefresh);
-      } else {
-        // Regular student doesn't see this section
-        if (mounted) setState(() => _teacherStats = {});
-        return;
-      }
-
-      if (mounted) {
-        setState(() {
-          _teacherStats = stats;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading stats in HomeScreen: $e');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWideScreen = screenWidth > 900;
 
     return Scaffold(
+      key: _scaffoldKey,
       drawer: HomeDrawer(categories: _categories),
       body: RefreshIndicator(
         onRefresh: () => _refreshData(forceRefresh: true),
@@ -338,7 +299,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     userName: Provider.of<AuthService>(context).userProfile?['full_name'] ?? Provider.of<AuthService>(context).userProfile?['name'],
                     hasUnreadNotifications: _hasUnreadNotifications,
                     t: _t,
-                    onMenuTap: () => Scaffold.of(context).openDrawer(),
+                    onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
                     onNotificationTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen())),
                   ),
                 ),
@@ -348,34 +309,37 @@ class _HomeScreenState extends State<HomeScreen> {
                   SliverToBoxAdapter(child: _buildShimmerLoading()),
 
                 if (!_isLoading) ...[
-                  // Teacher Performance Summary (Contextual)
-                  SliverToBoxAdapter(child: _buildTeacherQuickStats()),
+                  // 1. Top Banner (Carousel)
+                  SliverToBoxAdapter(child: _buildBannerCarousel()),
+
+                  // 2. Search Bar
+                  _buildSearchBar(),
+
+                  // 3. Ad Banner
+                  _buildAdBanner(),
 
                   // Continue Learning
                   SliverToBoxAdapter(child: _buildContinueLearning()),
 
-                  // Banner Carousel
-                  SliverToBoxAdapter(child: _buildBannerCarousel()),
-
-                  // Categories
+                  // 4. Categories
                   if (_categories.isNotEmpty) _buildCategoriesSection(),
 
-                  // New Courses
+                  // 5. New Courses
                   if (_allCourses.isNotEmpty) _buildNewCoursesSection(isWideScreen),
 
-                  // Most Watched
+                  // 6. Most Watched
                   if (_allCourses.isNotEmpty) _buildMostWatchedSection(isWideScreen),
 
-                  // Tips Section
+                  // 7. Tips Section
                   _buildTipsSection(),
 
-                  // Featured Packages
+                  // 8. Featured Packages
                   _buildPackagesSection(isWideScreen),
 
-                  // Recorded Courses
+                  // 9. Recorded Courses
                   if (_allCourses.isNotEmpty) _buildRecordedCoursesSection(isWideScreen),
 
-                  // Top Teachers
+                  // 10. Top Teachers
                   if (_filteredTeachers.isNotEmpty) ...[
                     _buildSectionHeader(_t('top_teachers'), () {
                       Navigator.push(
@@ -834,104 +798,100 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTeacherQuickStats() {
-    if (_teacherStats.isEmpty) return const SizedBox.shrink();
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                _t('performance_summary'),
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.normal,
-                  color: Colors.white,
+  Widget _buildSearchBar() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),
+        child: Hero(
+          tag: 'search_bar_home',
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const SearchScreen()),
+                );
+              },
+              borderRadius: BorderRadius.circular(15),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search, color: Colors.white54, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      _t('search_placeholder') == 'search_placeholder' ? 'ابحث عن دورة...' : _t('search_placeholder'),
+                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14),
+                    ),
+                  ],
                 ),
               ),
-              GestureDetector(
-                onTap: () {
-                  // Navigate to dashboard if needed
-                },
-                child: Icon(
-                  Icons.arrow_forward_ios,
-                  size: 14,
-                  color: Colors.white.withOpacity(0.5),
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 15),
-          Row(
-            children: [
-              _buildStatCard(
-                _t('total_revenue'),
-                '${_teacherStats['total_revenue'] ?? 0}',
-                Icons.account_balance_wallet_outlined,
-                Colors.greenAccent,
-              ),
-              const SizedBox(width: 15),
-              _buildStatCard(
-                _t('active_students'),
-                '${_teacherStats['total_users'] ?? 0}',
-                Icons.people_outline,
-                Colors.blueAccent,
-              ),
-              const SizedBox(width: 15),
-              _buildStatCard(
-                _t('courses_count'),
-                '${_teacherStats['total_courses'] ?? 0}',
-                Icons.book_outlined,
-                Colors.orangeAccent,
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Color accentColor) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.getGlassColor(context),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: accentColor.withOpacity(0.2),
-            width: 1,
+  Widget _buildAdBanner() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        child: Container(
+          height: 120, // Rectangular for ads
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.indigo.shade900, Colors.purple.shade900],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(20),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: accentColor, size: 20),
-            const SizedBox(height: 10),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Positioned(
+                right: -20,
+                top: -20,
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.white.withOpacity(0.05),
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 10,
-                color: Colors.white.withOpacity(0.6),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(15.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'إعلان ترويجي مميز', // Promo ad text
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'تحقق من أحدث العروض والخصومات الحصرية',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1377,19 +1337,13 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              userName != null ? '${t('welcome_with_name')} $userName 👋' : '${t('welcome')} 👋',
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              t('ready_to_learn'),
-                              style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.5)),
-                            ),
-                          ],
+                        child: Text(
+                          t('home'),
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ],
@@ -1401,12 +1355,15 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                   children: [
                     // Theme Toggle (Quick Access)
                     IconButton(
-                      icon: const Icon(Icons.light_mode_rounded, color: Colors.white, size: 20),
+                      icon: Icon(
+                        Provider.of<ThemeProvider>(context).isDarkMode 
+                            ? Icons.light_mode_rounded 
+                            : Icons.dark_mode_rounded, 
+                        color: Colors.white, 
+                        size: 20
+                      ),
                       onPressed: () {
-                        // Feedback for theme toggle (as per previous logic)
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('تغيير السمة متاح من القائمة الجانبية')),
-                        );
+                        Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
                       },
                     ),
                     const SizedBox(width: 8),
@@ -1440,41 +1397,6 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
               ],
             ),
             
-            // Search Bar (Dawrat Style)
-            if (shrinkOffset < (maxExtent - minExtent) / 2)
-              Padding(
-                padding: const EdgeInsets.only(top: 15),
-                child: Hero(
-                  tag: 'search_bar_home',
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        // Navigate to explore/search
-                      },
-                      borderRadius: BorderRadius.circular(15),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: Colors.white.withOpacity(0.1)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.search, color: Colors.white54, size: 20),
-                            const SizedBox(width: 10),
-                            Text(
-                              t('search_placeholder') == 'search_placeholder' ? 'ابحث عن دورة...' : t('search_placeholder'),
-                              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -1482,7 +1404,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   }
 
   @override
-  double get maxExtent => 140.0; // Dynamic height based on search bar
+  double get maxExtent => 90.0;
 
   @override
   double get minExtent => 90.0;

@@ -21,7 +21,7 @@ import 'core/services/offline_cache_service.dart';
 import 'core/services/settings_service.dart';
 import 'core/localization/locale_provider.dart';
 import 'core/services/local_database.dart';
-// import 'core/constants/app_strings.dart';
+import 'package:doraty/core/constants/app_strings.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 import 'models/offline_course.dart';
@@ -236,11 +236,16 @@ class _MainScreenState extends State<MainScreen> {
                         Icon(Icons.home, color: AppColors.primaryPurple),
                     label: Text('الرئيسية', style: TextStyle(fontSize: 12)),
                   ),
-                  const NavigationRailDestination(
-                    icon: Icon(Icons.manage_search_outlined),
+                  NavigationRailDestination(
+                    icon: const Icon(Icons.manage_search_outlined),
                     selectedIcon:
-                        Icon(Icons.search, color: AppColors.primaryPurple),
-                    label: Text('استكشف', style: TextStyle(fontSize: 12)),
+                        const Icon(Icons.search, color: AppColors.primaryPurple),
+                    label: Consumer<LocaleProvider>(
+                      builder: (context, localeProvider, _) => Text(
+                        AppStrings.get('search', localeProvider.locale),
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                    ),
                   ),
                   const NavigationRailDestination(
                     icon: Icon(Icons.lightbulb_outline),
@@ -248,11 +253,16 @@ class _MainScreenState extends State<MainScreen> {
                         Icon(Icons.lightbulb, color: AppColors.primaryPurple),
                     label: Text('نصائح', style: TextStyle(fontSize: 12)),
                   ),
-                  const NavigationRailDestination(
-                    icon: Icon(Icons.category_outlined),
+                  NavigationRailDestination(
+                    icon: const Icon(Icons.category_outlined),
                     selectedIcon:
-                        Icon(Icons.category, color: AppColors.primaryPurple),
-                    label: Text('الأقسام', style: TextStyle(fontSize: 12)),
+                        const Icon(Icons.category, color: AppColors.primaryPurple),
+                    label: Consumer<LocaleProvider>(
+                        builder: (context, localeProvider, _) => Text(
+                              AppStrings.get(
+                                  'categories_title', localeProvider.locale),
+                              style: const TextStyle(fontSize: 12),
+                            )),
                   ),
                   NavigationRailDestination(
                     icon: Consumer<AuthService>(

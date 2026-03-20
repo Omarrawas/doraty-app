@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
 import '../../models/course.dart';
+import '../../models/category_model.dart';
 import '../../widgets/course_card.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
@@ -18,25 +19,13 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _selectedSubject = 'الكل';
+  CategoryModel? _selectedCategory;
   double _minPrice = 0;
   double _maxPrice = 100000;
   double _minRating = 0;
   bool _showFilters = false;
 
-
-  final List<String> _subjects = [
-    'الكل',
-    'رياضيات',
-    'فيزياء',
-    'كيمياء',
-    'أحياء',
-    'لغة عربية',
-    'لغة إنجليزية',
-    'تاريخ',
-    'جغرافيا',
-  ];
-
+  List<CategoryModel> _categories = [];
   List<Course> _searchResults = [];
 
   Timer? _debounce;
@@ -45,6 +34,20 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    _loadCategories();
+  }
+
+  Future<void> _loadCategories() async {
+    try {
+      final data = await _databaseService.getCategories();
+      if (mounted) {
+        setState(() {
+          _categories = data.map((json) => CategoryModel.fromJson(json)).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading categories in SearchScreen: $e');
+    }
   }
 
   @override
@@ -76,7 +79,7 @@ class _SearchScreenState extends State<SearchScreen> {
       final query = _searchController.text.trim();
       final results = await _databaseService.searchCourses(
         query: query,
-        subject: _selectedSubject == 'الكل' ? null : _selectedSubject,
+        categoryId: _selectedCategory?.id,
         minPrice: _minPrice > 0 ? _minPrice : null,
         maxPrice: _maxPrice < 1000000 ? _maxPrice : null,
         minRating: _minRating > 0 ? _minRating : null,
@@ -377,18 +380,29 @@ class _SearchScreenState extends State<SearchScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _subjects.map((subject) {
-                  final isSelected = subject == _selectedSubject;
-                  return _buildFilterChip(
-                    label: subject,
-                    isSelected: isSelected,
+                children: [
+                  _buildFilterChip(
+                    label: 'الكل',
+                    isSelected: _selectedCategory == null,
                     onTap: () {
                       setState(() {
-                        _selectedSubject = subject;
+                        _selectedCategory = null;
                       });
                     },
-                  );
-                }).toList(),
+                  ),
+                  ..._categories.map((category) {
+                    final isSelected = category.id == _selectedCategory?.id;
+                    return _buildFilterChip(
+                      label: category.name,
+                      isSelected: isSelected,
+                      onTap: () {
+                        setState(() {
+                          _selectedCategory = category;
+                        });
+                      },
+                    );
+                  }),
+                ],
               ),
 
               const SizedBox(height: 20),
@@ -546,15 +560,123 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildEmptyState() {
+    if (_searchController.text.isEmpty) {
+      return SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 10),
+              const Text(
+                'تصفح حسب التصنيف',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _categories.isEmpty 
+                ? const Center(child: Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: CircularProgressIndicator(color: Colors.white70),
+                  ))
+                : GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 15,
+                  mainAxisSpacing: 15,
+                  childAspectRatio: 1.3,
+                ),
+                itemCount: _categories.length,
+                itemBuilder: (context, index) {
+                  final category = _categories[index];
+                  return _buildCategoryItem(category);
+                },
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
+        ),
+      );
+    }
+
     return ProfessionalEmptyState(
-      title:
-          _searchController.text.isEmpty ? 'ابحث عن الدورات' : 'لا توجد نتائج',
-      message: _searchController.text.isEmpty
-          ? 'استخدم شريط البحث أعلاه للعثور على الدورات التي تبحث عنها'
-          : 'لم نتمكن من العثور على أي دورات تطابق بحثك. حاول تغيير كلمات البحث أو الفلاتر.',
-      icon: _searchController.text.isEmpty
-          ? Icons.search_rounded
-          : Icons.search_off_rounded,
+      title: 'لا توجد نتائج',
+      message: 'لم نتمكن من العثور على أي دورات تطابق بحثك. حاول تغيير كلمات البحث أو الفلاتر.',
+      icon: Icons.search_off_rounded,
+    );
+  }
+
+  Widget _buildCategoryItem(CategoryModel category) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedCategory = category;
+          _showFilters = true; // Show filters to indicate selection
+        });
+        _performSearch();
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withOpacity(0.15),
+              Colors.white.withOpacity(0.05),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (category.iconUrl != null && category.iconUrl!.isNotEmpty)
+              Container(
+                 padding: const EdgeInsets.all(8),
+                 decoration: BoxDecoration(
+                   color: AppColors.primaryPurple.withOpacity(0.2),
+                   shape: BoxShape.circle,
+                 ),
+                 child: Icon(Icons.category, color: Colors.white, size: 24), // Placeholder if iconUrl is not image
+              )
+            else
+              Container(
+                 padding: const EdgeInsets.all(8),
+                 decoration: BoxDecoration(
+                   color: AppColors.primaryPurple.withOpacity(0.2),
+                   shape: BoxShape.circle,
+                 ),
+                 child: const Icon(Icons.category, color: Colors.white, size: 24),
+              ),
+            const SizedBox(height: 8),
+            Text(
+              category.name,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -14,6 +14,7 @@ import '../../settings/settings_screen.dart';
 import '../../admin/admin_dashboard_screen.dart';
 import '../../teacher/teacher_dashboard_screen.dart';
 import '../../profile/order_history_screen.dart';
+import '../../teacher/teachers_list_screen.dart';
 
 class HomeDrawer extends StatelessWidget {
   final List<CategoryModel> categories;
@@ -136,6 +137,16 @@ class HomeDrawer extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderHistoryScreen()));
+                  },
+                ),
+
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.people_outline,
+                  title: 'أبرز المعلمين',
+                  onTap: () {
+                    Navigator.pop(context);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const TeachersListScreen()));
                   },
                 ),
 
@@ -274,8 +285,7 @@ class HomeDrawer extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, Map<String, dynamic>? profile, bool isDark) {
-    final name = profile?['full_name'] ?? 'Guest User';
-    final email = profile?['email'] ?? 'guest@doraty.com';
+    final userName = profile?['full_name'] ?? profile?['name'];
     final photoUrl = profile?['photo_url'] ?? profile?['avatar_url'];
 
     return Container(
@@ -304,7 +314,7 @@ class HomeDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  name,
+                  userName != null ? '${_t(context, 'welcome_with_name')} $userName 👋' : '${_t(context, 'welcome')} 👋',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -314,7 +324,7 @@ class HomeDrawer extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  email,
+                  _t(context, 'ready_to_learn'),
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.8),
                     fontSize: 12,

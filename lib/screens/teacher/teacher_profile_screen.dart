@@ -35,6 +35,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
   String? _teacherBio;
   String? _teacherPhoto;
   String _teacherName = '';
+  Map<String, dynamic> _stats = {};
   late TabController _tabController;
 
   @override
@@ -46,6 +47,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
     _teacherBio = widget.bio;
     _loadTeacherData();
     _loadTeacherCourses();
+    _loadTeacherStats();
   }
 
   @override
@@ -94,10 +96,25 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
     }
   }
 
+  Future<void> _loadTeacherStats({bool forceRefresh = false}) async {
+    try {
+      final stats = await _databaseService.getTeacherStatistics(widget.teacherId,
+          forceRefresh: forceRefresh);
+      if (mounted) {
+        setState(() {
+          _stats = stats;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading teacher stats: $e');
+    }
+  }
+
   Future<void> _refreshProfile() async {
     await Future.wait([
       _loadTeacherData(forceRefresh: true),
       _loadTeacherCourses(forceRefresh: true),
+      _loadTeacherStats(forceRefresh: true),
     ]);
   }
 
@@ -232,7 +249,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
               const SizedBox(width: 40),
               _buildStatItem(
                 isRTL ? 'طالب' : 'Students',
-                '1.2k+', // Placeholder or load from DB if available
+                _formatNumber(_stats['total_users'] ?? 0),
                 Icons.people_outline_rounded,
               ),
             ],
@@ -240,6 +257,13 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
         ],
       ),
     );
+  }
+
+  String _formatNumber(int number) {
+    if (number >= 1000) {
+      return '${(number / 1000).toStringAsFixed(1)}k+';
+    }
+    return number.toString();
   }
 
   Widget _buildStatItem(String label, String value, IconData icon) {

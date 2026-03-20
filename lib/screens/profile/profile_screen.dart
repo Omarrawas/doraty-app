@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
@@ -14,6 +15,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
 import '../../core/utils/error_utils.dart';
 import '../../models/course.dart';
+import '../courses/course_details_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -27,9 +29,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Map<String, dynamic>? _userProfile;
   Map<String, dynamic> _stats = {};
-  int _selectedTabIndex = 0; // 0 for "متابعة", 1 for "تمت المشاهدة"
-  List<Course> _enrolledCourses = [];
-  bool _isCoursesLoading = false;
+  int _selectedTabIndex = 0; // 0 for "متابعة", 1 for "المكتملة"
+  List<Map<String, dynamic>> _enrolledData = [];
+  bool _isCoursesLoading = true;
+  bool _isEditing = false; // Added to toggle account info section
   
   // Profile editing data
   String? _userRole;
@@ -202,11 +205,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted) return;
     setState(() => _isCoursesLoading = true);
     try {
-      final coursesData = await _databaseService.getEnrolledCourses();
-      final courses = coursesData.map((c) => Course.fromJson(c)).toList();
+      final enrollments = await _databaseService.getEnrolledCoursesWithProgress();
       if (mounted) {
         setState(() {
-          _enrolledCourses = courses;
+          _enrolledData = enrollments;
           _isCoursesLoading = false;
         });
       }
@@ -248,13 +250,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         const SizedBox(height: 12),
                         OutlinedButton.icon(
                           onPressed: () {
-                            // Edit profile logic
+                            setState(() {
+                              _isEditing = !_isEditing;
+                            });
                           },
-                          icon: const Icon(Icons.edit_outlined, size: 18),
-                          label: const Text('تعديل الحساب'),
+                          icon: Icon(_isEditing ? Icons.check_circle_outline : Icons.edit_outlined, 
+                            size: 18, 
+                            color: _isEditing ? Colors.greenAccent : Colors.white
+                          ),
+                          label: Text(_isEditing ? 'تم' : 'تعديل الحساب',
+                            style: TextStyle(color: _isEditing ? Colors.greenAccent : Colors.white),
+                          ),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: BorderSide(color: Colors.white.withOpacity(0.3)),
+                            foregroundColor: _isEditing ? Colors.greenAccent : Colors.white,
+                            side: BorderSide(color: _isEditing ? Colors.greenAccent.withOpacity(0.5) : Colors.white.withOpacity(0.3)),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
@@ -285,8 +294,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       
                       const SizedBox(height: 10),
                       
-                      // Profile Sections
-                      _buildSectionTitle('معلومات الحساب'),
+                      if (_isEditing) ...[
+                        // Profile Sections
+                        _buildSectionTitle('معلومات الحساب'),
                         _buildSettingCard(
                           icon: Icons.person_outline,
                           title: 'الاسم الكامل',
@@ -340,6 +350,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             onTap: _showBioDialog,
                           ),
                         ],
+                      ],
 
 
                         const SizedBox(height: 30),
@@ -679,7 +690,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () => setState(() => _selectedTabIndex = 0),
                       child: Center(
                         child: Text(
-                          'متابعة',
+                          _t('current'), // "متابعة"
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -694,7 +705,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       onTap: () => setState(() => _selectedTabIndex = 1),
                       child: Center(
                         child: Text(
-                          'تمت المشاهدة',
+                          _t('completed_status'), // "المكتملة"
                           style: TextStyle(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -890,11 +901,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 
   Widget _buildCoursesList() {
-    final filteredCourses = _selectedTabIndex == 0 
-        ? _enrolledCourses.where((c) => c.progress < 1.0).toList()
-        : _enrolledCourses.where((c) => c.progress >= 1.0).toList();
+    // Match My Courses logic: 100% progress means completed
+    final filteredData = _selectedTabIndex == 0 
+        ? _enrolledData.where((e) => (e['progress_percentage'] ?? 0) < 100).toList()
+        : _enrolledData.where((e) => (e['progress_percentage'] ?? 0) >= 100).toList();
 
-    if (filteredCourses.isEmpty) {
+    if (filteredData.isEmpty) {
       return Padding(
         padding: const EdgeInsets.only(top: 60),
         child: Column(
@@ -903,8 +915,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                  size: 64, color: Colors.white.withOpacity(0.1)),
             const SizedBox(height: 16),
             Text(
-              _selectedTabIndex == 0 ? 'لا توجد دورات قيد المتابعة حالياً' : 'لم تقم بإنهاء أي دورات بعد',
-              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14),
+              _selectedTabIndex == 0 ? 'لا توجد دورات حالية' : 'لا توجد دورات مكتملة',
+              style: const TextStyle(color: Colors.white70, fontSize: 16),
             ),
           ],
         ),
@@ -914,63 +926,127 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: filteredCourses.length,
+      itemCount: filteredData.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final course = filteredCourses[index];
-        return Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.05)),
-          ),
-          child: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  course.imageUrl ?? '',
-                  width: 90,
-                  height: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(color: Colors.grey[900], width: 90, height: 60, child: const Icon(Icons.image_not_supported, color: Colors.white24)),
-                ),
+        final enrollment = filteredData[index];
+        final courseJson = enrollment['courses'];
+        if (courseJson == null) return const SizedBox.shrink();
+        
+        final course = Course.fromJson(courseJson);
+        final progress = (enrollment['progress_percentage'] as num? ?? 0).toDouble() / 100;
+
+        return InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CourseDetailsScreen(course: course),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      course.title,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      course.instructorName,
-                      style: TextStyle(color: Colors.white60, fontSize: 12),
-                    ),
-                    if (_selectedTabIndex == 0) ...[
-                      const SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: LinearProgressIndicator(
-                          value: course.progress,
-                          backgroundColor: Colors.white10,
-                          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
-                          minHeight: 4,
+            );
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.05)),
+            ),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CachedNetworkImage(
+                    imageUrl: course.imageUrl ?? '',
+                    width: 90,
+                    height: 60,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => Container(
+                      width: 90,
+                      height: 60,
+                      color: Colors.white10,
+                      child: const Center(
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
+                          ),
                         ),
                       ),
-                    ],
-                  ],
+                    ),
+                    errorWidget: (context, url, error) => Container(
+                      width: 90,
+                      height: 60,
+                      color: Colors.white10,
+                      child: const Icon(Icons.image_not_supported, color: Colors.white24),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(Icons.arrow_forward_ios, color: Colors.white24, size: 14),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        course.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        course.instructorName,
+                        style: const TextStyle(
+                          color: Colors.white60,
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (_selectedTabIndex == 0) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(2),
+                                child: LinearProgressIndicator(
+                                  value: progress,
+                                  backgroundColor: Colors.white10,
+                                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
+                                  minHeight: 4,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${(progress * 100).toInt()}%',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Icon(
+                  Icons.arrow_forward_ios,
+                  color: Colors.white24,
+                  size: 14,
+                ),
+              ],
+            ),
           ),
         );
       },
