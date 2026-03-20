@@ -750,11 +750,12 @@ class DatabaseService {
             }
 
             // Map categories from junction
-            final junction = course['course_category_junction'] as List?;
+            final rawJunction = course['course_category_junction'];
+            final junction = rawJunction is List ? rawJunction : null;
             if (junction != null) {
               final categories = junction
                   .map((j) {
-                    final cat = j['category'] as Map?;
+                    final cat = j is Map && j['category'] is Map ? j['category'] : null;
                     return cat?['name'] as String? ?? '';
                   })
                   .where((name) => name.isNotEmpty)
@@ -762,7 +763,7 @@ class DatabaseService {
 
               final categoriesEn = junction
                   .map((j) {
-                    final cat = j['category'] as Map?;
+                    final cat = j is Map && j['category'] is Map ? j['category'] : null;
                     return cat?['name_en'] as String? ?? '';
                   })
                   .where((name) => name.isNotEmpty)
@@ -770,7 +771,7 @@ class DatabaseService {
 
               final categoryIds = junction
                   .map((j) {
-                    final cat = j['category'] as Map?;
+                    final cat = j is Map && j['category'] is Map ? j['category'] : null;
                     return cat?['id'] as String? ?? '';
                   })
                   .where((id) => id.isNotEmpty)
@@ -787,9 +788,13 @@ class DatabaseService {
             }
 
             // Map tags
-            final tagsList = course['course_tags'] as List?;
+            final rawTags = course['course_tags'];
+            final tagsList = rawTags is List ? rawTags : null;
             if (tagsList != null) {
-              course['tags'] = tagsList.map((t) => t['tag'] as String).toList();
+              course['tags'] = tagsList
+                .map((t) => t is Map && t['tag'] is String ? t['tag'] as String : null)
+                .whereType<String>()
+                .toList();
             }
 
             return course;

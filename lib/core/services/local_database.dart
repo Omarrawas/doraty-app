@@ -149,6 +149,9 @@ class LocalDatabase {
     // Direct match check - fastest
     if (data is T) return data;
 
+    // Helper for complex type comparisons
+    bool isT<Target>() => Target == T;
+
     // Use runtimeType.toString() for logging
     debugPrint('🔎 LocalDatabase: SafeCast conversion needed. Input: ${data.runtimeType}, Target: $T');
 
@@ -158,7 +161,7 @@ class LocalDatabase {
         final list = data.toList();
         
         // If T is List<Map<String, dynamic>> (Most common in Supabase results)
-        if (const <Map<String, dynamic>>[] is T) {
+        if (isT<List<Map<String, dynamic>>>() || isT<List<Map<String, dynamic>>?>()) {
           final List<Map<String, dynamic>> result = [];
           for (final item in list) {
             if (item is Map) {
@@ -171,12 +174,12 @@ class LocalDatabase {
         }
 
         // Specific List<String> conversion
-        if (const <String>[] is T) {
+        if (isT<List<String>>() || isT<List<String>?>()) {
           return List<String>.from(list.map((e) => e?.toString() ?? '')) as T;
         }
 
         // Generic List fallback
-        if (const <dynamic>[] is T) {
+        if (isT<List<dynamic>>() || isT<List<dynamic>?>()) {
           return List<dynamic>.from(list) as T;
         }
       }
@@ -187,21 +190,22 @@ class LocalDatabase {
         if (converted is T) return converted;
         
         // Ensure result is Map<String, dynamic> if requested
-        if (const <String, dynamic>{} is T) {
+        if (isT<Map<String, dynamic>>() || isT<Map<String, dynamic>?>()) {
           return Map<String, dynamic>.from(converted) as T;
         }
       }
 
       // 3. Check for Set types
-      if (data is Iterable && const <String>{} is T) {
-        return Set<String>.from(data.map((e) => e?.toString() ?? '')) as T;
+      if (data is Iterable) {
+        if (isT<Set<String>>() || isT<Set<String>?>()) {
+          return Set<String>.from(data.map((e) => e?.toString() ?? '')) as T;
+        }
       }
 
       // Final attempt at direct cast
       return data as T;
     } catch (e) {
       debugPrint('🚨 LocalDatabase SafeCast Error - Target: $T, Current: ${data.runtimeType}: $e');
-      // If we are in debug mode, rethrow to catch logic issues
       try {
         return data as T;
       } catch (_) {
