@@ -153,71 +153,53 @@ class LocalDatabase {
     debugPrint('🔎 LocalDatabase: SafeCast conversion needed. Input: ${data.runtimeType}, Target: $T');
 
     try {
-      // Robust type comparison for Web
-      final targetType = T.toString().replaceAll(' ', '');
-      final isListMap = targetType.contains('List<Map<String,dynamic>>') || targetType.contains('List<Map<dynamic,dynamic>>');
-      final isListString = targetType.contains('List<String>');
-      final isSetString = targetType.contains('Set<String>') || targetType.contains('Set<dynamic>');
-      final isMapStringDynamic = targetType.contains('Map<String,dynamic>');
+      final targetType = T.toString().replaceAll(' ', '').toLowerCase();
+      final isList = targetType.contains('list');
+      final isMap = targetType.contains('map');
+      final isSet = targetType.contains('set');
 
-      // 1. Check for List/Iterable types
       if (data is Iterable) {
         final list = data.toList();
-        
-        // If T is List<Map<String, dynamic>> (Most common in Supabase results)
-        if (isListMap) {
-          final List<Map<String, dynamic>> result = [];
-          for (final item in list) {
-            if (item is Map) {
-              result.add(Map<String, dynamic>.from(_deepConvert(item)));
-            } else {
-              result.add(<String, dynamic>{});
+
+        // If target is some kind of List or Set
+        if (isList || isSet) {
+          // If it's likely a List<Map<...>>
+          if (targetType.contains('map')) {
+            final convertedList = list.map((item) {
+              if (item is Map) return _deepConvert(item);
+              return item;
+            }).toList();
+            
+            try {
+              return convertedList as T;
+            } catch (e) {
+              // Fallback to List<Map<String, dynamic>>
+              return List<Map<String, dynamic>>.from(convertedList.whereType<Map>()) as T;
             }
           }
-          return List<Map<String, dynamic>>.from(result) as T;
-        }
-
-        // Specific List<String> conversion
-        if (isListString) {
-          return List<String>.from(list.map((e) => e?.toString() ?? '')) as T;
-        }
-
-        // Specific Set<String> conversion
-        if (isSetString) {
-          return Set<String>.from(list.map((e) => e?.toString() ?? '')) as T;
-        }
-
-        // Generic List fallback
-        if (targetType.startsWith('List')) {
-          return List<dynamic>.from(list) as T;
+          
+          // Fallback for simple Lists/Sets
+          if (isSet) return Set.from(list) as T;
+          return List.from(list) as T;
         }
       }
 
-      // 2. Check for Map types
-      if (data is Map) {
+      if (data is Map && isMap) {
         final converted = _deepConvert(data);
-        if (converted is T) return converted;
-        
-        // Ensure result is Map<String, dynamic> if requested
-        if (isMapStringDynamic) {
+        try {
+          return converted as T;
+        } catch (e) {
           return Map<String, dynamic>.from(converted) as T;
         }
       }
 
       // Final attempt at direct cast
       return data as T;
-    } catch (e) {
-      debugPrint('🚨 LocalDatabase SafeCast Error - Target: $T, Current: ${data.runtimeType}: $e');
-      // If we are on web, try one last desperate cast or Return data as is if it might work
-      try {
-        return data as T;
-      } catch (_) {
-        // Last resort: if it's a list and we expect a list, just return the list
-        if (data is List && T.toString().startsWith('List')) {
-           return data as T;
-        }
-        rethrow;
-      }
+    } catch (e, stack) {
+      debugPrint('🚨 LocalDatabase SafeCast Error - Target: $T: $e');
+      debugPrint('$stack');
+      // Final desperate attempt: usually dynamic dispatch handles this if the types are compatible
+      return data as T;
     }
   }
 
@@ -228,11 +210,12 @@ class LocalDatabase {
     if (input is Map) {
       final Map<String, dynamic> result = {};
       input.forEach((key, value) {
-        result[key.toString()] = _deepConvert(value);
+        final k = key.toString();
+        result[k] = _deepConvert(value);
       });
       return result;
     } else if (input is List) {
-      return List<dynamic>.from(input.map((e) => _deepConvert(e)));
+      return input.map((e) => _deepConvert(e)).toList();
     }
     return input;
   }
