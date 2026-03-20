@@ -11,6 +11,37 @@ class Tip {
   final DateTime createdAt;
   final Course? linkedCourse; // Optional linked course object
 
+  String? get effectiveThumbnailUrl {
+    if (thumbnailUrl != null && thumbnailUrl!.isNotEmpty) return thumbnailUrl;
+    
+    // Auto-generate for YouTube
+    if (videoUrl.contains('youtube.com') || videoUrl.contains('youtu.be') || videoUrl.contains('shorts')) {
+      final videoId = _extractYoutubeId(videoUrl);
+      if (videoId != null) {
+        return 'https://img.youtube.com/vi/$videoId/maxresdefault.jpg';
+      }
+    }
+    return null;
+  }
+
+  String? _extractYoutubeId(String url) {
+    RegExp regExp = RegExp(
+        r'^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*');
+    var match = regExp.firstMatch(url);
+    if (match != null && match.group(7) != null && match.group(7)!.length == 11) {
+      return match.group(7);
+    }
+    
+    // Check for shorts
+    if (url.contains('/shorts/')) {
+      final parts = url.split('/shorts/');
+      if (parts.length > 1) {
+        return parts[1].split('?')[0].split('&')[0];
+      }
+    }
+    return null;
+  }
+
   Tip({
     required this.id,
     required this.title,

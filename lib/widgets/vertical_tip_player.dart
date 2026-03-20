@@ -176,10 +176,10 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
       fit: StackFit.expand,
       children: [
         // Background Thumbnail as placeholder
-        if (widget.tip.thumbnailUrl != null)
+        if (widget.tip.effectiveThumbnailUrl != null)
           Positioned.fill(
             child: Image.network(
-              widget.tip.thumbnailUrl!,
+              widget.tip.effectiveThumbnailUrl!,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => Container(color: Colors.black),
             ),

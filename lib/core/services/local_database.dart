@@ -144,77 +144,59 @@ class LocalDatabase {
   }
 
   static T _safeCast<T>(dynamic data) {
-    if (data == null) return data as T;
-    
-    // Direct match check - fastest
+    if (data == null) return null as T;
+
+    // 1. Direct type match - works for basic types even when minified
     if (data is T) return data;
 
-    // Use runtimeType.toString() for logging
-    debugPrint('🔎 LocalDatabase: SafeCast conversion needed. Input: ${data.runtimeType}, Target: $T');
+    // 2. Numeric conversions (int/double mix-ups)
+    if (data is num) {
+      if (T == double || T.toString().contains('double')) return data.toDouble() as T;
+      if (T == int || T.toString().contains('int')) return data.toInt() as T;
+    }
 
-    try {
-      final targetType = T.toString().replaceAll(' ', '').toLowerCase();
-      final isList = targetType.contains('list');
-      final isMap = targetType.contains('map');
-      final isSet = targetType.contains('set');
-
-      if (data is Iterable) {
-        final list = data.toList();
-
-        // If target is some kind of List or Set
-        if (isList || isSet) {
-          // If it's likely a List<Map<...>>
-          if (targetType.contains('map')) {
-            final convertedList = list.map((item) {
-              if (item is Map) return _deepConvert(item);
-              return item;
-            }).toList();
-            
-            try {
-              return convertedList as T;
-            } catch (e) {
-              // Fallback to List<Map<String, dynamic>>
-              return List<Map<String, dynamic>>.from(convertedList.whereType<Map>()) as T;
-            }
-          }
-          
-          // Fallback for simple Lists/Sets
-          if (isSet) return Set.from(list) as T;
-          return List.from(list) as T;
-        }
-      }
-
-      if (data is Map && isMap) {
+    // 3. Robust List/Map handling for minified environments
+    // If it's a collection, we try deep conversion followed by cast
+    if (data is Iterable || data is Map) {
+      try {
         final converted = _deepConvert(data);
-        try {
-          return converted as T;
-        } catch (e) {
-          return Map<String, dynamic>.from(converted) as T;
+        // We try to return the converted value as T
+        // In minified builds, this might still fail if T is very specific
+        return converted as T;
+      } catch (e) {
+        // Fallback: If it's a list and we still failed, try List.from
+        if (data is Iterable) {
+          try {
+            final list = data.toList();
+            return List<Map<String, dynamic>>.from(
+              list.map((e) => e is Map ? _deepConvert(e) : e)
+            ) as T;
+          } catch (_) {}
         }
       }
+    }
 
-      // Final attempt at direct cast
+    // 4. Final attempt at direct cast
+    try {
       return data as T;
-    } catch (e, stack) {
-      debugPrint('🚨 LocalDatabase SafeCast Error - Target: $T: $e');
-      debugPrint('$stack');
-      // Final desperate attempt: usually dynamic dispatch handles this if the types are compatible
-      return data as T;
+    } catch (e) {
+      debugPrint('🚨 LocalDatabase: SafeCast mismatch for type $T. Input: ${data.runtimeType}');
+      // Return as is - if T is dynamic/Object it works, else it throws here or at call site
+      return data;
     }
   }
 
-  /// Deeply converts Maps to `Map<String, dynamic>` and handles nested Lists
+  /// Recursively convert internal maps to `Map<String, dynamic>`
   static dynamic _deepConvert(dynamic input) {
     if (input == null) return null;
 
     if (input is Map) {
       final Map<String, dynamic> result = {};
       input.forEach((key, value) {
-        final k = key.toString();
-        result[k] = _deepConvert(value);
+        result[key.toString()] = _deepConvert(value);
       });
       return result;
-    } else if (input is List) {
+    } else if (input is Iterable) {
       return input.map((e) => _deepConvert(e)).toList();
     }
     return input;

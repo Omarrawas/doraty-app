@@ -19,6 +19,7 @@ import '../tips/all_tips_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../core/services/sync_service.dart';
+import '../../core/services/supabase_service.dart';
 import '../../widgets/course_card.dart';
 import 'widgets/home_drawer.dart';
 
@@ -82,56 +83,26 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Future<void> _refreshData({bool forceRefresh = false}) async {
     if (_isRefreshing) return;
-    setState(() => _isRefreshing = true);
+    if (mounted) setState(() => _isRefreshing = true);
 
     try {
       debugPrint('🔄 HomeScreen: Refreshing data (force: $forceRefresh)...');
       
-      if (SyncService().isSyncing) {
-        debugPrint('⏳ Sync in progress, waiting for critical items...');
-      }
-
       // Load all data points in parallel with individual error catching
-      final List<Future> loaders = [
-        _loadTeachers(forceRefresh: forceRefresh).catchError((e) {
-          debugPrint('❌ HomeScreen: Error loading teachers: $e');
-          return null;
-        }),
-        _loadCategories(forceRefresh: forceRefresh).catchError((e) { // Renamed from _loadSubjects to _loadCategories
-          debugPrint('❌ HomeScreen: Error loading categories: $e');
-          return null;
-        }),
-        _loadCourses(forceRefresh: forceRefresh).catchError((e) {
-          debugPrint('❌ HomeScreen: Error loading courses: $e');
-          return null;
-        }),
-        _loadEnrolledCourses().catchError((e) {
-          debugPrint('❌ HomeScreen: Error loading enrolled courses: $e');
-          return null;
-        }),
-        _loadFeaturedBanner(forceRefresh: forceRefresh).catchError((e) { // Added back _loadFeaturedBanner
-          debugPrint('❌ HomeScreen: Error loading featured banner: $e');
-          return null;
-        }),
-        _loadTips(forceRefresh: forceRefresh).catchError((e) { // Added back _loadTips
-          debugPrint('❌ HomeScreen: Error loading tips: $e');
-          return null;
-        }),
-        _loadBundles(forceRefresh: forceRefresh).catchError((e) { // Added back _loadBundles
-          debugPrint('❌ HomeScreen: Error loading bundles: $e');
-          return null;
-        }),
-        _checkUnreadNotifications().catchError((e) { // Renamed from _loadUnreadNotifications to _checkUnreadNotifications
-          debugPrint('❌ HomeScreen: Error loading notifications: $e');
-          return null;
-        }),
-      ];
-
-      await Future.wait(loaders);
+      await Future.wait([
+        _loadTeachers(forceRefresh: forceRefresh),
+        _loadCategories(forceRefresh: forceRefresh),
+        _loadCourses(forceRefresh: forceRefresh),
+        _loadEnrolledCourses(),
+        _loadFeaturedBanner(forceRefresh: forceRefresh),
+        _loadTips(forceRefresh: forceRefresh),
+        _loadBundles(forceRefresh: forceRefresh),
+        _checkUnreadNotifications(),
+      ]);
+      
       debugPrint('✅ HomeScreen: Data refresh complete');
-    } catch (e, stack) {
+    } catch (e) {
       debugPrint('🚨 HomeScreen: Critical error in _refreshData: $e');
-      debugPrint('StackTrace: $stack');
     } finally {
       if (mounted) {
         setState(() {
@@ -172,16 +143,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadTeachers({bool forceRefresh = false}) async {
     try {
-      final teachers =
-          await _databaseService.getAllTeachers(forceRefresh: forceRefresh);
+      final teachers = await _databaseService.getAllTeachers(forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
-          _allTeachers = teachers;
-          _filteredTeachers = _allTeachers; // Show all on home
+          _allTeachers = List<Map<String, dynamic>>.from(teachers);
+          _filteredTeachers = _allTeachers;
         });
       }
     } catch (e) {
-      debugPrint('Error loading teachers: $e');
+      debugPrint('❌ HomeScreen: Error loading teachers: $e');
     }
   }
 
@@ -274,24 +244,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadEnrollmentProgress() async {
     try {
-      final userId = _databaseService.supabaseClient.auth.currentUser?.id;
+      final userId = SupabaseService.instance.currentUserId;
       if (userId == null) return;
 
-      final enrollments =
-          await _databaseService.getUserEnrollmentsWithProgress(userId);
+      final enrollments = await _databaseService.getUserEnrollmentsWithProgress(userId);
 
       if (mounted) {
         setState(() {
           for (var enrollment in enrollments) {
-            final courseId = enrollment['course_id'];
-            _enrollmentProgress[courseId] =
-                (enrollment['progress_percentage'] ?? 0.0).toDouble();
-            _enrollmentIds[courseId] = enrollment['id'];
+            final courseId = (enrollment['course_id'] ?? enrollment['id'])?.toString();
+            if (courseId != null) {
+              _enrollmentProgress[courseId] = (enrollment['progress_percentage'] ?? 0.0).toDouble();
+              _enrollmentIds[courseId] = enrollment['id']?.toString() ?? '';
+            }
           }
         });
       }
     } catch (e) {
-      debugPrint('Error loading enrollment progress: $e');
+      debugPrint('❌ HomeScreen: Error loading enrollment progress: $e');
     }
   }
 
@@ -318,7 +288,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWideScreen = screenWidth > 900;
+    final authService = Provider.of<AuthService>(context);
 
+    // If we're on the white screen, it might be because the scaffold's body crashed.
+    // We add an ErrorWidget around any potentially risky areas.
     return Scaffold(
       key: _scaffoldKey,
       drawer: HomeDrawer(categories: _categories),
@@ -335,7 +308,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _HomeHeaderDelegate(
-                    userName: Provider.of<AuthService>(context).userProfile?['full_name'] ?? Provider.of<AuthService>(context).userProfile?['name'],
+                    userName: authService.userProfile?['full_name'] ?? authService.userProfile?['name'],
                     hasUnreadNotifications: _hasUnreadNotifications,
                     t: _t,
                     onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
@@ -414,6 +387,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ],
+                // Add padding at bottom
+                const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
               ],
             ),
           ),

@@ -107,9 +107,9 @@ class _AllTipsScreenState extends State<AllTipsScreen> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          image: tip.thumbnailUrl != null
+          image: tip.effectiveThumbnailUrl != null
               ? DecorationImage(
-                  image: NetworkImage(tip.thumbnailUrl!),
+                  image: NetworkImage(tip.effectiveThumbnailUrl!),
                   fit: BoxFit.cover,
                 )
               : null,
