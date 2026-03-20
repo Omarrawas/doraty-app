@@ -149,19 +149,23 @@ class LocalDatabase {
     // Direct match check - fastest
     if (data is T) return data;
 
-    // Helper for complex type comparisons
-    bool isT<Target>() => Target == T;
-
     // Use runtimeType.toString() for logging
     debugPrint('🔎 LocalDatabase: SafeCast conversion needed. Input: ${data.runtimeType}, Target: $T');
 
     try {
+      // Robust type comparison for Web
+      final targetType = T.toString().replaceAll(' ', '');
+      final isListMap = targetType.contains('List<Map<String,dynamic>>') || targetType.contains('List<Map<dynamic,dynamic>>');
+      final isListString = targetType.contains('List<String>');
+      final isSetString = targetType.contains('Set<String>') || targetType.contains('Set<dynamic>');
+      final isMapStringDynamic = targetType.contains('Map<String,dynamic>');
+
       // 1. Check for List/Iterable types
       if (data is Iterable) {
         final list = data.toList();
         
         // If T is List<Map<String, dynamic>> (Most common in Supabase results)
-        if (isT<List<Map<String, dynamic>>>() || isT<List<Map<String, dynamic>>?>()) {
+        if (isListMap) {
           final List<Map<String, dynamic>> result = [];
           for (final item in list) {
             if (item is Map) {
@@ -170,16 +174,21 @@ class LocalDatabase {
               result.add(<String, dynamic>{});
             }
           }
-          return result as T;
+          return List<Map<String, dynamic>>.from(result) as T;
         }
 
         // Specific List<String> conversion
-        if (isT<List<String>>() || isT<List<String>?>()) {
+        if (isListString) {
           return List<String>.from(list.map((e) => e?.toString() ?? '')) as T;
         }
 
+        // Specific Set<String> conversion
+        if (isSetString) {
+          return Set<String>.from(list.map((e) => e?.toString() ?? '')) as T;
+        }
+
         // Generic List fallback
-        if (isT<List<dynamic>>() || isT<List<dynamic>?>()) {
+        if (targetType.startsWith('List')) {
           return List<dynamic>.from(list) as T;
         }
       }
@@ -190,15 +199,8 @@ class LocalDatabase {
         if (converted is T) return converted;
         
         // Ensure result is Map<String, dynamic> if requested
-        if (isT<Map<String, dynamic>>() || isT<Map<String, dynamic>?>()) {
+        if (isMapStringDynamic) {
           return Map<String, dynamic>.from(converted) as T;
-        }
-      }
-
-      // 3. Check for Set types
-      if (data is Iterable) {
-        if (isT<Set<String>>() || isT<Set<String>?>()) {
-          return Set<String>.from(data.map((e) => e?.toString() ?? '')) as T;
         }
       }
 
@@ -206,9 +208,14 @@ class LocalDatabase {
       return data as T;
     } catch (e) {
       debugPrint('🚨 LocalDatabase SafeCast Error - Target: $T, Current: ${data.runtimeType}: $e');
+      // If we are on web, try one last desperate cast or Return data as is if it might work
       try {
         return data as T;
       } catch (_) {
+        // Last resort: if it's a list and we expect a list, just return the list
+        if (data is List && T.toString().startsWith('List')) {
+           return data as T;
+        }
         rethrow;
       }
     }
@@ -225,7 +232,7 @@ class LocalDatabase {
       });
       return result;
     } else if (input is List) {
-      return input.map((e) => _deepConvert(e)).toList();
+      return List<dynamic>.from(input.map((e) => _deepConvert(e)));
     }
     return input;
   }

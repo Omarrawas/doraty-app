@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:flutter/foundation.dart';
 import '../../models/tip.dart';
 import '../../core/theme/app_colors.dart';
 import 'course_preview_modal.dart';
+import 'lesson/youtube_player_web_windows.dart';
 
 class VerticalTipPlayer extends StatefulWidget {
   final List<Tip> tips;
@@ -91,24 +93,34 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
     if (_isYouTube) {
       final videoId = YoutubePlayer.convertUrlToId(widget.tip.videoUrl);
       if (videoId != null) {
-        _youtubeController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            loop: true,
-            mute: false,
-            hideControls: true,
-          ),
-        );
-        if (widget.isActive) {
-          _youtubeController!.play();
+        if (!kIsWeb && defaultTargetPlatform != TargetPlatform.windows) {
+          _youtubeController = YoutubePlayerController(
+            initialVideoId: videoId,
+            flags: const YoutubePlayerFlags(
+              autoPlay: false,
+              loop: true,
+              mute: false,
+              hideControls: true,
+            ),
+          );
+          if (widget.isActive) {
+            _youtubeController!.play();
+          }
         }
         setState(() => _isInitialized = true);
         return;
       }
     }
 
-    _videoController = VideoPlayerController.networkUrl(Uri.parse(widget.tip.videoUrl));
+    final String sanitizedUrl = _sanitizeUrl(widget.tip.videoUrl);
+    _videoController = VideoPlayerController.networkUrl(
+      Uri.parse(sanitizedUrl),
+      httpHeaders: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Referer': 'https://supabase.co',
+      },
+    );
+
     try {
       await _videoController!.initialize();
       _videoController!.setLooping(true);
@@ -119,6 +131,26 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
     } catch (e) {
       debugPrint('Error initializing video: $e');
     }
+  }
+
+  String _sanitizeUrl(String url) {
+    if (url.isEmpty) return url;
+    try {
+      if (url.contains('%')) return url;
+      final uri = Uri.parse(url);
+      final encodedUri = uri.replace(
+        path: _encodePath(uri.path),
+        queryParameters: uri.queryParameters.isNotEmpty ? uri.queryParameters : null,
+      );
+      return encodedUri.toString();
+    } catch (e) {
+      return url.replaceAll(' ', '%20');
+    }
+  }
+
+  String _encodePath(String path) {
+    if (path.isEmpty) return path;
+    return path.split('/').map((segment) => Uri.encodeComponent(segment)).join('/');
   }
 
   @override
@@ -143,13 +175,27 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
     return Stack(
       fit: StackFit.expand,
       children: [
+        // Background Thumbnail as placeholder
+        if (widget.tip.thumbnailUrl != null)
+          Positioned.fill(
+            child: Image.network(
+              widget.tip.thumbnailUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(color: Colors.black),
+            ),
+          )
+        else
+          Container(color: Colors.black),
+
         // Video Player
         if (_isInitialized)
           GestureDetector(
             onTap: () {
               setState(() {
                 if (_isYouTube) {
-                  _youtubeController!.value.isPlaying ? _youtubeController!.pause() : _youtubeController!.play();
+                  if (_youtubeController != null) {
+                    _youtubeController!.value.isPlaying ? _youtubeController!.pause() : _youtubeController!.play();
+                  }
                 } else {
                   _videoController!.value.isPlaying ? _videoController!.pause() : _videoController!.play();
                 }
@@ -157,11 +203,16 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
             },
             child: Center(
               child: _isYouTube 
-                ? YoutubePlayer(
-                    controller: _youtubeController!,
-                    showVideoProgressIndicator: true,
-                    progressIndicatorColor: AppColors.primaryPurple,
-                  )
+                ? (kIsWeb || defaultTargetPlatform == TargetPlatform.windows
+                    ? YoutubePlayerWebWindows(
+                        videoId: YoutubePlayer.convertUrlToId(widget.tip.videoUrl) ?? '',
+                        height: MediaQuery.of(context).size.height,
+                      )
+                    : YoutubePlayer(
+                        controller: _youtubeController!,
+                        showVideoProgressIndicator: true,
+                        progressIndicatorColor: AppColors.primaryPurple,
+                      ))
                 : AspectRatio(
                     aspectRatio: _videoController!.value.aspectRatio,
                     child: VideoPlayer(_videoController!),
