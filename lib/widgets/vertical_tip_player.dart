@@ -79,6 +79,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
   YoutubePlayerController? _youtubeController;
   bool _isInitialized = false;
   bool _isYouTube = false;
+  String? _extractedVideoId;
 
   @override
   void initState() {
@@ -90,26 +91,35 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
   }
 
   Future<void> _initializePlayer() async {
-    if (_isYouTube) {
-      final videoId = YoutubePlayer.convertUrlToId(widget.tip.videoUrl);
-      if (videoId != null) {
-        if (!kIsWeb && defaultTargetPlatform != TargetPlatform.windows) {
-          _youtubeController = YoutubePlayerController(
-            initialVideoId: videoId,
-            flags: const YoutubePlayerFlags(
-              autoPlay: false,
-              loop: true,
-              mute: false,
-              hideControls: true,
-            ),
-          );
-          if (widget.isActive) {
-            _youtubeController!.play();
-          }
-        }
-        setState(() => _isInitialized = true);
-        return;
+    String? videoId = YoutubePlayer.convertUrlToId(widget.tip.videoUrl);
+    
+    // Manual fallback for Shorts or if library fails
+    if (videoId == null && _isYouTube) {
+      final regExp = RegExp(
+        r'(?:youtube\.com\/shorts\/|youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})',
+        caseSensitive: false,
+      );
+      final match = regExp.firstMatch(widget.tip.videoUrl);
+      if (match != null && match.groupCount >= 1) {
+        videoId = match.group(1);
       }
+    }
+
+    if (_isYouTube && videoId != null) {
+      _extractedVideoId = videoId;
+      if (!kIsWeb && defaultTargetPlatform != TargetPlatform.windows) {
+        _youtubeController = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: true,
+            loop: true,
+            mute: false,
+            hideControls: true,
+          ),
+        );
+      }
+      if (mounted) setState(() => _isInitialized = true);
+      return;
     }
 
     final String sanitizedUrl = _sanitizeUrl(widget.tip.videoUrl);
@@ -122,14 +132,21 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
     );
 
     try {
+      if (sanitizedUrl.isEmpty) throw 'Empty URL';
       await _videoController!.initialize();
       _videoController!.setLooping(true);
       if (widget.isActive) {
         _videoController!.play();
       }
-      setState(() => _isInitialized = true);
+      if (mounted) setState(() => _isInitialized = true);
     } catch (e) {
       debugPrint('Error initializing video: $e');
+      if (mounted) {
+        setState(() {
+          _isInitialized = false;
+          // We could set an error flag here to show an error icon
+        });
+      }
     }
   }
 
@@ -205,7 +222,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
               child: _isYouTube 
                 ? (kIsWeb || defaultTargetPlatform == TargetPlatform.windows
                     ? YoutubePlayerWebWindows(
-                        videoId: YoutubePlayer.convertUrlToId(widget.tip.videoUrl) ?? '',
+                        videoId: _extractedVideoId ?? '',
                         height: MediaQuery.of(context).size.height,
                       )
                     : YoutubePlayer(
@@ -219,8 +236,30 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
                   ),
             ),
           )
-        else
-          const Center(child: CircularProgressIndicator(color: Colors.white)),
+        else if (!_isInitialized && (widget.tip.videoUrl.isNotEmpty))
+          const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: Colors.white),
+                SizedBox(height: 16),
+                Text('جاري التحميل...', style: TextStyle(color: Colors.white70)),
+              ],
+            ),
+          ),
+
+        // Error State
+        if (!_isInitialized && widget.tip.videoUrl.isEmpty)
+          const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, color: Colors.white70, size: 48),
+                SizedBox(height: 16),
+                Text('رابط الفيديو غير متاح', style: TextStyle(color: Colors.white70)),
+              ],
+            ),
+          ),
 
         // Play/Pause Icon Overlay
         if (_isInitialized && !(_isYouTube ? _youtubeController!.value.isPlaying : _videoController!.value.isPlaying))

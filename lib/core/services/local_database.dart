@@ -146,51 +146,72 @@ class LocalDatabase {
   static T _safeCast<T>(dynamic data) {
     if (data == null) return null as T;
 
-    // 1. Direct type match - works for basic types even when minified
+    // 1. Direct type match - works for basic types
     if (data is T) return data;
 
-    // 2. Numeric conversions (int/double mix-ups)
+    // 2. Numeric handling
     if (data is num) {
-      if (T == double || T.toString().contains('double')) return data.toDouble() as T;
-      if (T == int || T.toString().contains('int')) return data.toInt() as T;
+      final typeStr = T.toString().toLowerCase();
+      if (typeStr.contains('double')) return data.toDouble() as T;
+      if (typeStr.contains('int')) return data.toInt() as T;
     }
 
-    // 3. Robust List/Map handling for minified environments
-    // If it's a collection, we try deep conversion followed by cast
-    if (data is Iterable || data is Map) {
+    // 3. Collection conversion and casting (The major Web issue)
+    if (data is Iterable) {
+      // First, deep convert elements (recursive)
+      final List<dynamic> baseList = data.map((e) => _deepConvert(e)).toList();
+      
+      // Now, try to satisfy T by increasing specificity of the List container
+      // This is necessary because List<dynamic> cannot be cast to List<Map<...>>
+      
+      // Step A: Attempt direct cast of base list
+      try { return baseList as T; } catch (_) {}
+      
+      // Step B: Attempt cast to List<Map<String, dynamic>>
       try {
-        final converted = _deepConvert(data);
-        // We try to return the converted value as T
-        // In minified builds, this might still fail if T is very specific
-        return converted as T;
-      } catch (e) {
-        // Fallback: If it's a list and we still failed, try List.from
-        if (data is Iterable) {
-          try {
-            final list = data.toList();
-            return List<Map<String, dynamic>>.from(
-              list.map((e) => e is Map ? _deepConvert(e) : e)
-            ) as T;
-          } catch (_) {}
-        }
-      }
+        final mapList = List<Map<String, dynamic>>.from(
+          baseList.where((e) => e is Map).map((e) => Map<String, dynamic>.from(e as Map))
+        );
+        return mapList as T;
+      } catch (_) {}
+
+      // Step C: Attempt cast to List<String>
+      try {
+        final stringList = List<String>.from(baseList.map((e) => e.toString()));
+        return stringList as T;
+      } catch (_) {}
+
+      // Step D: Attempt cast to List<dynamic> (most generic)
+      try {
+        return List<dynamic>.from(baseList) as T;
+      } catch (_) {}
     }
 
-    // 4. Final attempt at direct cast
+    if (data is Map) {
+      final convertedMap = _deepConvert(data);
+      try { return convertedMap as T; } catch (_) {}
+      try { return Map<String, dynamic>.from(convertedMap) as T; } catch (_) {}
+    }
+
+    // 4. Final Fallback
     try {
       return data as T;
     } catch (e) {
-      debugPrint('🚨 LocalDatabase: SafeCast mismatch for type $T. Input: ${data.runtimeType}');
-      // Return as is - if T is dynamic/Object it works, else it throws here or at call site
-      return data;
+      debugPrint('⚠️ LocalDatabase: SafeCast failed for $T. Returning converted as dynamic.');
+      try {
+        return _deepConvert(data) as T;
+      } catch (_) {
+        return data as T; // Will likely throw but we've tried everything
+      }
     }
   }
 
-  /// Recursively convert internal maps to `Map<String, dynamic>`
+  /// Deeply converts Hive data to standard Dart types (Map<String, dynamic>, List, etc.)
   static dynamic _deepConvert(dynamic input) {
     if (input == null) return null;
 
     if (input is Map) {
+      // Hive often returns Map<dynamic, dynamic>
       final Map<String, dynamic> result = {};
       input.forEach((key, value) {
         result[key.toString()] = _deepConvert(value);
@@ -199,6 +220,8 @@ class LocalDatabase {
     } else if (input is Iterable) {
       return input.map((e) => _deepConvert(e)).toList();
     }
+    
+    // Basic types (String, num, bool) return as is
     return input;
   }
 }

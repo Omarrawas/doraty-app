@@ -1314,7 +1314,10 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     final double topPadding = MediaQuery.of(context).padding.top;
-    final double currentOpacity = (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
+    
+    // Safety check to avoid division by zero if maxExtent equals minExtent
+    final double range = maxExtent - minExtent;
+    final double currentOpacity = range <= 0 ? 1.0 : (shrinkOffset / range).clamp(0.0, 1.0);
 
     return Container(
       decoration: BoxDecoration(
