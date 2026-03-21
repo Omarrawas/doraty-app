@@ -22,6 +22,8 @@ import '../../core/services/sync_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../widgets/course_card.dart';
 import 'widgets/home_drawer.dart';
+import '../auth/login_screen.dart';
+import '../categories/subjects_screen.dart';
 
 import 'package:provider/provider.dart';
 import '../../core/constants/app_strings.dart';
@@ -535,7 +537,23 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
-  }  // Removed _buildHeader as it's replaced by _HomeHeaderDelegate
+  }
+
+  Widget _buildAvatarPlaceholder(String name) {
+    return Container(
+      color: AppColors.primaryPurple.withOpacity(0.2),
+      child: Center(
+        child: Text(
+          name.isNotEmpty ? name[0].toUpperCase() : '?',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
 
 
   Widget _buildContinueLearning() {
@@ -843,33 +861,40 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchBar() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 15),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Hero(
-          tag: 'search_bar_home',
+          tag: 'search_bar',
           child: Material(
             color: Colors.transparent,
             child: InkWell(
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SearchScreen()),
+                  PageRouteBuilder(
+                    pageBuilder: (context, animation, secondaryAnimation) =>
+                        const SearchScreen(),
+                    transitionsBuilder:
+                        (context, animation, secondaryAnimation, child) {
+                      return FadeTransition(opacity: animation, child: child);
+                    },
+                  ),
                 );
               },
               borderRadius: BorderRadius.circular(15),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  border: Border.all(color: Colors.white.withOpacity(0.2)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.search, color: Colors.white54, size: 20),
-                    const SizedBox(width: 10),
+                    const Icon(Icons.search, color: Colors.white70),
+                    const SizedBox(width: 12),
                     Text(
-                      _t('search_placeholder') == 'search_placeholder' ? 'ابحث عن دورة...' : _t('search_placeholder'),
-                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14),
+                      _t('search_hint'),
+                      style: const TextStyle(color: Colors.white70, fontSize: 16),
                     ),
                   ],
                 ),
@@ -883,102 +908,108 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildAdBanner() {
     return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        child: Container(
-          height: 120, // Rectangular for ads
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.indigo.shade900, Colors.purple.shade900],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      child: Container(
+        margin: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueAccent, Colors.purpleAccent.withOpacity(0.8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blueAccent.withOpacity(0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
             ),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Stack(
-            children: [
-              Positioned(
-                right: -20,
-                top: -20,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: Colors.white.withOpacity(0.05),
-                ),
-              ),
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'إعلان ترويجي مميز', // Promo ad text
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'تحقق من أحدث العروض والخصومات الحصرية',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _t('ad_banner_title'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _t('ad_banner_subtitle'),
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.9),
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AllPackagesScreen(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.blueAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      _t('view_plans_button'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 10),
+            Icon(Icons.stars_rounded, color: Colors.white.withOpacity(0.5), size: 80),
+          ],
         ),
       ),
     );
   }
-
-  Widget _buildAvatarPlaceholder(String name) {
-    return Image.network(
-      'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=random&color=fff',
-      fit: BoxFit.cover,
-    );
-  }
-
-  // --- New Sections ---
 
   Widget _buildCategoriesSection() {
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-            child: Text(
-              _t('categories') != 'categories' ? _t('categories') : 'الفئات', // Fallback
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.normal,
-                color: Colors.white,
-              ),
-            ),
-          ),
+          _buildSectionHeader(_t('categories_title'), () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SubjectsScreen(showBackButton: true)),
+            );
+          }),
           SizedBox(
-            height: 110,
+            height: 120,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
               itemBuilder: (context, index) {
-                final cat = _categories[index];
+                final category = _categories[index];
                 return CategoryCard(
-                  category: cat,
+                  category: category,
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => CategoryCoursesScreen(category: cat),
+                        builder: (context) => ExploreScreen(initialFilter: category.id),
                       ),
                     );
                   },
@@ -986,162 +1017,160 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-          const SizedBox(height: 10),
         ],
       ),
     );
   }
 
   Widget _buildNewCoursesSection(bool isWideScreen) {
-    // Assuming _allCourses are ordered by creation descending
-    final newCourses = _allCourses.take(10).toList();
-    if (newCourses.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-
-    return _buildCourseSection(
-      title: 'الدورات الجديدة', // _t('new_courses')
-      courses: newCourses,
-      isWideScreen: isWideScreen,
-      heroTagPrefix: 'new_course_',
-    );
-  }
-
-  Widget _buildMostWatchedSection(bool isWideScreen) {
-    // Sort all courses by studentsCount descending
-    final sortedCourses = List<Course>.from(_allCourses)
-      ..sort((a, b) => b.studentsCount.compareTo(a.studentsCount));
-    final mostWatched = sortedCourses.take(10).toList();
-
-    if (mostWatched.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
-
-    return _buildCourseSection(
-      title: 'الأكثر مشاهدة', // _t('most_watched')
-      courses: mostWatched,
-      isWideScreen: isWideScreen,
-      heroTagPrefix: 'watched_course_',
-    );
-  }
-
-  Widget _buildCourseSection({
-    required String title,
-    required List<Course> courses,
-    required bool isWideScreen,
-    required String heroTagPrefix,
-  }) {
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.normal,
-                color: Colors.white,
-              ),
+    // Sort by created_at descending
+    final newCourses = List<Course>.from(_allCourses);
+    newCourses.sort((a, b) {
+      if (a.createdAt == null) return 1;
+      if (b.createdAt == null) return -1;
+      return b.createdAt!.compareTo(a.createdAt!);
+    });
+    
+    return Column(
+      children: [
+        _buildSectionHeader(_t('new_courses'), () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ExploreScreen(initialFilter: 'newest'),
             ),
-          ),
-          SizedBox(
-            height: 280,
+          );
+        }),
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: isWideScreen ? 340 : 280,
             child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: courses.length,
+              itemCount: newCourses.take(6).length,
               itemBuilder: (context, index) {
                 return Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 16),
-                  child: SizedBox(
-                    width: 220,
-                    child: CourseCard(
-                      course: courses[index],
-                      heroTag: '$heroTagPrefix${courses[index].id}',
-                    ),
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: CourseCard(course: newCourses[index]),
                 );
               },
             ),
           ),
-          const SizedBox(height: 10),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  
+  Widget _buildMostWatchedSection(bool isWideScreen) {
+    // Sort by enrollment count if available, placeholder sort for now
+    final mostWatched = List<Course>.from(_allCourses);
+    mostWatched.shuffle(); // Placeholder logic
+    
+    return Column(
+      children: [
+        _buildSectionHeader(_t('most_watched'), () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ExploreScreen(initialFilter: 'popular'),
+            ),
+          );
+        }),
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: isWideScreen ? 340 : 280,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              scrollDirection: Axis.horizontal,
+              itemCount: mostWatched.take(6).length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: CourseCard(course: mostWatched[index]),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildRecordedCoursesSection(bool isWideScreen) {
-    // We just take some courses as a placeholder for recorded courses.
-    final recordedCourses = _allCourses.take(10).toList();
-    
+    final recordedCourses = _allCourses.where((c) => c.status == 'recorded').toList();
+    if (recordedCourses.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        _buildSectionHeader(_t('recorded_courses'), () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ExploreScreen(initialFilter: 'recorded'),
+            ),
+          );
+        }),
+        SliverToBoxAdapter(
+          child: SizedBox(
+            height: isWideScreen ? 340 : 280,
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
+              scrollDirection: Axis.horizontal,
+              itemCount: recordedCourses.take(6).length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: CourseCard(course: recordedCourses[index]),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTipsSection() {
+    if (_tips.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-            child: Text(
-              'دورات مسجلة',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.normal,
-                color: Colors.white,
-              ),
-            ),
-          ),
+          _buildSectionHeader(_t('learning_tips_title'), () {
+            Navigator.push(context, MaterialPageRoute(builder: (context) => const AllTipsScreen()));
+          }),
           SizedBox(
-            height: 280,
+            height: 200,
             child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              itemCount: recordedCourses.length + 1, // Include 'See All' card
+              itemCount: _tips.length,
               itemBuilder: (context, index) {
-                if (index == recordedCourses.length) {
-                  return GestureDetector(
+                final tip = _tips[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: GestureDetector(
                     onTap: () {
-                      // Navigate to ExploreScreen as requested
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ExploreScreen()));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => VerticalTipPlayer(tips: _tips, initialIndex: index),
+                        ),
+                      );
                     },
                     child: Container(
-                      width: 200,
-                      margin: const EdgeInsetsDirectional.only(start: 16),
+                      width: 140,
                       decoration: BoxDecoration(
-                        color: AppColors.getGlassColor(context).withOpacity(0.05),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.white12),
-                      ),
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppColors.primaryPurple.withOpacity(0.2),
-                              ),
-                              child: const Icon(Icons.arrow_forward_rounded, color: AppColors.primaryPurple, size: 40),
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'عرض جميع\nالدورات',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                        borderRadius: BorderRadius.circular(15),
+                        image: DecorationImage(
+                          image: CachedNetworkImageProvider(tip.thumbnailUrl ?? ''),
+                          fit: BoxFit.cover,
                         ),
                       ),
-                    ),
-                  );
-                }
-
-                return Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 16),
-                  child: SizedBox(
-                    width: 220,
-                    child: CourseCard(
-                      course: recordedCourses[index],
-                      heroTag: 'recorded_course_${recordedCourses[index].id}',
+                      child: Center(
+                        child: Icon(Icons.play_circle_fill, color: Colors.white.withOpacity(0.8), size: 40),
+                      ),
                     ),
                   ),
                 );
@@ -1154,171 +1183,98 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTipsSection() {
-    if (_tips.isEmpty) return const SizedBox.shrink();
-
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeader('نصائح دوراتي', () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const AllTipsScreen()));
-          }),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 220,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              scrollDirection: Axis.horizontal,
-              itemCount: _tips.length,
-              itemBuilder: (context, index) => _buildTipThumbnail(_tips[index], index),
-            ),
-          ),
-          const SizedBox(height: 30),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTipThumbnail(Tip tip, int index) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => VerticalTipPlayer(tips: _tips, initialIndex: index)));
-      },
-      child: Container(
-        width: 140,
-        margin: const EdgeInsetsDirectional.only(end: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          image: (tip.thumbnailUrl != null && tip.thumbnailUrl!.isNotEmpty)
-              ? DecorationImage(image: NetworkImage(tip.thumbnailUrl!), fit: BoxFit.cover)
-              : null,
-          color: Colors.white10,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            children: [
-              const Center(child: Icon(Icons.play_circle_outline, color: Colors.white70, size: 45)),
-              // View Count Badge
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: Colors.black45,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.visibility, color: Colors.white, size: 10),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${tip.viewsCount}',
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 12, left: 10, right: 10,
-                child: Text(tip.title, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildPackagesSection(bool isWideScreen) {
-    if (_bundles.isEmpty) return const SizedBox.shrink();
+    if (_bundles.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader('باقات دوراتي المميزة', () {
+          _buildSectionHeader(_t('bundles_title'), () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const AllPackagesScreen()));
           }),
-          const SizedBox(height: 12),
           SizedBox(
-            height: 150,
+            height: 180,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
               itemCount: _bundles.length,
               itemBuilder: (context, index) {
                 final bundle = _bundles[index];
-                return _buildBundleThumbnail(bundle);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PackageScreen(
+                            packageTitle: bundle.title,
+                            courses: bundle.courses,
+                            bundle: bundle,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 300,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primaryPurple.withOpacity(0.8),
+                            Colors.blueAccent.withOpacity(0.8),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            bundle.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            bundle.description ?? '',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.9),
+                              fontSize: 13,
+                            ),
+                          ),
+                          const Spacer(),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                '${bundle.price} ${_t('currency')}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const Icon(Icons.arrow_forward_rounded, color: Colors.white),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
               },
             ),
           ),
-          const SizedBox(height: 30),
+          const SizedBox(height: 20),
         ],
-      ),
-    );
-  }
-
-  Widget _buildBundleThumbnail(Bundle bundle) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PackageScreen(
-              packageTitle: bundle.title,
-              courses: bundle.courses,
-            ),
-          ),
-        );
-      },
-      child: Container(
-        width: 280,
-        margin: const EdgeInsetsDirectional.only(end: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: const LinearGradient(
-            colors: [Color(0xFF6A11CB), Color(0xFF2575FC)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                bundle.title,
-                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  const Icon(Icons.library_books, color: Colors.white70, size: 14),
-                  const SizedBox(width: 6),
-                  Text('${bundle.courses.length} دورات تدريبية', style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                ],
-              ),
-              const Spacer(),
-              Align(
-                alignment: AlignmentDirectional.bottomEnd,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
-                  child: const Text('عرض الباقة', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -1342,6 +1298,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     final double topPadding = MediaQuery.of(context).padding.top;
+    final authService = Provider.of<AuthService>(context);
     
     // Safety check to avoid division by zero if maxExtent equals minExtent
     final double range = maxExtent - minExtent;
@@ -1381,7 +1338,9 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          t('home'),
+                          authService.isAuthenticated 
+                            ? '${t('hello')}, ${userName ?? t('user')}'
+                            : t('home'),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -1393,48 +1352,66 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                   ),
                 ),
                 
-                // Theme Toggle & Notifications
+                // Theme Toggle & Notifications & Login
                 Row(
                   children: [
-                    // Theme Toggle (Quick Access)
-                    IconButton(
-                      icon: Icon(
-                        Provider.of<ThemeProvider>(context).isDarkMode 
-                            ? Icons.light_mode_rounded 
-                            : Icons.dark_mode_rounded, 
-                        color: Colors.white, 
-                        size: 20
-                      ),
-                      onPressed: () {
-                        Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
-                      },
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: onNotificationTap,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
+                    if (!authService.isAuthenticated)
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.primaryPurple.withOpacity(0.3),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: Stack(
-                          children: [
-                            const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
-                            if (hasUnreadNotifications)
-                              Positioned(
-                                top: 0,
-                                right: 0,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                        child: Text(t('login_title')),
+                      )
+                    else ...[
+                      // Theme Toggle (Quick Access)
+                      IconButton(
+                        icon: Icon(
+                          Provider.of<ThemeProvider>(context).isDarkMode 
+                              ? Icons.light_mode_rounded 
+                              : Icons.dark_mode_rounded, 
+                          color: Colors.white, 
+                          size: 20
+                        ),
+                        onPressed: () {
+                          Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: onNotificationTap,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Stack(
+                            children: [
+                              const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+                              if (hasUnreadNotifications)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                  ),
                                 ),
-                              ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ],

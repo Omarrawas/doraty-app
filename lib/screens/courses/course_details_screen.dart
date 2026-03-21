@@ -20,6 +20,8 @@ import '../../core/utils/error_utils.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
+import '../../core/services/auth_service.dart';
+import '../auth/login_screen.dart';
 
 
 
@@ -159,6 +161,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<void> _toggleFavorite() async {
+    if (!_checkAuthAndShowDialog()) return;
     try {
       final newStatus = await _databaseService.toggleFavorite(
         widget.course.id,
@@ -1199,6 +1202,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
   }
   Future<void> _handleEnrollment() async {
+    if (!_checkAuthAndShowDialog()) return;
     if (_isEnrolled && _lessons.isNotEmpty) {
       final firstLesson = Lesson.fromJson(_lessons.first);
       Navigator.push(
@@ -1481,6 +1485,53 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           fontSize: 10,
           fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+
+  bool _checkAuthAndShowDialog() {
+    if (!Provider.of<AuthService>(context, listen: false).isAuthenticated) {
+      _showLoginRequiredDialog();
+      return false;
+    }
+    return true;
+  }
+
+  void _showLoginRequiredDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2C),
+        title: Text(
+          _t('login_required_title'),
+          style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+          textAlign: TextAlign.right,
+        ),
+        content: Text(
+          _t('login_required_desc'),
+          style: TextStyle(color: Colors.white.withOpacity(0.7), fontFamily: 'Cairo'),
+          textAlign: TextAlign.right,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(_t('cancel'), style: const TextStyle(fontFamily: 'Cairo')),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPurple,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(_t('login_title'), style: const TextStyle(fontFamily: 'Cairo')),
+          ),
+        ],
       ),
     );
   }

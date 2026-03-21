@@ -9,6 +9,8 @@ import '../../models/chapter.dart';
 import '../../models/lesson.dart';
 import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../../widgets/empty_state.dart';
+import '../../core/services/auth_service.dart';
+import '../auth/login_screen.dart';
 
 class CourseContentScreen extends StatefulWidget {
   final Course course;
@@ -219,6 +221,13 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           color: Colors.transparent,
           child: InkWell(
             onTap: () {
+              final authService = Provider.of<AuthService>(context, listen: false);
+              
+              if (!authService.isAuthenticated && !lesson.isFree) {
+                _showLoginRequiredDialog(context);
+                return;
+              }
+
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -279,6 +288,45 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  void _showLoginRequiredDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2C),
+        title: Text(
+          _t('login_required_title'),
+          style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+          textAlign: TextAlign.right,
+        ),
+        content: Text(
+          _t('login_required_desc'),
+          style: TextStyle(color: Colors.white.withOpacity(0.7), fontFamily: 'Cairo'),
+          textAlign: TextAlign.right,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(_t('cancel'), style: const TextStyle(fontFamily: 'Cairo')),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPurple,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(_t('login_now'), style: const TextStyle(fontFamily: 'Cairo')),
+          ),
+        ],
+      ),
     );
   }
 }

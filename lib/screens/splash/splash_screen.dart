@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/screen_security_service.dart';
-import '../auth/role_selection_screen.dart';
-import '../auth/login_screen.dart';
+import '../auth/register_screen.dart';
 import '../../main.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
@@ -82,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen>
           // If we are offline and have no cached role, we're stuck anyway, but selection screen is better than nothing
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+            MaterialPageRoute(builder: (context) => const RegisterScreen()),
           );
         } else {
           // User is logged in and has a role (cached or fetched), go to main screen
@@ -92,19 +91,19 @@ class _SplashScreenState extends State<SplashScreen>
           );
         }
       } else {
-        // User is not logged in, go to login screen
+        // User is not logged in, go to main screen as guest
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       }
     } catch (e) {
       debugPrint('❌ Error checking auth status: $e');
-      // On error, go to login screen
+      // On error, still go to main screen as guest or try to let them use what they can
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       }
     }

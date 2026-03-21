@@ -12,7 +12,8 @@ import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 
 class ExploreScreen extends StatefulWidget {
-  const ExploreScreen({super.key});
+  final String? initialFilter;
+  const ExploreScreen({super.key, this.initialFilter});
 
   @override
   State<ExploreScreen> createState() => _ExploreScreenState();
@@ -29,6 +30,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String _searchQuery = '';
   String _selectedType = 'الكل';
   String? _selectedLevel;
+  String? _initialFilter;
 
   String _t(String key) =>
       AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -36,6 +38,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   void initState() {
     super.initState();
+    _initialFilter = widget.initialFilter;
     _loadData();
   }
 
@@ -136,7 +139,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
       filtered = filtered.where((course) {
         return course.level == _selectedLevel || course.level == null; // soft return if null placeholder
       }).toList();
-    } // Ensure unique courses by ID
+    } 
+
+    // Handle initialFilter (if not already handled by categorical filters above)
+    if (_initialFilter != null) {
+      if (_initialFilter == 'newest') {
+        filtered.sort((a, b) {
+          if (a.createdAt == null) return 1;
+          if (b.createdAt == null) return -1;
+          return b.createdAt!.compareTo(a.createdAt!);
+        });
+      } else if (_initialFilter == 'popular') {
+        filtered.sort((a, b) => b.studentsCount.compareTo(a.studentsCount));
+      } else if (_initialFilter == 'recorded') {
+        filtered = filtered.where((c) => c.status == 'recorded').toList();
+      }
+      // Reset after first apply to allow user navigation to change it?
+      // Or keep it. Usually initial means start state.
+    }
+
+    // Ensure unique courses by ID
     final seenIds = <String>{};
     _filteredCourses = filtered.where((c) => seenIds.add(c.id)).toList();
   }

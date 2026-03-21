@@ -470,6 +470,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
   Future<void> _saveProgressBeforeExit() async {
     try {
+      final userId = SupabaseService.instance.currentUserId;
+      if (userId == null) return; // Skip saving progress for guests
+      
       await DatabaseService().updateLessonProgress(
         lessonId: widget.lesson.id,
         watchTime: _videoWatchTime,
@@ -947,8 +950,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       children: [
         ...widget.lesson.resources.map((resource) {
           final fileName = resource['name'] ?? 'ملف غير معروف';
-          final url = resource['url'] ?? '';
-
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             child: ClipRRect(

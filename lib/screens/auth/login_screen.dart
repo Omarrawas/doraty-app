@@ -10,9 +10,6 @@ import '../../core/services/supabase_service.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/screen_security_service.dart';
 import 'register_screen.dart';
-import 'role_selection_screen.dart';
-import 'student_register_screen.dart';
-import 'teacher_register_screen.dart';
 import '../../core/utils/error_utils.dart';
 import '../../main.dart';
 
@@ -61,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
             if (!hasRole) {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const RoleSelectionScreen()),
+                MaterialPageRoute(builder: (context) => const RegisterScreen()),
               );
             } else {
               // Check if profile exists
@@ -74,18 +71,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (mounted) {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (context) => const StudentRegisterScreen()),
-                    );
-                  }
-                  return;
-                }
-              } else if (role == 'teacher') {
-                final profile = await dbService.getTeacherProfile(userId);
-                if (profile == null) {
-                  if (mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const TeacherRegisterScreen()),
+                      MaterialPageRoute(builder: (context) => const RegisterScreen()),
                     );
                   }
                   return;
@@ -322,27 +308,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             const SizedBox(height: 10),
 
-                            // Guest Login
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const MainScreen(),
-                                  ),
-                                );
-                              },
-                              child: const Text(
-                                'تصفح كضيف',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  decoration: TextDecoration.underline,
-                                  decorationColor: Colors.white,
-                                ),
-                              ),
-                            ),
                           ],
                         ),
                       ),
@@ -504,13 +469,9 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (mounted) {
-        // Navigate to main screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const MainScreen(),
-          ),
-        );
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -736,12 +697,9 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const MainScreen(),
-          ),
-        );
+        setState(() {
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {

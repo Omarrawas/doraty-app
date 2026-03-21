@@ -364,6 +364,9 @@ class AppStrings {
       'included_courses': 'الدورات المشمولة',
       'buy_bundle': 'امتلك الباقة',
       'featured_bundles': 'باقات مميزة',
+      'login_title': 'تسجيل الدخول',
+      'login_required_title': 'تسجيل الدخول مطلوب',
+      'login_required_desc': 'يرجى تسجيل الدخول للوصول إلى ملفك الشخصي ومتابعة دوراتك',
     },
     'en': {
       'settings': 'Settings',
@@ -729,6 +732,9 @@ class AppStrings {
       'included_courses': 'Included Courses',
       'buy_bundle': 'Buy Bundle',
       'featured_bundles': 'Featured Bundles',
+      'login_title': 'Login',
+      'login_required_title': 'Login Required',
+      'login_required_desc': 'Please login to access your profile and track your courses',
     },
   };
 

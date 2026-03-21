@@ -16,6 +16,8 @@ import '../../core/utils/string_utils.dart';
 import '../../core/utils/error_utils.dart';
 import '../../models/course.dart';
 import '../courses/course_details_screen.dart';
+import '../auth/login_screen.dart';
+import '../auth/register_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -220,6 +222,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
+    
+    if (!authService.isAuthenticated) {
+      return Scaffold(
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: _buildLoginRequiredView(),
+          ),
+        ),
+      );
+    }
+
+    if (_userRole == null && !_isCoursesLoading) {
+      return Scaffold(
+        body: DynamicGradientBackground(
+          child: SafeArea(
+            child: _buildCompleteProfilePrompt(),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       body: DynamicGradientBackground(
         child: SafeArea(
@@ -1050,6 +1074,130 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         );
       },
+    );
+  }
+  Widget _buildCompleteProfilePrompt() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.assignment_ind_outlined, size: 80, color: Colors.amberAccent),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'أكمل إعداد حسابك',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'يرجى اختيار دورك (طالب أو مدرس) وإكمال بياناتك للوصول لكامل ميزات المنصة',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                elevation: 8,
+              ),
+              child: const Text(
+                'إكمال الملف الشخصي',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            TextButton(
+              onPressed: () => AuthService().signOut(),
+              child: const Text('تسجيل الخروج', style: TextStyle(color: Colors.white54)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoginRequiredView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.person_outline, size: 80, color: Colors.white54),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              _t('login_required_title'),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _t('login_required_desc'),
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white.withOpacity(0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                elevation: 8,
+                shadowColor: AppColors.primaryPurple.withOpacity(0.5),
+              ),
+              child: Text(
+                _t('login_title'),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

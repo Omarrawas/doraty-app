@@ -1,23 +1,30 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
+// No import needed here
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/supabase_service.dart';
+import '../../core/services/database_service.dart';
+import '../../core/services/github_storage_service.dart' hide FileType;
 import '../../core/utils/error_utils.dart';
-import 'student_register_screen.dart';
-import 'teacher_register_screen.dart';
-import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
-
 import '../../core/constants/app_strings.dart';
+import '../../main.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final bool isCompletingProfile;
+  const RegisterScreen({super.key, this.isCompletingProfile = false});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  final _formKey = GlobalKey<FormState>();
+
+  // Common Fields
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -29,9 +36,56 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirmPassword = true;
   String _selectedRole = 'student'; // 'student' or 'teacher'
 
+  // Student Specific Fields
+  String _educationLevel = 'school'; // 'school' or 'university'
+  String? _selectedGrade;
+  String? _selectedUniversityYear;
+  final TextEditingController _studentSpecializationController = TextEditingController();
+  bool _termsAccepted = true;
+  File? _profileImage;
+
+  // Teacher Specific Fields
+  final TextEditingController _teacherPhoneController = TextEditingController();
+  final TextEditingController _teacherSpecializationController = TextEditingController();
+  final TextEditingController _teacherCountryController = TextEditingController();
+  final TextEditingController _teacherBioController = TextEditingController();
+  bool _giveFullCourses = false;
+  bool _teachPrivateHours = false;
+  File? _cvFile;
+  File? _certificateFile;
+
+  // Lists for Grade/Year
+  final List<String> _schoolGrades = [
+    'الصف الأول', 'الصف الثاني', 'الصف الثالث',
+    'الصف الرابع', 'الصف الخامس', 'الصف السادس',
+    'الصف السابع', 'الصف الثامن', 'الصف التاسع',
+    'الصف العاشر', 'الحادي عشر', 'البكالوريا'
+  ];
+
+  final List<String> _universityYears = [
+    'السنة الأولى', 'السنة الثانية', 'السنة الثالثة',
+    'السنة الرابعة', 'السنة الخامسة', 'السنة السادسة',
+    'خريج'
+  ];
+
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
+  @override
+  void initState() {
+    super.initState();
+    // If completing profile, pre-fill from already authenticated user if possible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthService>(context, listen: false);
+      if (auth.isAuthenticated) {
+        final profile = auth.userProfile;
+        if (profile != null) {
+          _nameController.text = profile['full_name'] ?? '';
+          _emailController.text = profile['email'] ?? '';
+        }
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -39,278 +93,241 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _studentSpecializationController.dispose();
+    _teacherPhoneController.dispose();
+    _teacherSpecializationController.dispose();
+    _teacherCountryController.dispose();
+    _teacherBioController.dispose();
     super.dispose();
   }
 
+  // --- Image/File Picking ---
+  Future<void> _pickProfileImage() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    if (result != null && result.files.single.path != null) {
+      setState(() => _profileImage = File(result.files.single.path!));
+    }
+  }
+
+  Future<void> _pickFile(bool isCV) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'png'],
+    );
+    if (result != null && result.files.single.path != null) {
+      setState(() {
+        if (isCV) {
+          _cvFile = File(result.files.single.path!);
+        } else {
+          _certificateFile = File(result.files.single.path!);
+        }
+      });
+    }
+  }
+
   Future<void> _register() async {
-    // Validate inputs
-    if (_nameController.text.trim().isEmpty ||
-        _emailController.text.trim().isEmpty ||
-        _passwordController.text.isEmpty ||
-        _confirmPasswordController.text.isEmpty) {
-      _showErrorSnackBar('الرجاء ملء جميع الحقول');
+    if (!_formKey.currentState!.validate()) return;
+
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final bool isAlreadyAuth = authService.isAuthenticated;
+
+    if (!isAlreadyAuth) {
+      if (_passwordController.text != _confirmPasswordController.text) {
+        _showErrorSnackBar(_t('pass_dont_match'));
+        return;
+      }
+    }
+
+    if (_selectedRole == 'student' && !_termsAccepted) {
+      _showErrorSnackBar('الرجاء الموافقة على الشروط والأحكام');
       return;
     }
 
-    if (_passwordController.text != _confirmPasswordController.text) {
-      _showErrorSnackBar('كلمة المرور غير متطابقة');
+    if (_selectedRole == 'teacher' && !_giveFullCourses && !_teachPrivateHours) {
+      _showErrorSnackBar(_t('select_sub_type_error'));
       return;
     }
 
-    if (_passwordController.text.length < 6) {
-      _showErrorSnackBar('كلمة المرور يجب أن تكون 6 أحرف على الأقل');
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      final authService = AuthService();
-      await authService.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-        fullName: _nameController.text.trim(),
-      );
+      final dbService = DatabaseService();
+
+      // 1. Auth Signup (if not already auth)
+      if (!isAlreadyAuth) {
+        await authService.signUp(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          fullName: _nameController.text.trim(),
+        );
+      }
+
+      final String? userId = SupabaseService.instance.currentUserId;
+      if (userId == null) throw _t('fail_get_user_id');
+
+      // 2. Upload Files to GitHub
+      String? avatarUrl;
+      String? cvUrl;
+      String? certUrl;
+
+      if (_profileImage != null) {
+        final path = '${_selectedRole}s/$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.${_profileImage!.path.split('.').last}';
+        avatarUrl = await GitHubStorageService.uploadFile(file: _profileImage!, path: path, commitMessage: 'Avatar for $userId');
+      }
+
+      if (_selectedRole == 'teacher') {
+        if (_cvFile != null) {
+          final path = 'teachers/$userId/cv_${DateTime.now().millisecondsSinceEpoch}.${_cvFile!.path.split('.').last}';
+          cvUrl = await GitHubStorageService.uploadFile(file: _cvFile!, path: path, commitMessage: 'CV for $userId');
+        }
+        if (_certificateFile != null) {
+          final path = 'teachers/$userId/cert_${DateTime.now().millisecondsSinceEpoch}.${_certificateFile!.path.split('.').last}';
+          certUrl = await GitHubStorageService.uploadFile(file: _certificateFile!, path: path, commitMessage: 'Cert for $userId');
+        }
+      }
+
+      // 3. Save Role-Specific Profile
+      if (_selectedRole == 'student') {
+        await dbService.saveStudentProfile({
+          'id': userId,
+          'full_name': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'education_level': _educationLevel,
+          'grade': _educationLevel == 'school' ? _selectedGrade : _selectedUniversityYear,
+          'specialization': _educationLevel == 'university' ? _studentSpecializationController.text.trim() : null,
+          'terms_accepted': _termsAccepted,
+          'avatar_url': avatarUrl,
+        });
+      } else {
+        await dbService.saveTeacherProfile({
+          'id': userId,
+          'full_name': _nameController.text.trim(),
+          'email': _emailController.text.trim(),
+          'phone_number': _teacherPhoneController.text.trim(),
+          'subscription_type': _giveFullCourses && _teachPrivateHours ? 'both' : (_giveFullCourses ? 'courses' : 'tutoring'),
+          'specialization': _teacherSpecializationController.text.trim(),
+          'country': _teacherCountryController.text.trim(),
+          'bio': _teacherBioController.text.trim(),
+          'cv_url': cvUrl,
+          'certificates_url': certUrl,
+          'avatar_url': avatarUrl,
+          'status': 'pending',
+        });
+      }
 
       if (mounted) {
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _t('account_created_success'),
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontFamily: 'Cairo'),
-            ),
-            backgroundColor: Colors.green.shade400,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
+        final scaffoldMessenger = ScaffoldMessenger.of(context);
+        await authService.loadUserProfile();
+        
+        scaffoldMessenger.showSnackBar(
+          SnackBar(content: Text(_t('account_created_success')), backgroundColor: Colors.green),
         );
-
-        // Navigate to the appropriate profile completion screen
-        if (_selectedRole == 'student') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const StudentRegisterScreen()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const TeacherRegisterScreen()),
-          );
+        
+        if (mounted) {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainScreen()));
         }
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+        setState(() => _isLoading = false);
         _showErrorSnackBar(ErrorUtils.getFriendlyErrorMessage(e));
       }
     }
   }
 
-
-
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          message,
-          textAlign: TextAlign.right,
-          style: const TextStyle(fontFamily: 'Cairo'),
-        ),
+        content: Text(message, textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'Cairo')),
         backgroundColor: Colors.red.shade400,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isAlreadyAuth = Provider.of<AuthService>(context).isAuthenticated;
+
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: AppColors.backgroundGradient,
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTopBar(),
-                const SizedBox(height: 20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTopBar(),
+                  const SizedBox(height: 20),
+                  Text(isAlreadyAuth ? 'إكمال الملف الشخصي' : _t('register_title'), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Cairo')),
+                  Text(isAlreadyAuth ? 'الرجاء تزويدنا ببعض المعلومات الإضافية' : _t('register_subtitle'), style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.8), fontFamily: 'Cairo')),
+                  const SizedBox(height: 30),
+                  
+                  _buildProfileImagePicker(),
+                  const SizedBox(height: 30),
 
-                // Title
-                Text(
-                  _t('register_title'),
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontFamily: 'Cairo',
-                  ),
-                ),
+                  _buildHeader(_t('personal_info')),
+                  _buildGlassField(controller: _nameController, label: _t('name'), icon: Icons.person_outline, validator: (v) => v!.isEmpty ? _t('required_field') : null, enabled: !isAlreadyAuth),
+                  const SizedBox(height: 16),
+                  _buildGlassField(controller: _emailController, label: _t('email_label'), icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress, validator: (v) => v!.isEmpty ? _t('required_field') : null, enabled: !isAlreadyAuth),
+                  const SizedBox(height: 16),
+                  
+                  _buildPremiumRoleSelector(),
+                  const SizedBox(height: 20),
 
-                const SizedBox(height: 8),
+                  // Role-Specific Sections
+                  if (_selectedRole == 'student') _buildStudentSection() else _buildTeacherSection(),
 
-                Text(
-                  _t('register_subtitle'),
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.8),
-                    fontFamily: 'Cairo',
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-
-                // Name Field
-                _buildTextField(
-                  controller: _nameController,
-                  label: _t('name'),
-                  icon: Icons.person_outline,
-                ),
-
-                const SizedBox(height: 20),
-
-                // Role Selection
-                _buildPremiumRoleSelector(),
-
-                const SizedBox(height: 20),
-
-                // Email Field
-                _buildTextField(
-                  controller: _emailController,
-                  label: _t('email_label'),
-                  icon: Icons.email_outlined,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-
-
-                // Password Field
-                _buildTextField(
-                  controller: _passwordController,
-                  label: _t('password_label'),
-                  icon: Icons.lock_outline,
-                  obscureText: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.black54,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscurePassword = !_obscurePassword;
-                      });
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Confirm Password Field
-                _buildTextField(
-                  controller: _confirmPasswordController,
-                  label: _t('confirm_password_label'),
-                  icon: Icons.lock_outline,
-                  obscureText: _obscureConfirmPassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscureConfirmPassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.black54,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _obscureConfirmPassword = !_obscureConfirmPassword;
-                      });
-                    },
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                // Register Button
-                _buildRegisterButton(),
-
-                const SizedBox(height: 20),
-
-                // Login Link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _t('already_have_account'),
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
-                        fontSize: 14,
-                        fontFamily: 'Cairo',
+                  if (!isAlreadyAuth) ...[
+                    const SizedBox(height: 32),
+                    _buildHeader(_t('security_header')),
+                    _buildGlassField(
+                      controller: _passwordController,
+                      label: _t('password_label'),
+                      icon: Icons.lock_outline,
+                      obscureText: _obscurePassword,
+                      validator: (v) => v!.length < 6 ? _t('pass_min_char') : null,
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
+                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        _t('login_now'),
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.underline,
-                          fontFamily: 'Cairo',
-                        ),
+                    const SizedBox(height: 16),
+                    _buildGlassField(
+                      controller: _confirmPasswordController,
+                      label: _t('confirm_password_label'),
+                      icon: Icons.lock_outline,
+                      obscureText: _obscureConfirmPassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
+                        onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                       ),
                     ),
                   ],
-                ),
+                  
+                  const SizedBox(height: 40),
+                  _buildRegisterButton(isAlreadyAuth),
 
-                const SizedBox(height: 30),
-
-                // Alternative Login Header
-                Row(
-                  children: [
-                    Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Text(
-                        _t('or_via'),
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
-                          fontFamily: 'Cairo',
+                  const SizedBox(height: 20),
+                  if (!isAlreadyAuth)
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(_t('already_have_account'), style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontFamily: 'Cairo')),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Text(' ${_t('login_now')}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, fontFamily: 'Cairo')),
                         ),
-                      ),
+                      ],
                     ),
-                    Expanded(child: Divider(color: Colors.white.withOpacity(0.3))),
-                  ],
-                ),
-
-                const SizedBox(height: 20),
-
-                // Google Login Button
-                Center(
-                  child: _buildSocialButton(
-                    icon: Icons.g_mobiledata,
-                    onTap: _handleGoogleLogin,
-                  ),
-                ),
-
-                const SizedBox(height: 40),
-              ],
+                  const SizedBox(height: 40),
+                ],
+              ),
             ),
           ),
         ),
@@ -318,45 +335,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  // --- UI Components ---
   Widget _buildTopBar() {
     final localeProvider = Provider.of<LocaleProvider>(context);
     final isArabic = localeProvider.locale == 'ar';
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Back Button
-        IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70),
-          onPressed: () => Navigator.pop(context),
-        ),
-        
-        // Language Toggle
+        IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70), onPressed: () => Navigator.pop(context)),
         GestureDetector(
-          onTap: () {
-            final newLocale = isArabic ? 'en' : 'ar';
-            localeProvider.setLocale(newLocale);
-          },
+          onTap: () => localeProvider.setLocale(isArabic ? 'en' : 'ar'),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white.withOpacity(0.3)),
-            ),
+            decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withOpacity(0.3))),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.language_rounded, size: 18, color: Colors.white.withOpacity(0.9)),
                 const SizedBox(width: 8),
-                Text(
-                  isArabic ? 'English' : 'العربية',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(isArabic ? 'English' : 'العربية', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
@@ -365,275 +361,182 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  Widget _buildProfileImagePicker() {
+    return Center(
+      child: GestureDetector(
+        onTap: _pickProfileImage,
+        child: Stack(
+          children: [
+            Container(
+              width: 100, height: 100,
+              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.5), width: 2)),
+              child: ClipOval(
+                child: _profileImage != null 
+                  ? Image.file(_profileImage!, fit: BoxFit.cover) 
+                  : Container(color: Colors.white10, child: const Icon(Icons.person, size: 50, color: Colors.white60)),
+              ),
+            ),
+            Positioned(bottom: 0, right: 0, child: Container(padding: const EdgeInsets.all(6), decoration: const BoxDecoration(color: AppColors.primaryPurple, shape: BoxShape.circle), child: const Icon(Icons.camera_alt, color: Colors.white, size: 16))),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPremiumRoleSelector() {
     final isStudent = _selectedRole == 'student';
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(16)),
+      child: Row(
+        children: [
+          _buildRoleBtn(_t('student_role'), Icons.school_rounded, isStudent, () => setState(() => _selectedRole = 'student')),
+          _buildRoleBtn(_t('teacher_role'), Icons.co_present_rounded, !isStudent, () => setState(() => _selectedRole = 'teacher')),
+        ],
+      ),
+    );
+  }
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+  Widget _buildRoleBtn(String label, IconData icon, bool active, VoidCallback onTap) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(6),
-          decoration: BoxDecoration(
-            color: AppColors.getGlassColor(context, opacity: 0.15),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.25),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            children: [
-              // Student Option
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedRole = 'student'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      gradient: isStudent ? AppColors.primaryGradient : null,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: isStudent 
-                          ? [BoxShadow(color: AppColors.primaryPurple.withOpacity(0.3), blurRadius: 10)]
-                          : [],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.school_rounded, color: isStudent ? Colors.white : Colors.white60, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          _t('student_role'),
-                          style: TextStyle(
-                            color: isStudent ? Colors.white : Colors.white60,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            fontFamily: 'Cairo',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Teacher Option
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => setState(() => _selectedRole = 'teacher'),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      gradient: !isStudent ? AppColors.primaryGradient : null,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: !isStudent 
-                          ? [BoxShadow(color: AppColors.primaryPurple.withOpacity(0.3), blurRadius: 10)]
-                          : [],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.co_present_rounded, color: !isStudent ? Colors.white : Colors.white60, size: 20),
-                        const SizedBox(width: 8),
-                        Text(
-                          _t('teacher_role'),
-                          style: TextStyle(
-                            color: !isStudent ? Colors.white : Colors.white60,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            fontFamily: 'Cairo',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(gradient: active ? AppColors.primaryGradient : null, borderRadius: BorderRadius.circular(12)),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(icon, color: active ? Colors.white : Colors.white60, size: 18),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: active ? Colors.white : Colors.white60, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+          ]),
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    bool obscureText = false,
-    Widget? suffixIcon,
-    TextInputType? keyboardType,
-  }) {
-    final textColor = AppColors.getTextColor(context);
-    final secondaryTextColor = AppColors.getTextColor(context, secondary: true);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.getGlassColor(context, opacity: 0.2),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1.5,
-            ),
-          ),
-          child: TextField(
-            controller: controller,
-            obscureText: obscureText,
-            keyboardType: keyboardType,
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              color: textColor,
-              fontSize: 16,
-            ),
-            decoration: InputDecoration(
-              labelText: label,
-              labelStyle: TextStyle(
-                color: secondaryTextColor,
-              ),
-              prefixIcon: Icon(
-                icon,
-                color: secondaryTextColor,
-              ),
-              suffixIcon: suffixIcon,
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(20),
-            ),
-          ),
+  Widget _buildStudentSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeader(_t('educational_info')),
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(12)),
+          child: Row(children: [
+            _buildTypeBtn(_t('school'), 'school'),
+            _buildTypeBtn(_t('university'), 'university'),
+          ]),
         ),
+        const SizedBox(height: 16),
+        if (_educationLevel == 'school')
+          _buildGlassDropdown(label: _t('grade_level_label'), icon: Icons.school_outlined, value: _selectedGrade, items: _schoolGrades, onChanged: (v) => setState(() => _selectedGrade = v))
+        else ...[
+          _buildGlassField(controller: _studentSpecializationController, label: _t('specialization'), icon: Icons.workspace_premium_outlined, validator: (v) => v!.isEmpty ? _t('required_field') : null),
+          const SizedBox(height: 12),
+          _buildGlassDropdown(label: _t('academic_year_label'), icon: Icons.calendar_month_outlined, value: _selectedUniversityYear, items: _universityYears, onChanged: (v) => setState(() => _selectedUniversityYear = v)),
+        ],
+        const SizedBox(height: 16),
+        Row(children: [
+          Checkbox(value: _termsAccepted, onChanged: (v) => setState(() => _termsAccepted = v!), activeColor: AppColors.primaryPurple),
+          Text(_t('terms_accept_label'), style: const TextStyle(color: Colors.white70, fontSize: 13, fontFamily: 'Cairo')),
+        ]),
+      ],
+    );
+  }
+
+  Widget _buildTeacherSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildHeader(_t('professional_info')),
+        _buildGlassField(controller: _teacherPhoneController, label: _t('phone_number_label'), icon: Icons.phone_android_rounded, keyboardType: TextInputType.phone, validator: (v) => v!.isEmpty ? _t('required_field') : null),
+        const SizedBox(height: 16),
+        _buildGlassField(controller: _teacherSpecializationController, label: _t('specialization'), icon: Icons.workspace_premium_outlined, validator: (v) => v!.isEmpty ? _t('required_field') : null),
+        const SizedBox(height: 16),
+        _buildGlassField(controller: _teacherCountryController, label: _t('country_label'), icon: Icons.public_rounded),
+        const SizedBox(height: 16),
+        _buildHeader(_t('participation_plans')),
+        _buildSubscriptionOption(_t('give_full_courses_label'), _giveFullCourses, (v) => setState(() => _giveFullCourses = v!)),
+        _buildSubscriptionOption(_t('teach_private_hours_label'), _teachPrivateHours, (v) => setState(() => _teachPrivateHours = v!)),
+        const SizedBox(height: 16),
+        _buildFilePickerSection(_t('cv_label'), _cvFile, () => _pickFile(true)),
+        const SizedBox(height: 12),
+        _buildFilePickerSection(_t('certificates_label'), _certificateFile, () => _pickFile(false)),
+        const SizedBox(height: 16),
+        _buildGlassField(controller: _teacherBioController, label: _t('short_bio_hint'), icon: Icons.description_outlined, maxLines: 3),
+      ],
+    );
+  }
+
+  Widget _buildHeader(String title) {
+    return Padding(padding: const EdgeInsets.only(top: 16, bottom: 12), child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Cairo')));
+  }
+
+  Widget _buildTypeBtn(String label, String value) {
+    final active = _educationLevel == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() { _educationLevel = value; _selectedGrade = null; _selectedUniversityYear = null; }),
+        child: Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: active ? AppColors.primaryPurple : Colors.transparent, borderRadius: BorderRadius.circular(10)), child: Center(child: Text(label, style: TextStyle(color: active ? Colors.white : Colors.white70, fontWeight: active ? FontWeight.bold : FontWeight.normal)))),
       ),
     );
   }
 
+  Widget _buildSubscriptionOption(String title, bool value, Function(bool?) onChanged) {
+    return CheckboxListTile(title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Cairo')), value: value, onChanged: onChanged, activeColor: AppColors.primaryPurple, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading);
+  }
 
+  Widget _buildFilePickerSection(String title, File? file, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.1))),
+        child: Row(children: [
+          Icon(file != null ? Icons.check_circle_rounded : Icons.upload_file_rounded, color: file != null ? Colors.greenAccent : Colors.white70, size: 20),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)), Text(file != null ? file.path.split('/').last : _t('no_file_selected'), style: TextStyle(color: Colors.white60, fontSize: 11), overflow: TextOverflow.ellipsis)])),
+          Text(file != null ? _t('change') : _t('choose'), style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12)),
+        ]),
+      ),
+    );
+  }
 
-  Widget _buildRegisterButton() {
-    return SizedBox(
+  Widget _buildGlassField({required TextEditingController controller, required String label, required IconData icon, bool obscureText = false, Widget? suffixIcon, TextInputType? keyboardType, int maxLines = 1, String? Function(String?)? validator, bool enabled = true}) {
+    return Container(
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.1))),
+      child: TextFormField(
+        controller: controller, obscureText: obscureText, keyboardType: keyboardType, maxLines: maxLines, textAlign: TextAlign.right, enabled: enabled,
+        style: TextStyle(color: enabled ? Colors.white : Colors.white38, fontSize: 15),
+        decoration: InputDecoration(labelText: label, labelStyle: TextStyle(color: Colors.white70, fontSize: 14), prefixIcon: Icon(icon, color: Colors.white60, size: 20), suffixIcon: suffixIcon, border: InputBorder.none, contentPadding: const EdgeInsets.all(16)),
+        validator: validator,
+      ),
+    );
+  }
+
+  Widget _buildGlassDropdown({required String label, required IconData icon, required String? value, required List<String> items, required void Function(String?) onChanged}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.1))),
+      child: DropdownButtonFormField<String>(
+        value: value, dropdownColor: AppColors.darkBackground, icon: const Icon(Icons.arrow_drop_down, color: Colors.white60),
+        style: const TextStyle(color: Colors.white, fontSize: 15),
+        decoration: InputDecoration(labelText: label, labelStyle: TextStyle(color: Colors.white70, fontSize: 14), prefixIcon: Icon(icon, color: Colors.white60, size: 20), border: InputBorder.none),
+        items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+        onChanged: onChanged, validator: (v) => v == null ? _t('required_field') : null,
+      ),
+    );
+  }
+
+  Widget _buildRegisterButton(bool isAlreadyAuth) {
+    return Container(
       width: double.infinity,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primaryPurple.withOpacity(0.5),
-                  blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: _isLoading ? null : _register,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  child: _isLoading
-                      ? const Center(
-                          child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        )
-                      : Text(
-                          _t('register_action'),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Cairo',
-                          ),
-                        ),
-                ),
-              ),
-            ),
-          ),
-        ),
+      decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: AppColors.primaryPurple.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))]),
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _register,
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, padding: const EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+        child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : Text(isAlreadyAuth ? 'إكمال التسجيل' : _t('register_action'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Cairo')),
       ),
     );
-  }
-
-  Widget _buildSocialButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: onTap,
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 32,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _handleGoogleLogin() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final authService = AuthService();
-      await authService.signInWithGoogle();
-
-      if (mounted) {
-        // Navigate to the appropriate profile completion screen
-        if (_selectedRole == 'student') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const StudentRegisterScreen()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const TeacherRegisterScreen()),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        if (e.toString() != 'تم إلغاء تسجيل الدخول عبر جوجل') {
-          _showErrorSnackBar(ErrorUtils.getFriendlyErrorMessage(e));
-        }
-      }
-    }
   }
 }

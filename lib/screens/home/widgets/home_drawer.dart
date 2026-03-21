@@ -13,6 +13,7 @@ import '../../settings/settings_screen.dart';
 import '../../admin/admin_dashboard_screen.dart';
 import '../../teacher/teacher_dashboard_screen.dart';
 import '../../profile/order_history_screen.dart';
+import '../../auth/login_screen.dart';
 import '../../teacher/teachers_list_screen.dart';
 
 class HomeDrawer extends StatelessWidget {
@@ -246,23 +247,41 @@ class HomeDrawer extends StatelessWidget {
 
                 const SizedBox(height: 20),
 
-                // Logout
+                // Logout or Login
                 Padding(
                   padding: const EdgeInsets.all(20),
-                  child: ElevatedButton.icon(
-                    onPressed: () => authService.signOut(),
-                    icon: const Icon(Icons.logout),
-                    label: Text(_t(context, 'logout')),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red.withOpacity(0.1),
-                      foregroundColor: Colors.red,
-                      elevation: 0,
-                      minimumSize: const Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  child: authService.isAuthenticated 
+                    ? ElevatedButton.icon(
+                        onPressed: () => authService.signOut(),
+                        icon: const Icon(Icons.logout),
+                        label: Text(_t(context, 'logout')),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.withOpacity(0.1),
+                          foregroundColor: Colors.red,
+                          elevation: 0,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      )
+                    : ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                        },
+                        icon: const Icon(Icons.login),
+                        label: Text(_t(context, 'login_title')),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
+                          foregroundColor: AppColors.primaryPurple,
+                          elevation: 0,
+                          minimumSize: const Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
                 ),
                 
                 const SizedBox(height: 20),

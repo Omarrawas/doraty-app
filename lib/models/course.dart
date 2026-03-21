@@ -28,6 +28,7 @@ class Course {
   final String? videoUrl;
   final int discountPercentage;
   final List<String> tags;
+  final String? status;
   final DateTime? createdAt;
 
   Course({
@@ -60,6 +61,7 @@ class Course {
     this.videoUrl,
     this.discountPercentage = 0,
     this.tags = const [],
+    this.status,
     this.createdAt,
   });
 
@@ -96,6 +98,7 @@ class Course {
       videoUrl: json['video_url']?.toString(),
       discountPercentage: _toInt(json['discount_percentage']),
       tags: _toStringList(json['tags']),
+      status: json['status']?.toString(),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
@@ -150,6 +153,7 @@ class Course {
       'video_url': videoUrl,
       'discount_percentage': discountPercentage,
       'tags': tags,
+      'status': status,
       'created_at': createdAt?.toIso8601String(),
     };
   }
