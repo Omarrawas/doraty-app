@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'local_database.dart';
+import '../utils/safe_parser.dart';
 
 enum SyncActionType { create, update, delete, toggleLike, enroll }
 
@@ -63,7 +64,7 @@ class SyncQueue {
   Future<List<SyncTask>> getTasks() async {
     final raw = _localDb.get<List<dynamic>>('pending_tasks', boxName: _boxName);
     if (raw == null) return [];
-    return raw.map((e) => SyncTask.fromJson(Map<String, dynamic>.from(e))).toList();
+    return raw.map((e) => SyncTask.fromJson(SafeParser.safeMap(e))).toList();
   }
 
   /// Remove a task by ID

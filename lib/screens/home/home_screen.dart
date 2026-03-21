@@ -34,6 +34,7 @@ import '../../models/tip.dart';
 import '../../models/bundle.dart';
 import '../../widgets/vertical_tip_player.dart';
 import '../../widgets/tip_preview_card.dart';
+import '../../core/utils/safe_parser.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -67,14 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentBannerPage = 0;
 
   List<Map<String, dynamic>> _normalizeMapList(dynamic raw) {
-    if (raw is! Iterable) return <Map<String, dynamic>>[];
-    final result = <Map<String, dynamic>>[];
-    for (final item in raw) {
-      if (item is Map) {
-        result.add(Map<String, dynamic>.from(item));
-      }
-    }
-    return result;
+    return SafeParser.safeMapList(raw);
   }
 
   @override
@@ -278,7 +272,7 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           for (var item in rawEnrollments) {
             if (item is! Map) continue;
-            final enrollment = Map<String, dynamic>.from(item);
+            final enrollment = SafeParser.safeMap(item);
             final courseId = (enrollment['course_id'] ?? enrollment['id'])?.toString();
             if (courseId != null) {
               final progressRaw = enrollment['progress_percentage'];
@@ -465,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildTeacherItem(Map<String, dynamic> teacher) {
     final dynamic usersRaw = teacher['users'];
     final Map<String, dynamic>? userData =
-        usersRaw is Map ? Map<String, dynamic>.from(usersRaw) : null;
+        usersRaw is Map ? SafeParser.safeMap(usersRaw) : null;
     final name = StringUtils.cleanTeacherName(
         userData?['full_name'] ?? userData?['name'] ?? _t('teacher'));
     final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'];

@@ -1,4 +1,5 @@
 import 'course.dart';
+import '../core/utils/safe_parser.dart';
 
 class Bundle {
   final String id;
@@ -36,7 +37,7 @@ class Bundle {
       if (rawCourses is Iterable) {
         parsedCourses = rawCourses
             .whereType<Map>()
-            .map((c) => Course.fromJson(Map<String, dynamic>.from(c)))
+            .map((c) => Course.fromJson(SafeParser.safeMap(c)))
             .toList();
       } else {
         parsedCourses = [];

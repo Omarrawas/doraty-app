@@ -6,6 +6,7 @@ import '../env/multi_env.dart';
 import 'platform_utils.dart';
 import 'local_database.dart';
 import 'cache_service.dart';
+import '../utils/safe_parser.dart';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _client = SupabaseService.instance.client;
@@ -103,7 +104,7 @@ class AuthService extends ChangeNotifier {
       if (currentUser != null) {
         final cached = LocalDatabase().get<Map<String, dynamic>>(CacheKeys.userProfile(currentUser!.id));
         if (cached != null) {
-          _userProfile = Map<String, dynamic>.from(cached);
+          _userProfile = SafeParser.safeMap(cached);
           notifyListeners();
         }
       }
