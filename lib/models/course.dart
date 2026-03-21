@@ -1,20 +1,20 @@
 class Course {
   final String id;
   final String title;
-  final String? description; // Nullable
-  final String? instructorId; // Added instructorId
+  final String? description;
+  final String? instructorId;
   final String instructorName;
-  final String? instructorPhoto; // Nullable in schema
-  final String? imageUrl; // Renamed from thumbnail, nullable
+  final String? instructorPhoto;
+  final String? imageUrl;
   final double price;
   final double rating;
   final int studentsCount;
   final int lessonsCount;
-  final String? durationHours; // Renamed from duration, nullable
-  final List<String> categories; // List of category names
-  final List<String> categoryIds; // List of category IDs
+  final String? durationHours;
+  final List<String> categories;
+  final List<String> categoryIds;
   final String subject;
-  final String? subjectEn; // Added subjectEn
+  final String? subjectEn;
   final List<String> curriculum;
   final bool isEnrolled;
   final int completedLessons;
@@ -27,8 +27,8 @@ class Course {
   final List<String> targetAudience;
   final String? videoUrl;
   final int discountPercentage;
-  final List<String> tags; // Restored tags field
-  final DateTime? createdAt; // Added createdAt field
+  final List<String> tags;
+  final DateTime? createdAt;
 
   Course({
     required this.id,
@@ -52,7 +52,7 @@ class Course {
     this.completedLessons = 0,
     this.level,
     this.isPublished = true,
-    this.currency = 'ل.س',
+    this.currency = 'SYP',
     this.isFeatured = false,
     this.featuredOrder = 0,
     this.outcomes = const [],
@@ -65,42 +65,58 @@ class Course {
 
   factory Course.fromJson(Map<String, dynamic> json) {
     return Course(
-      id: json['id'] ?? '',
-      title: json['title'] ?? '',
-      description: json['description'],
-      instructorId: json['instructor_id'],
-      instructorName: json['instructor_name'] ?? '',
-      instructorPhoto: json['instructor_photo'],
-      imageUrl:
-          json['image_url'] ?? json['thumbnail'], // Handle both for safety
-      price: (json['price'] ?? 0).toDouble(),
-      rating: (json['rating'] ?? 0).toDouble(),
-      studentsCount: json['students_count'] ?? 0,
-      lessonsCount: json['lessons_count'] ?? 0,
-      durationHours: json['duration_hours']?.toString() ?? json['duration'],
-      categories: List<String>.from(json['categories_names'] ??
-          (json['category'] != null ? [json['category']] : [])),
-      categoryIds: List<String>.from(json['category_ids'] ??
-          (json['category_id'] != null ? [json['category_id']] : [])),
-      subject: json['subject'] ?? '',
-      subjectEn: json['subject_en'],
-      curriculum: List<String>.from(json['curriculum'] ?? []),
-      isEnrolled: json['is_enrolled'] ?? false,
-      completedLessons: json['completed_lessons'] ?? 0,
-      level: json['level'],
-      isPublished: json['is_published'] ?? true,
-      currency: json['currency'] ?? 'ل.س',
-      isFeatured: json['is_featured'] ?? false,
-      featuredOrder: json['featured_order'] ?? 0,
-      outcomes: List<String>.from(json['outcomes'] ?? []),
-      targetAudience: List<String>.from(json['target_audience'] ?? []),
-      videoUrl: json['video_url'],
-      discountPercentage: json['discount_percentage'] ?? 0,
-      tags: List<String>.from(json['tags'] ?? []),
-      createdAt: json['created_at'] != null 
-          ? DateTime.tryParse(json['created_at'].toString()) 
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString(),
+      instructorId: json['instructor_id']?.toString(),
+      instructorName: json['instructor_name']?.toString() ?? '',
+      instructorPhoto: json['instructor_photo']?.toString(),
+      imageUrl: (json['image_url'] ?? json['thumbnail'])?.toString(),
+      price: _toDouble(json['price']),
+      rating: _toDouble(json['rating']),
+      studentsCount: _toInt(json['students_count']),
+      lessonsCount: _toInt(json['lessons_count']),
+      durationHours: json['duration_hours']?.toString() ?? json['duration']?.toString(),
+      categories: _toStringList(
+          json['categories_names'] ?? (json['category'] != null ? [json['category']] : const [])),
+      categoryIds: _toStringList(
+          json['category_ids'] ?? (json['category_id'] != null ? [json['category_id']] : const [])),
+      subject: json['subject']?.toString() ?? '',
+      subjectEn: json['subject_en']?.toString(),
+      curriculum: _toStringList(json['curriculum']),
+      isEnrolled: json['is_enrolled'] == true,
+      completedLessons: _toInt(json['completed_lessons']),
+      level: json['level']?.toString(),
+      isPublished: json['is_published'] != false,
+      currency: json['currency']?.toString() ?? 'SYP',
+      isFeatured: json['is_featured'] == true,
+      featuredOrder: _toInt(json['featured_order']),
+      outcomes: _toStringList(json['outcomes']),
+      targetAudience: _toStringList(json['target_audience']),
+      videoUrl: json['video_url']?.toString(),
+      discountPercentage: _toInt(json['discount_percentage']),
+      tags: _toStringList(json['tags']),
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'].toString())
           : null,
     );
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    return double.tryParse(value?.toString() ?? '0') ?? 0.0;
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '0') ?? 0;
+  }
+
+  static List<String> _toStringList(dynamic value) {
+    if (value is Iterable) {
+      return value.map((e) => e.toString()).toList();
+    }
+    return const [];
   }
 
   Map<String, dynamic> toJson() {
@@ -169,8 +185,8 @@ class Course {
 
   String getFormattedPrice(String locale) {
     String currencyLabel = currency;
-    if (currency == 'ل.س') {
-      currencyLabel = locale == 'en' ? 'SYP' : 'ل.س';
+    if (currency == 'SYP') {
+      currencyLabel = locale == 'en' ? 'SYP' : 'SYP';
     }
     return '${price.toStringAsFixed(0)} $currencyLabel';
   }
@@ -178,13 +194,12 @@ class Course {
   String getLocalizedPrice(String locale) {
     final currentPrice = hasDiscount ? discountedPrice : price;
     String currencyLabel = currency;
-    if (currency == 'ل.س') {
-      currencyLabel = locale == 'en' ? 'SYP' : 'ل.س';
+    if (currency == 'SYP') {
+      currencyLabel = locale == 'en' ? 'SYP' : 'SYP';
     }
     return '${currentPrice.toStringAsFixed(0)} $currencyLabel';
   }
 
-  // Backward compatibility getters
   String get category => categories.isNotEmpty ? categories.first : '';
   String get categoryId => categoryIds.isNotEmpty ? categoryIds.first : '';
 
@@ -195,4 +210,3 @@ class Course {
 
   bool get hasDiscount => discountPercentage > 0;
 }
-

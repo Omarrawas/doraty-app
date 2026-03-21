@@ -300,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final unreadCount = await _databaseService.getUnreadNotificationsCount();
       if (mounted) {
         setState(() {
-          _hasUnreadNotifications = (unreadCount ?? 0) > 0;
+          _hasUnreadNotifications = unreadCount > 0;
         });
       }
     } catch (e) {

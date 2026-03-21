@@ -24,24 +24,49 @@ class Bundle {
     this.instructorNames = const [],
     this.studentsCount = 0,
     this.rating = 0,
-    this.currency = 'ل.س',
+    this.currency = 'SYP',
   });
 
   factory Bundle.fromJson(Map<String, dynamic> json, {List<Course>? courses}) {
+    final List<Course> parsedCourses;
+    if (courses != null) {
+      parsedCourses = courses;
+    } else {
+      final dynamic rawCourses = json['courses'];
+      if (rawCourses is Iterable) {
+        parsedCourses = rawCourses
+            .whereType<Map>()
+            .map((c) => Course.fromJson(Map<String, dynamic>.from(c)))
+            .toList();
+      } else {
+        parsedCourses = [];
+      }
+    }
+
     return Bundle(
-      id: json['id'] ?? '',
-      title: json['title'] ?? '',
-      description: json['description'],
-      imageUrl: json['image_url'] ?? json['thumbnail'],
-      price: (json['price'] ?? 0).toDouble(),
-      discountPercentage: json['discount_percentage'] ?? 0,
-      courses: courses ?? (json['courses'] != null 
-          ? (json['courses'] as List).map((c) => Course.fromJson(c)).toList()
-          : []),
-      instructorNames: List<String>.from(json['instructor_names'] ?? []),
-      studentsCount: json['students_count'] ?? 0,
-      rating: (json['rating'] ?? 0).toDouble(),
-      currency: json['currency'] ?? 'ل.س',
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      description: json['description']?.toString(),
+      imageUrl: (json['image_url'] ?? json['thumbnail'])?.toString(),
+      price: (json['price'] as num?)?.toDouble() ??
+          double.tryParse(json['price']?.toString() ?? '0') ??
+          0.0,
+      discountPercentage: (json['discount_percentage'] as num?)?.toInt() ??
+          int.tryParse(json['discount_percentage']?.toString() ?? '0') ??
+          0,
+      courses: parsedCourses,
+      instructorNames: (json['instructor_names'] is Iterable)
+          ? (json['instructor_names'] as Iterable)
+              .map((e) => e.toString())
+              .toList()
+          : const [],
+      studentsCount: (json['students_count'] as num?)?.toInt() ??
+          int.tryParse(json['students_count']?.toString() ?? '0') ??
+          0,
+      rating: (json['rating'] as num?)?.toDouble() ??
+          double.tryParse(json['rating']?.toString() ?? '0') ??
+          0.0,
+      currency: json['currency']?.toString() ?? 'SYP',
     );
   }
 
@@ -70,16 +95,16 @@ class Bundle {
   String getFormattedPrice(String locale) {
     final currentPrice = hasDiscount ? discountedPrice : price;
     String currencyLabel = currency;
-    if (currency == 'ل.س') {
-      currencyLabel = locale == 'en' ? 'SYP' : 'ل.س';
+    if (currency == 'SYP') {
+      currencyLabel = locale == 'en' ? 'SYP' : 'SYP';
     }
     return '${currentPrice.toStringAsFixed(0)} $currencyLabel';
   }
-  
+
   String getOriginalPrice(String locale) {
     String currencyLabel = currency;
-    if (currency == 'ل.س') {
-      currencyLabel = locale == 'en' ? 'SYP' : 'ل.س';
+    if (currency == 'SYP') {
+      currencyLabel = locale == 'en' ? 'SYP' : 'SYP';
     }
     return '${price.toStringAsFixed(0)} $currencyLabel';
   }

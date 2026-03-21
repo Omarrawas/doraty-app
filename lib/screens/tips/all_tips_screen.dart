@@ -17,6 +17,17 @@ class _AllTipsScreenState extends State<AllTipsScreen> {
   List<Tip> _tips = [];
   bool _isLoading = true;
 
+  List<Map<String, dynamic>> _normalizeMapList(dynamic raw) {
+    if (raw is! Iterable) return <Map<String, dynamic>>[];
+    final result = <Map<String, dynamic>>[];
+    for (final item in raw) {
+      if (item is Map) {
+        result.add(Map<String, dynamic>.from(item));
+      }
+    }
+    return result;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -29,7 +40,8 @@ class _AllTipsScreenState extends State<AllTipsScreen> {
     try {
       final data = await _db.getTips();
       if (mounted) {
-        final List<Tip> loadedTips = data.map((e) => Tip.fromJson(e)).toList();
+        final normalized = _normalizeMapList(data);
+        final List<Tip> loadedTips = normalized.map((e) => Tip.fromJson(e)).toList();
         // Shuffle for randomness (TikTok style)
         loadedTips.shuffle();
         
