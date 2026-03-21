@@ -379,40 +379,44 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (_allCourses.isNotEmpty) _buildRecordedCoursesSection(isWideScreen),
 
                   // 10. Top Teachers
-                  if (_filteredTeachers.isNotEmpty) ...[
-                    _buildSectionHeader(_t('top_teachers'), () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const TeachersListScreen(),
-                        ),
-                      );
-                    }),
+                  if (_filteredTeachers.isNotEmpty)
                     SliverToBoxAdapter(
-                      child: isWideScreen
-                          ? Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20),
-                              child: Wrap(
-                                spacing: 20,
-                                runSpacing: 20,
-                                children: _filteredTeachers
-                                    .take(isWideScreen ? 12 : 6)
-                                    .map((t) => _buildTeacherItem(t))
-                                    .toList(),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionHeaderBox(_t('top_teachers'), () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const TeachersListScreen(),
                               ),
-                            )
-                          : SizedBox(
-                              height: 110,
-                              child: ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 20),
-                                scrollDirection: Axis.horizontal,
-                                itemCount: _filteredTeachers.length,
-                                itemBuilder: (context, index) =>
-                                    _buildTeacherItem(_filteredTeachers[index]),
-                              ),
-                            ),
+                            );
+                          }),
+                          isWideScreen
+                              ? Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  child: Wrap(
+                                    spacing: 20,
+                                    runSpacing: 20,
+                                    children: _filteredTeachers
+                                        .take(isWideScreen ? 12 : 6)
+                                        .map((t) => _buildTeacherItem(t))
+                                        .toList(),
+                                  ),
+                                )
+                              : SizedBox(
+                                  height: 110,
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: _filteredTeachers.length,
+                                    itemBuilder: (context, index) =>
+                                        _buildTeacherItem(_filteredTeachers[index]),
+                                  ),
+                                ),
+                        ],
+                      ),
                     ),
-                  ],
                 ],
                 // Add padding at bottom
                 const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
@@ -424,34 +428,32 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSectionHeader(String title, VoidCallback onSeeAll) {
-    return SliverPadding(
+  Widget _buildSectionHeaderBox(String title, VoidCallback onSeeAll) {
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      sliver: SliverToBoxAdapter(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.normal,
+              color: Colors.white,
+            ),
+          ),
+          GestureDetector(
+            onTap: onSeeAll,
+            child: Text(
+              _t('explore_more'),
+              style: TextStyle(
+                fontSize: 14,
                 fontWeight: FontWeight.normal,
-                color: Colors.white,
+                color: AppColors.primaryPurple.withOpacity(0.9),
               ),
             ),
-            GestureDetector(
-              onTap: onSeeAll,
-              child: Text(
-                _t('explore_more'),
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.normal,
-                  color: AppColors.primaryPurple.withOpacity(0.9),
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -988,7 +990,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(_t('categories_title'), () {
+          _buildSectionHeaderBox(_t('categories_title'), () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const SubjectsScreen(showBackButton: true)),
@@ -1030,18 +1032,18 @@ class _HomeScreenState extends State<HomeScreen> {
       return b.createdAt!.compareTo(a.createdAt!);
     });
     
-    return Column(
-      children: [
-        _buildSectionHeader(_t('new_courses'), () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ExploreScreen(initialFilter: 'newest'),
-            ),
-          );
-        }),
-        SliverToBoxAdapter(
-          child: SizedBox(
+    return SliverToBoxAdapter(
+      child: Column(
+        children: [
+          _buildSectionHeaderBox(_t('new_courses'), () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ExploreScreen(initialFilter: 'newest'),
+              ),
+            );
+          }),
+          SizedBox(
             height: isWideScreen ? 340 : 280,
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -1055,8 +1057,8 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1065,18 +1067,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final mostWatched = List<Course>.from(_allCourses);
     mostWatched.shuffle(); // Placeholder logic
     
-    return Column(
-      children: [
-        _buildSectionHeader(_t('most_watched'), () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ExploreScreen(initialFilter: 'popular'),
-            ),
-          );
-        }),
-        SliverToBoxAdapter(
-          child: SizedBox(
+    return SliverToBoxAdapter(
+      child: Column(
+        children: [
+          _buildSectionHeaderBox(_t('most_watched'), () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ExploreScreen(initialFilter: 'popular'),
+              ),
+            );
+          }),
+          SizedBox(
             height: isWideScreen ? 340 : 280,
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -1090,27 +1092,29 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildRecordedCoursesSection(bool isWideScreen) {
     final recordedCourses = _allCourses.where((c) => c.status == 'recorded').toList();
-    if (recordedCourses.isEmpty) return const SizedBox.shrink();
+    if (recordedCourses.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
 
-    return Column(
-      children: [
-        _buildSectionHeader(_t('recorded_courses'), () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ExploreScreen(initialFilter: 'recorded'),
-            ),
-          );
-        }),
-        SliverToBoxAdapter(
-          child: SizedBox(
+    return SliverToBoxAdapter(
+      child: Column(
+        children: [
+          _buildSectionHeaderBox(_t('recorded_courses'), () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ExploreScreen(initialFilter: 'recorded'),
+              ),
+            );
+          }),
+          SizedBox(
             height: isWideScreen ? 340 : 280,
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 15),
@@ -1124,8 +1128,8 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1136,7 +1140,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(_t('learning_tips_title'), () {
+          _buildSectionHeaderBox(_t('learning_tips_title'), () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const AllTipsScreen()));
           }),
           SizedBox(
@@ -1174,7 +1178,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionHeader(_t('bundles_title'), () {
+          _buildSectionHeaderBox(_t('bundles_title'), () {
             Navigator.push(context, MaterialPageRoute(builder: (context) => const AllPackagesScreen()));
           }),
           SizedBox(
