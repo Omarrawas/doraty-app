@@ -15,11 +15,7 @@ class LocalDatabase {
 
   // Standard boxes
   static const String boxGeneral = 'app_local_database';
-  static const String boxCourses = 'courses_cache';
-  static const String boxLessons = 'lessons_cache';
-  static const String boxUserData = 'user_data_cache';
-  static const String boxOffline = 'offline_actions';
-  static const String boxMetadata = 'cache_metadata';
+  static const String boxMetadata = 'app_local_database';
 
   /// Initialize Hive and open all required boxes
   Future<void> init() async {
@@ -30,14 +26,7 @@ class LocalDatabase {
     }
 
     _initFuture = () async {
-      final boxes = <String>[
-        boxGeneral,
-        boxCourses,
-        boxLessons,
-        boxUserData,
-        boxOffline,
-        boxMetadata,
-      ];
+      final boxes = <String>[boxGeneral];
 
       for (final name in boxes) {
         await _openBox(name);
@@ -62,10 +51,9 @@ class LocalDatabase {
     try {
       final Box box;
       if (Hive.isBoxOpen(name)) {
-        box = Hive.box<Map>(name);
+        box = Hive.box(name);
       } else {
-        // Keep type aligned with OfflineCacheService to avoid type mismatches.
-        box = await Hive.openBox<Map>(name);
+        box = await Hive.openBox(name);
       }
 
       _boxes[name] = box;
@@ -73,7 +61,7 @@ class LocalDatabase {
       return box;
     } catch (e) {
       if (Hive.isBoxOpen(name)) {
-        final box = Hive.box<Map>(name);
+        final box = Hive.box(name);
         _boxes[name] = box;
         debugPrint('Got object store box in database $name.');
         return box;
@@ -86,7 +74,7 @@ class LocalDatabase {
   Box _getBox([String? name]) {
     final boxName = name ?? boxGeneral;
     if (!_boxes.containsKey(boxName) && Hive.isBoxOpen(boxName)) {
-      _boxes[boxName] = Hive.box<Map>(boxName);
+      _boxes[boxName] = Hive.box(boxName);
     }
     if (!_boxes.containsKey(boxName)) {
       throw Exception('Box $boxName not opened. Call init() first.');

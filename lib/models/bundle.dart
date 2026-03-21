@@ -24,7 +24,7 @@ class Bundle {
     this.instructorNames = const [],
     this.studentsCount = 0,
     this.rating = 0,
-    this.currency = 'SYP',
+    this.currency = 'ل.س',
   });
 
   factory Bundle.fromJson(Map<String, dynamic> json, {List<Course>? courses}) {
@@ -66,7 +66,7 @@ class Bundle {
       rating: (json['rating'] as num?)?.toDouble() ??
           double.tryParse(json['rating']?.toString() ?? '0') ??
           0.0,
-      currency: json['currency']?.toString() ?? 'SYP',
+      currency: json['currency']?.toString() ?? 'ل.س',
     );
   }
 
@@ -95,16 +95,16 @@ class Bundle {
   String getFormattedPrice(String locale) {
     final currentPrice = hasDiscount ? discountedPrice : price;
     String currencyLabel = currency;
-    if (currency == 'SYP') {
-      currencyLabel = locale == 'en' ? 'SYP' : 'SYP';
+    if (currency == 'ل.س') {
+      currencyLabel = locale == 'en' ? 'SYP' : 'ل.س';
     }
     return '${currentPrice.toStringAsFixed(0)} $currencyLabel';
   }
 
   String getOriginalPrice(String locale) {
     String currencyLabel = currency;
-    if (currency == 'SYP') {
-      currencyLabel = locale == 'en' ? 'SYP' : 'SYP';
+    if (currency == 'ل.س') {
+      currencyLabel = locale == 'en' ? 'SYP' : 'ل.س';
     }
     return '${price.toStringAsFixed(0)} $currencyLabel';
   }

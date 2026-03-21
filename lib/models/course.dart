@@ -52,7 +52,7 @@ class Course {
     this.completedLessons = 0,
     this.level,
     this.isPublished = true,
-    this.currency = 'SYP',
+    this.currency = 'ل.س',
     this.isFeatured = false,
     this.featuredOrder = 0,
     this.outcomes = const [],
@@ -88,7 +88,7 @@ class Course {
       completedLessons: _toInt(json['completed_lessons']),
       level: json['level']?.toString(),
       isPublished: json['is_published'] != false,
-      currency: json['currency']?.toString() ?? 'SYP',
+      currency: json['currency']?.toString() ?? 'ل.س',
       isFeatured: json['is_featured'] == true,
       featuredOrder: _toInt(json['featured_order']),
       outcomes: _toStringList(json['outcomes']),
@@ -185,8 +185,8 @@ class Course {
 
   String getFormattedPrice(String locale) {
     String currencyLabel = currency;
-    if (currency == 'SYP') {
-      currencyLabel = locale == 'en' ? 'SYP' : 'SYP';
+    if (currency == 'ل.س') {
+      currencyLabel = locale == 'en' ? 'SYP' : 'ل.س';
     }
     return '${price.toStringAsFixed(0)} $currencyLabel';
   }
@@ -194,8 +194,8 @@ class Course {
   String getLocalizedPrice(String locale) {
     final currentPrice = hasDiscount ? discountedPrice : price;
     String currencyLabel = currency;
-    if (currency == 'SYP') {
-      currencyLabel = locale == 'en' ? 'SYP' : 'SYP';
+    if (currency == 'ل.س') {
+      currencyLabel = locale == 'en' ? 'SYP' : 'ل.س';
     }
     return '${currentPrice.toStringAsFixed(0)} $currencyLabel';
   }
