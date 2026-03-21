@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
-import '../downloads/downloads_screen.dart';
+import '../exams/exams_list_screen.dart';
+import '../notifications/notifications_screen.dart';
+import '../tips/all_tips_screen.dart';
+import '../categories/subjects_screen.dart';
 
 class FeaturesMenuScreen extends StatelessWidget {
   const FeaturesMenuScreen({super.key});
@@ -107,11 +110,32 @@ class FeaturesMenuScreen extends StatelessWidget {
   Widget _buildFeaturesGrid(BuildContext context) {
     final features = [
       {
-        'icon': Icons.download,
-        'title': 'التحميلات',
-        'subtitle': 'شاهد بدون إنترنت',
-        'color': const Color(0xFFFF9800),
-        'screen': const DownloadsScreen(),
+        'icon': Icons.assignment_outlined,
+        'title': 'الاختبارات',
+        'subtitle': 'اختبر معلوماتك',
+        'color': const Color(0xFF4CAF50),
+        'screen': const ExamsListScreen(),
+      },
+      {
+        'icon': Icons.notifications_none_outlined,
+        'title': 'الإشعارات',
+        'subtitle': 'ابق على اطلاع',
+        'color': const Color(0xFF2196F3),
+        'screen': const NotificationsScreen(),
+      },
+      {
+        'icon': Icons.lightbulb_outline,
+        'title': 'النصائح',
+        'subtitle': 'نصائح دراسية يومية',
+        'color': const Color(0xFFFFC107),
+        'screen': const AllTipsScreen(),
+      },
+      {
+        'icon': Icons.category_outlined,
+        'title': 'الأقسام',
+        'subtitle': 'تصفح حسب الموضوع',
+        'color': const Color(0xFF9C27B0),
+        'screen': const SubjectsScreen(),
       },
     ];
 

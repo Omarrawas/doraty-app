@@ -19,16 +19,12 @@ import '../exams/exam_taking_screen.dart';
 import '../exams/review_exam_screen.dart';
 import '../../core/services/database_service.dart';
 import '../notes/add_note_screen.dart';
-import '../../core/services/course_download_service.dart';
-import '../../models/download.dart' as dl;
 import '../../widgets/dynamic_gradient_background.dart';
+
 import '../../core/utils/error_utils.dart';
 import 'dart:ui';
-import 'dart:io';
-import 'dart:math' as math; 
-
+import 'dart:math' as math;
 import '../../core/services/supabase_service.dart';
-import '../../core/services/offline_storage_service.dart';
 import '../../widgets/lesson/video_player_controls.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
@@ -81,12 +77,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   List<LessonQuestion>? _questionsList;
   final ScrollController _mainScrollController = ScrollController();
 
-  // Offline
-  bool _isOffline = false;
-  final OfflineStorageService _offlineStorage = OfflineStorageService();
   late String _videoUrl;
-  Map<String, String>? _downloadedResources;
-  final Set<String> _downloadingFiles = {};
+
 
   @override
   void initState() {
@@ -102,69 +94,26 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Future<void> _initLesson() async {
-    await _checkOfflineLesson();
-    await _checkDownloadedResources();
     _initVideoPlayer();
     _refreshFutures();
     _startWatchTimeTracking();
   }
 
-  Future<void> _checkDownloadedResources() async {
-    final offlineLesson = await _offlineStorage.getLesson(widget.lesson.id);
-    if (mounted) {
-      setState(() {
-        _downloadedResources = offlineLesson?.downloadedResources;
-      });
-    }
-  }
 
-  Future<String?> _downloadResource(Map<String, String> resource) async {
+
+  Future<void> _handleOpenResource(Map<String, String> resource) async {
     final url = resource['url'] ?? '';
     final fileName = resource['name'] ?? 'file';
-    if (url.isEmpty) return null;
+    if (url.isEmpty) return;
 
-    if (mounted) {
-      setState(() {
-        _downloadingFiles.add(fileName);
-      });
-    }
-
-    try {
-      final localPath = await CourseDownloadService().downloadResource(
-        url: url,
-        courseId: widget.lesson.courseId,
-        lessonId: widget.lesson.id,
-        fileName: fileName,
-      );
-      await _checkDownloadedResources();
-      return localPath;
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
-        );
-      }
-      return null;
-    } finally {
-      if (mounted) {
-        setState(() {
-          _downloadingFiles.remove(fileName);
-        });
-      }
-    }
-  }
-
-  void _openResource(String fileName, String localPath, String url) {
     final ext = fileName.split('.').last.toLowerCase();
     if (ext == 'pdf') {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => PdfViewerScreen(
-            url: null,
-            localPath: localPath,
+            url: url,
             title: fileName,
-            isOffline: true,
           ),
         ),
       );
@@ -173,15 +122,16 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         context,
         MaterialPageRoute(
           builder: (context) => ImageViewerScreen(
-            url: null,
-            localPath: localPath,
+            url: url,
             title: fileName,
-            isOffline: true,
           ),
         ),
       );
     } else {
-      launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
     }
   }
 
@@ -203,46 +153,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         duration: const Duration(milliseconds: 500), curve: Curves.easeOut);
   }
 
-  Future<void> _checkOfflineLesson() async {
-    try {
-      // YouTube videos are never offline
-      final url = (widget.lesson.videoUrl as String?) ?? '';
-      if (url.contains('youtu.be') || url.contains('youtube.com')) {
-        return;
-      }
 
-      // 1. Check OfflineStorageService (Old system)
-      final offlineLesson = await _offlineStorage.getLesson(widget.lesson.id);
-      if (offlineLesson != null && offlineLesson.isDownloaded) {
-        if (mounted) {
-          setState(() {
-            _isOffline = true;
-            if (offlineLesson.videoPath != null && File(offlineLesson.videoPath!).existsSync()) {
-              _videoUrl = offlineLesson.videoPath!;
-            }
-          });
-        }
-        return;
-      }
-
-      // 2. Check DownloadManager (New system)
-      final downloadManager = dl.DownloadManager();
-      if (downloadManager.isDownloaded(widget.lesson.id)) {
-        final playableUrl =
-            await downloadManager.getPlayableUrl(widget.lesson.id);
-        if (playableUrl != null) {
-          if (mounted) {
-            setState(() {
-              _isOffline = true;
-              _videoUrl = playableUrl;
-            });
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('Error checking offline lesson: $e');
-    }
-  }
 
   void _refreshFutures() {
     if (mounted) {
@@ -404,7 +315,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     // 1. Handle Online/YouTube Link FIRST
     if (url.contains('youtu.be') || url.contains('youtube.com')) {
       _isYoutube = true;
-      _isOffline = false; // YouTube cannot be offline
       
       if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
         return; 
@@ -421,7 +331,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             enableCaption: false,
             isLive: false,
             disableDragSeek: false,
-            hideControls: true,  // إخفاء أزرار YouTube الأصلية (بما فيها الشعار القابل للنقر)
+            hideControls: true, 
             hideThumbnail: true,
           ),
         );
@@ -429,53 +339,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       return; // Handled as YouTube
     }
 
-    // 2. Handle local/offline file
-    if (_isOffline) {
-      _isYoutube = false;
-      
-      if (_videoUrl.startsWith('http')) {
-        _videoPlayerController = VideoPlayerController.networkUrl(Uri.parse(_videoUrl));
-      } else {
-        _videoPlayerController = VideoPlayerController.file(File(_videoUrl));
-      }
-
-      _videoPlayerController!.initialize().then((_) {
-        if (!mounted) return;
-        setState(() {
-          final isVertical = _videoPlayerController!.value.aspectRatio < 1.0;
-          _chewieController = ChewieController(
-            videoPlayerController: _videoPlayerController!,
-            autoPlay: false,
-            looping: false,
-            aspectRatio: _videoPlayerController!.value.aspectRatio,
-            deviceOrientationsOnEnterFullScreen: isVertical
-                ? [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]
-                : [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight],
-            deviceOrientationsAfterFullScreen: const [
-              DeviceOrientation.portraitUp,
-              DeviceOrientation.portraitDown,
-            ],
-            errorBuilder: (context, errorMessage) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Text(
-                    'خطأ في تشغيل الملف المحلي: $errorMessage',
-                    style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            },
-          );
-        });
-      }).catchError((error) {
-        debugPrint('Error initializing local video: $error');
-      });
-      return;
-    }
-
-    // 3. Handle Direct Network Stream (MX Player Style: HLS, DASH, MP4)
+    // 2. Handle Direct Network Stream (MX Player Style: HLS, DASH, MP4)
     else {
       _isYoutube = false;
       
@@ -520,9 +384,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     children: [
                       const Icon(Icons.error_outline, color: Colors.red, size: 40),
                       const SizedBox(height: 10),
-                      Text(
+                      const Text(
                         'فشل تحميل البث المباشر. تأكد من صحة الرابط أو جودة الإنترنت.',
-                        style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+                        style: TextStyle(color: Colors.white, fontFamily: 'Cairo'),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -1084,8 +948,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         ...widget.lesson.resources.map((resource) {
           final fileName = resource['name'] ?? 'ملف غير معروف';
           final url = resource['url'] ?? '';
-          final localPath = _downloadedResources?[fileName];
-          final isDownloaded = localPath != null;
 
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
@@ -1124,8 +986,42 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                         ),
                       ),
                       const SizedBox(width: 12),
-                      _buildTelegramStyleButton(
-                          resource, fileName, url, localPath, isDownloaded),
+                      GestureDetector(
+                        onTap: () => _handleOpenResource(resource),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryPurple.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.remove_red_eye_outlined,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'عرض',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -1134,71 +1030,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           );
         }),
       ],
-    );
-  }
-
-  Widget _buildTelegramStyleButton(Map<String, String> resource,
-      String fileName, String url, String? localPath, bool isDownloaded) {
-    final isDownloading = _downloadingFiles.contains(fileName);
-
-    if (isDownloading) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-        child: const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Colors.white,
-          ),
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: () async {
-        if (!isDownloaded) {
-          final path = await _downloadResource(resource);
-          if (path != null && mounted) {
-            _openResource(fileName, path, url);
-          }
-        } else {
-          _openResource(fileName, localPath!, url);
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryPurple.withOpacity(0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.remove_red_eye_outlined,
-              color: Colors.white,
-              size: 18,
-            ),
-            const SizedBox(width: 8),
-            const Text(
-              'عرض',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

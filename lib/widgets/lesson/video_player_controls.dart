@@ -4,8 +4,7 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:video_player/video_player.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
-import '../../models/download.dart';
-import '../../core/utils/error_utils.dart';
+
 
 class VideoPlayerControls extends StatefulWidget {
   final YoutubePlayerController? youtubeController;
@@ -174,9 +173,9 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                             ),
                             if (!_isLocked) ...[
                               const Spacer(),
-                              if (widget.lesson != null) _buildDownloadButton(),
                               _buildSpeedButton(),
                             ],
+
                           ],
                         ),
                       ),
@@ -293,193 +292,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
     );
   }
 
-  Widget _buildDownloadButton() {
-    if (widget.lesson == null) return const SizedBox.shrink();
-    
-    return AnimatedBuilder(
-      animation: DownloadManager(),
-      builder: (context, child) {
-        final downloadManager = DownloadManager();
-        final isDownloaded = downloadManager.isDownloaded(widget.lesson!.id);
 
-        // Check if currently downloading
-        final activeDownload = downloadManager.activeDownloads.firstWhere(
-          (d) => d.lessonId == widget.lesson!.id,
-          orElse: () => DownloadedLesson(
-            id: '',
-            lessonId: '',
-            courseId: '',
-            title: '',
-            videoUrl: '',
-            localPath: '',
-            fileSize: 0,
-            downloadedAt: DateTime.now(),
-            status: DownloadStatus.notDownloaded,
-          ),
-        );
-
-        if (activeDownload.status == DownloadStatus.downloading) {
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                value: activeDownload.progress,
-                color: Colors.white,
-                strokeWidth: 2,
-              ),
-            ),
-          );
-        }
-
-        return IconButton(
-          icon: Icon(
-            isDownloaded ? Icons.download_done : Icons.download_rounded,
-            color: isDownloaded ? Colors.greenAccent : Colors.white,
-          ),
-          onPressed: () {
-            if (isDownloaded) {
-              _showDeleteConfirm(context, downloadManager, widget.lesson!.id);
-            } else {
-              _showQualitySelectionDialog(context);
-            }
-          },
-        );
-      },
-    );
-  }
-
-  void _showDeleteConfirm(
-      BuildContext context, DownloadManager manager, String lessonId) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('حذف التحميل'),
-        content: const Text('هل تريد حذف هذا الفيديو من الجهاز؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('إلغاء'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final download = manager.getDownload(lessonId);
-              if (download != null) {
-                await manager.deleteDownload(download.id);
-              }
-            },
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _showQualitySelectionDialog(BuildContext context) async {
-    if (widget.lesson == null) return;
-    
-    if (!widget.isYoutube) {
-      // Direct download
-      DownloadManager().startDownload(DownloadedLesson(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        lessonId: widget.lesson!.id,
-        courseId: widget.lesson!.courseId,
-        title: widget.lesson!.title,
-        videoUrl: widget.lesson!.videoUrl,
-        localPath: '',
-        fileSize: 0,
-        downloadedAt: DateTime.now(),
-      ));
-      return;
-    }
-
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Text('جاري تحميل خيارات الجودة...'),
-          ],
-        ),
-      ),
-    );
-
-    final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-
-    try {
-      final manifest =
-          await DownloadManager().getYouTubeStreams(widget.lesson!.videoUrl);
-      if (!context.mounted) return;
-      navigator.pop(); // Close loading
-
-      if (manifest == null) throw Exception('فشل في جلب الجودة');
-
-      final muxedStreams = manifest.muxed.toList()
-        ..sort((a, b) => b.bitrate.compareTo(a.bitrate));
-
-      if (!context.mounted) return;
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('اختر جودة الفيديو'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: muxedStreams.length,
-              itemBuilder: (context, index) {
-                final stream = muxedStreams[index];
-                final sizeMB =
-                    (stream.size.totalBytes / 1024 / 1024).toStringAsFixed(1);
-                return ListTile(
-                  title: Text(
-                      '${stream.videoQualityLabel} (${stream.videoResolution})'),
-                  subtitle: Text(
-                      'الحجم: $sizeMB MB • ${stream.container.name.toUpperCase()}'),
-                onTap: () {
-                    Navigator.pop(context);
-                    if (widget.lesson == null) return;
-                    DownloadManager().startDownload(DownloadedLesson(
-                      id: DateTime.now().millisecondsSinceEpoch.toString(),
-                      lessonId: widget.lesson!.id,
-                      courseId: widget.lesson!.courseId,
-                      title: widget.lesson!.title,
-                      videoUrl: stream.url.toString(),
-                      localPath: '',
-                      fileSize: stream.size.totalBytes,
-                      downloadedAt: DateTime.now(),
-                    ));
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      // Close loading dialog if it's there
-      navigator.pop();
-
-      messenger.showSnackBar(
-        SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
-      );
-    }
-  }
 
   Widget _buildSpeedButton() {
     return TextButton(

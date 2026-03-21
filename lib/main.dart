@@ -16,16 +16,12 @@ import 'core/theme/theme_provider.dart';
 import 'core/services/supabase_service.dart';
 import 'core/env/multi_env.dart';
 
-import 'models/download.dart';
-import 'core/services/offline_cache_service.dart';
 import 'core/services/settings_service.dart';
 import 'core/localization/locale_provider.dart';
 import 'core/services/local_database.dart';
 import 'package:doraty/core/constants/app_strings.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
-import 'models/offline_course.dart';
-import 'models/offline_lesson.dart';
 import 'core/services/sync_service.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'core/services/notification_service.dart';
@@ -43,15 +39,7 @@ void main() async {
   // Initialize services in parallel where possible
   // We initialize Hive first as it's a prerequisite for some adapters
   await Hive.initFlutter();
-
-  // Register Hive adapters
-  Hive.registerAdapter(DownloadedLessonAdapter());
-  Hive.registerAdapter(DownloadStatusAdapter());
-  Hive.registerAdapter(OfflineCourseAdapter());
-  Hive.registerAdapter(OfflineLessonAdapter());
-
-  // These two services touch the same Hive boxes, so initialize in order.
-  await OfflineCacheService().init();
+  // Initialize LocalDatabase first as it's a prerequisite for some services
   await LocalDatabase().init();
 
   final List<Future> remainingInitializations = [
@@ -59,8 +47,8 @@ void main() async {
   ];
 
   if (!kIsWeb) {
-    remainingInitializations.add(DownloadManager().init());
   }
+
 
   await Future.wait(remainingInitializations);
 

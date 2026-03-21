@@ -5,21 +5,22 @@ import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
-import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+
 import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
 import '../../models/interactive_element.dart';
 import '../../core/services/database_service.dart';
-import '../../widgets/lesson/rich_content_viewer.dart';
-import '../lesson/pdf_viewer_screen.dart';
-import '../lesson/interactive_quiz_screen.dart';
-import '../../models/download.dart'; // Add import
+
 import 'lesson_exam_screen.dart';
 
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../widgets/lesson/youtube_player_web_windows.dart';
 import '../../core/utils/error_utils.dart';
+import '../lesson/pdf_viewer_screen.dart';
+import '../lesson/interactive_quiz_screen.dart';
+import '../../widgets/lesson/rich_content_viewer.dart';
+
 
 class LessonViewScreen extends StatefulWidget {
   final Lesson lesson;
@@ -68,90 +69,113 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
   Future<void> _initializePlayer() async {
     try {
-      final downloadManager = DownloadManager();
-      if (downloadManager.isDownloaded(widget.lesson.id)) {
-        // Load Local Video
-        final url = await downloadManager.getPlayableUrl(widget.lesson.id);
-        if (url != null) {
-          debugPrint('Playing local video from: $url');
-          _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
-          await _videoController!.initialize();
-
-          _chewieController = ChewieController(
-            videoPlayerController: _videoController!,
-            autoPlay: false,
-            looping: false,
-            aspectRatio: _videoController!.value.aspectRatio,
-            allowFullScreen: true,
-            fullScreenByDefault: false,
-            deviceOrientationsOnEnterFullScreen: [
-              DeviceOrientation.landscapeLeft,
-              DeviceOrientation.landscapeRight,
-            ],
-            deviceOrientationsAfterFullScreen: [
-              DeviceOrientation.portraitUp,
-              DeviceOrientation.portraitDown,
-              DeviceOrientation.landscapeLeft,
-              DeviceOrientation.landscapeRight,
-            ],
-            systemOverlaysOnEnterFullScreen: [],
-            systemOverlaysAfterFullScreen: SystemUiOverlay.values,
-          );
-
-          _videoController!.addListener(() {
-            _updateProgress(); // You might need to adapt this method for VideoPlayerController
+      // Load Online Video
+      final String? url = widget.lesson.videoUrl as String?;
+      if (url == null || url.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _hasValidVideo = false;
           });
-
-          if (mounted) {
-            setState(() {
-              _isLocalVideo = true;
-              _hasValidVideo = true;
-            });
-          }
-          return;
         }
+        return;
       }
 
-      // Fallback to YouTube
-      final videoId = YoutubePlayer.convertUrlToId(widget.lesson.videoUrl);
-      if (videoId != null && videoId.isNotEmpty) {
-        if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
-          if (mounted) {
-            setState(() {
-              _hasValidVideo = true;
-              _isLocalVideo = false;
-            });
-          }
-          return;
-        }
-        _youtubeController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: false,
-            mute: false,
-            enableCaption: true,
-            controlsVisibleAtStart: true,
-          ),
-        );
-        _youtubeController!.addListener(() {
-          if (mounted && _youtubeController!.value.isPlaying) {
-            _updateProgress();
-          }
+      if (url.contains('youtu.be') || url.contains('youtube.com')) {
+        _initializeYoutube(url);
+        return;
+      }
+
+      _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
+      await _videoController!.initialize();
+
+      _chewieController = ChewieController(
+        videoPlayerController: _videoController!,
+        autoPlay: false,
+        looping: false,
+        aspectRatio: _videoController!.value.aspectRatio,
+        allowFullScreen: true,
+        fullScreenByDefault: false,
+        deviceOrientationsOnEnterFullScreen: [
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ],
+        deviceOrientationsAfterFullScreen: [
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ],
+        systemOverlaysOnEnterFullScreen: [],
+        systemOverlaysAfterFullScreen: SystemUiOverlay.values,
+      );
+
+      _videoController!.addListener(() {
+        _updateProgress();
+      });
+
+      if (mounted) {
+        setState(() {
+          _hasValidVideo = true;
+          _isLocalVideo = false;
         });
+      }
+    } catch (e) {
+      debugPrint('Error initializing player: $e');
+      if (mounted) {
+        setState(() {
+          _hasValidVideo = false;
+        });
+      }
+    }
+  }
+
+  void _initializeYoutube(String url) {
+    final String? videoId = YoutubePlayer.convertUrlToId(url);
+    if (videoId != null && videoId.isNotEmpty) {
+      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
         if (mounted) {
           setState(() {
             _hasValidVideo = true;
             _isLocalVideo = false;
           });
         }
-      } else {
-        if (mounted) setState(() => _hasValidVideo = false);
+        return;
       }
-    } catch (e) {
-      debugPrint('Error initializing player: $e');
-      if (mounted) setState(() => _hasValidVideo = false);
+
+      _youtubeController = YoutubePlayerController(
+        initialVideoId: videoId,
+        flags: const YoutubePlayerFlags(
+          autoPlay: false,
+          mute: false,
+          disableDragSeek: false,
+          loop: false,
+          isLive: false,
+          forceHD: false,
+          enableCaption: true,
+        ),
+      );
+
+      _youtubeController!.addListener(() {
+        if (mounted && _youtubeController!.value.isPlaying) {
+          _updateProgress();
+        }
+      });
+
+      if (mounted) {
+        setState(() {
+          _hasValidVideo = true;
+          _isLocalVideo = false;
+        });
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _hasValidVideo = false;
+        });
+      }
     }
   }
+
 
   Future<void> _loadNotes() async {
     try {
@@ -174,11 +198,19 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
   Future<void> _updateProgress() async {
     try {
-      if (_youtubeController == null || !_youtubeController!.value.isPlaying) {
-        return;
+      int position = 0;
+      bool isPlaying = false;
+
+      if (_youtubeController != null) {
+        position = _youtubeController!.value.position.inSeconds;
+        isPlaying = _youtubeController!.value.isPlaying;
+      } else if (_videoController != null) {
+        position = _videoController!.value.position.inSeconds;
+        isPlaying = _videoController!.value.isPlaying;
       }
 
-      final position = _youtubeController!.value.position.inSeconds;
+      if (!isPlaying) return;
+
       final now = DateTime.now();
 
       // Update only if position changed by at least 5 seconds OR 5 seconds passed since last update
@@ -219,7 +251,13 @@ class _LessonViewScreenState extends State<LessonViewScreen>
     if (_noteController.text.trim().isEmpty) return;
 
     try {
-      final position = _youtubeController?.value.position.inSeconds ?? 0;
+      int position = 0;
+      if (_youtubeController != null) {
+        position = _youtubeController!.value.position.inSeconds;
+      } else if (_videoController != null) {
+        position = _videoController!.value.position.inSeconds;
+      }
+
       await _databaseService.createNote(
         lessonId: widget.lesson.id,
         courseId: widget.lesson.courseId,
@@ -243,130 +281,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
     }
   }
 
-  Future<void> _showQualitySelectionDialog() async {
-    final isYoutube = widget.lesson.videoUrl.contains('youtube.com') ||
-        widget.lesson.videoUrl.contains('youtu.be');
 
-    if (!isYoutube) {
-      // Direct download for non-YouTube videos
-      _startDownload();
-      return;
-    }
-
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const AlertDialog(
-        content: Row(
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(width: 16),
-            Text('جاري تحميل خيارات الجودة...'),
-          ],
-        ),
-      ),
-    );
-
-    try {
-      final yt = YoutubeExplode();
-      final videoId = VideoId(widget.lesson.videoUrl);
-      
-      // Add timeout to prevent infinite loading
-      final manifest =
-          await yt.videos.streamsClient.getManifest(videoId).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception('انتهت مهلة الاتصال. يرجى المحاولة لاحقاً');
-        },
-      );
-      yt.close();
-
-      if (!mounted) return;
-      Navigator.pop(context); // Close loading dialog
-
-      final muxedStreams = manifest.muxed.toList()
-        ..sort((a, b) =>
-            b.bitrate.compareTo(a.bitrate)); // Sort by bitrate descending
-
-      if (muxedStreams.isEmpty) {
-        throw Exception('لا توجد خيارات جودة متاحة لهذا الفيديو');
-      }
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('اختر جودة الفيديو'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: muxedStreams.length,
-              itemBuilder: (context, index) {
-                final stream = muxedStreams[index];
-                final sizeMB =
-                    (stream.size.totalBytes / 1024 / 1024).toStringAsFixed(1);
-                return ListTile(
-                  title: Text(
-                      '${stream.videoQualityLabel} (${stream.videoResolution})'),
-                  subtitle: Text(
-                      'الحجم: $sizeMB MB • ${stream.container.name.toUpperCase()}'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _startDownloadWithQuality(stream);
-                  },
-                  trailing: stream.videoQualityLabel.contains('1080') ||
-                          stream.videoQualityLabel.contains('720')
-                      ? const Icon(Icons.hd, color: Colors.blue)
-                      : null,
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      Navigator.pop(context); // Close loading dialog
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
-      );
-    }
-  }
-
-  void _startDownload() {
-    final downloadManager = DownloadManager();
-    downloadManager.startDownload(DownloadedLesson(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      lessonId: widget.lesson.id,
-      courseId: widget.lesson.courseId,
-      title: widget.lesson.title,
-      videoUrl: widget.lesson.videoUrl,
-      localPath: '',
-      fileSize: 0,
-      downloadedAt: DateTime.now(),
-    ));
-  }
-
-  void _startDownloadWithQuality(MuxedStreamInfo stream) {
-    final downloadManager = DownloadManager();
-    downloadManager.startDownload(DownloadedLesson(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      lessonId: widget.lesson.id,
-      courseId: widget.lesson.courseId,
-      title: widget.lesson.title,
-      videoUrl: stream.url.toString(), // Use selected stream URL
-      localPath: '',
-      fileSize: stream.size.totalBytes,
-      downloadedAt: DateTime.now(),
-    ));
-  }
 
   void _navigateToLesson(int index) {
     if (index < 0 || index >= widget.allLessons.length) return;
@@ -528,27 +443,9 @@ class _LessonViewScreenState extends State<LessonViewScreen>
               ],
             ),
           ),
-          // زر التحميل
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                margin: const EdgeInsets.only(left: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: _buildDownloadButton(),
-              ),
-            ),
-          ),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
@@ -579,91 +476,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
     );
   }
 
-  Widget _buildDownloadButton() {
-    return AnimatedBuilder(
-      animation: DownloadManager(),
-      builder: (context, child) {
-        final downloadManager = DownloadManager();
-        final isDownloaded = downloadManager.isDownloaded(widget.lesson.id);
 
-        // Find if there is an active download/progress
-        final activeDownload = downloadManager.activeDownloads.firstWhere(
-            (d) => d.lessonId == widget.lesson.id,
-            orElse: () => DownloadedLesson(
-                id: '',
-                lessonId: '',
-                courseId: '',
-                title: '',
-                videoUrl:
-                    '', // Changed from videoPath to videoUrl to match constructor
-                localPath: '',
-                fileSize: 0,
-                downloadedAt: DateTime.now(),
-                status: DownloadStatus.notDownloaded));
-
-        if (activeDownload.status == DownloadStatus.downloading) {
-          return SizedBox(
-            width: 40,
-            height: 40,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CircularProgressIndicator(
-                  value: activeDownload.progress,
-                  color: Colors.white,
-                  strokeWidth: 3,
-                ),
-                const Icon(Icons.stop, color: Colors.white, size: 20),
-              ],
-            ),
-          );
-        }
-
-        return IconButton(
-          icon: Icon(
-            isDownloaded ? Icons.download_done : Icons.download_rounded,
-            color: isDownloaded ? Colors.greenAccent : Colors.white,
-          ),
-          onPressed: () {
-            if (isDownloaded) {
-              // Confirm delete
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('حذف التحميل'),
-                  content: const Text('هل تريد حذف هذا الفيديو من الجهاز؟'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('إلغاء'),
-                    ),
-                    TextButton(
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        final download =
-                            downloadManager.getDownload(widget.lesson.id);
-                        if (download != null) {
-                          await downloadManager.deleteDownload(download.id);
-                        }
-                      },
-                      child: const Text('حذف',
-                          style: TextStyle(color: Colors.red)),
-                    ),
-                  ],
-                ),
-              );
-            } else if (activeDownload.status == DownloadStatus.downloading) {
-              // Cancel?
-              downloadManager.cancelDownload(activeDownload.id);
-            } else {
-              // Show quality selection dialog
-              _showQualitySelectionDialog();
-            }
-          },
-        );
-      },
-    );
-  }
 
   Widget _buildVideoPlayer() {
     if (!_hasValidVideo) {

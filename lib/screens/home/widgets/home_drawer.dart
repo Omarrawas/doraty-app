@@ -8,7 +8,6 @@ import '../../../core/services/auth_service.dart';
 import '../../../models/category_model.dart';
 import '../../explore/explore_screen.dart';
 import '../../courses/courses_list_screen.dart';
-import '../../downloads/downloads_screen.dart';
 import '../../tips/all_tips_screen.dart';
 import '../../settings/settings_screen.dart';
 import '../../admin/admin_dashboard_screen.dart';
@@ -120,15 +119,6 @@ class HomeDrawer extends StatelessWidget {
                   },
                 ),
 
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.offline_pin_outlined,
-                  title: 'تنزيلاتي',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const DownloadsScreen()));
-                  },
-                ),
 
                 _buildDrawerItem(
                   context,

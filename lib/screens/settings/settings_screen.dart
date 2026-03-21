@@ -7,12 +7,12 @@ import '../../core/services/settings_service.dart';
 import '../auth/login_screen.dart';
 import 'terms_conditions_screen.dart';
 import 'privacy_policy_screen.dart';
-import '../../core/constants/app_strings.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:ui' as ui;
-import '../../core/services/offline_storage_service.dart';
+
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -28,9 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   bool _notificationsEnabled = true;
-  bool _autoDownload = false;
-  bool _wifiOnly = true;
-  String _videoQuality = 'عالية';
+
 
   @override
   void initState() {
@@ -50,10 +48,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final settings = SettingsService();
     setState(() {
       _notificationsEnabled = settings.getNotificationsEnabled();
-      _autoDownload = settings.getAutoDownload();
-      _wifiOnly = settings.getWifiOnly();
     });
   }
+
 
   String get _selectedLanguage =>
       Provider.of<LocaleProvider>(context, listen: false).locale;
@@ -101,79 +98,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         },
                         activeColor: AppColors.primaryPurple,
                       ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Download Section
-                    _buildSectionTitle(_t('downloads')),
-                    const SizedBox(height: 12),
-                    _buildSettingCard(
-                      icon: Icons.download,
-                      title: _t('auto_download'),
-                      subtitle: _t('auto_download_desc'),
-                      trailing: Switch(
-                        value: _autoDownload,
-                        onChanged: (value) async {
-                          setState(() {
-                            _autoDownload = value;
-                          });
-                          await SettingsService().setAutoDownload(value);
-                        },
-                        activeColor: AppColors.primaryPurple,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _buildSettingCard(
-                      icon: Icons.wifi,
-                      title: _t('wifi_only'),
-                      subtitle: _t('wifi_only_desc'),
-                      trailing: Switch(
-                        value: _wifiOnly,
-                        onChanged: (value) async {
-                          setState(() {
-                            _wifiOnly = value;
-                          });
-                          await SettingsService().setWifiOnly(value);
-                        },
-                        activeColor: AppColors.primaryPurple,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _buildSettingCard(
-                      icon: Icons.high_quality,
-                      title: _t('video_quality'),
-                      subtitle: _videoQuality == 'عالية'
-                          ? _t('video_quality_high')
-                          : (_videoQuality == 'متوسطة'
-                              ? _t('video_quality_medium')
-                              : _t('video_quality_low')),
-                      trailing: Icon(
-                        selectedLanguage == 'ar'
-                            ? Icons.chevron_left
-                            : Icons.chevron_right,
-                        color: Colors.white,
-                      ),
-                      onTap: () => _showQualityDialog(),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    _buildSettingCard(
-                      icon: Icons.delete_outline,
-                      title: _t('clear_downloads'),
-                      subtitle: _t('clear_downloads_desc'),
-                      trailing: Icon(
-                        selectedLanguage == 'ar'
-                            ? Icons.chevron_left
-                            : Icons.chevron_right,
-                        color: Colors.white,
-                      ),
-                      onTap: _clearAllDownloads,
                     ),
 
                     const SizedBox(height: 24),
@@ -527,160 +451,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
-  }
-
-
-
-  void _showQualityDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(0.3),
-                    Colors.white.withOpacity(0.2),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _t('video_quality'),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontFamily: 'Cairo',
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  ...['عالية', 'متوسطة', 'منخفضة'].map((quality) {
-                    final label = quality == 'عالية'
-                        ? _t('video_quality_high')
-                        : (quality == 'متوسطة'
-                            ? _t('video_quality_medium')
-                            : _t('video_quality_low'));
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () async {
-                            final navigator = Navigator.of(context);
-                            await _updateVideoQuality(quality);
-                            if (mounted) navigator.pop();
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: _videoQuality == quality
-                                  ? AppColors.primaryPurple.withOpacity(0.3)
-                                  : Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _videoQuality == quality
-                                    ? AppColors.primaryPurple
-                                    : Colors.white.withOpacity(0.3),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    label,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white,
-                                      fontFamily: 'Cairo',
-                                    ),
-                                  ),
-                                ),
-                                if (_videoQuality == quality)
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: AppColors.primaryPurple,
-                                  ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-
-  Future<void> _updateVideoQuality(String quality) async {
-    setState(() {
-      _videoQuality = quality;
-    });
-    await SettingsService().setVideoQuality(quality);
-  }
-
-  Future<void> _clearAllDownloads() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.getSurfaceColor(context),
-        title: Text(_t('clear_downloads_confirm_title')),
-        content: Text(_t('clear_downloads_confirm_desc')),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(_t('cancel')),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              _t('clear'),
-              style: const TextStyle(color: Colors.red, fontFamily: 'Cairo'),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      // Show loading indicator or snackbar before deleting
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_t('clearing'))),
-        );
-      }
-
-      await OfflineStorageService().clearAll();
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_t('clear_success'))),
-        );
-        // Refresh settings or stats if needed
-      }
-    }
   }
 
   void _showSupportDialog() {

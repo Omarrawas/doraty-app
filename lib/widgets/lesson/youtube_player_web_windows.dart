@@ -31,7 +31,7 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
   void initState() {
     super.initState();
     _viewCounter++;
-    _viewId = 'youtube-${widget.videoId}-${_viewCounter}';
+    _viewId = 'youtube-${widget.videoId}-$_viewCounter';
 
     if (kIsWeb) {
       // Register the view factory for Web
