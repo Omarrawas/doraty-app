@@ -1,3 +1,4 @@
+import '../core/utils/safe_parser.dart';
 class Question {
   final String id;
   final String text;
@@ -166,7 +167,7 @@ class Exam {
       endTime: json['endTime'] != null ? DateTime.parse(json['endTime']) : null,
       isCompleted: json['isCompleted'] ?? false,
       maxAttempts: json['max_attempts'],
-      attempts: List<Map<String, dynamic>>.from(json['attempts'] ?? []),
+      attempts: SafeParser.safeMapList(json['attempts'] ?? []),
       shuffleQuestions: json['shuffle_questions'] ?? false,
       shuffleOptions: json['shuffle_options'] ?? false,
       score: json['score'],

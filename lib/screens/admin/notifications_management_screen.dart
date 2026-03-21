@@ -8,6 +8,7 @@ import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../models/course.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../utils/safe_parser.dart';
 
 class NotificationsManagementScreen extends StatefulWidget {
   const NotificationsManagementScreen({super.key});
@@ -57,7 +58,7 @@ class _NotificationsManagementScreenState
 
       if (mounted) {
         setState(() {
-          _history = List<Map<String, dynamic>>.from(response);
+          _history = SafeParser.safeMapList(response);
           _isLoadingHistory = false;
         });
       }
@@ -93,7 +94,7 @@ class _NotificationsManagementScreenState
 
       if (mounted) {
         setState(() {
-          _users = List<Map<String, dynamic>>.from(response);
+          _users = SafeParser.safeMapList(response);
           _isLoadingData = false;
         });
       }

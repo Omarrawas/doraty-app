@@ -8,6 +8,7 @@ import '../../models/chapter.dart';
 import '../../models/payment_account.dart';
 import 'cache_service.dart';
 import 'local_database.dart';
+import '../utils/safe_parser.dart';
 import '../../models/course.dart';
 
 class DatabaseService {
@@ -54,7 +55,7 @@ class DatabaseService {
         try {
           final response =
               await _client.from('categories').select().order('name');
-          return List<Map<String, dynamic>>.from(response);
+          return SafeParser.safeMapList(response);
         } catch (e) {
           debugPrint('Error getting categories: $e');
           return [];
@@ -71,7 +72,7 @@ class DatabaseService {
           .select()
           .eq('parent_id', parentId)
           .order('name');
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error getting subcategories: $e');
       return [];
@@ -166,7 +167,7 @@ class DatabaseService {
         try {
           // Fetch bundles
           final response = await _client.from('bundles').select().order('created_at', ascending: false);
-          final List<Map<String, dynamic>> bundles = List<Map<String, dynamic>>.from(response);
+          final List<Map<String, dynamic>> bundles = SafeParser.safeMapList(response);
           
           // For each bundle, fetch course IDs and full course details
           final List<Map<String, dynamic>> enrichedBundles = [];
@@ -302,7 +303,7 @@ class DatabaseService {
               .from('tips')
               .select('*, courses(*)')
               .order('created_at', ascending: false);
-          return List<Map<String, dynamic>>.from(response);
+          return SafeParser.safeMapList(response);
         } catch (e) {
           debugPrint('Error getting tips: $e');
           return [];
@@ -505,7 +506,7 @@ class DatabaseService {
       dbQuery = dbQuery.eq('is_published', true);
 
       final response = await dbQuery;
-      final data = List<Map<String, dynamic>>.from(response);
+      final data = SafeParser.safeMapList(response);
 
       // Map joined data to flat structure expected by UI
       return data.map((course) {
@@ -536,7 +537,7 @@ class DatabaseService {
           .eq('instructor_id', teacherId)
           .eq('is_published', true);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -560,7 +561,7 @@ class DatabaseService {
               .select()
               .eq('instructor_id', userId);
 
-          final courses = List<Map<String, dynamic>>.from(coursesResponse);
+          final courses = SafeParser.safeMapList(coursesResponse);
           final courseIds = courses.map((c) => c['id']).toList();
 
           if (courseIds.isEmpty) return [];
@@ -572,7 +573,7 @@ class DatabaseService {
               .inFilter('course_id', courseIds);
 
           final enrollments =
-              List<Map<String, dynamic>>.from(enrollmentsResponse);
+              SafeParser.safeMapList(enrollmentsResponse);
 
           // 3. Get exams count
           final examsResponse = await _client
@@ -580,7 +581,7 @@ class DatabaseService {
               .select('course_id')
               .inFilter('course_id', courseIds);
 
-          final allExams = List<Map<String, dynamic>>.from(examsResponse);
+          final allExams = SafeParser.safeMapList(examsResponse);
 
           // 4. Get revenue from view
           final revenueResponse = await _client
@@ -588,7 +589,7 @@ class DatabaseService {
               .select('course_id, course_price')
               .inFilter('course_id', courseIds);
 
-          final allRevenue = List<Map<String, dynamic>>.from(revenueResponse);
+          final allRevenue = SafeParser.safeMapList(revenueResponse);
 
           // 5. Aggregate data
           return courses.map((course) {
@@ -647,7 +648,7 @@ class DatabaseService {
           .eq('created_by', userId) // Or join with courses
           .order('created_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       // Fallback if created_by doesn't exist, try via teacher_courses
       try {
@@ -661,7 +662,7 @@ class DatabaseService {
             .inFilter('course_id', courseIds)
             .order('created_at', ascending: false);
 
-        return List<Map<String, dynamic>>.from(response);
+        return SafeParser.safeMapList(response);
       } catch (e2) {
         rethrow;
       }
@@ -680,7 +681,7 @@ class DatabaseService {
           .eq('attempts.user_id', userId ?? '')
           .order('created_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error fetching exams for lesson: $e');
       return [];
@@ -739,7 +740,7 @@ class DatabaseService {
           }
 
           final response = await query;
-          final data = List<Map<String, dynamic>>.from(response);
+          final data = SafeParser.safeMapList(response);
 
           // Map joined data to flat structure expected by UI
           final coursesMapList = data.map((course) {
@@ -843,7 +844,7 @@ class DatabaseService {
       }
 
       final response = await query.order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error in _getCoursesSimple: $e');
       return [];
@@ -931,7 +932,7 @@ class DatabaseService {
           .eq('course_id', courseId)
           .order('order_index', ascending: true);
 
-      final lessons = List<Map<String, dynamic>>.from(response);
+      final lessons = SafeParser.safeMapList(response);
 
       // If user is authenticated, get progress for all lessons in one query
       if (userId != null && lessons.isNotEmpty) {
@@ -943,7 +944,7 @@ class DatabaseService {
             .eq('user_id', userId)
             .filter('lesson_id', 'in', lessonIds);
 
-        final allProgress = List<Map<String, dynamic>>.from(progressResponse);
+        final allProgress = SafeParser.safeMapList(progressResponse);
 
         // Create a map for quick lookup
         final progressMap = {for (var p in allProgress) p['lesson_id']: p};
@@ -1191,7 +1192,7 @@ class DatabaseService {
           .eq('lesson_id', lessonId)
           .order('created_at'); // or timestamp if used
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       return [];
     }
@@ -1242,7 +1243,7 @@ class DatabaseService {
           .eq('lesson_id', lessonId)
           .order('created_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -1311,7 +1312,7 @@ class DatabaseService {
           .eq('user_id', userId)
           .order('event_date');
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -1330,7 +1331,7 @@ class DatabaseService {
           .select('*, achievements(*)')
           .eq('user_id', userId);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -1371,7 +1372,7 @@ class DatabaseService {
           .order('created_at', ascending: false)
           .limit(50);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -1507,7 +1508,7 @@ class DatabaseService {
           .eq('course_id', courseId)
           .order('created_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -1568,7 +1569,7 @@ class DatabaseService {
 
       if (response.isEmpty) return;
 
-      final ratings = List<Map<String, dynamic>>.from(response);
+      final ratings = SafeParser.safeMapList(response);
       if (ratings.isEmpty) return;
 
       double totalRating = 0;
@@ -1601,7 +1602,7 @@ class DatabaseService {
           .eq('user_id', userId)
           .order('due_date');
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -1777,7 +1778,7 @@ class DatabaseService {
               'id, full_name, avatar_url, exam_attempts(score, status), lesson_progress(is_completed)')
           .order('full_name');
 
-      final users = List<Map<String, dynamic>>.from(response);
+      final users = SafeParser.safeMapList(response);
 
       final results = users.map((u) {
         // Points from exams (50 XP per submitted exam)
@@ -1867,7 +1868,7 @@ class DatabaseService {
       }
 
       var data = await query;
-      var enrollments = List<Map<String, dynamic>>.from(data);
+      var enrollments = SafeParser.safeMapList(data);
 
       // Filter by teacher manually if API filter failed or was complex
       if (teacherId != null) {
@@ -2040,7 +2041,7 @@ class DatabaseService {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      final data = List<Map<String, dynamic>>.from(response);
+      final data = SafeParser.safeMapList(response);
       return data.map((fav) => fav['courses'] as Map<String, dynamic>).toList();
     } catch (e) {
       debugPrint('Error getting favorite courses: $e');
@@ -2061,7 +2062,7 @@ class DatabaseService {
           .eq('is_published', true)
           .limit(6);
 
-      final data = List<Map<String, dynamic>>.from(response);
+      final data = SafeParser.safeMapList(response);
       return data.map((json) => Course.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error getting similar courses: $e');
@@ -2109,7 +2110,7 @@ class DatabaseService {
               .eq('user_id', userId)
               .order('enrolled_at', ascending: false);
 
-          final data = List<Map<String, dynamic>>.from(response);
+          final data = SafeParser.safeMapList(response);
 
           // Map nested user data to course fields
           final enrollments = data.map((enrollment) {
@@ -2143,7 +2144,7 @@ class DatabaseService {
         .select('*, courses(*)')
         .eq('user_id', userId)
         .order('enrolled_at', ascending: false);
-    return List<Map<String, dynamic>>.from(response);
+    return SafeParser.safeMapList(response);
   }
 
   /// Get enrolled course IDs
@@ -2188,7 +2189,7 @@ class DatabaseService {
               .select('*, courses(*)')
               .eq('user_id', userId);
 
-          return List<Map<String, dynamic>>.from(response);
+          return SafeParser.safeMapList(response);
         } catch (e) {
           debugPrint('Error getting enrolled courses: $e');
           rethrow;
@@ -2211,7 +2212,7 @@ class DatabaseService {
           .eq('attempts.user_id', userId ?? '')
           .order('created_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -2227,7 +2228,7 @@ class DatabaseService {
           .eq('course_id', courseId)
           .order('created_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -2271,7 +2272,7 @@ class DatabaseService {
       }
 
       final response = await query.order('started_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -2509,7 +2510,7 @@ class DatabaseService {
           .eq('exam_id', examId)
           .eq('status', 'submitted');
 
-      final attempts = List<Map<String, dynamic>>.from(attemptsResponse);
+      final attempts = SafeParser.safeMapList(attemptsResponse);
 
       if (attempts.isEmpty) {
         return {
@@ -2535,7 +2536,7 @@ class DatabaseService {
           .select('question_id, is_correct, questions(question_text)')
           .filter('attempt_id', 'in', attemptIds);
 
-      final answers = List<Map<String, dynamic>>.from(answersResponse);
+      final answers = SafeParser.safeMapList(answersResponse);
 
       // Group by question
       final Map<String, Map<String, dynamic>> questionStatsMap = {};
@@ -2637,7 +2638,7 @@ class DatabaseService {
           .eq('status', 'graded')
           .order('submitted_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(attempts);
+      return SafeParser.safeMapList(attempts);
     } catch (e) {
       rethrow;
     }
@@ -2998,7 +2999,7 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getRoles() async {
     try {
       final response = await _client.from('roles').select();
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -3012,7 +3013,7 @@ class DatabaseService {
           .select('*, roles(*)')
           .eq('user_id', userId);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -3032,7 +3033,7 @@ class DatabaseService {
           .select('*, permissions(*)')
           .eq('role_id', role['id']);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -3198,7 +3199,7 @@ class DatabaseService {
 
       final response = await query.order('started_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -3255,7 +3256,7 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
       final response = await _client.from('users').select('*');
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -3294,7 +3295,7 @@ class DatabaseService {
         try {
           // Use RPC to bypass RLS and get teachers list cleanly
           final response = await _client.rpc('get_all_teachers_public');
-          final data = List<Map<String, dynamic>>.from(response);
+          final data = SafeParser.safeMapList(response);
 
           // Transform flattened data to nested structure expected by UI
           return data.map((t) {
@@ -3327,7 +3328,7 @@ class DatabaseService {
                 .select('*, users(*)')
                 .eq('role_id', teacherRole['id']);
 
-            return List<Map<String, dynamic>>.from(response);
+            return SafeParser.safeMapList(response);
           } catch (_) {
             return []; // Return empty if both fail
           }
@@ -3371,7 +3372,7 @@ class DatabaseService {
 
       final response = await query;
 
-      final rawEnrollments = List<Map<String, dynamic>>.from(response);
+      final rawEnrollments = SafeParser.safeMapList(response);
 
       // 2. Filter enrollments by date in Dart - using a more robust comparison
       final enrollments = rawEnrollments.where((e) {
@@ -3418,7 +3419,7 @@ class DatabaseService {
               .inFilter('exam_id', examIds)
               .gte('started_at', startDate.toIso8601String())
               .lte('started_at', inclusiveEndDate.toIso8601String());
-          attempts = List<Map<String, dynamic>>.from(attemptsResponse);
+          attempts = SafeParser.safeMapList(attemptsResponse);
         }
       }
 
@@ -3538,7 +3539,7 @@ class DatabaseService {
           .order('submitted_at', ascending: false)
           .limit(limit);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error getting recent teacher exam attempts: $e');
       return [];
@@ -3580,7 +3581,7 @@ class DatabaseService {
       }
 
       final response = await filterQuery.order('enrolled_at', ascending: false);
-      final rawData = List<Map<String, dynamic>>.from(response);
+      final rawData = SafeParser.safeMapList(response);
 
       // Reconstruct UI compatible structure
       final enrollments = rawData.map((row) {
@@ -3637,7 +3638,7 @@ class DatabaseService {
         query = query.eq('status', status);
       }
       final response = await query.order('enrolled_at', ascending: false);
-      final enrollments = List<Map<String, dynamic>>.from(response);
+      final enrollments = SafeParser.safeMapList(response);
 
       for (var enrollment in enrollments) {
         try {
@@ -3684,7 +3685,7 @@ class DatabaseService {
       final response = await _client
           .from('admin_enrollments_view')
           .select('status, enrolled_at, expires_at, course_price');
-      final enrollments = List<Map<String, dynamic>>.from(response);
+      final enrollments = SafeParser.safeMapList(response);
 
       int totalEnrollments = enrollments.length;
       int activeCount = 0;
@@ -3822,7 +3823,7 @@ class DatabaseService {
       }
 
       final response = await query.order('enrolled_at', ascending: false);
-      var rawData = List<Map<String, dynamic>>.from(response);
+      var rawData = SafeParser.safeMapList(response);
 
       if (searchQuery != null && searchQuery.isNotEmpty) {
         final search = searchQuery.toLowerCase();
@@ -3912,7 +3913,7 @@ class DatabaseService {
           .select()
           .eq('instructor_id', teacherId);
 
-      final rawData = List<Map<String, dynamic>>.from(response);
+      final rawData = SafeParser.safeMapList(response);
 
       double totalRevenue = 0;
       int totalStudents = rawData.length;
@@ -4050,7 +4051,7 @@ class DatabaseService {
           .eq('course_id', courseId)
           .order('order_index');
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
     }
@@ -4081,7 +4082,7 @@ class DatabaseService {
           .select('id, progress, status')
           .eq('course_id', courseId);
       
-      final enrollments = List<Map<String, dynamic>>.from(response);
+      final enrollments = SafeParser.safeMapList(response);
 
       // Total lessons in the course
       final lessonsResponse =
@@ -4245,7 +4246,7 @@ class DatabaseService {
             .select('*, courses(title), payment_receipts(*)')
             .eq('user_id', userId)
             .order('created_at', ascending: false);
-        return List<Map<String, dynamic>>.from(response);
+        return SafeParser.safeMapList(response);
       } catch (e) {
         // If table doesn't exist, return empty
         return [];
@@ -4341,7 +4342,7 @@ class DatabaseService {
           .eq('user_id', userId)
           .order('created_at', ascending: false);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error getting user payment receipts: $e');
       return [];
@@ -4383,7 +4384,7 @@ class DatabaseService {
       }
 
       final response = await query.order('created_at', ascending: false);
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error getting all payment receipts: $e');
       return [];
@@ -4495,7 +4496,7 @@ class DatabaseService {
           .eq('lesson_id', lessonId)
           .order('created_at', ascending: false);
 
-      final questions = List<Map<String, dynamic>>.from(response);
+      final questions = SafeParser.safeMapList(response);
 
       final userId = SupabaseService.instance.currentUserId;
 
@@ -4551,7 +4552,7 @@ class DatabaseService {
               .select()
               .or(combinedFilter);
 
-          final reactions = List<Map<String, dynamic>>.from(reactionsResponse);
+          final reactions = SafeParser.safeMapList(reactionsResponse);
 
           void processReactions(Map<String, dynamic> item, String idKey) {
             final id = item['id'].toString();
@@ -4629,7 +4630,7 @@ class DatabaseService {
           .eq('question_id', questionId)
           .order('created_at', ascending: true);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error getting question replies: $e');
       return [];
@@ -4763,7 +4764,7 @@ class DatabaseService {
                 last_accessed_lesson:lessons!last_accessed_lesson_id(*)
               ''').eq('user_id', userId).order('updated_at', ascending: false);
 
-          return List<Map<String, dynamic>>.from(response);
+          return SafeParser.safeMapList(response);
         } catch (e) {
           debugPrint('Error fetching enrollments with progress: $e');
           rethrow;
@@ -4788,7 +4789,7 @@ class DatabaseService {
               .order('featured_order', ascending: true)
               .limit(5);
 
-          final data = List<Map<String, dynamic>>.from(response);
+          final data = SafeParser.safeMapList(response);
 
           // Map joined data to flat structure
           return data.map((course) {
@@ -4871,7 +4872,7 @@ class DatabaseService {
           .order('created_at', ascending: false)
           .limit(50);
 
-      final notifications = List<Map<String, dynamic>>.from(userResponse);
+      final notifications = SafeParser.safeMapList(userResponse);
 
       // 2. Global admin notifications (type = 'all')
       try {
@@ -4883,7 +4884,7 @@ class DatabaseService {
             .limit(20);
 
         final adminNotifications =
-            List<Map<String, dynamic>>.from(adminResponse);
+            SafeParser.safeMapList(adminResponse);
 
         for (var adminNotif in adminNotifications) {
           // Avoid duplicates if app already saved it locally
@@ -5112,7 +5113,7 @@ class DatabaseService {
       final response = await _client.from('qr_codes').insert(codes).select();
 
       debugPrint('Generated ${codes.length} QR codes in batch: $batchName');
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error generating bulk QR codes: $e');
       rethrow;
@@ -5128,7 +5129,7 @@ class DatabaseService {
           .eq('batch_id', batchId)
           .order('created_at', ascending: true);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error getting QR codes by batch: $e');
       rethrow;
@@ -5155,7 +5156,7 @@ class DatabaseService {
       final response =
           await query.order('created_at', ascending: false).range(from, to);
 
-      return List<Map<String, dynamic>>.from(response);
+      return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error getting all QR codes: $e');
       return [];
@@ -5310,7 +5311,7 @@ class DatabaseService {
       }
 
       final response = await query.order('enrolled_at', ascending: false);
-      final rawData = List<Map<String, dynamic>>.from(response);
+      final rawData = SafeParser.safeMapList(response);
 
       // 2. Fetch QR Code usage for the same period (Safely)
       List<Map<String, dynamic>> qrData = [];
@@ -5331,7 +5332,7 @@ class DatabaseService {
         }
 
         final qrResponse = await qrQuery.order('redeemed_at', ascending: false);
-        qrData = List<Map<String, dynamic>>.from(qrResponse);
+        qrData = SafeParser.safeMapList(qrResponse);
       } catch (e) {
         debugPrint('⚠️ Error fetching QR data for report: $e');
         // Continue without QR data

@@ -3,6 +3,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
 import '../../widgets/tex_view_widget.dart';
+import '../utils/safe_parser.dart';
 
 class ReviewExamScreen extends StatefulWidget {
   final String attemptId;
@@ -38,7 +39,7 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
              .select()
              .eq('exam_id', examId);
              
-         final questionsList = List<Map<String, dynamic>>.from(questionsResponse);
+         final questionsList = SafeParser.safeMapList(questionsResponse);
          
          // Map answers by question_id for easy lookup
          final answersList = data['answers'] as List;

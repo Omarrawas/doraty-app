@@ -11,6 +11,7 @@ import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../../widgets/empty_state.dart';
 import '../../core/services/auth_service.dart';
 import '../auth/login_screen.dart';
+import '../utils/safe_parser.dart';
 
 class CourseContentScreen extends StatefulWidget {
   final Course course;
@@ -122,7 +123,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           padding: const EdgeInsets.only(bottom: 16),
           child: _buildCurriculumSection(
             title: section['title'],
-            lessons: List<Map<String, dynamic>>.from(section['lessons']),
+            lessons: SafeParser.safeMapList(section['lessons']),
             sectionIndex: index,
             isRTL: isRTL,
           ),

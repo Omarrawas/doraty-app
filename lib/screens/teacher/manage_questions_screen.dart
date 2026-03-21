@@ -9,6 +9,7 @@ import '../../core/utils/error_utils.dart';
 import 'add_question_screen.dart';
 import 'dart:ui';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import '../utils/safe_parser.dart';
 
 class ManageQuestionsScreen extends StatefulWidget {
   final String examId;
@@ -41,7 +42,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
     try {
       final exam = await _db.getExamById(widget.examId);
       setState(() {
-        _questions = List<Map<String, dynamic>>.from(exam?['questions'] ?? []);
+        _questions = SafeParser.safeMapList(exam?['questions'] ?? []);
         _isLoading = false;
       });
     } catch (e) {
