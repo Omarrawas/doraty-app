@@ -200,10 +200,16 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    // Calculate ideal width for a vertical video (9:16)
+    final double idealWidth = screenHeight * 9 / 16;
+    final double playerWidth = idealWidth > screenWidth ? screenWidth : idealWidth;
+
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Background Thumbnail as placeholder
+        // 1. Background Thumbnail as placeholder
         if (widget.tip.effectiveThumbnailUrl != null)
           Positioned.fill(
             child: Image.network(
@@ -215,82 +221,87 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
         else
           Container(color: Colors.black),
 
-        // Video Player
+        // 2. Video Player (Constrained to prevent iframe overlap with buttons)
         if (_isInitialized)
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                if (_isYouTube) {
-                  if (_youtubeController != null) {
-                    _youtubeController!.value.isPlaying ? _youtubeController!.pause() : _youtubeController!.play();
-                  }
-                } else {
-                  _videoController!.value.isPlaying ? _videoController!.pause() : _videoController!.play();
-                }
-              });
-            },
-            child: Center(
-              child: _isYouTube 
-                ? (kIsWeb || defaultTargetPlatform == TargetPlatform.windows
-                    ? YoutubePlayerWebWindows(
-                        videoId: _extractedVideoId ?? '',
-                        height: MediaQuery.of(context).size.height,
-                      )
-                    : YoutubePlayer(
-                        controller: _youtubeController!,
-                        showVideoProgressIndicator: true,
-                        progressIndicatorColor: AppColors.primaryPurple,
-                      ))
-                : AspectRatio(
-                    aspectRatio: _videoController!.value.aspectRatio,
-                    child: VideoPlayer(_videoController!),
-                  ),
+          Center(
+            child: SizedBox(
+              width: playerWidth,
+              height: screenHeight,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  setState(() {
+                    if (_isYouTube) {
+                      if (_youtubeController != null) {
+                        _youtubeController!.value.isPlaying ? _youtubeController!.pause() : _youtubeController!.play();
+                      }
+                    } else {
+                      _videoController!.value.isPlaying ? _videoController!.pause() : _videoController!.play();
+                    }
+                  });
+                },
+                child: _isYouTube 
+                  ? (kIsWeb || defaultTargetPlatform == TargetPlatform.windows
+                      ? YoutubePlayerWebWindows(
+                          videoId: _extractedVideoId ?? '',
+                          height: screenHeight,
+                        )
+                      : YoutubePlayer(
+                          controller: _youtubeController!,
+                          showVideoProgressIndicator: true,
+                          progressIndicatorColor: AppColors.primaryPurple,
+                        ))
+                  : AspectRatio(
+                      aspectRatio: _videoController!.value.aspectRatio,
+                      child: VideoPlayer(_videoController!),
+                    ),
+              ),
             ),
           )
-        else if (!_isInitialized && (widget.tip.videoUrl.isNotEmpty))
+        else if (!_isInitialized && (widget.tip.videoUrl.isNotEmpty) && !_hasLoadError)
           const Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircularProgressIndicator(color: Colors.white),
                 SizedBox(height: 16),
-                Text('Loading...', style: TextStyle(color: Colors.white70)),
+                Text('جاري التحميل...', style: TextStyle(color: Colors.white70)),
               ],
             ),
           ),
 
-        // Error State
-        if (!_isInitialized && widget.tip.videoUrl.isEmpty)
-          const Center(
+        // 3. Play/Pause Icon Overlay (Centered on video)
+        if (_isInitialized && !_isCurrentlyPlaying() && !_hasLoadError)
+          Center(
+            child: IgnorePointer(
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: Colors.black26,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.play_arrow, size: 60, color: Colors.white70),
+              ),
+            ),
+          ),
+
+        // 4. Error State
+        if (_hasLoadError || (widget.tip.videoUrl.isEmpty && !_isInitialized))
+          Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, color: Colors.white70, size: 48),
-                SizedBox(height: 16),
-                Text('Video URL is unavailable', style: TextStyle(color: Colors.white70)),
+                const Icon(Icons.error_outline, color: Colors.white70, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  widget.tip.videoUrl.isEmpty ? 'رابط الفيديو غير متاح' : 'تعذر تشغيل الفيديو',
+                  style: const TextStyle(color: Colors.white70),
+                ),
               ],
             ),
           ),
 
-        // Play/Pause Icon Overlay
-        if (_isInitialized && !_isCurrentlyPlaying())
-          const Center(
-            child: Icon(Icons.play_arrow, size: 80, color: Colors.white54),
-          ),
-
-        if (_hasLoadError)
-          const Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, color: Colors.white70, size: 48),
-                SizedBox(height: 16),
-                Text('تعذر تشغيل الفيديو', style: TextStyle(color: Colors.white70)),
-              ],
-            ),
-          ),
-
-        // Bottom Info & CTA
+        // 5. Bottom Info & CTA
         Positioned(
           bottom: 40,
           left: 16,
@@ -307,26 +318,33 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
                   shadows: [Shadow(blurRadius: 10, color: Colors.black)],
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               if (widget.tip.linkedCourse != null)
-                GestureDetector(
-                  onTap: () => _showCoursePreview(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryPurple.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.school, color: Colors.white, size: 16),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'View course details',
-                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                        ),
-                      ],
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => _showCoursePreview(),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryPurple.withOpacity(0.95),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4))
+                        ],
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.school_rounded, color: Colors.white, size: 18),
+                          SizedBox(width: 10),
+                          Text(
+                            'استكشاف الدورة التدريبية',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -334,7 +352,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
           ),
         ),
 
-        // Side Buttons (Share, Mute, Course)
+        // 6. Side Buttons
         Positioned(
           bottom: 100,
           right: 16,
@@ -342,20 +360,20 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
             children: [
               _buildSideAction(
                 icon: Icons.share,
-                label: 'Share',
+                label: 'مشاركة',
                 onTap: () {},
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               _buildSideAction(
-                icon: _isMuted() ? Icons.volume_off : Icons.volume_up,
-                label: 'Mute',
+                icon: _isMuted() ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                label: _isMuted() ? 'تنشيط' : 'كتم',
                 onTap: _toggleMute,
               ),
               if (widget.tip.linkedCourse != null) ...[
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 _buildSideAction(
-                  icon: Icons.monitor,
-                  label: 'Course',
+                  icon: Icons.play_circle_fill_rounded,
+                  label: 'الدورة',
                   onTap: () => _showCoursePreview(),
                   animate: true,
                 ),
@@ -364,13 +382,20 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
           ),
         ),
 
-        // Top Back Button
+        // 7. Top Back Button
         Positioned(
           top: 50,
           left: 16,
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-            onPressed: () => Navigator.pop(context),
+          child: Material(
+            color: Colors.transparent,
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(color: Colors.black26, shape: BoxShape.circle),
+                child: const Icon(Icons.close, color: Colors.white),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
           ),
         ),
       ],

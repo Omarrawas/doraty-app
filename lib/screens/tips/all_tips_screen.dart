@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/services/database_service.dart';
 import '../../models/tip.dart';
 import '../../widgets/vertical_tip_player.dart';
-import '../../core/theme/app_colors.dart';
 
+/// Discovery-style screen for Tips (TikTok-like vertical feed)
 class AllTipsScreen extends StatefulWidget {
   final bool showAppBar;
-  const AllTipsScreen({super.key, this.showAppBar = true});
+  const AllTipsScreen({super.key, this.showAppBar = false});
 
   @override
   State<AllTipsScreen> createState() => _AllTipsScreenState();
@@ -25,12 +24,17 @@ class _AllTipsScreenState extends State<AllTipsScreen> {
   }
 
   Future<void> _loadTips() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final data = await _db.getTips();
       if (mounted) {
+        final List<Tip> loadedTips = data.map((e) => Tip.fromJson(e)).toList();
+        // Shuffle for randomness (TikTok style)
+        loadedTips.shuffle();
+        
         setState(() {
-          _tips = data.map((e) => Tip.fromJson(e)).toList();
+          _tips = loadedTips;
           _isLoading = false;
         });
       }
@@ -44,188 +48,44 @@ class _AllTipsScreenState extends State<AllTipsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: widget.showAppBar ? AppBar(
-        title: const Text('نصائح دوراتي'), // More branded title
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ) : null,
-      extendBodyBehindAppBar: true,
-      body: DynamicGradientBackground(
-        child: SafeArea(
-          child: _isLoading
-              ? const Center(child: CircularProgressIndicator(color: Colors.white))
-              : _tips.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.lightbulb_outline, color: Colors.white24, size: 80),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'لا توجد نصائح متوفرة حالياً',
-                            style: TextStyle(color: Colors.white54, fontSize: 18),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: GridView.builder(
-                        padding: const EdgeInsets.only(top: 20, bottom: 40),
-                        itemCount: _tips.length,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.6,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                        ),
-                        itemBuilder: (context, index) {
-                          return _buildTipCard(_tips[index], index);
-                        },
-                      ),
-                    ),
-        ),
-      ),
-    );
-  }
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+      );
+    }
 
-  Widget _buildTipCard(Tip tip, int index) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => VerticalTipPlayer(
-              tips: _tips,
-              initialIndex: index,
-            ),
+    if (_tips.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            onPressed: () => Navigator.pop(context),
           ),
-        );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          image: tip.effectiveThumbnailUrl != null
-              ? DecorationImage(
-                  image: NetworkImage(tip.effectiveThumbnailUrl!),
-                  fit: BoxFit.cover,
-                )
-              : null,
-          color: Colors.white10,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Gradient Overlay
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.85),
-                      ],
-                      stops: const [0.4, 1.0],
-                    ),
-                  ),
-                ),
-              ),
-              
-              const Center(
-                child: Icon(
-                  Icons.play_circle_fill,
-                  color: Colors.white70,
-                  size: 50,
-                ),
-              ),
-              
-              // View Count Badge
-              Positioned(
-                top: 12,
-                right: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.black45,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.visibility, color: Colors.white, size: 12),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${tip.viewsCount}',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Title & Info
-              Positioned(
-                bottom: 16,
-                left: 12,
-                right: 12,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      tip.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        shadows: [Shadow(blurRadius: 10, color: Colors.black)],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    if (tip.linkedCourse != null) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.link, color: AppColors.secondaryGold, size: 12),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(
-                              tip.linkedCourse!.title,
-                              style: const TextStyle(
-                                color: AppColors.secondaryGold,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
+              Icon(Icons.lightbulb_outline, color: Colors.white24, size: 80),
+              SizedBox(height: 16),
+              Text(
+                'لا توجد نصائح متوفرة حالياً',
+                style: TextStyle(color: Colors.white54, fontSize: 18),
               ),
             ],
           ),
         ),
-      ),
+      );
+    }
+
+    // Directly return the TikTok-style vertical player
+    return VerticalTipPlayer(
+      tips: _tips,
+      initialIndex: 0,
     );
   }
 }

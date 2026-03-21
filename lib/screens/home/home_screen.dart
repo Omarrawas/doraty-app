@@ -63,6 +63,17 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _currentBannerPage = 0;
 
+  List<Map<String, dynamic>> _normalizeMapList(dynamic raw) {
+    if (raw is! Iterable) return <Map<String, dynamic>>[];
+    final result = <Map<String, dynamic>>[];
+    for (final item in raw) {
+      if (item is Map) {
+        result.add(Map<String, dynamic>.from(item));
+      }
+    }
+    return result;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -144,9 +155,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadTeachers({bool forceRefresh = false}) async {
     try {
       final teachers = await _databaseService.getAllTeachers(forceRefresh: forceRefresh);
+      final normalized = _normalizeMapList(teachers);
       if (mounted) {
         setState(() {
-          _allTeachers = List<Map<String, dynamic>>.from(teachers);
+          _allTeachers = normalized;
           _filteredTeachers = _allTeachers;
         });
       }
@@ -158,9 +170,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadCategories({bool forceRefresh = false}) async {
     try {
       final categoriesData = await _databaseService.getCategories(forceRefresh: forceRefresh);
+      final normalized = _normalizeMapList(categoriesData);
       if (mounted) {
         setState(() {
-          _categories = categoriesData.map((e) => CategoryModel.fromJson(e)).toList();
+          _categories = normalized.map((e) => CategoryModel.fromJson(e)).toList();
         });
       }
     } catch (e) {
@@ -171,9 +184,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadTips({bool forceRefresh = false}) async {
     try {
       final tipsData = await _databaseService.getTips(forceRefresh: forceRefresh);
+      final normalized = _normalizeMapList(tipsData);
       if (mounted) {
         setState(() {
-          _tips = tipsData.map((e) => Tip.fromJson(e)).toList();
+          _tips = normalized.map((e) => Tip.fromJson(e)).toList();
         });
       }
     } catch (e) {
@@ -184,9 +198,10 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadBundles({bool forceRefresh = false}) async {
     try {
       final bundlesData = await _databaseService.getBundles(forceRefresh: forceRefresh);
+      final normalized = _normalizeMapList(bundlesData);
       if (mounted) {
         setState(() {
-          _bundles = bundlesData.map((e) => Bundle.fromJson(e)).toList();
+          _bundles = normalized.map((e) => Bundle.fromJson(e)).toList();
         });
       }
     } catch (e) {
@@ -213,10 +228,11 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final coursesData =
           await _databaseService.getCourses(forceRefresh: forceRefresh);
+      final normalized = _normalizeMapList(coursesData);
       
       if (mounted) {
         setState(() {
-          _allCourses = coursesData
+          _allCourses = normalized
               .map((data) => Course.fromJson(data))
               .toList();
         });
@@ -230,9 +246,10 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final featured =
           await _databaseService.getFeaturedCourses(forceRefresh: forceRefresh);
+      final normalized = _normalizeMapList(featured);
       if (mounted) {
         setState(() {
-          _featuredCoursesForBanner = featured
+          _featuredCoursesForBanner = normalized
               .map((data) => Course.fromJson(data))
               .toList();
         });
@@ -257,7 +274,11 @@ class _HomeScreenState extends State<HomeScreen> {
             final enrollment = Map<String, dynamic>.from(item);
             final courseId = (enrollment['course_id'] ?? enrollment['id'])?.toString();
             if (courseId != null) {
-              _enrollmentProgress[courseId] = (enrollment['progress_percentage'] ?? 0.0).toDouble();
+              final progressRaw = enrollment['progress_percentage'];
+              final progress = progressRaw is num
+                  ? progressRaw.toDouble()
+                  : double.tryParse(progressRaw?.toString() ?? '0') ?? 0.0;
+              _enrollmentProgress[courseId] = progress;
               _enrollmentIds[courseId] = enrollment['id']?.toString() ?? '';
             }
           }
