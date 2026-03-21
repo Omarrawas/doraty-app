@@ -79,23 +79,30 @@ class LocalDatabase {
     return _boxes[boxName]!;
   }
 
+  /// DEEP recursive normalization — converts every nested Map to Map<String, dynamic>
+  /// and every nested List to List<dynamic>. This is essential for Flutter Web where
+  /// Supabase/Dart returns LinkedHashMap<dynamic, dynamic> at every join level.
+  dynamic _deepNormalize(dynamic value) {
+    if (value is Map) {
+      return Map<String, dynamic>.fromEntries(
+        value.entries.map((e) => MapEntry(e.key.toString(), _deepNormalize(e.value))),
+      );
+    }
+    if (value is Iterable && value is! String) {
+      return value.map(_deepNormalize).toList();
+    }
+    return value;
+  }
+
   /// Generic set operation with strict normalization and memory caching
   Future<void> set(String key, dynamic value, {String? boxName, String? version}) async {
     try {
       final box = _getBox(boxName);
       
-      // Normalize before saving
-      dynamic normalizedValue;
-      if (value is Iterable) {
-        normalizedValue = value.map((item) {
-          if (item is Map) return Map<String, dynamic>.from(item);
-          return item;
-        }).toList();
-      } else if (value is Map) {
-        normalizedValue = Map<String, dynamic>.from(value);
-      } else {
-        normalizedValue = value;
-      }
+      // DEEP normalize before saving — converts all nested Maps/Lists recursively.
+      // Critical for Flutter Web: Supabase returns LinkedHashMap<dynamic, dynamic>
+      // at nested levels which causes type cast failures on minified builds.
+      final normalizedValue = _deepNormalize(value);
       
       // PERSISTENT LAYER (Hive)
       await box.put(key, normalizedValue);
@@ -156,20 +163,34 @@ class LocalDatabase {
     }
   }
 
-  /// Shared parsing logic
+  /// Shared parsing logic — uses runtime data-type checks to survive Flutter Web minification.
+  /// NOTE: T== comparisons for generic types (List<Map<String,dynamic>>) fail on minified builds.
   T? _parseData<T>(dynamic data, String key) {
     try {
       if (data == null) return null;
-      if (T == List<Map<String, dynamic>>) return SafeParser.safeMapList(data) as T;
-      if (T == Map<String, dynamic>) return SafeParser.safeMap(data) as T;
-      if (T == List<String>) return SafeParser.toStringList(data) as T;
-      if (T == int) return SafeParser.toInt(data) as T;
-      if (T == double) return SafeParser.toDouble(data) as T;
-      if (T == bool) return SafeParser.toBool(data) as T;
-      if (T == String) return SafeParser.toStringSafe(data) as T;
+
+      // Use data-instance checks instead of T== (T== breaks on minified Flutter Web)
+      if (data is Iterable && data is! String) {
+        // Always deep-normalize lists coming from Hive (they may be ReadOnlyList<dynamic>)
+        final asList = SafeParser.safeMapList(data);
+        try { return asList as T; } catch (_) {}
+        // Fallback: try as plain List<dynamic>
+        try { return data.toList() as T; } catch (_) {}
+      }
+      if (data is Map) {
+        final asMap = SafeParser.safeMap(data);
+        try { return asMap as T; } catch (_) {}
+      }
+
+      // Primitive types
+      if (data is int)    { try { return data as T; } catch (_) { return SafeParser.toInt(data) as T?; } }
+      if (data is double) { try { return data as T; } catch (_) { return SafeParser.toDouble(data) as T?; } }
+      if (data is bool)   { try { return data as T; } catch (_) { return SafeParser.toBool(data) as T?; } }
+      if (data is String) { try { return data as T; } catch (_) { return SafeParser.toStringSafe(data) as T?; } }
+
       return data as T?;
     } catch (e) {
-      debugPrint('❌ LocalDatabase.parse error: $e');
+      debugPrint('❌ LocalDatabase.parse error for $key: $e');
       return null;
     }
   }

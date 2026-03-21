@@ -136,7 +136,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _startBannerAutoPlay() {
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _allCourses.isNotEmpty) {
+      if (mounted && _allCourses.isNotEmpty &&
+          _bannerController.hasClients) {
         final nextPage =
             (_currentBannerPage + 1) % (_allCourses.take(3).length);
         _bannerController
@@ -151,6 +152,9 @@ class _HomeScreenState extends State<HomeScreen> {
             _startBannerAutoPlay();
           }
         });
+      } else if (mounted) {
+        // PageView not ready yet — retry in 1 second
+        _startBannerAutoPlay();
       }
     });
   }
