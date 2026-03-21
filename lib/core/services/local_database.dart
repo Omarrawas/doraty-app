@@ -30,8 +30,6 @@ class LocalDatabase {
     }
 
     _initFuture = () async {
-      await Hive.initFlutter();
-
       final boxes = <String>[
         boxGeneral,
         boxCourses,
@@ -64,7 +62,7 @@ class LocalDatabase {
     try {
       final Box box;
       if (Hive.isBoxOpen(name)) {
-        box = Hive.box(name);
+        box = Hive.box<Map>(name);
       } else {
         // Keep type aligned with OfflineCacheService to avoid type mismatches.
         box = await Hive.openBox<Map>(name);
@@ -75,7 +73,7 @@ class LocalDatabase {
       return box;
     } catch (e) {
       if (Hive.isBoxOpen(name)) {
-        final box = Hive.box(name);
+        final box = Hive.box<Map>(name);
         _boxes[name] = box;
         debugPrint('Got object store box in database $name.');
         return box;
@@ -88,7 +86,7 @@ class LocalDatabase {
   Box _getBox([String? name]) {
     final boxName = name ?? boxGeneral;
     if (!_boxes.containsKey(boxName) && Hive.isBoxOpen(boxName)) {
-      _boxes[boxName] = Hive.box(boxName);
+      _boxes[boxName] = Hive.box<Map>(boxName);
     }
     if (!_boxes.containsKey(boxName)) {
       throw Exception('Box $boxName not opened. Call init() first.');

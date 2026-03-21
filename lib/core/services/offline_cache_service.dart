@@ -20,11 +20,18 @@ class OfflineCacheService {
   static const int userDataCacheDuration = 30 * 24 * 60 * 60 * 1000; // 30 days
 
   Future<void> init() async {
-    _coursesBox = await Hive.openBox<Map>('courses_cache');
-    _lessonsBox = await Hive.openBox<Map>('lessons_cache');
-    _userDataBox = await Hive.openBox<Map>('user_data_cache');
-    _offlineActionsBox = await Hive.openBox<Map>('offline_actions');
-    _metadataBox = await Hive.openBox<Map>('cache_metadata');
+    _coursesBox = await _openMapBox('courses_cache');
+    _lessonsBox = await _openMapBox('lessons_cache');
+    _userDataBox = await _openMapBox('user_data_cache');
+    _offlineActionsBox = await _openMapBox('offline_actions');
+    _metadataBox = await _openMapBox('cache_metadata');
+  }
+
+  Future<Box<Map>> _openMapBox(String name) async {
+    if (Hive.isBoxOpen(name)) {
+      return Hive.box<Map>(name);
+    }
+    return Hive.openBox<Map>(name);
   }
 
   // ==================== COURSES CACHE ====================
