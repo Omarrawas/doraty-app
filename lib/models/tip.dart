@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
+import '../core/utils/safe_parser.dart';
 import 'course.dart';
 
 class Tip {
   final String id;
   final String title;
+  final String description; // Added
   final String videoUrl;
   final String? thumbnailUrl;
   final String? courseId;
@@ -10,6 +13,9 @@ class Tip {
   final int viewsCount;
   final DateTime createdAt;
   final Course? linkedCourse; // Optional linked course object
+  final String category; // Added
+  final int orderIndex; // Added
+  final bool isFree; // Added
 
   String? get effectiveThumbnailUrl {
     if (thumbnailUrl != null && thumbnailUrl!.isNotEmpty) return thumbnailUrl;
@@ -45,6 +51,7 @@ class Tip {
   Tip({
     required this.id,
     required this.title,
+    required this.description, // Added
     required this.videoUrl,
     this.thumbnailUrl,
     this.courseId,
@@ -52,32 +59,43 @@ class Tip {
     this.viewsCount = 0,
     required this.createdAt,
     this.linkedCourse,
+    required this.category, // Added
+    this.orderIndex = 0, // Added with default
+    this.isFree = false, // Added with default
   });
 
   factory Tip.fromJson(Map<String, dynamic> json) {
-    Course? parsedCourse;
-    final dynamic coursesRaw = json['courses'];
-    if (coursesRaw is Map) {
-      parsedCourse = Course.fromJson(Map<String, dynamic>.from(coursesRaw));
-    } else if (coursesRaw is List && coursesRaw.isNotEmpty && coursesRaw.first is Map) {
-      parsedCourse = Course.fromJson(Map<String, dynamic>.from(coursesRaw.first as Map));
+    try {
+      return Tip(
+        id: SafeParser.toStringSafe(json['id']),
+        title: SafeParser.toStringSafe(json['title']),
+        description: SafeParser.toStringSafe(json['description']),
+        videoUrl: SafeParser.toStringSafe(json['video_url']),
+        thumbnailUrl: SafeParser.toStringSafe(json['thumbnail_url']),
+        category: SafeParser.toStringSafe(json['category']),
+        orderIndex: SafeParser.toInt(json['order_index']),
+        isFree: SafeParser.toBool(json['is_free']),
+        courseId: SafeParser.toStringSafe(json['course_id']),
+        // instructorId and viewsCount are not parsed in the new fromJson,
+        // so we'll use defaults or null if not explicitly set.
+        // createdAt is also not parsed, using DateTime.now() as a fallback.
+        instructorId: SafeParser.toStringSafe(json['instructor_id']), // Re-added based on class definition
+        viewsCount: SafeParser.toInt(json['views_count']), // Re-added based on class definition
+        createdAt: SafeParser.toDateTime(json['created_at']) ?? DateTime.now(), // Re-added based on class definition
+        linkedCourse: json['courses'] != null ? Course.fromJson(SafeParser.safeMap(json['courses'])) : null,
+      );
+    } catch (e) {
+      debugPrint('❌ Tip.fromJson error: $e. Data: $json');
+      return Tip(
+        id: 'error_id',
+        title: 'خطأ في التحميل',
+        description: '',
+        videoUrl: '',
+        thumbnailUrl: '',
+        category: '',
+        createdAt: DateTime.now(), // Added for minimal valid object
+      );
     }
-
-    return Tip(
-      id: json['id']?.toString() ?? '',
-      title: json['title']?.toString() ?? '',
-      videoUrl: json['video_url']?.toString() ?? '',
-      thumbnailUrl: json['thumbnail_url']?.toString(),
-      courseId: json['course_id']?.toString(),
-      instructorId: json['instructor_id']?.toString(),
-      viewsCount: (json['views_count'] as num?)?.toInt() ??
-          int.tryParse(json['views_count']?.toString() ?? '0') ??
-          0,
-      createdAt: json['created_at'] != null 
-          ? DateTime.tryParse(json['created_at'].toString()) ?? DateTime.now()
-          : DateTime.now(),
-      linkedCourse: parsedCourse,
-    );
   }
 
   Map<String, dynamic> toJson() {
@@ -96,6 +114,8 @@ class Tip {
   Tip copyWith({
     String? id,
     String? title,
+    String? description,
+    String? category,
     String? videoUrl,
     String? thumbnailUrl,
     String? courseId,
@@ -107,6 +127,8 @@ class Tip {
     return Tip(
       id: id ?? this.id,
       title: title ?? this.title,
+      description: description ?? this.description,
+      category: category ?? this.category,
       videoUrl: videoUrl ?? this.videoUrl,
       thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
       courseId: courseId ?? this.courseId,

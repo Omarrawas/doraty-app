@@ -33,15 +33,39 @@
   <link rel="manifest" href="manifest.json">
   
   <!-- Firebase Messaging Service Worker -->
+  <!-- Enhanced Service Worker Registration -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/firebase-messaging-sw.js')
-        .then((registration) => {
-          console.log('Service Worker registered:', registration);
-        })
-        .catch((error) => {
-          console.error('Service Worker registration failed:', error);
+      window.addEventListener('load', function () {
+        // 1. Flutter's auto-generated SW (handles Dart/JS bundle)
+        navigator.serviceWorker.register('flutter_service_worker.js?v=' + new Date().getTime(), {
+          scope: './'
+        }).then(function (reg) {
+          console.log('[SW] Flutter SW registered');
+          reg.onupdatefound = function () {
+            const w = reg.installing;
+            w.onstatechange = function () {
+              if (w.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('[SW] New Flutter content available — refresh to update.');
+              }
+            };
+          };
+        }).catch(function (err) {
+          console.error('[SW] Flutter SW registration failed:', err);
         });
+
+        // 2. Doraty tiered-cache SW (handles API, fonts, images)
+        navigator.serviceWorker.register('/doraty-sw.js', {
+          scope: '/'
+        }).then(function () {
+          console.log('[SW] Doraty tiered-cache SW registered');
+        }).catch(function (err) {
+          console.warn('[SW] Doraty SW registration failed (non-critical):', err);
+        });
+
+        // 3. Firebase Messaging SW (push notifications)
+        navigator.serviceWorker.register('/firebase-messaging-sw.js').catch(() => {});
+      });
     }
   </script>
   <style>

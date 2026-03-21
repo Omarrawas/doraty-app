@@ -367,6 +367,7 @@ class AppStrings {
       'login_title': 'تسجيل الدخول',
       'login_required_title': 'تسجيل الدخول مطلوب',
       'login_required_desc': 'يرجى تسجيل الدخول للوصول إلى ملفك الشخصي ومتابعة دوراتك',
+      'offline_mode': 'وضع الأوفلاين (بيانات مخزنة)',
     },
     'en': {
       'settings': 'Settings',
@@ -735,6 +736,7 @@ class AppStrings {
       'login_title': 'Login',
       'login_required_title': 'Login Required',
       'login_required_desc': 'Please login to access your profile and track your courses',
+      'offline_mode': 'Offline Mode (Cached Data)',
     },
   };
 

@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import '../core/utils/safe_parser.dart';
+
 class AppUser {
   final String id;
   final String name;
@@ -30,25 +33,31 @@ class AppUser {
   });
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
-    return AppUser(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      email: json['email'] ?? '',
-      photoUrl: json['photo_url'],
-      bio: json['bio'],
-      enrolledCourses: List<String>.from(json['enrolled_courses'] ?? []),
-      completedCourses: json['completed_courses'] ?? 0,
-      totalHours: json['total_hours'] ?? 0,
-      certificates: json['certificates'] ?? 0,
-      streakCount: json['streak_count'] ?? 0,
-      lastActivityDate: json['last_activity_date'] != null
-          ? DateTime.parse(json['last_activity_date'])
-          : null,
-      badges: List<String>.from(json['badges'] ?? []),
-      createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
-          : DateTime.now(),
-    );
+    try {
+      return AppUser(
+        id: SafeParser.toStringSafe(json['id']),
+        name: SafeParser.toStringSafe(json['name']),
+        email: SafeParser.toStringSafe(json['email']),
+        photoUrl: SafeParser.toStringSafe(json['photo_url']),
+        bio: SafeParser.toStringSafe(json['bio']),
+        enrolledCourses: SafeParser.toStringList(json['enrolled_courses']),
+        completedCourses: SafeParser.toInt(json['completed_courses']),
+        totalHours: SafeParser.toInt(json['total_hours']),
+        certificates: SafeParser.toInt(json['certificates']),
+        streakCount: SafeParser.toInt(json['streak_count']),
+        lastActivityDate: SafeParser.toDateTime(json['last_activity_date']),
+        badges: SafeParser.toStringList(json['badges']),
+        createdAt: SafeParser.toDateTime(json['created_at']) ?? DateTime.now(),
+      );
+    } catch (e) {
+      debugPrint('❌ AppUser.fromJson Error: $e. Data: $json');
+      return AppUser(
+        id: SafeParser.toStringSafe(json['id']),
+        name: 'User',
+        email: '',
+        createdAt: DateTime.now(),
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {

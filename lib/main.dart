@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -30,13 +31,18 @@ import 'core/services/app_update_service.dart';
 import 'core/utils/url_strategy_noop.dart'
     if (dart.library.html) 'core/utils/url_strategy_web.dart';
 
-void main() async {
-  // Use path URL strategy for clean URLs on web
-  configureUrlStrategy();
-  
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize services in parallel where possible
+void main() {
+  runZonedGuarded(() async {
+    // Use path URL strategy for clean URLs on web
+    configureUrlStrategy();
+    
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // Global Flutter error handler
+    FlutterError.onError = (details) {
+      FlutterError.presentError(details);
+      debugPrint('🚨 [FlutterError] ${details.exception}\n${details.stack}');
+    };
   // We initialize Hive first as it's a prerequisite for some adapters
   await Hive.initFlutter();
   // Initialize LocalDatabase first as it's a prerequisite for some services
@@ -102,10 +108,15 @@ void main() async {
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => AuthService()),
+        ChangeNotifierProvider(create: (_) => SyncService()),
       ],
       child: const MyApp(),
     ),
   );
+  }, (error, stack) {
+    // Zone-level error catcher — catches async errors missed by FlutterError
+    debugPrint('🚨 [ZoneError] Unhandled: $error\n$stack');
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -163,7 +174,6 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
@@ -180,97 +190,125 @@ class _MainScreenState extends State<MainScreen> {
 
     return Scaffold(
       extendBody: true,
-      body: Row(
+      body: Column(
         children: [
-          if (isWideScreen)
-            Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: Colors.white.withOpacity(0.05),
-                    width: 1,
-                  ),
+          // Offline Indicator (Condition: syncService.isOffline)
+          Consumer<SyncService>(
+            builder: (context, sync, _) {
+              if (!sync.isOffline) return const SizedBox.shrink();
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                color: Colors.orange.shade800,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.wifi_off, size: 14, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppStrings.get('offline_mode', context.read<LocaleProvider>().locale),
+                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
-              ),
-              child: NavigationRail(
-                selectedIndex: _currentIndex,
-                onDestinationSelected: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
-                backgroundColor:
-                    AppColors.getSurfaceColor(context).withOpacity(0.95),
-                indicatorColor: AppColors.primaryPurple.withOpacity(0.2),
-                labelType: NavigationRailLabelType.all,
-                useIndicator: true,
-                minWidth: 80,
-                destinations: [
-                  const NavigationRailDestination(
-                    icon: Icon(Icons.home_outlined),
-                    selectedIcon:
-                        Icon(Icons.home, color: AppColors.primaryPurple),
-                    label: Text('الرئيسية', style: TextStyle(fontSize: 12)),
+              );
+            },
+          ),
+          Expanded(
+            child: Row(
+              children: [
+                if (isWideScreen)
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(
+                          color: Colors.white.withOpacity(0.05),
+                          width: 1,
+                        ),
+                      ),
+                    ),
+                    child: NavigationRail(
+                      selectedIndex: _currentIndex,
+                      onDestinationSelected: (index) {
+                        setState(() {
+                          _currentIndex = index;
+                        });
+                      },
+                      backgroundColor:
+                          AppColors.getSurfaceColor(context).withOpacity(0.95),
+                      indicatorColor: AppColors.primaryPurple.withOpacity(0.2),
+                      labelType: NavigationRailLabelType.all,
+                      useIndicator: true,
+                      minWidth: 80,
+                      destinations: [
+                        const NavigationRailDestination(
+                          icon: Icon(Icons.home_outlined),
+                          selectedIcon:
+                              Icon(Icons.home, color: AppColors.primaryPurple),
+                          label: Text('الرئيسية', style: TextStyle(fontSize: 12)),
+                        ),
+                        NavigationRailDestination(
+                          icon: const Icon(Icons.manage_search_outlined),
+                          selectedIcon:
+                              const Icon(Icons.search, color: AppColors.primaryPurple),
+                          label: Consumer<LocaleProvider>(
+                            builder: (context, localeProvider, _) => Text(
+                              AppStrings.get('search', localeProvider.locale),
+                              style: const TextStyle(fontSize: 12),
+                            ),
+                          ),
+                        ),
+                        const NavigationRailDestination(
+                          icon: Icon(Icons.lightbulb_outline),
+                          selectedIcon:
+                              Icon(Icons.lightbulb, color: AppColors.primaryPurple),
+                          label: Text('نصائح', style: TextStyle(fontSize: 12)),
+                        ),
+                        NavigationRailDestination(
+                          icon: const Icon(Icons.category_outlined),
+                          selectedIcon:
+                              const Icon(Icons.category, color: AppColors.primaryPurple),
+                          label: Consumer<LocaleProvider>(
+                              builder: (context, localeProvider, _) => Text(
+                                    AppStrings.get(
+                                        'categories_title', localeProvider.locale),
+                                    style: const TextStyle(fontSize: 12),
+                                  )),
+                        ),
+                        NavigationRailDestination(
+                          icon: Consumer<AuthService>(
+                            builder: (context, auth, _) {
+                              final photoUrl = auth.userProfile?['avatar_url'] ??
+                                  auth.userProfile?['photo_url'];
+                              return Container(
+                                width: 30,
+                                height: 30,
+                                decoration:
+                                    const BoxDecoration(shape: BoxShape.circle),
+                                child: ClipOval(
+                                  child: (auth.isAuthenticated && photoUrl != null)
+                                      ? Image.network(photoUrl, fit: BoxFit.cover)
+                                      : const Icon(Icons.person_outline),
+                                ),
+                              );
+                            },
+                          ),
+                          label: const Text('حسابي', style: TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                    ),
                   ),
-                  NavigationRailDestination(
-                    icon: const Icon(Icons.manage_search_outlined),
-                    selectedIcon:
-                        const Icon(Icons.search, color: AppColors.primaryPurple),
-                    label: Consumer<LocaleProvider>(
-                      builder: (context, localeProvider, _) => Text(
-                        AppStrings.get('search', localeProvider.locale),
-                        style: const TextStyle(fontSize: 12),
+                Expanded(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1200),
+                      child: GradientBackground(
+                        child: _buildCurrentScreen(),
                       ),
                     ),
                   ),
-                  const NavigationRailDestination(
-                    icon: Icon(Icons.lightbulb_outline),
-                    selectedIcon:
-                        Icon(Icons.lightbulb, color: AppColors.primaryPurple),
-                    label: Text('نصائح', style: TextStyle(fontSize: 12)),
-                  ),
-                  NavigationRailDestination(
-                    icon: const Icon(Icons.category_outlined),
-                    selectedIcon:
-                        const Icon(Icons.category, color: AppColors.primaryPurple),
-                    label: Consumer<LocaleProvider>(
-                        builder: (context, localeProvider, _) => Text(
-                              AppStrings.get(
-                                  'categories_title', localeProvider.locale),
-                              style: const TextStyle(fontSize: 12),
-                            )),
-                  ),
-                  NavigationRailDestination(
-                    icon: Consumer<AuthService>(
-                      builder: (context, auth, _) {
-                        final photoUrl = auth.userProfile?['avatar_url'] ??
-                            auth.userProfile?['photo_url'];
-                        return Container(
-                          width: 30,
-                          height: 30,
-                          decoration:
-                              const BoxDecoration(shape: BoxShape.circle),
-                          child: ClipOval(
-                            child: (auth.isAuthenticated && photoUrl != null)
-                                ? Image.network(photoUrl, fit: BoxFit.cover)
-                                : const Icon(Icons.person_outline),
-                          ),
-                        );
-                      },
-                    ),
-                    label: const Text('حسابي', style: TextStyle(fontSize: 12)),
-                  ),
-                ],
-              ),
-            ),
-          Expanded(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1200),
-                child: GradientBackground(
-                  child: _buildCurrentScreen(),
                 ),
-              ),
+              ],
             ),
           ),
         ],

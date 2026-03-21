@@ -1,9 +1,16 @@
+import 'package:flutter/material.dart';
+import '../core/utils/safe_parser.dart';
+import 'lesson.dart';
+
 class Course {
   final String id;
   final String title;
   final String? description;
   final String? instructorId;
   final String instructorName;
+
+  String getLocalizedTitle(String locale) => title;
+  String getLocalizedInstructorName(String locale) => instructorName;
   final String? instructorPhoto;
   final String? imageUrl;
   final double price;
@@ -30,6 +37,8 @@ class Course {
   final List<String> tags;
   final String? status;
   final DateTime? createdAt;
+  final List<Lesson> lessons;
+  final double progress;
 
   Course({
     required this.id,
@@ -48,7 +57,7 @@ class Course {
     this.categoryIds = const [],
     required this.subject,
     this.subjectEn,
-    required this.curriculum,
+    this.curriculum = const [],
     this.isEnrolled = false,
     this.completedLessons = 0,
     this.level,
@@ -63,63 +72,70 @@ class Course {
     this.tags = const [],
     this.status,
     this.createdAt,
+    this.lessons = const [],
+    this.progress = 0.0,
   });
 
   factory Course.fromJson(Map<String, dynamic> json) {
-    return Course(
-      id: json['id']?.toString() ?? '',
-      title: json['title']?.toString() ?? '',
-      description: json['description']?.toString(),
-      instructorId: json['instructor_id']?.toString(),
-      instructorName: json['instructor_name']?.toString() ?? '',
-      instructorPhoto: json['instructor_photo']?.toString(),
-      imageUrl: (json['image_url'] ?? json['thumbnail'])?.toString(),
-      price: _toDouble(json['price']),
-      rating: _toDouble(json['rating']),
-      studentsCount: _toInt(json['students_count']),
-      lessonsCount: _toInt(json['lessons_count']),
-      durationHours: json['duration_hours']?.toString() ?? json['duration']?.toString(),
-      categories: _toStringList(
-          json['categories_names'] ?? (json['category'] != null ? [json['category']] : const [])),
-      categoryIds: _toStringList(
-          json['category_ids'] ?? (json['category_id'] != null ? [json['category_id']] : const [])),
-      subject: json['subject']?.toString() ?? '',
-      subjectEn: json['subject_en']?.toString(),
-      curriculum: _toStringList(json['curriculum']),
-      isEnrolled: json['is_enrolled'] == true,
-      completedLessons: _toInt(json['completed_lessons']),
-      level: json['level']?.toString(),
-      isPublished: json['is_published'] != false,
-      currency: json['currency']?.toString() ?? 'ل.س',
-      isFeatured: json['is_featured'] == true,
-      featuredOrder: _toInt(json['featured_order']),
-      outcomes: _toStringList(json['outcomes']),
-      targetAudience: _toStringList(json['target_audience']),
-      videoUrl: json['video_url']?.toString(),
-      discountPercentage: _toInt(json['discount_percentage']),
-      tags: _toStringList(json['tags']),
-      status: json['status']?.toString(),
-      createdAt: json['created_at'] != null
-          ? DateTime.tryParse(json['created_at'].toString())
-          : null,
-    );
-  }
+    try {
+      final List<Lesson> parsedLessons = [];
+      final lessonsRaw = json['lessons'];
+      if (lessonsRaw != null && lessonsRaw is Iterable) {
+        for (final l in lessonsRaw) {
+          if (l is Map) {
+            parsedLessons.add(Lesson.fromJson(SafeParser.safeMap(l)));
+          }
+        }
+      }
 
-  static double _toDouble(dynamic value) {
-    if (value is num) return value.toDouble();
-    return double.tryParse(value?.toString() ?? '0') ?? 0.0;
-  }
-
-  static int _toInt(dynamic value) {
-    if (value is num) return value.toInt();
-    return int.tryParse(value?.toString() ?? '0') ?? 0;
-  }
-
-  static List<String> _toStringList(dynamic value) {
-    if (value is Iterable) {
-      return value.map((e) => e.toString()).toList();
+      return Course(
+        id: SafeParser.toStringSafe(json['id']),
+        title: SafeParser.toStringSafe(json['title']),
+        description: SafeParser.toStringSafe(json['description']),
+        instructorId: SafeParser.toStringSafe(json['instructor_id']),
+        instructorName: SafeParser.toStringSafe(json['instructor_name']),
+        instructorPhoto: SafeParser.toStringSafe(json['instructor_photo']),
+        imageUrl: SafeParser.toStringSafe(json['image_url'] ?? json['thumbnail']),
+        price: SafeParser.toDouble(json['price']),
+        rating: SafeParser.toDouble(json['rating']),
+        studentsCount: SafeParser.toInt(json['students_count']),
+        lessonsCount: SafeParser.toInt(json['lessons_count']),
+        durationHours: SafeParser.toStringSafe(json['duration_hours'] ?? json['duration']),
+        categories: SafeParser.toStringList(json['categories_names'] ?? (json['category'] != null ? [json['category']] : [])),
+        categoryIds: SafeParser.toStringList(json['category_ids'] ?? (json['category_id'] != null ? [json['category_id']] : [])),
+        subject: SafeParser.toStringSafe(json['subject']),
+        subjectEn: SafeParser.toStringSafe(json['subject_en']),
+        curriculum: SafeParser.toStringList(json['curriculum']),
+        isEnrolled: SafeParser.toBool(json['is_enrolled']),
+        completedLessons: SafeParser.toInt(json['completed_lessons']),
+        level: SafeParser.toStringSafe(json['level']),
+        isPublished: SafeParser.toBool(json['is_published'], fallback: true),
+        currency: SafeParser.toStringSafe(json['currency'], fallback: 'ل.س'),
+        isFeatured: SafeParser.toBool(json['is_featured']),
+        featuredOrder: SafeParser.toInt(json['featured_order']),
+        outcomes: SafeParser.toStringList(json['outcomes']),
+        targetAudience: SafeParser.toStringList(json['target_audience']),
+        videoUrl: SafeParser.toStringSafe(json['video_url']),
+        discountPercentage: SafeParser.toInt(json['discount_percentage']),
+        tags: SafeParser.toStringList(json['tags']),
+        status: SafeParser.toStringSafe(json['status']),
+        createdAt: SafeParser.toDateTime(json['created_at']),
+        lessons: parsedLessons,
+        progress: SafeParser.toDouble(json['progress']),
+      );
+    } catch (e) {
+      debugPrint('❌ Course.fromJson error: $e. Data: $json');
+      return Course(
+        id: 'error_${DateTime.now().millisecondsSinceEpoch}',
+        title: 'خطأ في تحميل الدورة',
+        instructorName: '',
+        price: 0,
+        rating: 0,
+        studentsCount: 0,
+        lessonsCount: 0,
+        subject: '',
+      );
     }
-    return const [];
   }
 
   Map<String, dynamic> toJson() {
@@ -158,7 +174,7 @@ class Course {
     };
   }
 
-  double get progress {
+  double get calculatedProgress {
     if (lessonsCount == 0) return 0;
     return completedLessons / lessonsCount;
   }
@@ -166,18 +182,6 @@ class Course {
   bool get isNew {
     if (createdAt == null) return false;
     return DateTime.now().difference(createdAt!).inDays < 30;
-  }
-
-  String getLocalizedTitle(String locale) {
-    return title;
-  }
-
-  String? getLocalizedDescription(String locale) {
-    return description;
-  }
-
-  String getLocalizedInstructorName(String locale) {
-    return instructorName;
   }
 
   String getLocalizedSubject(String locale) {

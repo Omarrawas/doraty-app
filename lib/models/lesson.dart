@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import '../core/utils/safe_parser.dart';
+
 class Lesson {
   final String id;
   final String courseId;
@@ -36,44 +39,60 @@ class Lesson {
   });
 
   factory Lesson.fromJson(Map<String, dynamic> json) {
-    List<Map<String, String>> resourcesList = [];
-    if (json['resources'] != null) {
-      final resourcesData = json['resources'];
-      if (resourcesData is List) {
-        resourcesList = resourcesData
-            .map((r) => Map<String, String>.from(r as Map))
-            .toList();
+    try {
+      final List<Map<String, String>> resourcesList = [];
+      final resourcesRaw = json['resources'];
+      if (resourcesRaw != null && resourcesRaw is Iterable) {
+        for (final r in resourcesRaw) {
+          if (r is Map) {
+            final Map<String, String> res = {};
+            r.forEach((k, v) => res[k.toString()] = v?.toString() ?? '');
+            resourcesList.add(res);
+          }
+        }
       }
-    }
 
-    List<Map<String, dynamic>>? interactiveElementsList;
-    if (json['interactive_elements'] != null) {
-      final elementsData = json['interactive_elements'];
-      if (elementsData is List) {
-        interactiveElementsList = elementsData
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
+      final List<Map<String, dynamic>> interactiveElementsList = [];
+      final elementsRaw = json['interactive_elements'];
+      if (elementsRaw != null && elementsRaw is Iterable) {
+        for (final e in elementsRaw) {
+          if (e is Map) {
+            interactiveElementsList.add(SafeParser.safeMap(e));
+          }
+        }
       }
-    }
 
-    return Lesson(
-      id: json['id'] ?? '',
-      courseId: json['course_id'] ?? '',
-      chapterId: json['chapter_id'],
-      title: json['title'] ?? '',
-      description: json['description'] ?? '',
-      videoUrl: json['video_url'] ?? '',
-      duration: json['duration'] ?? '0:00',
-      orderIndex: json['order_index'] ?? 0,
-      isFree: json['is_free'] ?? false,
-      contentType: json['content_type'] ?? 'video',
-      resources: resourcesList,
-      isCompleted: json['is_completed'] ?? false,
-      contentHtml: json['content_html'],
-      contentMarkdown: json['content_markdown'],
-      content: json['content'],
-      interactiveElements: interactiveElementsList,
-    );
+      return Lesson(
+        id: SafeParser.toStringSafe(json['id']),
+        courseId: SafeParser.toStringSafe(json['course_id']),
+        chapterId: SafeParser.toStringSafe(json['chapter_id']),
+        title: SafeParser.toStringSafe(json['title']),
+        description: SafeParser.toStringSafe(json['description']),
+        videoUrl: SafeParser.toStringSafe(json['video_url']),
+        duration: SafeParser.toStringSafe(json['duration'], fallback: '0:00'),
+        orderIndex: SafeParser.toInt(json['order_index']),
+        isFree: SafeParser.toBool(json['is_free']),
+        contentType: SafeParser.toStringSafe(json['content_type'], fallback: 'video'),
+        resources: resourcesList,
+        isCompleted: SafeParser.toBool(json['is_completed']),
+        contentHtml: SafeParser.toStringSafe(json['content_html']),
+        contentMarkdown: SafeParser.toStringSafe(json['content_markdown']),
+        content: SafeParser.toStringSafe(json['content']),
+        interactiveElements: interactiveElementsList,
+      );
+    } catch (e) {
+      debugPrint('❌ Lesson.fromJson error: $e. Data: $json');
+      return Lesson(
+        id: 'error',
+        courseId: '',
+        title: 'Error loading lesson',
+        description: '',
+        videoUrl: '',
+        duration: '0:00',
+        orderIndex: 0,
+        isFree: false,
+      );
+    }
   }
 
   Map<String, dynamic> toJson() {

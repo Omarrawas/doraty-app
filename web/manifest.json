@@ -1,13 +1,17 @@
 {
-    "name": "Doraty - أكاديمية دوراتي",
-    "short_name": "Doraty",
-    "start_url": ".",
+    "name": "دوراتي - منصة التعلم",
+    "short_name": "دوراتي",
+    "start_url": "/",
     "display": "standalone",
-    "background_color": "#FFFFFF",
+    "background_color": "#0b0114",
     "theme_color": "#7B2CBF",
-    "description": "A new Flutter project.",
+    "description": "منصة دوراتي للتعلم الإلكتروني — دورات، نصائح تعليمية، وشهادات معتمدة",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "lang": "ar",
+    "dir": "rtl",
+    "categories": ["education"],
+    "screenshots": [],
     "icons": [
         {
             "src": "icons/Icon-192.png",
@@ -30,6 +34,20 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "استكشاف الدورات",
+            "short_name": "الدورات",
+            "url": "/courses",
+            "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
+        },
+        {
+            "name": "نصائح سريعة",
+            "short_name": "النصائح",
+            "url": "/tips",
+            "icons": [{ "src": "icons/Icon-192.png", "sizes": "192x192" }]
         }
     ]
 }

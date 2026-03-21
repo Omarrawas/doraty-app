@@ -16,6 +16,7 @@ class AuthService extends ChangeNotifier {
   bool _isOffline = false;
   bool get isOffline => _isOffline;
 
+  /// Ensures dynamic data intended to be a `List<Map<String, dynamic>>` is safely parsed.
   Map<String, dynamic>? _userProfile;
   Map<String, dynamic>? get userProfile => _userProfile;
 
@@ -204,7 +205,7 @@ class AuthService extends ChangeNotifier {
           .from('users')
           .select()
           .eq('id', currentUser!.id)
-          .single();
+          .maybeSingle();
 
       return response;
     } catch (e) {

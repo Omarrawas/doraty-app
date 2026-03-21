@@ -1657,91 +1657,39 @@ class DatabaseService {
   // ==================== USER STATS ====================
 
   /// Get user profile (public info)
-  Future<Map<String, dynamic>> getUserProfile(String userId) async {
-    try {
-      final response = await _client
-          .from('users')
-          .select('full_name, avatar_url')
-          .eq('id', userId)
-          .single();
-      
-      // Ensure avatar_url is a full URL
-      if (response['avatar_url'] != null) {
-        response['avatar_url'] = _formatAvatarUrl(response['avatar_url'], userId: userId);
-      }
-      
-      return response;
-    } catch (e) {
-      debugPrint('Error getting user profile: $e');
-      return {};
-    }
+  Future<Map<String, dynamic>> getUserProfile(String userId, {bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: CacheKeys.userProfile(userId),
+      forceRefresh: forceRefresh,
+      duration: const Duration(days: 1),
+      fetcher: () async {
+        try {
+          final response = await _client
+              .from('users')
+              .select('full_name, avatar_url')
+              .eq('id', userId)
+              .maybeSingle();
+          
+          if (response == null) return {};
+          
+          // Ensure avatar_url is a full URL
+          if (response['avatar_url'] != null) {
+            response['avatar_url'] = _formatAvatarUrl(response['avatar_url'], userId: userId);
+          }
+          
+          return Map<String, dynamic>.from(response);
+        } catch (e) {
+          debugPrint('Error getting user profile: $e');
+          return {};
+        }
+      },
+    );
   }
 
   /// Get user stats
-  Future<Map<String, dynamic>> getUserStats() async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) {
-        return {
-          'completed_courses': 0,
-          'learning_hours': 0.0,
-          'certificates': 0,
-          'average_score': 0.0,
-        };
-      }
-
-      // Calculate completed courses
-      final enrollmentsResponse = await _client
-          .from('enrollments')
-          .select('id, progress_percentage')
-          .eq('user_id', userId)
-          .gte('progress_percentage', 100);
-
-      final completedCourses = (enrollmentsResponse as List).length;
-
-      // Calculate learning hours from lesson progress (as double for decimal display)
-      final progressResponse = await _client
-          .from('lesson_progress')
-          .select('watch_time')
-          .eq('user_id', userId);
-
-      int totalSeconds = 0;
-      for (var record in progressResponse) {
-        totalSeconds += (record['watch_time'] as int?) ?? 0;
-      }
-      final learningHours = totalSeconds / 3600.0; // Keep as double
-
-      // Certificates = completed courses (1 certificate per completed course)
-      final certificates = completedCourses;
-
-      // Calculate average exam score
-      final examAttemptsResponse = await _client
-          .from('exam_attempts')
-          .select('score, total_points')
-          .eq('user_id', userId)
-          .eq('status', 'submitted');
-
-      double averageScore = 0.0;
-      if ((examAttemptsResponse as List).isNotEmpty) {
-        double totalPercentage = 0;
-        for (var attempt in examAttemptsResponse) {
-          final score = (attempt['score'] as num?)?.toDouble() ?? 0;
-          final totalScore = (attempt['total_points'] as num?)?.toDouble() ?? 1;
-          if (totalScore > 0) {
-            totalPercentage += (score / totalScore) * 100;
-          }
-        }
-        averageScore = totalPercentage / examAttemptsResponse.length;
-      }
-
-      return {
-        'completed_courses': completedCourses,
-        'learning_hours': learningHours,
-        'certificates': certificates,
-        'average_score': averageScore,
-      };
-    } catch (e) {
-      debugPrint('Error getting user stats: $e');
+  Future<Map<String, dynamic>> getUserStats({bool forceRefresh = false}) async {
+    final userId = SupabaseService.instance.currentUserId;
+    if (userId == null) {
       return {
         'completed_courses': 0,
         'learning_hours': 0.0,
@@ -1749,6 +1697,74 @@ class DatabaseService {
         'average_score': 0.0,
       };
     }
+
+    return fetchWithCache(
+      key: CacheKeys.userStats(userId),
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 1),
+      fetcher: () async {
+        try {
+          // Calculate completed courses
+          final enrollmentsResponse = await _client
+              .from('enrollments')
+              .select('id, progress_percentage')
+              .eq('user_id', userId)
+              .gte('progress_percentage', 100);
+
+          final completedCourses = (enrollmentsResponse as List).length;
+
+          // Calculate learning hours from lesson progress
+          final progressResponse = await _client
+              .from('lesson_progress')
+              .select('watch_time')
+              .eq('user_id', userId);
+
+          int totalSeconds = 0;
+          for (var record in progressResponse) {
+            totalSeconds += (record['watch_time'] as int?) ?? 0;
+          }
+          final learningHours = totalSeconds / 3600.0;
+
+          // Certificates = completed courses
+          final certificates = completedCourses;
+
+          // Calculate average exam score
+          final examAttemptsResponse = await _client
+              .from('exam_attempts')
+              .select('score, total_points')
+              .eq('user_id', userId)
+              .eq('status', 'submitted');
+
+          double averageScore = 0.0;
+          if ((examAttemptsResponse as List).isNotEmpty) {
+            double totalPercentage = 0;
+            for (var attempt in examAttemptsResponse) {
+              final score = (attempt['score'] as num?)?.toDouble() ?? 0;
+              final totalScore = (attempt['total_points'] as num?)?.toDouble() ?? 1;
+              if (totalScore > 0) {
+                totalPercentage += (score / totalScore) * 100;
+              }
+            }
+            averageScore = totalPercentage / examAttemptsResponse.length;
+          }
+
+          return {
+            'completed_courses': completedCourses,
+            'learning_hours': learningHours,
+            'certificates': certificates,
+            'average_score': averageScore,
+          };
+        } catch (e) {
+          debugPrint('Error getting user stats: $e');
+          return {
+            'completed_courses': 0,
+            'learning_hours': 0.0,
+            'certificates': 0,
+            'average_score': 0.0,
+          };
+        }
+      },
+    );
   }
 
   /// Get leaderboard data (Top students)
