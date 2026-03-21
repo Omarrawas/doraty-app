@@ -8,7 +8,7 @@ import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../models/course.dart';
 import '../../widgets/dynamic_gradient_background.dart';
-import '../utils/safe_parser.dart';
+import '../../core/utils/safe_parser.dart';
 
 class NotificationsManagementScreen extends StatefulWidget {
   const NotificationsManagementScreen({super.key});

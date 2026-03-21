@@ -9,7 +9,7 @@ import '../../core/utils/error_utils.dart';
 import 'add_question_screen.dart';
 import 'dart:ui';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
-import '../utils/safe_parser.dart';
+import '../../core/utils/safe_parser.dart';
 
 class ManageQuestionsScreen extends StatefulWidget {
   final String examId;

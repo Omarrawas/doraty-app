@@ -3,7 +3,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
 import '../../widgets/tex_view_widget.dart';
-import '../utils/safe_parser.dart';
+import '../../core/utils/safe_parser.dart';
 
 class ReviewExamScreen extends StatefulWidget {
   final String attemptId;

@@ -79,9 +79,9 @@ class LocalDatabase {
     return _boxes[boxName]!;
   }
 
-  /// DEEP recursive normalization — converts every nested Map to Map<String, dynamic>
-  /// and every nested List to List<dynamic>. This is essential for Flutter Web where
-  /// Supabase/Dart returns LinkedHashMap<dynamic, dynamic> at every join level.
+  /// DEEP recursive normalization — converts every nested Map to `Map<String, dynamic>`
+  /// and every nested List to `List<dynamic>`. This is essential for Flutter Web where
+  /// Supabase/Dart returns `LinkedHashMap<dynamic, dynamic>` at every join level.
   dynamic _deepNormalize(dynamic value) {
     if (value is Map) {
       return Map<String, dynamic>.fromEntries(
@@ -164,7 +164,7 @@ class LocalDatabase {
   }
 
   /// Shared parsing logic — uses runtime data-type checks to survive Flutter Web minification.
-  /// NOTE: T== comparisons for generic types (List<Map<String,dynamic>>) fail on minified builds.
+  /// NOTE: T== comparisons for generic types (`List<Map<String,dynamic>>`) fail on minified builds.
   T? _parseData<T>(dynamic data, String key) {
     try {
       if (data == null) return null;
