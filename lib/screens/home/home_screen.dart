@@ -11,7 +11,7 @@ import '../teacher/teachers_list_screen.dart';
 import '../../models/category_model.dart';
 import '../explore/widgets/category_card.dart';
 import '../explore/explore_screen.dart';
-import '../categories/category_courses_screen.dart';
+// Removed unused import
 import '../search/search_screen.dart';
 import '../packages/package_screen.dart';
 import '../packages/all_packages_screen.dart';
@@ -33,6 +33,7 @@ import '../../core/utils/string_utils.dart';
 import '../../models/tip.dart';
 import '../../models/bundle.dart';
 import '../../widgets/vertical_tip_player.dart';
+import '../../widgets/tip_preview_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -1148,31 +1149,16 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: _tips.length,
               itemBuilder: (context, index) {
                 final tip = _tips[index];
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => VerticalTipPlayer(tips: _tips, initialIndex: index),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 140,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(15),
-                        image: DecorationImage(
-                          image: CachedNetworkImageProvider(tip.thumbnailUrl ?? ''),
-                          fit: BoxFit.cover,
-                        ),
+                return TipPreviewCard(
+                  tip: tip,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => VerticalTipPlayer(tips: _tips, initialIndex: index),
                       ),
-                      child: Center(
-                        child: Icon(Icons.play_circle_fill, color: Colors.white.withOpacity(0.8), size: 40),
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 );
               },
             ),
