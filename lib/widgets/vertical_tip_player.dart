@@ -80,6 +80,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
   bool _isInitialized = false;
   bool _isYouTube = false;
   String? _extractedVideoId;
+  bool _hasLoadError = false;
 
   @override
   void initState() {
@@ -122,6 +123,16 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
       return;
     }
 
+    if (_isYouTube && videoId == null) {
+      if (mounted) {
+        setState(() {
+          _isInitialized = false;
+          _hasLoadError = true;
+        });
+      }
+      return;
+    }
+
     final String sanitizedUrl = _sanitizeUrl(widget.tip.videoUrl);
     _videoController = VideoPlayerController.networkUrl(
       Uri.parse(sanitizedUrl),
@@ -144,7 +155,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
       if (mounted) {
         setState(() {
           _isInitialized = false;
-          // We could set an error flag here to show an error icon
+          _hasLoadError = true;
         });
       }
     }
@@ -243,7 +254,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
               children: [
                 CircularProgressIndicator(color: Colors.white),
                 SizedBox(height: 16),
-                Text('جاري التحميل...', style: TextStyle(color: Colors.white70)),
+                Text('Loading...', style: TextStyle(color: Colors.white70)),
               ],
             ),
           ),
@@ -256,15 +267,27 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
               children: [
                 Icon(Icons.error_outline, color: Colors.white70, size: 48),
                 SizedBox(height: 16),
-                Text('رابط الفيديو غير متاح', style: TextStyle(color: Colors.white70)),
+                Text('Video URL is unavailable', style: TextStyle(color: Colors.white70)),
               ],
             ),
           ),
 
         // Play/Pause Icon Overlay
-        if (_isInitialized && !(_isYouTube ? _youtubeController!.value.isPlaying : _videoController!.value.isPlaying))
+        if (_isInitialized && !_isCurrentlyPlaying())
           const Center(
             child: Icon(Icons.play_arrow, size: 80, color: Colors.white54),
+          ),
+
+        if (_hasLoadError)
+          const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, color: Colors.white70, size: 48),
+                SizedBox(height: 16),
+                Text('تعذر تشغيل الفيديو', style: TextStyle(color: Colors.white70)),
+              ],
+            ),
           ),
 
         // Bottom Info & CTA
@@ -300,7 +323,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
                         const Icon(Icons.school, color: Colors.white, size: 16),
                         const SizedBox(width: 8),
                         const Text(
-                          'عرض الدورة التدريبية',
+                          'View course details',
                           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ],
@@ -319,28 +342,20 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
             children: [
               _buildSideAction(
                 icon: Icons.share,
-                label: 'مشاركة',
+                label: 'Share',
                 onTap: () {},
               ),
               const SizedBox(height: 20),
               _buildSideAction(
-                icon: (_isYouTube ? (_youtubeController?.value.volume ?? 100) == 0 : (_videoController?.value.volume ?? 1.0) == 0) ? Icons.volume_off : Icons.volume_up,
-                label: 'كتم',
-                onTap: () {
-                  setState(() {
-                    if (_isYouTube) {
-                      _youtubeController!.value.volume == 0 ? _youtubeController!.unMute() : _youtubeController!.mute();
-                    } else {
-                      _videoController!.setVolume(_videoController!.value.volume == 0 ? 1.0 : 0.0);
-                    }
-                  });
-                },
+                icon: _isMuted() ? Icons.volume_off : Icons.volume_up,
+                label: 'Mute',
+                onTap: _toggleMute,
               ),
               if (widget.tip.linkedCourse != null) ...[
                 const SizedBox(height: 20),
                 _buildSideAction(
                   icon: Icons.monitor,
-                  label: 'الدورة',
+                  label: 'Course',
                   onTap: () => _showCoursePreview(),
                   animate: true,
                 ),
@@ -362,6 +377,46 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
     );
   }
 
+
+  bool _isCurrentlyPlaying() {
+    if (!_isInitialized) return false;
+    if (_isYouTube) {
+      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+        return true;
+      }
+      return _youtubeController?.value.isPlaying ?? false;
+    }
+    return _videoController?.value.isPlaying ?? false;
+  }
+
+  bool _isMuted() {
+    if (_isYouTube) {
+      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+        return false;
+      }
+      return (_youtubeController?.value.volume ?? 100) == 0;
+    }
+    return (_videoController?.value.volume ?? 1.0) == 0;
+  }
+
+  void _toggleMute() {
+    setState(() {
+      if (_isYouTube) {
+        if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+          return;
+        }
+        if ((_youtubeController?.value.volume ?? 100) == 0) {
+          _youtubeController?.unMute();
+        } else {
+          _youtubeController?.mute();
+        }
+      } else {
+        final controller = _videoController;
+        if (controller == null) return;
+        controller.setVolume(controller.value.volume == 0 ? 1.0 : 0.0);
+      }
+    });
+  }
   Widget _buildSideAction({
     required IconData icon,
     required String label,

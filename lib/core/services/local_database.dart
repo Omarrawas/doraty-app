@@ -10,6 +10,7 @@ class LocalDatabase {
   LocalDatabase._internal();
 
   bool _isInitialized = false;
+  Future<void>? _initFuture;
   final Map<String, Box> _boxes = {};
 
   // Standard boxes
@@ -23,36 +24,72 @@ class LocalDatabase {
   /// Initialize Hive and open all required boxes
   Future<void> init() async {
     if (_isInitialized) return;
+    if (_initFuture != null) {
+      await _initFuture;
+      return;
+    }
 
-    try {
+    _initFuture = () async {
       await Hive.initFlutter();
-      
-      // Open all default boxes
-      await _openBox(boxGeneral);
-      await _openBox(boxCourses);
-      await _openBox(boxLessons);
-      await _openBox(boxUserData);
-      await _openBox(boxOffline);
-      await _openBox(boxMetadata);
+
+      final boxes = <String>[
+        boxGeneral,
+        boxCourses,
+        boxLessons,
+        boxUserData,
+        boxOffline,
+        boxMetadata,
+      ];
+
+      for (final name in boxes) {
+        await _openBox(name);
+      }
 
       _isInitialized = true;
-      debugPrint('📦 LocalDatabase initialized successfully');
+      debugPrint('LocalDatabase initialized successfully');
+    }();
+
+    try {
+      await _initFuture;
     } catch (e) {
-      debugPrint('❌ LocalDatabase init error: $e');
+      debugPrint('LocalDatabase init error: $e');
+    } finally {
+      _initFuture = null;
     }
   }
 
   Future<Box> _openBox(String name) async {
     if (_boxes.containsKey(name)) return _boxes[name]!;
-    final box = await Hive.openBox(name);
-    _boxes[name] = box;
-    debugPrint('Got object store box in database $name.');
-    return box;
+
+    try {
+      final Box box;
+      if (Hive.isBoxOpen(name)) {
+        box = Hive.box(name);
+      } else {
+        // Keep type aligned with OfflineCacheService to avoid type mismatches.
+        box = await Hive.openBox<Map>(name);
+      }
+
+      _boxes[name] = box;
+      debugPrint('Got object store box in database $name.');
+      return box;
+    } catch (e) {
+      if (Hive.isBoxOpen(name)) {
+        final box = Hive.box(name);
+        _boxes[name] = box;
+        debugPrint('Got object store box in database $name.');
+        return box;
+      }
+      rethrow;
+    }
   }
 
   /// Get a box by name, defaults to general box
   Box _getBox([String? name]) {
     final boxName = name ?? boxGeneral;
+    if (!_boxes.containsKey(boxName) && Hive.isBoxOpen(boxName)) {
+      _boxes[boxName] = Hive.box(boxName);
+    }
     if (!_boxes.containsKey(boxName)) {
       throw Exception('Box $boxName not opened. Call init() first.');
     }
@@ -124,6 +161,7 @@ class LocalDatabase {
     String? boxName,
   }) async {
     try {
+      await init();
       final cachedData = get<T>(key, boxName: boxName);
       final expired = isExpired(key, maxAge);
 
@@ -256,3 +294,4 @@ class LocalDatabase {
     return result;
   }
 }
+

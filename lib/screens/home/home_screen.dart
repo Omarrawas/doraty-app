@@ -433,7 +433,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTeacherItem(Map<String, dynamic> teacher) {
-    final userData = teacher['users'] as Map<String, dynamic>?;
+    final dynamic usersRaw = teacher['users'];
+    final Map<String, dynamic>? userData =
+        usersRaw is Map ? Map<String, dynamic>.from(usersRaw) : null;
     final name = StringUtils.cleanTeacherName(
         userData?['full_name'] ?? userData?['name'] ?? _t('teacher'));
     final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'];

@@ -50,9 +50,11 @@ void main() async {
   Hive.registerAdapter(OfflineCourseAdapter());
   Hive.registerAdapter(OfflineLessonAdapter());
 
+  // These two services touch the same Hive boxes, so initialize in order.
+  await OfflineCacheService().init();
+  await LocalDatabase().init();
+
   final List<Future> remainingInitializations = [
-    OfflineCacheService().init(),
-    LocalDatabase().init(),
     SettingsService().init(),
   ];
 
