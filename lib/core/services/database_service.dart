@@ -6,7 +6,6 @@ import 'package:uuid/uuid.dart';
 import 'supabase_service.dart';
 import '../../models/chapter.dart';
 import '../../models/payment_account.dart';
-import 'offline_cache_service.dart';
 import 'cache_service.dart';
 import 'local_database.dart';
 import '../../models/course.dart';
@@ -107,6 +106,7 @@ class DatabaseService {
         'parent_id': parentId,
         'icon_url': iconUrl,
       });
+      await LocalDatabase().remove(CacheKeys.categories);
     } catch (e) {
       debugPrint('Error creating category: $e');
       rethrow;
@@ -135,6 +135,7 @@ class DatabaseService {
 
       if (updates.isNotEmpty) {
         await _client.from('categories').update(updates).eq('id', id);
+        await LocalDatabase().remove(CacheKeys.categories);
       }
     } catch (e) {
       debugPrint('Error updating category: $e');
@@ -146,6 +147,7 @@ class DatabaseService {
   Future<void> deleteCategory(String id) async {
     try {
       await _client.from('categories').delete().eq('id', id);
+      await LocalDatabase().remove(CacheKeys.categories);
     } catch (e) {
       debugPrint('Error deleting category: $e');
       rethrow;
@@ -2072,61 +2074,49 @@ class DatabaseService {
   }
 
   /// Get enrolled courses with progress
-  Future<List<Map<String, dynamic>>> getEnrolledCoursesWithProgress() async {
-    try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) return [];
+  Future<List<Map<String, dynamic>>> getEnrolledCoursesWithProgress({
+    bool forceRefresh = false,
+  }) async {
+    final userId = SupabaseService.instance.currentUserId;
+    if (userId == null) return [];
 
-      // Fetch enrollments with course details AND instructor details
-      final response = await _client
-          .from('enrollments')
-          .select(
-              '*, courses(*, users!instructor_id(full_name, avatar_url))')
-          .eq('user_id', userId)
-          .order('enrolled_at', ascending: false);
+    return fetchWithCache(
+      key: CacheKeys.userEnrollments(userId),
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 1),
+      fetcher: () async {
+        try {
+          // Fetch enrollments with course details AND instructor details
+          final response = await _client
+              .from('enrollments')
+              .select('*, courses(*, users!instructor_id(full_name, avatar_url))')
+              .eq('user_id', userId)
+              .order('enrolled_at', ascending: false);
 
-      final data = List<Map<String, dynamic>>.from(response);
+          final data = List<Map<String, dynamic>>.from(response);
 
-      // Map nested user data to course fields
-      final enrollments = data.map((enrollment) {
-        if (enrollment['courses'] != null) {
-          final course = enrollment['courses'];
-          final user = course['users'];
-          if (user != null) {
-            course['instructor_name'] =
-                user['full_name'] ?? course['instructor_name'];
-            course['instructor_photo'] =
-                user['avatar_url'] ?? course['instructor_photo'];
-          }
+          // Map nested user data to course fields
+          final enrollments = data.map((enrollment) {
+            if (enrollment['courses'] != null) {
+              final course = enrollment['courses'];
+              final user = course['users'];
+              if (user != null) {
+                course['instructor_name'] =
+                    user['full_name'] ?? course['instructor_name'];
+                course['instructor_photo'] =
+                    user['avatar_url'] ?? course['instructor_photo'];
+              }
+            }
+            return enrollment;
+          }).toList();
+
+          return enrollments;
+        } catch (e) {
+          debugPrint('Error getting enrolled courses with join: $e');
+          return _getEnrolledCoursesSimple();
         }
-        return enrollment;
-      }).toList();
-
-      // CACHE: Save to offline cache
-      try {
-        await OfflineCacheService().cacheEnrolledCourses(enrollments);
-      } catch (cacheError) {
-        debugPrint('Error caching enrollments: $cacheError');
-      }
-
-      return enrollments;
-    } catch (e) {
-      debugPrint('Error getting enrolled courses with join: $e');
-
-      // CACHE: Try to load from offline cache
-      try {
-        final cachedEnrollments =
-            await OfflineCacheService().getCachedEnrolledCourses();
-        if (cachedEnrollments != null && cachedEnrollments.isNotEmpty) {
-          return cachedEnrollments;
-        }
-      } catch (cacheError) {
-        debugPrint('Error loading cached enrollments: $cacheError');
-      }
-
-      // Fallback
-      return _getEnrolledCoursesSimple();
-    }
+      },
+    );
   }
 
   Future<List<Map<String, dynamic>>> _getEnrolledCoursesSimple() async {

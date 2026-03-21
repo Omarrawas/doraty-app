@@ -22,6 +22,7 @@ class YoutubePlayerWebWindows extends StatefulWidget {
 }
 
 class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
+  static int _viewCounter = 0;
   late String _viewId;
   bool _hasError = false;
   String _errorMessage = '';
@@ -29,7 +30,8 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
   @override
   void initState() {
     super.initState();
-    _viewId = 'youtube-${widget.videoId}';
+    _viewCounter++;
+    _viewId = 'youtube-${widget.videoId}-${_viewCounter}';
 
     if (kIsWeb) {
       // Register the view factory for Web
@@ -42,16 +44,11 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
                 'https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=0&rel=0&modestbranding=1&fs=1'
             ..style.border = 'none'
             ..style.width = '100%'
-            ..style.height = '100%'
-            ..allowFullscreen = true;
+            ..style.height = '100%';
 
           iframe.setAttribute(
               'allow',
-              'accelerometer; autoplay; clipboard-write; '
-                  'encrypted-media; gyroscope; picture-in-picture; '
-                  'web-share; fullscreen');
-          iframe.setAttribute('webkitallowfullscreen', 'true');
-          iframe.setAttribute('mozallowfullscreen', 'true');
+              'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen');
 
           return iframe;
         },

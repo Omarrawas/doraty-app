@@ -65,9 +65,6 @@ void main() async {
   await Future.wait(remainingInitializations);
 
   // Initialize Supabase
-  // In CI/GitHub Actions builds, SUPABASE_URL & SUPABASE_ANON_KEY are injected
-  // via --dart-define. Locally (debug / Windows), they will be empty strings,
-  // so we fall back to the envied-generated Env class which reads from .env file.
   const String ciUrl = String.fromEnvironment('SUPABASE_URL');
   const String ciAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
@@ -75,29 +72,19 @@ void main() async {
   final String anonKey =
       (ciAnonKey.isNotEmpty ? ciAnonKey : Env.supabaseAnonKey).trim();
 
-  // Initialize Supabase with the configuration
   try {
     debugPrint('🔄 Initializing Supabase...');
-    debugPrint('📍 URL: $url');
-
     await SupabaseService.initialize(
       supabaseUrl: url,
       supabaseAnonKey: anonKey,
     );
-
     debugPrint('✅ Supabase initialized successfully');
-    debugPrint('🔌 Client connected successfully');
   } catch (e) {
-    debugPrint(
-        '⚠️ WARNING: Failed to initialize Supabase. The app will continue in OFFLINE mode.');
+    debugPrint('⚠️ WARNING: Failed to initialize Supabase. The app will continue in OFFLINE mode.');
     debugPrint('Error: $e');
-    // debugPrint('StackTrace: $stackTrace');
-    
-    // We don't return early here anymore, allowing the app to run in offline mode
   }
 
   // Initialize SyncService (Background) - AFTER Supabase
-  // On web, we only initialize but don't force a full sync on start to keep it light
   SyncService().init(skipInitialSync: kIsWeb);
 
   // Initialize Notification Service - AFTER Supabase (Non-blocking)
@@ -193,13 +180,12 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWideScreen = screenWidth > 900;
-    // userRole and isManager are now handled by the Sidebar Drawer for dashboard access
 
     // Build common screens
     final List<Widget> screens = [
       const HomeScreen(),
       const ExploreScreen(),
-      const AllTipsScreen(showAppBar: false),
+      AllTipsScreen(showAppBar: false, isVisible: _currentIndex == 2),
       const SubjectsScreen(showBackButton: false),
       const ProfileScreen(),
     ];
@@ -294,10 +280,7 @@ class _MainScreenState extends State<MainScreen> {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1200),
                 child: GradientBackground(
-                  child: IndexedStack(
-                    index: _currentIndex >= screens.length ? 0 : _currentIndex,
-                    children: screens,
-                  ),
+                  child: _buildCurrentScreen(),
                 ),
               ),
             ),
@@ -323,34 +306,51 @@ class _MainScreenState extends State<MainScreen> {
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(30),
-                      clipBehavior: Clip.none, // يجب ألا نقص حتى لا نقتطع الدائرة العلوية
+                      clipBehavior: Clip.none,
                       child: CurvedNavigationBar(
                         index: _currentIndex >= screens.length ? 0 : _currentIndex,
                         height: 60.0,
-                      items: <Widget>[
-                        _buildNavItem(Icons.home_outlined, 0),
-                        _buildNavItem(Icons.manage_search_outlined, 1),
-                        _buildNavItem(Icons.lightbulb_outline, 2),
-                        _buildNavItem(Icons.category_outlined, 3),
-                        _buildProfileTab(context, 4),
-                      ],
-                      color: AppColors.getSurfaceColor(context).withOpacity(0.95),
-                      buttonBackgroundColor: AppColors.primaryPurple,
-                      backgroundColor: Colors.transparent, // اللون المحيط حول الشريط
-                      animationCurve: Curves.easeInOut,
-                      animationDuration: const Duration(milliseconds: 300),
-                      onTap: (index) {
-                        setState(() {
-                          _currentIndex = index;
-                        });
-                      },
+                        items: <Widget>[
+                          _buildNavItem(Icons.home_outlined, 0),
+                          _buildNavItem(Icons.manage_search_outlined, 1),
+                          _buildNavItem(Icons.lightbulb_outline, 2),
+                          _buildNavItem(Icons.category_outlined, 3),
+                          _buildProfileTab(context, 4),
+                        ],
+                        color: AppColors.getSurfaceColor(context).withOpacity(0.95),
+                        buttonBackgroundColor: AppColors.primaryPurple,
+                        backgroundColor: Colors.transparent,
+                        animationCurve: Curves.easeInOut,
+                        animationDuration: const Duration(milliseconds: 300),
+                        onTap: (index) {
+                          setState(() {
+                            _currentIndex = index;
+                          });
+                        },
+                      ),
                     ),
-                  ), // closes ClipRRect
-                ), // closes Container
-              ); // closes SafeArea
-            }, // closes builder
-          ), // closes Consumer
-    ); // closes Scaffold
+                  ),
+                );
+              },
+            ),
+    );
+  }
+
+  Widget _buildCurrentScreen() {
+    switch (_currentIndex) {
+      case 0:
+        return const HomeScreen();
+      case 1:
+        return const ExploreScreen();
+      case 2:
+        return const AllTipsScreen(showAppBar: false, isVisible: true);
+      case 3:
+        return const SubjectsScreen(showBackButton: false);
+      case 4:
+        return const ProfileScreen();
+      default:
+        return const HomeScreen();
+    }
   }
 
   Widget _buildNavItem(IconData icon, int index) {
@@ -358,7 +358,7 @@ class _MainScreenState extends State<MainScreen> {
     double iconSize = 26;
     
     return Container(
-      width: 44, // Slightly wider base for better touch and centering
+      width: 44,
       height: 44,
       alignment: Alignment.center,
       child: Icon(
@@ -377,7 +377,7 @@ class _MainScreenState extends State<MainScreen> {
       builder: (context, auth, _) {
         final photoUrl = auth.userProfile?['avatar_url'] ?? auth.userProfile?['photo_url'];
         return Container(
-          width: 44, // Consistent with _buildNavItem
+          width: 44,
           height: 44,
           alignment: Alignment.center,
           child: Container(

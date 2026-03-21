@@ -6,10 +6,8 @@ import '../services/offline_storage_service.dart';
 import '../services/course_download_service.dart';
 import '../../models/offline_course.dart';
 import 'settings_service.dart';
-import 'offline_cache_service.dart';
 import 'supabase_service.dart';
 import 'auth_service.dart';
-import '../../models/course.dart';
 import 'notification_service.dart';
 
 class SyncService extends ChangeNotifier {
@@ -77,26 +75,22 @@ class SyncService extends ChangeNotifier {
       debugPrint('📡 Syncing core database items...');
 
       // Sync Categories
-      final categories = await _db.getCategories(forceRefresh: true);
-      await OfflineCacheService().cacheUserData('categories_all', categories);
+      await _db.getCategories(forceRefresh: true);
 
       // Sync Enrolled Courses (The "My Courses" tab)
-      final enrollments = await _db.getUserEnrollmentsWithProgress(userId);
-      await OfflineCacheService().cacheEnrolledCourses(enrollments);
+      final enrollments = await _db.getEnrolledCoursesWithProgress(forceRefresh: true);
 
       // 3. Subscribe to course topics for push notifications
       for (final enrollment in enrollments) {
-        final courseId = enrollment['id'] ?? enrollment['course_id'];
+        final courseData = enrollment['courses'] as Map<String, dynamic>?;
+        final courseId = courseData?['id'] ?? enrollment['course_id'];
         if (courseId != null) {
           await NotificationService().subscribeToTopic('course_$courseId');
         }
       }
 
       // Sync Home Content (Featured/Latest)
-      final homeCoursesData =
-          await _db.getCourses(forceRefresh: true); // Get some initial courses
-      await OfflineCacheService().cacheCourses(
-          homeCoursesData.map((e) => Course.fromJson(e)).toList());
+      await _db.getCourses(forceRefresh: true); // Get initial courses
 
       // Sync User Profile
       // This is already handled in AuthService, but we ensure it here

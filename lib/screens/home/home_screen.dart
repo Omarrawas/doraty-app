@@ -332,7 +332,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 SliverPersistentHeader(
                   pinned: true,
                   delegate: _HomeHeaderDelegate(
-                    userName: authService.userProfile?['full_name'] ?? authService.userProfile?['name'],
+                    userName: (authService.userProfile?['full_name'] ??
+                            authService.userProfile?['name'])
+                        ?.toString(),
                     hasUnreadNotifications: _hasUnreadNotifications,
                     t: _t,
                     onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),

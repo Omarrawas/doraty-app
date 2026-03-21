@@ -10,11 +10,13 @@ import 'lesson/youtube_player_web_windows.dart';
 class VerticalTipPlayer extends StatefulWidget {
   final List<Tip> tips;
   final int initialIndex;
+  final bool isVisible;
 
   const VerticalTipPlayer({
     super.key,
     required this.tips,
     this.initialIndex = 0,
+    this.isVisible = true,
   });
 
   @override
@@ -39,6 +41,13 @@ class _VerticalTipPlayerState extends State<VerticalTipPlayer> {
   }
 
   @override
+  void didUpdateWidget(VerticalTipPlayer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the whole player visibility changed, we might need to trigger a rebuild
+    // to let TipPlayerItems know.
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
@@ -53,6 +62,7 @@ class _VerticalTipPlayerState extends State<VerticalTipPlayer> {
           return TipPlayerItem(
             tip: widget.tips[index],
             isActive: _currentIndex == index,
+            isVisible: widget.isVisible,
           );
         },
       ),
@@ -63,11 +73,13 @@ class _VerticalTipPlayerState extends State<VerticalTipPlayer> {
 class TipPlayerItem extends StatefulWidget {
   final Tip tip;
   final bool isActive;
+  final bool isVisible;
 
   const TipPlayerItem({
     super.key,
     required this.tip,
     required this.isActive,
+    required this.isVisible,
   });
 
   @override
@@ -111,17 +123,24 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
       if (!kIsWeb && defaultTargetPlatform != TargetPlatform.windows) {
         _youtubeController = YoutubePlayerController(
           initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
-            autoPlay: true,
+          flags: YoutubePlayerFlags(
+            autoPlay: widget.isActive && widget.isVisible,
             loop: true,
             mute: false,
             hideControls: true,
           ),
         );
       }
-      if (mounted) setState(() => _isInitialized = true);
+      if (mounted) {
+        setState(() {
+          _isInitialized = _isYouTube 
+            ? (kIsWeb || defaultTargetPlatform == TargetPlatform.windows || _youtubeController != null)
+            : false;
+        });
+      }
       return;
     }
+
 
     if (_isYouTube && videoId == null) {
       if (mounted) {
@@ -146,7 +165,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
       if (sanitizedUrl.isEmpty) throw 'Empty URL';
       await _videoController!.initialize();
       _videoController!.setLooping(true);
-      if (widget.isActive) {
+      if (widget.isActive && widget.isVisible) {
         _videoController!.play();
       }
       if (mounted) setState(() => _isInitialized = true);
@@ -159,36 +178,55 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
         });
       }
     }
+
   }
 
   String _sanitizeUrl(String url) {
     if (url.isEmpty) return url;
-    try {
-      if (url.contains('%')) return url;
-      final uri = Uri.parse(url);
-      final encodedUri = uri.replace(
-        path: _encodePath(uri.path),
-        queryParameters: uri.queryParameters.isNotEmpty ? uri.queryParameters : null,
-      );
-      return encodedUri.toString();
-    } catch (e) {
-      return url.replaceAll(' ', '%20');
-    }
-  }
-
-  String _encodePath(String path) {
-    if (path.isEmpty) return path;
-    return path.split('/').map((segment) => Uri.encodeComponent(segment)).join('/');
+    return Uri.encodeFull(url);
   }
 
   @override
   void didUpdateWidget(TipPlayerItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isActive && !oldWidget.isActive) {
-      _isYouTube ? _youtubeController?.play() : _videoController?.play();
-    } else if (!widget.isActive && oldWidget.isActive) {
-      _isYouTube ? _youtubeController?.pause() : _videoController?.pause();
+
+    if (oldWidget.tip.videoUrl != widget.tip.videoUrl) {
+      _videoController?.dispose();
+      _youtubeController?.dispose();
+      _videoController = null;
+      _youtubeController = null;
+      _isInitialized = false;
+      _isYouTube = widget.tip.videoUrl.contains('youtube.com') || 
+                   widget.tip.videoUrl.contains('youtu.be') ||
+                   widget.tip.videoUrl.contains('shorts');
+      _initializePlayer();
+      return;
     }
+
+    
+    final bool currentlyShouldPlay = widget.isActive && widget.isVisible;
+    final bool previouslyShouldPlay = oldWidget.isActive && oldWidget.isVisible;
+
+    if (currentlyShouldPlay && !previouslyShouldPlay) {
+      if (_isYouTube) {
+        _youtubeController?.play();
+      } else if (_videoController?.value.isInitialized == true) {
+        _videoController?.play();
+      }
+    } else if (!currentlyShouldPlay && previouslyShouldPlay) {
+      if (_isYouTube) {
+        _youtubeController?.pause();
+      } else if (_videoController?.value.isInitialized == true) {
+        _videoController?.pause();
+      }
+    }
+  }
+
+  @override
+  void deactivate() {
+    _videoController?.pause();
+    _youtubeController?.pause();
+    super.deactivate();
   }
 
   @override
@@ -230,15 +268,18 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
-                  setState(() {
-                    if (_isYouTube) {
-                      if (_youtubeController != null) {
-                        _youtubeController!.value.isPlaying ? _youtubeController!.pause() : _youtubeController!.play();
-                      }
-                    } else {
-                      _videoController!.value.isPlaying ? _videoController!.pause() : _videoController!.play();
+                  if (_isYouTube) {
+                    if (_youtubeController != null) {
+                      _youtubeController!.value.isPlaying ? _youtubeController!.pause() : _youtubeController!.play();
                     }
-                  });
+                  } else {
+                    final controller = _videoController;
+                    if (controller != null && controller.value.isInitialized) {
+                      setState(() {
+                        controller.value.isPlaying ? controller.pause() : controller.play();
+                      });
+                    }
+                  }
                 },
                 child: _isYouTube 
                   ? (kIsWeb || defaultTargetPlatform == TargetPlatform.windows
@@ -247,13 +288,17 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
                           height: screenHeight,
                         )
                       : YoutubePlayer(
-                          controller: _youtubeController!,
+                          controller: _youtubeController ?? YoutubePlayerController(initialVideoId: ''),
                           showVideoProgressIndicator: true,
                           progressIndicatorColor: AppColors.primaryPurple,
                         ))
                   : AspectRatio(
-                      aspectRatio: _videoController!.value.aspectRatio,
-                      child: VideoPlayer(_videoController!),
+                      aspectRatio: (_videoController?.value.aspectRatio ?? 0) > 0 
+                        ? _videoController!.value.aspectRatio 
+                        : 9 / 16,
+                      child: _videoController != null 
+                        ? VideoPlayer(_videoController!) 
+                        : const SizedBox(),
                     ),
               ),
             ),
@@ -407,7 +452,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
     if (!_isInitialized) return false;
     if (_isYouTube) {
       if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
-        return true;
+        return widget.isActive && widget.isVisible;
       }
       return _youtubeController?.value.isPlaying ?? false;
     }

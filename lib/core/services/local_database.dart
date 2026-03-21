@@ -124,6 +124,14 @@ class LocalDatabase {
     }
   }
 
+  /// Clear all data in all boxes
+  Future<void> clearAll() async {
+    for (final box in _boxes.values) {
+      await box.clear();
+    }
+    debugPrint('🗑️ LocalDatabase: All data cleared');
+  }
+
   /// Check if data is expired
   bool isExpired(String key, Duration maxAge) {
     try {
@@ -155,7 +163,7 @@ class LocalDatabase {
         return cachedData;
       }
 
-      if (cachedData != null && (expired || forceRefresh)) {
+      if (cachedData != null && expired && !forceRefresh) {
         debugPrint('🕰️ LocalDatabase Hit (Stale): $key - Fetching new data in background');
         _backgroundUpdate(key, fetcher, boxName);
         return cachedData;
@@ -202,7 +210,10 @@ class LocalDatabase {
     if (data is Iterable) {
       final List<dynamic> baseList = data.toList();
       
-      if (_isListMapType<T>()) {
+      // Target: List<Map<String, dynamic>> or similar
+      final listMapType = (List<Map<String, dynamic>>);
+      final listMapType2 = (List<Map>);
+      if (T == listMapType || T == listMapType2) {
         try {
           final converted = baseList.map((item) {
             if (item is Map) return _deepMapConvert(item);
@@ -212,22 +223,30 @@ class LocalDatabase {
         } catch (_) {}
       }
 
-      if (_isStringListType<T>()) {
+      // Target: List<String>
+      final stringListType = (List<String>);
+      if (T == stringListType) {
         try {
           final converted = baseList.map((e) => e.toString()).toList();
           return List<String>.from(converted) as T;
         } catch (_) {}
       }
 
+      // Generic List fallback
       try {
         final converted = baseList.map((e) => _deepConvert(e)).toList();
+        if (T == List || T == (List<dynamic>)) {
+          return converted as T;
+        }
+        // If we got here and T is still a list type (e.g. minified), try direct cast
         return converted as T;
       } catch (_) {}
     }
 
     // 2. Handling Maps
     if (data is Map) {
-      if (_isMapType<T>()) {
+      final mapType = (Map<String, dynamic>);
+      if (T == mapType || T == Map) {
         try {
           final converted = _deepMapConvert(data);
           return Map<String, dynamic>.from(converted) as T;
@@ -240,29 +259,13 @@ class LocalDatabase {
 
     // 3. Handling Numbers
     if (data is num) {
-      final tStr = T.toString().toLowerCase();
-      if (tStr.contains('double')) return data.toDouble() as T;
-      if (tStr.contains('int')) return data.toInt() as T;
+      if (T == double) return data.toDouble() as T;
+      if (T == int) return data.toInt() as T;
     }
 
     // 4. Ultimate Fallback
     final converted = _deepConvert(data);
     return converted as T;
-  }
-
-  static bool _isListMapType<T>() {
-    final s = T.toString();
-    return s.contains('List') && s.contains('Map');
-  }
-  
-  static bool _isMapType<T>() {
-    final s = T.toString();
-    return s.contains('Map');
-  }
-
-  static bool _isStringListType<T>() {
-    final s = T.toString();
-    return s.contains('List') && s.contains('String');
   }
 
   static dynamic _deepConvert(dynamic value) {

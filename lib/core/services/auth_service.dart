@@ -4,7 +4,8 @@ import 'supabase_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../env/multi_env.dart';
 import 'platform_utils.dart';
-import 'offline_cache_service.dart';
+import 'local_database.dart';
+import 'cache_service.dart';
 
 class AuthService extends ChangeNotifier {
   final SupabaseClient _client = SupabaseService.instance.client;
@@ -76,7 +77,7 @@ class AuthService extends ChangeNotifier {
       } catch (roleErr) {
         debugPrint('Could not fetch role, attempting to use cached role: $roleErr');
         // Try to get role from cached profile if network fails
-        final cached = await OfflineCacheService().getCachedUserData('user_profile_${currentUser!.id}');
+        final cached = LocalDatabase().get<Map<String, dynamic>>(CacheKeys.userProfile(currentUser!.id));
         if (cached != null && cached['role'] != null) {
           role = cached['role'];
         }
@@ -89,7 +90,7 @@ class AuthService extends ChangeNotifier {
       };
 
       // 4. CACHE: Save profile for offline use
-      await OfflineCacheService().cacheUserData('user_profile_${currentUser!.id}', _userProfile);
+      await LocalDatabase().set(CacheKeys.userProfile(currentUser!.id), _userProfile);
 
       _isOffline = false;
       notifyListeners();
@@ -99,7 +100,7 @@ class AuthService extends ChangeNotifier {
       
       // Try to load from cache if network fails
       if (currentUser != null) {
-        final cached = await OfflineCacheService().getCachedUserData('user_profile_${currentUser!.id}');
+        final cached = LocalDatabase().get<Map<String, dynamic>>(CacheKeys.userProfile(currentUser!.id));
         if (cached != null) {
           _userProfile = Map<String, dynamic>.from(cached);
           notifyListeners();
@@ -175,7 +176,9 @@ class AuthService extends ChangeNotifier {
   Future<void> signOut() async {
     try {
       if (currentUser != null) {
-        await OfflineCacheService().clearAllCache(); // Or just specifically the user data
+        // Clear all local database cache on sign out
+        // We use a general clear for security/privacy
+        await LocalDatabase().clearAll();
       }
       await _client.auth.signOut();
     } catch (e) {
