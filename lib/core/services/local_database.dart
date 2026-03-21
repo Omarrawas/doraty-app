@@ -1,227 +1,258 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-/// Database service that uses Hive as the single source of truth for offline/cache data
+/// A unified local caching service using Hive for persistence.
+/// Optimized for Flutter Web minification and type safety.
 class LocalDatabase {
   static final LocalDatabase _instance = LocalDatabase._internal();
   factory LocalDatabase() => _instance;
   LocalDatabase._internal();
 
-  // Box Names
-  static const String _mainBox = 'app_local_database';
-  
-  late Box<Map> _box;
-  bool _initialized = false;
+  bool _isInitialized = false;
+  final Map<String, Box> _boxes = {};
 
+  // Standard boxes
+  static const String boxGeneral = 'app_local_database';
+  static const String boxCourses = 'courses_cache';
+  static const String boxLessons = 'lessons_cache';
+  static const String boxUserData = 'user_data_cache';
+  static const String boxOffline = 'offline_actions';
+  static const String boxMetadata = 'cache_metadata';
+
+  /// Initialize Hive and open all required boxes
   Future<void> init() async {
-    if (_initialized) return;
+    if (_isInitialized) return;
+
     try {
       await Hive.initFlutter();
-      _box = await Hive.openBox<Map>(_mainBox);
-      _initialized = true;
+      
+      // Open all default boxes
+      await _openBox(boxGeneral);
+      await _openBox(boxCourses);
+      await _openBox(boxLessons);
+      await _openBox(boxUserData);
+      await _openBox(boxOffline);
+      await _openBox(boxMetadata);
+
+      _isInitialized = true;
       debugPrint('📦 LocalDatabase initialized successfully');
     } catch (e) {
-      debugPrint('🚨 Failed to initialize LocalDatabase: $e');
-      // Fallback or retry logic if needed
-      _initialized = false;
+      debugPrint('❌ LocalDatabase init error: $e');
     }
   }
 
-  /// Check if data should be refreshed
-  bool _isDataStale(int timestamp, Duration maxAge) {
-    final now = DateTime.now().millisecondsSinceEpoch;
-    return (now - timestamp) > maxAge.inMilliseconds;
+  Future<Box> _openBox(String name) async {
+    if (_boxes.containsKey(name)) return _boxes[name]!;
+    final box = await Hive.openBox(name);
+    _boxes[name] = box;
+    debugPrint('Got object store box in database $name.');
+    return box;
   }
 
-  /// Set data directly
-  Future<void> set(String key, dynamic data) async {
-    if (!_initialized) return;
+  /// Get a box by name, defaults to general box
+  Box _getBox([String? name]) {
+    final boxName = name ?? boxGeneral;
+    if (!_boxes.containsKey(boxName)) {
+      throw Exception('Box $boxName not opened. Call init() first.');
+    }
+    return _boxes[boxName]!;
+  }
+
+  /// Generic set operation
+  Future<void> set(String key, dynamic value, {String? boxName}) async {
     try {
-      await _box.put(key, {
-        'data': data,
-        'timestamp': DateTime.now().millisecondsSinceEpoch,
-      });
+      final box = _getBox(boxName);
+      await box.put(key, value);
+      
+      // Update metadata (timestamp)
+      final metaBox = _getBox(boxMetadata);
+      await metaBox.put('${key}_timestamp', DateTime.now().millisecondsSinceEpoch);
+      
       debugPrint('✅ LocalDatabase: Saved $key');
     } catch (e) {
-      debugPrint('❌ LocalDatabase Error setting $key: $e');
+      debugPrint('❌ LocalDatabase Error saving $key: $e');
     }
   }
 
-  /// Get data directly
-  dynamic get(String key) {
-    if (!_initialized) return null;
-    final entry = _box.get(key);
-    if (entry != null) {
-      return _safeCast(entry['data']);
+  /// Generic get operation with safe casting
+  T? get<T>(String key, {String? boxName}) {
+    try {
+      final box = _getBox(boxName);
+      final data = box.get(key);
+      if (data == null) return null;
+
+      return _safeCast<T>(data);
+    } catch (e) {
+      debugPrint('❌ LocalDatabase Error getting $key: $e');
+      return null;
     }
-    return null;
-  }
-  
-  /// Delete data
-  Future<void> remove(String key) async {
-    if (!_initialized) return;
-    await _box.delete(key);
   }
 
-  /// Clear all local data
-  Future<void> clear() async {
-    if (!_initialized) return;
-    await _box.clear();
+  /// Remove an item
+  Future<void> remove(String key, {String? boxName}) async {
+    try {
+      final box = _getBox(boxName);
+      await box.delete(key);
+      final metaBox = _getBox(boxMetadata);
+      await metaBox.delete('${key}_timestamp');
+    } catch (e) {
+      debugPrint('❌ LocalDatabase Error deleting $key: $e');
+    }
   }
 
-  /// Core function: Gets data from local DB if valid, otherwise fetches from Supabase
-  /// - `key`: Unique identifier for the data
-  /// - `fetcher`: The function to fetch data from Supabase
-  /// - `maxAge`: How long the local data is considered fresh
-  /// - `forceRefresh`: Ignore local data and fetch from Supabase immediately
-  static Future<T> localFirst<T>({
+  /// Check if data is expired
+  bool isExpired(String key, Duration maxAge) {
+    try {
+      final metaBox = _getBox(boxMetadata);
+      final timestamp = metaBox.get('${key}_timestamp') as int?;
+      if (timestamp == null) return true;
+
+      final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(timestamp));
+      return age > maxAge;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  /// Implementation of "Local-First" pattern with stale-while-revalidate
+  Future<T> localFirst<T>({
     required String key,
     required Future<T> Function() fetcher,
-    Duration maxAge = const Duration(minutes: 30),
+    Duration maxAge = const Duration(hours: 1),
     bool forceRefresh = false,
+    String? boxName,
   }) async {
-    final db = LocalDatabase();
-    
-    // Safety check if not initialized
-    if (!db._initialized) {
-      debugPrint('⚠️ LocalDatabase not initialized, fetching directly: $key');
-      return await fetcher();
-    }
-
     try {
-      final entry = db._box.get(key);
-      
-      if (!forceRefresh && entry != null) {
-        final timestamp = entry['timestamp'] as int?;
-        final data = entry['data'];
-        
-        if (timestamp != null && data != null) {
-          final isStale = db._isDataStale(timestamp, maxAge);
-          
-          if (!isStale) {
-            debugPrint('⚡ LocalDatabase Hit (Fresh): $key');
-            return _safeCast<T>(data);
-          } else {
-            debugPrint('🕰️ LocalDatabase Hit (Stale): $key - Fetching new data in background');
-            // Data is stale, return local data immediately, but fetch new data in background
-            _backgroundFetch(key, fetcher);
-            return _safeCast<T>(data);
-          }
-        }
+      final cachedData = get<T>(key, boxName: boxName);
+      final expired = isExpired(key, maxAge);
+
+      if (cachedData != null && !expired && !forceRefresh) {
+        return cachedData;
       }
 
-      // If we reach here, we either forced refresh, or there is no local data
+      if (cachedData != null && (expired || forceRefresh)) {
+        debugPrint('🕰️ LocalDatabase Hit (Stale): $key - Fetching new data in background');
+        _backgroundUpdate(key, fetcher, boxName);
+        return cachedData;
+      }
+
       debugPrint('🌐 Fetching from Supabase: $key');
       final fetchedData = await fetcher();
-      
-      // Save for next time
-      await db.set(key, fetchedData);
-      
+      await set(key, fetchedData, boxName: boxName);
       return fetchedData;
-      
     } catch (e) {
       debugPrint('❌ Fetch error for $key: $e');
-      
-      // If fetch fails, try to return stale local data as a fallback
-      final entry = db._box.get(key);
-      if (entry != null && entry['data'] != null) {
-        debugPrint('⚠️ Network failed, using stale local data for: $key');
-        return _safeCast<T>(entry['data']);
-      }
-      
-      rethrow;
+      try {
+        final lastResort = get<T>(key, boxName: boxName);
+        if (lastResort != null) return lastResort;
+      } catch (_) {}
+      return await fetcher();
     }
   }
 
-  static Future<void> _backgroundFetch<T>(String key, Future<T> Function() fetcher) async {
+  Future<void> _backgroundUpdate<T>(String key, Future<T> Function() fetcher, String? boxName) async {
     try {
-      final data = await fetcher();
-      await LocalDatabase().set(key, data);
-      debugPrint('🔄 Background update complete for: $key');
+      final newData = await fetcher();
+      await set(key, newData, boxName: boxName);
     } catch (e) {
       debugPrint('❌ Background update failed for $key: $e');
     }
   }
 
+  /// Safely casts data to type T, with special handling for minified web builds
   static T _safeCast<T>(dynamic data) {
     if (data == null) return null as T;
-
-    // 1. Direct type match - works for basic types
     if (data is T) return data;
 
-    // 2. Numeric handling
-    if (data is num) {
-      final typeStr = T.toString().toLowerCase();
-      if (typeStr.contains('double')) return data.toDouble() as T;
-      if (typeStr.contains('int')) return data.toInt() as T;
-    }
-
-    // 3. Collection conversion and casting (The major Web issue)
-    if (data is Iterable) {
-      // First, deep convert elements (recursive)
-      final List<dynamic> baseList = data.map((e) => _deepConvert(e)).toList();
-      
-      // Now, try to satisfy T by increasing specificity of the List container
-      // This is necessary because List<dynamic> cannot be cast to List<Map<...>>
-      
-      // Step A: Attempt direct cast of base list
-      try { return baseList as T; } catch (_) {}
-      
-      // Step B: Attempt cast to List<Map<String, dynamic>>
-      try {
-        final mapList = List<Map<String, dynamic>>.from(
-          baseList.where((e) => e is Map).map((e) => Map<String, dynamic>.from(e as Map))
-        );
-        return mapList as T;
-      } catch (_) {}
-
-      // Step C: Attempt cast to List<String>
-      try {
-        final stringList = List<String>.from(baseList.map((e) => e.toString()));
-        return stringList as T;
-      } catch (_) {}
-
-      // Step D: Attempt cast to List<dynamic> (most generic)
-      try {
-        return List<dynamic>.from(baseList) as T;
-      } catch (_) {}
-    }
-
-    if (data is Map) {
-      final convertedMap = _deepConvert(data);
-      try { return convertedMap as T; } catch (_) {}
-      try { return Map<String, dynamic>.from(convertedMap) as T; } catch (_) {}
-    }
-
-    // 4. Final Fallback
     try {
       return data as T;
     } catch (e) {
-      debugPrint('⚠️ LocalDatabase: SafeCast failed for $T. Returning converted as dynamic.');
-      try {
-        return _deepConvert(data) as T;
-      } catch (_) {
-        return data as T; // Will likely throw but we've tried everything
-      }
+      return _complexCast<T>(data);
     }
   }
 
-  /// Deeply converts Hive data to standard Dart types (Map<String, dynamic>, List, etc.)
-  static dynamic _deepConvert(dynamic input) {
-    if (input == null) return null;
+  /// Heavier casting logic for collections and primitives
+  static T _complexCast<T>(dynamic data) {
+    // 1. Handling Lists
+    if (data is Iterable) {
+      final List<dynamic> baseList = data.toList();
+      
+      if (_isListMapType<T>()) {
+        try {
+          final converted = baseList.map((item) {
+            if (item is Map) return _deepMapConvert(item);
+            return _deepConvert(item);
+          }).toList();
+          return List<Map<String, dynamic>>.from(converted) as T;
+        } catch (_) {}
+      }
 
-    if (input is Map) {
-      // Hive often returns Map<dynamic, dynamic>
-      final Map<String, dynamic> result = {};
-      input.forEach((key, value) {
-        result[key.toString()] = _deepConvert(value);
-      });
-      return result;
-    } else if (input is Iterable) {
-      return input.map((e) => _deepConvert(e)).toList();
+      if (_isStringListType<T>()) {
+        try {
+          final converted = baseList.map((e) => e.toString()).toList();
+          return List<String>.from(converted) as T;
+        } catch (_) {}
+      }
+
+      try {
+        final converted = baseList.map((e) => _deepConvert(e)).toList();
+        return converted as T;
+      } catch (_) {}
     }
-    
-    // Basic types (String, num, bool) return as is
-    return input;
+
+    // 2. Handling Maps
+    if (data is Map) {
+      if (_isMapType<T>()) {
+        try {
+          final converted = _deepMapConvert(data);
+          return Map<String, dynamic>.from(converted) as T;
+        } catch (_) {}
+      }
+      
+      final convertedMap = _deepMapConvert(data);
+      try { return convertedMap as T; } catch (_) {}
+    }
+
+    // 3. Handling Numbers
+    if (data is num) {
+      final tStr = T.toString().toLowerCase();
+      if (tStr.contains('double')) return data.toDouble() as T;
+      if (tStr.contains('int')) return data.toInt() as T;
+    }
+
+    // 4. Ultimate Fallback
+    final converted = _deepConvert(data);
+    return converted as T;
+  }
+
+  static bool _isListMapType<T>() {
+    final s = T.toString();
+    return s.contains('List') && s.contains('Map');
+  }
+  
+  static bool _isMapType<T>() {
+    final s = T.toString();
+    return s.contains('Map');
+  }
+
+  static bool _isStringListType<T>() {
+    final s = T.toString();
+    return s.contains('List') && s.contains('String');
+  }
+
+  static dynamic _deepConvert(dynamic value) {
+    if (value == null) return null;
+    if (value is Map) return _deepMapConvert(value);
+    if (value is Iterable) return value.map((e) => _deepConvert(e)).toList();
+    return value;
+  }
+
+  static Map<String, dynamic> _deepMapConvert(Map map) {
+    final Map<String, dynamic> result = {};
+    map.forEach((key, value) {
+      result[key.toString()] = _deepConvert(value);
+    });
+    return result;
   }
 }

@@ -8,7 +8,7 @@ Future<T> fetchWithCache<T>({
   bool forceRefresh = false,
   bool staleWhileRevalidate = true, // We ignore this as LocalDatabase handles it implicitly
 }) async {
-  return LocalDatabase.localFirst<T>(
+  return LocalDatabase().localFirst<T>(
     key: key,
     fetcher: fetcher,
     maxAge: duration ?? const Duration(minutes: 30),

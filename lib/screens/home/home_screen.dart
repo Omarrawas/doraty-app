@@ -247,11 +247,14 @@ class _HomeScreenState extends State<HomeScreen> {
       final userId = SupabaseService.instance.currentUserId;
       if (userId == null) return;
 
-      final enrollments = await _databaseService.getUserEnrollmentsWithProgress(userId);
+      final dynamic rawEnrollments = await _databaseService.getUserEnrollmentsWithProgress(userId);
+      if (rawEnrollments is! Iterable) return;
 
       if (mounted) {
         setState(() {
-          for (var enrollment in enrollments) {
+          for (var item in rawEnrollments) {
+            if (item is! Map) continue;
+            final enrollment = Map<String, dynamic>.from(item);
             final courseId = (enrollment['course_id'] ?? enrollment['id'])?.toString();
             if (courseId != null) {
               _enrollmentProgress[courseId] = (enrollment['progress_percentage'] ?? 0.0).toDouble();
@@ -276,7 +279,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final unreadCount = await _databaseService.getUnreadNotificationsCount();
       if (mounted) {
         setState(() {
-          _hasUnreadNotifications = unreadCount > 0;
+          _hasUnreadNotifications = (unreadCount ?? 0) > 0;
         });
       }
     } catch (e) {
