@@ -14,6 +14,9 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../models/chapter.dart';
 import '../../core/utils/error_utils.dart';
 import '../../widgets/rich_text_editor.dart';
+import '../../services/youtube_upload_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class CreateLessonScreen extends StatefulWidget {
   final String courseId;
@@ -45,6 +48,8 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   bool _isFree = false;
   bool _isSaving = false;
   bool _isUploadingToGitHub = false;
+  bool _isUploadingToYoutube = false;
+  final YoutubeUploadService _youtubeService = YoutubeUploadService();
   final List<Map<String, String>> _attachments = [];
   
   // Chapters
@@ -148,6 +153,43 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     _videoUrlController.dispose();
     _durationController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadToYoutube() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
+    
+    if (video == null) return;
+
+    setState(() => _isUploadingToYoutube = true);
+    try {
+      final String? ytUrl = await _youtubeService.uploadUnlistedVideo(
+        File(video.path), 
+        _titleController.text.isEmpty ? "New Lesson" : _titleController.text,
+        "Lesson uploaded from Doraty App"
+      );
+      
+      if (ytUrl != null) {
+        setState(() {
+          _videoUrlController.text = ytUrl;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم الرفع إلى يوتيوب بنجاح!')),
+          );
+        }
+      } else {
+        throw Exception('فشل الحصول على رابط يوتيوب');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في الرفع: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingToYoutube = false);
+    }
   }
 
   @override
@@ -271,6 +313,13 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                     label: 'رابط الفيديو',
                                     hint: 'https://youtube.com/watch?v=...',
                                     icon: Icons.video_library_outlined,
+                                    suffix: _isUploadingToYoutube 
+                                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                      : IconButton(
+                                          icon: const Icon(Icons.cloud_upload, color: Colors.redAccent),
+                                          onPressed: _pickAndUploadToYoutube,
+                                          tooltip: 'رفع إلى يوتيوب (غير مدرج)',
+                                        ),
                                   ),
                                   onChanged: (_) => setState(() {}),
                                   validator: (value) {
@@ -286,6 +335,20 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     child: VideoPreviewWidget(
                                       videoUrl: _videoUrlController.text,
+                                      onDurationFetched: (duration) {
+                                        if (duration.inSeconds > 0 && (_durationController.text.isEmpty || _durationController.text == '0' || _durationController.text == '0:00')) {
+                                          setState(() {
+                                            final h = duration.inHours;
+                                            final m = duration.inMinutes % 60;
+                                            final s = duration.inSeconds % 60;
+                                            if (h > 0) {
+                                              _durationController.text = '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+                                            } else {
+                                              _durationController.text = '$m:${s.toString().padLeft(2, '0')}';
+                                            }
+                                          });
+                                        }
+                                      },
                                     ),
                                   ),
                                 ],
@@ -295,9 +358,12 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                   style: TextStyle(
                                       color: AppColors.getTextColor(context)),
                                   decoration: _inputDecoration(
-                                    label: 'مدة الفيديو (بالثواني)',
-                                    hint: '1800 (30 دقيقة)',
+                                    label: 'مدة الفيديو (تلقائي)',
+                                    hint: 'يتم جلبها تلقائياً عند وضع الرابط',
                                     icon: Icons.access_time,
+                                  ).copyWith(
+                                    helperText: 'يمكن تعديلها يدوياً إذا لزم الأمر',
+                                    helperStyle: const TextStyle(color: Colors.blueAccent, fontSize: 10),
                                   ),
                                   keyboardType: TextInputType.number,
                                   validator: (value) {
@@ -379,7 +445,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -451,22 +517,24 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     String? label,
     String? hint,
     required IconData icon,
+    Widget? suffix,
   }) {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      prefixIcon: Icon(icon, color: Colors.white70),
-      labelStyle: const TextStyle(color: Colors.white70),
-      hintStyle: const TextStyle(color: Colors.white38),
+      prefixIcon: Icon(icon, color: AppColors.getTextColor(context, secondary: true)),
+      suffixIcon: suffix,
+      labelStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true)),
+      hintStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true).withOpacity(0.5)),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.05),
+      fillColor: AppColors.getGlassColor(context, opacity: 0.05),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -586,9 +654,9 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: AppColors.getGlassColor(context, opacity: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.1)),
             ),
             child: Column(
               children: [
@@ -668,12 +736,12 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
             ..._attachments.map((attachment) => Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.03),
+                    color: AppColors.getGlassColor(context, opacity: 0.03),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: ListTile(
-                    leading: const Icon(Icons.insert_drive_file,
-                        color: Colors.white70),
+                    leading: Icon(Icons.insert_drive_file,
+                        color: AppColors.getTextColor(context, secondary: true)),
                     title: Text(
                       attachment['name'] ?? '',
                       style: TextStyle(
@@ -682,7 +750,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                     subtitle: Text(
                       attachment['size'] ?? '',
                       style:
-                          const TextStyle(fontSize: 11, color: Colors.white54),
+                          TextStyle(fontSize: 11, color: AppColors.getTextColor(context, secondary: true)),
                     ),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete,

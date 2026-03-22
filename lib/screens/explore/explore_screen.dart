@@ -10,6 +10,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/providers/navigation_provider.dart';
 
 class ExploreScreen extends StatefulWidget {
   final String? initialFilter;
@@ -31,6 +32,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String _selectedType = 'الكل';
   String? _selectedLevel;
   String? _initialFilter;
+  final FocusNode _searchFocusNode = FocusNode();
 
   String _t(String key) =>
       AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -81,6 +83,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
       debugPrint('Error loading explore data: $e');
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final navProvider = Provider.of<NavigationProvider>(context);
+    if (navProvider.currentIndex == 1 && navProvider.shouldFocusSearch) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _searchFocusNode.requestFocus();
+          navProvider.consumeSearchFocus();
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _searchFocusNode.dispose();
+    super.dispose();
   }
 
   void _applyFilters() {
@@ -258,6 +280,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               ),
                             ),
                             child: TextField(
+                              focusNode: _searchFocusNode,
                               style: TextStyle(color: AppColors.getTextColor(context)),
                               cursorColor: AppColors.primaryPurple,
                               decoration: InputDecoration(

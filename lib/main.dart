@@ -12,10 +12,12 @@ import 'screens/tips/all_tips_screen.dart';
 import 'screens/categories/subjects_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'widgets/gradient_background.dart';
+import 'core/providers/navigation_provider.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/services/supabase_service.dart';
 import 'core/env/multi_env.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import 'core/services/settings_service.dart';
 import 'core/localization/locale_provider.dart';
@@ -38,6 +40,9 @@ void main() {
     
     WidgetsFlutterBinding.ensureInitialized();
     
+    // Load environment variables
+    await dotenv.load(fileName: ".env");
+
     // Global Flutter error handler
     FlutterError.onError = (details) {
       FlutterError.presentError(details);
@@ -101,6 +106,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => SyncService()),
+        ChangeNotifierProvider(create: (_) => NavigationProvider()),
       ],
       child: const MyApp(),
     ),
@@ -155,7 +161,6 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -171,11 +176,14 @@ class _MainScreenState extends State<MainScreen> {
     final double screenWidth = MediaQuery.of(context).size.width;
     final bool isWideScreen = screenWidth > 900;
 
+    final navProvider = Provider.of<NavigationProvider>(context);
+    final int currentIndex = navProvider.currentIndex;
+
     // Build common screens
     final List<Widget> screens = [
       const HomeScreen(),
       const ExploreScreen(),
-      AllTipsScreen(showAppBar: false, isVisible: _currentIndex == 2),
+      AllTipsScreen(showAppBar: false, isVisible: currentIndex == 2),
       const SubjectsScreen(showBackButton: false),
       const ProfileScreen(),
     ];
@@ -220,11 +228,9 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                     ),
                     child: NavigationRail(
-                      selectedIndex: _currentIndex,
+                      selectedIndex: currentIndex,
                       onDestinationSelected: (index) {
-                        setState(() {
-                          _currentIndex = index;
-                        });
+                        navProvider.setIndex(index);
                       },
                       backgroundColor:
                           AppColors.getSurfaceColor(context).withOpacity(0.95),
@@ -294,8 +300,8 @@ class _MainScreenState extends State<MainScreen> {
                   child: Center(
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 1200),
-                      child: GradientBackground(
-                        child: _buildCurrentScreen(),
+                      child: DynamicGradientBackground(
+                        child: _buildCurrentScreen(currentIndex),
                       ),
                     ),
                   ),
@@ -326,14 +332,14 @@ class _MainScreenState extends State<MainScreen> {
                       borderRadius: BorderRadius.circular(30),
                       clipBehavior: Clip.none,
                       child: CurvedNavigationBar(
-                        index: _currentIndex >= screens.length ? 0 : _currentIndex,
+                        index: currentIndex >= screens.length ? 0 : currentIndex,
                         height: 60.0,
                         items: <Widget>[
-                          _buildNavItem(Icons.home_outlined, 0),
-                          _buildNavItem(Icons.manage_search_outlined, 1),
-                          _buildNavItem(Icons.lightbulb_outline, 2),
-                          _buildNavItem(Icons.category_outlined, 3),
-                          _buildProfileTab(context, 4),
+                          _buildNavItem(Icons.home_outlined, 0, currentIndex),
+                          _buildNavItem(Icons.manage_search_outlined, 1, currentIndex),
+                          _buildNavItem(Icons.lightbulb_outline, 2, currentIndex),
+                          _buildNavItem(Icons.category_outlined, 3, currentIndex),
+                          _buildProfileTab(context, 4, currentIndex),
                         ],
                         color: AppColors.getSurfaceColor(context).withOpacity(0.95),
                         buttonBackgroundColor: AppColors.primaryPurple,
@@ -341,9 +347,7 @@ class _MainScreenState extends State<MainScreen> {
                         animationCurve: Curves.easeInOut,
                         animationDuration: const Duration(milliseconds: 300),
                         onTap: (index) {
-                          setState(() {
-                            _currentIndex = index;
-                          });
+                          navProvider.setIndex(index);
                         },
                       ),
                     ),
@@ -354,8 +358,8 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildCurrentScreen() {
-    switch (_currentIndex) {
+  Widget _buildCurrentScreen(int currentIndex) {
+    switch (currentIndex) {
       case 0:
         return const HomeScreen();
       case 1:
@@ -371,8 +375,8 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  Widget _buildNavItem(IconData icon, int index) {
-    bool isSelected = _currentIndex == index;
+  Widget _buildNavItem(IconData icon, int index, int currentIndex) {
+    bool isSelected = currentIndex == index;
     double iconSize = 26;
     
     return Container(
@@ -387,8 +391,8 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildProfileTab(BuildContext context, int index) {
-    bool isSelected = _currentIndex == index;
+  Widget _buildProfileTab(BuildContext context, int index, int currentIndex) {
+    bool isSelected = currentIndex == index;
     double containerSize = 34;
 
     return Consumer<AuthService>(

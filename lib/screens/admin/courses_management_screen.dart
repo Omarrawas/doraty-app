@@ -137,8 +137,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                 _buildFilterTabs(context),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
+                      ? Center(
+                          child: CircularProgressIndicator(color: AppColors.primaryPurple),
                         )
                       : _filteredCourses.isEmpty
                           ? _buildEmptyState(context)
@@ -205,7 +205,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -259,13 +259,13 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             ),
             child: TextField(
               onChanged: (value) => setState(() => _searchQuery = value),
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.getTextColor(context)),
               decoration: InputDecoration(
               hintText: _t('search_hint'),
               hintStyle:
-                  TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+                  TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 14),
               prefixIcon: Icon(Icons.search,
-                  color: Colors.white.withOpacity(0.7), size: 18),
+                  color: AppColors.getTextColor(context, secondary: true), size: 18),
                 border: InputBorder.none,
                 contentPadding:
                     EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -382,7 +382,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       Row(
                         children: [
                           const Icon(Icons.category,
-                              size: 14, color: Colors.white),
+                              size: 14, color: AppColors.primaryBlue),
                           const SizedBox(width: 4),
                           Text(
                             course['category'] ?? _t('general_specialization'),
@@ -454,7 +454,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                     radius: 12,
                     backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
                     child:
-                        const Icon(Icons.person, size: 14, color: Colors.white),
+                        Icon(Icons.person, size: 14, color: AppColors.primaryPurple),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
@@ -560,8 +560,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       border: Border.all(color: Colors.blue.withOpacity(0.5)),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.analytics_outlined,
-                          color: Colors.white),
+                      icon: Icon(Icons.analytics_outlined,
+                          color: Colors.blue),
                       onPressed: () => _showStatistics(course),
                     ),
                   ),
@@ -573,8 +573,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       border: Border.all(color: Colors.red.withOpacity(0.5)),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.delete_outline_rounded,
-                          color: Colors.white),
+                      icon: Icon(Icons.delete_outline_rounded,
+                          color: Colors.red),
                       onPressed: () => _deleteCourse(course),
                     ),
                   ),
@@ -638,7 +638,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
               child: Icon(
                 Icons.school_outlined,
                 size: 80,
-                color: Colors.white.withOpacity(0.2),
+                color: AppColors.getTextColor(context).withOpacity(0.2),
               ),
             ),
             const SizedBox(height: 24),

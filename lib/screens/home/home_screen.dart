@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
@@ -11,8 +12,7 @@ import '../teacher/teachers_list_screen.dart';
 import '../../models/category_model.dart';
 import '../explore/widgets/category_card.dart';
 import '../explore/explore_screen.dart';
-// Removed unused import
-import '../search/search_screen.dart';
+import '../../core/providers/navigation_provider.dart';
 import '../packages/package_screen.dart';
 import '../packages/all_packages_screen.dart';
 import '../tips/all_tips_screen.dart';
@@ -35,6 +35,8 @@ import '../../models/bundle.dart';
 import '../../widgets/vertical_tip_player.dart';
 import '../../widgets/tip_preview_card.dart';
 import '../../core/utils/safe_parser.dart';
+import '../../models/banner_ad.dart';
+import 'package:url_launcher/url_launcher.dart'; // Added
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -46,12 +48,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final DatabaseService _databaseService = DatabaseService();
   List<Course> _allCourses = [];
-  List<Course> _featuredCoursesForBanner = [];
   List<Map<String, dynamic>> _allTeachers = [];
   List<Map<String, dynamic>> _filteredTeachers = [];
   List<CategoryModel> _categories = [];
   List<Tip> _tips = [];
   List<Bundle> _bundles = [];
+  List<BannerAd> _banners = [];
   bool _isLoading = true;
   bool _isRefreshing = false;
   bool _hasUnreadNotifications = false;
@@ -68,7 +70,9 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentBannerPage = 0;
 
   List<Map<String, dynamic>> _normalizeMapList(dynamic raw) {
-    return SafeParser.safeMapList(raw);
+    if (raw == null) return [];
+    if (raw is List) return SafeParser.safeMapList(raw);
+    return [];
   }
 
   @override
@@ -102,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadCategories(forceRefresh: forceRefresh),
         _loadCourses(forceRefresh: forceRefresh),
         _loadEnrolledCourses(),
-        _loadFeaturedBanner(forceRefresh: forceRefresh),
+        _loadBanners(forceRefresh: forceRefresh),
         _loadTips(forceRefresh: forceRefresh),
         _loadBundles(forceRefresh: forceRefresh),
         _checkUnreadNotifications(),
@@ -130,10 +134,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _startBannerAutoPlay() {
     Future.delayed(const Duration(seconds: 3), () {
-      if (mounted && _allCourses.isNotEmpty &&
-          _bannerController.hasClients) {
-        final nextPage =
-            (_currentBannerPage + 1) % (_allCourses.take(3).length);
+      if (mounted && _bannerController.hasClients) {
+        final bannerCount = _banners.isNotEmpty 
+            ? _banners.length 
+            : _allCourses.where((c) => c.isFeatured).length;
+        
+        if (bannerCount == 0) {
+          _startBannerAutoPlay();
+          return;
+        }
+
+        final nextPage = (_currentBannerPage + 1) % bannerCount;
         _bannerController
             .animateToPage(
           nextPage,
@@ -243,20 +254,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadFeaturedBanner({bool forceRefresh = false}) async {
+  Future<void> _loadBanners({bool forceRefresh = false}) async {
     try {
-      final featured =
-          await _databaseService.getFeaturedCourses(forceRefresh: forceRefresh);
-      final normalized = _normalizeMapList(featured);
+      final bannersData = await _databaseService.getBanners(forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
-          _featuredCoursesForBanner = normalized
-              .map((data) => Course.fromJson(data))
-              .toList();
+          _banners = bannersData.map((e) => BannerAd.fromJson(e)).toList();
         });
       }
     } catch (e) {
-      debugPrint('Error loading featured banner: $e');
+      debugPrint('Error loading banners: $e');
     }
   }
 
@@ -348,14 +355,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   SliverToBoxAdapter(child: _buildShimmerLoading()),
 
                 if (!_isLoading || _allCourses.isNotEmpty) ...[
-                  // 1. Top Banner (Carousel)
-                  SliverToBoxAdapter(child: _buildBannerCarousel()),
+                  // 1. Unified Banner Carousel (Ads & Featured)
+                  _buildUnifiedBannerCarousel(),
 
                   // 2. Search Bar
                   _buildSearchBar(),
-
-                  // 3. Ad Banner
-                  _buildAdBanner(),
 
                   // Continue Learning
                   SliverToBoxAdapter(child: _buildContinueLearning()),
@@ -664,143 +668,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBannerCarousel() {
-    // Use admin-selected featured courses, or fallback to top 3 courses
-    final bannerCourses = _featuredCoursesForBanner.isNotEmpty
-        ? _featuredCoursesForBanner
-        : _allCourses.take(3).toList();
-    if (bannerCourses.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      children: [
-        SizedBox(
-          height: 180,
-          child: PageView.builder(
-            controller: _bannerController,
-            onPageChanged: (index) {
-              setState(() => _currentBannerPage = index);
-            },
-            itemCount: bannerCourses.length,
-            itemBuilder: (context, index) {
-              final course = bannerCourses[index];
-              return InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CourseDetailsScreen(
-                        course: course,
-                        heroTag: 'banner_course_image_${course.id}',
-                      ),
-                    ),
-                  );
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 5.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Stack(
-                      children: [
-                        Hero(
-                          tag: 'banner_course_image_${course.id}',
-                          child: CachedNetworkImage(
-                            imageUrl: course.imageUrl ?? '',
-                            width: double.infinity,
-                            height: double.infinity,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) =>
-                                Container(color: Colors.white10),
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.7),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 20,
-                          left: 20,
-                          right: 20,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryPurple,
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  _t('featured_course_badge'),
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.normal),
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                course.getLocalizedTitle(
-                                    Provider.of<LocaleProvider>(context)
-                                        .locale),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.normal,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 12),
-        // Page Indicators
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            bannerCourses.length,
-            (index) => Container(
-              width: 8,
-              height: 8,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _currentBannerPage == index
-                    ? AppColors.primaryPurple
-                    : AppColors.getTextColor(context).withOpacity(0.3),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
 
   Widget _buildShimmerLoading() {
     return Column(
@@ -869,17 +736,8 @@ class _HomeScreenState extends State<HomeScreen> {
             color: Colors.transparent,
             child: InkWell(
               onTap: () {
-                Navigator.push(
-                  context,
-                  PageRouteBuilder(
-                    pageBuilder: (context, animation, secondaryAnimation) =>
-                        const SearchScreen(),
-                    transitionsBuilder:
-                        (context, animation, secondaryAnimation, child) {
-                      return FadeTransition(opacity: animation, child: child);
-                    },
-                  ),
-                );
+                Provider.of<NavigationProvider>(context, listen: false)
+                    .setIndex(1, focusSearch: true);
               },
               borderRadius: BorderRadius.circular(15),
               child: Container(
@@ -907,83 +765,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAdBanner() {
-    return SliverToBoxAdapter(
-      child: Container(
-        margin: const EdgeInsets.all(20),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blueAccent, Colors.purpleAccent.withOpacity(0.8)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.blueAccent.withOpacity(0.3),
-              blurRadius: 15,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _t('ad_banner_title'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _t('ad_banner_subtitle'),
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: 13,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const AllPackagesScreen(),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.blueAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      elevation: 0,
-                    ),
-                    child: Text(
-                      _t('view_plans_button'),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
-            Icon(Icons.stars_rounded, color: Colors.white.withOpacity(0.5), size: 80),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildCategoriesSection() {
     return SliverToBoxAdapter(
@@ -1048,11 +829,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
-              itemCount: newCourses.take(6).length,
+              itemCount: newCourses.take(10).length,
               itemBuilder: (context, index) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: CourseCard(course: newCourses[index]),
+                  child: SizedBox(
+                    width: isWideScreen ? 280 : 220,
+                    child: CourseCard(course: newCourses[index]),
+                  ),
                 );
               },
             ),
@@ -1063,9 +847,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMostWatchedSection(bool isWideScreen) {
-    // Sort by enrollment count if available, placeholder sort for now
+    // Sort by student count descending
     final mostWatched = List<Course>.from(_allCourses);
-    mostWatched.shuffle(); // Placeholder logic
+    mostWatched.sort((a, b) => b.studentsCount.compareTo(a.studentsCount));
     
     return SliverToBoxAdapter(
       child: Column(
@@ -1083,11 +867,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
-              itemCount: mostWatched.take(6).length,
+              itemCount: mostWatched.take(10).length,
               itemBuilder: (context, index) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: CourseCard(course: mostWatched[index]),
+                  child: SizedBox(
+                    width: isWideScreen ? 280 : 220,
+                    child: CourseCard(course: mostWatched[index]),
+                  ),
                 );
               },
             ),
@@ -1119,11 +906,14 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
-              itemCount: recordedCourses.take(6).length,
+              itemCount: recordedCourses.take(10).length,
               itemBuilder: (context, index) {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: CourseCard(course: recordedCourses[index]),
+                  child: SizedBox(
+                    width: isWideScreen ? 280 : 220,
+                    child: CourseCard(course: recordedCourses[index]),
+                  ),
                 );
               },
             ),
@@ -1213,6 +1003,16 @@ class _HomeScreenState extends State<HomeScreen> {
                             Colors.blueAccent.withOpacity(0.8),
                           ],
                         ),
+                        image: bundle.imageUrl != null && bundle.imageUrl!.isNotEmpty
+                            ? DecorationImage(
+                                image: CachedNetworkImageProvider(bundle.imageUrl!),
+                                fit: BoxFit.cover,
+                                colorFilter: ColorFilter.mode(
+                                  Colors.black.withOpacity(0.5),
+                                  BlendMode.darken,
+                                ),
+                              )
+                            : null,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       padding: const EdgeInsets.all(20),
@@ -1265,6 +1065,200 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildUnifiedBannerCarousel() {
+    final bannerItems = _banners.isNotEmpty 
+        ? _banners 
+        : _allCourses.where((c) => c.isFeatured).map((c) => BannerAd(
+            id: c.id,
+            title: c.getLocalizedTitle(Provider.of<LocaleProvider>(context).locale),
+            subtitle: _t('featured_course_badge'),
+            imageUrl: c.imageUrl ?? '',
+            type: 'course',
+            targetId: c.id,
+            createdAt: c.createdAt ?? DateTime.now(),
+          )).toList();
+
+    if (bannerItems.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+    return SliverToBoxAdapter(
+      child: Column(
+        children: [
+          SizedBox(
+            height: 200,
+            child: PageView.builder(
+              controller: _bannerController,
+              onPageChanged: (index) {
+                setState(() => _currentBannerPage = index);
+              },
+              itemCount: bannerItems.length,
+              itemBuilder: (context, index) {
+                final item = bannerItems[index];
+                return _buildBannerItem(item);
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Page Indicators
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(
+              bannerItems.length,
+              (index) => Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _currentBannerPage == index
+                      ? AppColors.primaryPurple
+                      : AppColors.getTextColor(context).withOpacity(0.3),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBannerItem(BannerAd item) {
+    return InkWell(
+      onTap: () => _handleBannerTap(item),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 10.0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              CachedNetworkImage(
+                imageUrl: item.imageUrl,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                placeholder: (context, url) => Container(color: Colors.white10),
+                errorWidget: (context, url, e) => Container(color: Colors.grey.shade900),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.black.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: ClipRRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.black.withOpacity(0.0),
+                            Colors.black.withOpacity(0.6),
+                          ],
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (item.subtitle != null && item.subtitle!.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.primaryPurple.withOpacity(0.8),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: Text(
+                                item.subtitle!,
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          const SizedBox(height: 10),
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _handleBannerTap(BannerAd item) {
+    if (item.type == 'course' && item.targetId != null) {
+      final course = _allCourses.firstWhere((c) => c.id == item.targetId, 
+          orElse: () => Course(
+            id: item.targetId!,
+            title: item.title,
+            instructorName: '',
+            price: 0,
+            rating: 0,
+            studentsCount: 0,
+            lessonsCount: 0,
+            subject: '',
+          ));
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CourseDetailsScreen(course: course),
+        ),
+      );
+    } else if (item.type == 'package' && item.targetId != null) {
+       final bundle = _bundles.firstWhere((b) => b.id == item.targetId, orElse: () => _bundles.first);
+       Navigator.push(
+         context,
+         MaterialPageRoute(
+           builder: (context) => PackageScreen(packageTitle: bundle.title, courses: bundle.courses, bundle: bundle),
+         ),
+       );
+    } else if (item.type == 'external' && item.linkUrl != null) {
+      final uri = Uri.tryParse(item.linkUrl!);
+      if (uri != null) {
+        launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    }
   }
 }
 

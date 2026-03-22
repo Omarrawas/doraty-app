@@ -380,6 +380,9 @@ class AppStrings {
       'favorites': 'المفضلة',
       'faq': 'الأسئلة الشائعة',
       'dark_mode_title': 'الوضع الليلي',
+      'banners_management': 'إدارة الإعلانات',
+      'no_banners_found': 'لا يوجد إعلانات حالياً',
+      'add_banner': 'إضافة إعلان جديد',
     },
     'en': {
       'settings': 'Settings',
@@ -763,6 +766,9 @@ class AppStrings {
       'favorites': 'Favorites',
       'faq': 'FAQ',
       'dark_mode_title': 'Dark Mode',
+      'banners_management': 'Banners Management',
+      'no_banners_found': 'No banners found',
+      'add_banner': 'Add New Banner',
     },
   };
 

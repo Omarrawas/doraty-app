@@ -5,6 +5,7 @@ import '../../models/bundle.dart';
 import '../../models/course.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/error_utils.dart';
+import '../../core/services/image_upload_service.dart';
 
 class CreateBundleScreen extends StatefulWidget {
   final Bundle? bundle;
@@ -17,6 +18,7 @@ class CreateBundleScreen extends StatefulWidget {
 class _CreateBundleScreenState extends State<CreateBundleScreen> {
   final _formKey = GlobalKey<FormState>();
   final DatabaseService _db = DatabaseService();
+  final ImageUploadService _imageUploadService = ImageUploadService();
   
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
@@ -28,6 +30,7 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
   final List<String> _selectedCourseIds = [];
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isUploadingImage = false;
 
   @override
   void initState() {
@@ -102,15 +105,51 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
         );
       }
 
-      if (mounted) {
+      if (mounted && context.mounted) {
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _pickAndUploadBundleImage() async {
+    try {
+      final imageFile = await _imageUploadService.pickImage();
+      if (imageFile == null) return;
+
+      setState(() => _isUploadingImage = true);
+
+      final imageUrl = await _imageUploadService.uploadImageToGitHub(
+        imageFile,
+        folder: 'bundles',
+      );
+
+      setState(() {
+        _imageUrlController.text = imageUrl;
+        _isUploadingImage = false;
+      });
+
+      if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e))),
+          const SnackBar(content: Text('تم رفع الصورة بنجاح')),
         );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploadingImage = false);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('خطأ في الرفع: $e')),
+          );
+        }
       }
     }
   }
@@ -150,7 +189,41 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      _buildTextField(_imageUrlController, 'رابط الصورة', 'رابط الصورة المباشر للباقة'),
+                      // Image Link and Upload Button together
+                      if (_imageUrlController.text.isNotEmpty)
+                        Container(
+                          height: 150,
+                          width: double.infinity,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white10),
+                            image: DecorationImage(
+                              image: NetworkImage(_imageUrlController.text),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: IconButton(
+                              icon: const Icon(Icons.close, color: Colors.white),
+                              onPressed: () => setState(() => _imageUrlController.clear()),
+                              style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                            ),
+                          ),
+                        ),
+                      _buildTextField(
+                        _imageUrlController, 
+                        'رابط الصورة', 
+                        'رابط الصورة المباشر للباقة',
+                        suffix: _isUploadingImage 
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : IconButton(
+                              icon: const Icon(Icons.image_search_rounded, color: AppColors.primaryPurple),
+                              onPressed: _pickAndUploadBundleImage,
+                              tooltip: 'رفع صورة من المعرض',
+                            ),
+                      ),
                       const SizedBox(height: 32),
                       const Text(
                         'اختر الدورات المشمولة:',
@@ -196,11 +269,14 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, String hint, {int maxLines = 1, TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField(TextEditingController controller, String label, String hint, {int maxLines = 1, TextInputType keyboardType = TextInputType.text, Widget? suffix}) {
     return TextFormField(
       controller: controller,
       maxLines: maxLines,
       keyboardType: keyboardType,
+      onChanged: (val) {
+        if (label == 'رابط الصورة') setState(() {});
+      },
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
@@ -209,6 +285,7 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
         hintStyle: const TextStyle(color: Colors.white30),
         filled: true,
         fillColor: Colors.white10,
+        suffixIcon: suffix,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),
       validator: (val) {

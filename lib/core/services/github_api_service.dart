@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as path;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../env/multi_env.dart';
 
 /// Service for interacting with GitHub API to upload files
@@ -17,7 +18,8 @@ class GitHubApiService {
   // GitHub token (should be loaded from environment or secure storage)
   final String? _token;
   
-  GitHubApiService({String? token}) : _token = token ?? Env.githubToken;
+  GitHubApiService({String? token}) : _token = token ?? 
+    (Env.githubToken.isNotEmpty ? Env.githubToken : dotenv.maybeGet('DORATY_GITHUB_TOKEN'));
   
   /// Upload a file to GitHub repository
   /// 
@@ -34,7 +36,7 @@ class GitHubApiService {
     String? commitMessage,
   }) async {
     if (_token == null || _token.isEmpty) {
-      throw Exception('GitHub token is required for file upload');
+      throw Exception('GitHub token is missing. Please check DORATY_GITHUB_TOKEN in your .env file.');
     }
     
     try {
@@ -82,11 +84,18 @@ class GitHubApiService {
         return rawUrl;
       } else {
         // Error
-        final error = jsonDecode(response.body);
-        throw Exception('GitHub API error (${response.statusCode}): ${error['message'] ?? 'Unknown error'}');
+        String errorMessage = 'Status ${response.statusCode}';
+        try {
+          final error = jsonDecode(response.body);
+          errorMessage = error['message'] ?? errorMessage;
+        } catch (_) {
+          errorMessage = response.body.isNotEmpty ? response.body : errorMessage;
+        }
+        throw Exception('GitHub API error ($errorMessage)');
       }
     } catch (e) {
       debugPrint('GitHub Upload Error: $e');
+      if (e is Exception) rethrow;
       throw Exception('Failed to upload file to GitHub: $e');
     }
   }

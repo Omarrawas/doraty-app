@@ -4,6 +4,10 @@ import '../../models/tip.dart';
 import '../../models/course.dart';
 import '../../core/theme/app_colors.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../services/telegram_upload_service.dart';
+import '../../core/services/image_upload_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class CreateTipScreen extends StatefulWidget {
   final Tip? tip;
@@ -24,6 +28,10 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
   String? _selectedCourseId;
   List<Course> _allCourses = [];
   bool _isSaving = false;
+  bool _isUploading = false;
+  bool _isUploadingThumbnail = false;
+  final TelegramUploadService _telegramService = TelegramUploadService();
+  final ImageUploadService _imageUploadService = ImageUploadService();
 
   @override
   void initState() {
@@ -83,6 +91,71 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
     }
   }
 
+  Future<void> _pickAndUploadVideo() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
+    
+    if (video == null) return;
+
+    setState(() => _isUploading = true);
+    try {
+      final String? streamUrl = await _telegramService.uploadAndGetLink(File(video.path));
+      
+      if (streamUrl != null) {
+        setState(() {
+          _videoUrlController.text = streamUrl;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم الرفع والحصول على الرابط بنجاح!')),
+          );
+        }
+      } else {
+        throw Exception('فشل الحصول على رابط البث');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في الرفع: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
+  }
+
+  Future<void> _pickAndUploadThumbnail() async {
+    try {
+      final imageFile = await _imageUploadService.pickImage();
+      if (imageFile == null) return;
+
+      setState(() => _isUploadingThumbnail = true);
+
+      final imageUrl = await _imageUploadService.uploadImageToGitHub(
+        imageFile,
+        folder: 'tips/thumbnails',
+      );
+
+      setState(() {
+        _thumbnailUrlController.text = imageUrl;
+        _isUploadingThumbnail = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تم رفع الصورة بنجاح')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploadingThumbnail = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في الرفع: $e')),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -121,13 +194,49 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
                   icon: Icons.video_collection,
                   validator: (v) => v!.isEmpty ? 'يرجى إدخال رابط الفيديو' : null,
                   hint: 'https://example.com/video.mp4',
+                  suffix: _isUploading 
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : IconButton(
+                        icon: const Icon(Icons.cloud_upload, color: AppColors.secondaryGold),
+                        onPressed: _pickAndUploadVideo,
+                        tooltip: 'رفع إلى التلغرام تلقائياً',
+                      ),
                 ),
                 const SizedBox(height: 20),
+                if (_thumbnailUrlController.text.isNotEmpty)
+                  Container(
+                    height: 150,
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white10),
+                      image: DecorationImage(
+                        image: NetworkImage(_thumbnailUrlController.text),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    child: Align(
+                      alignment: Alignment.topRight,
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => setState(() => _thumbnailUrlController.clear()),
+                        style: IconButton.styleFrom(backgroundColor: Colors.black45),
+                      ),
+                    ),
+                  ),
                 _buildTextField(
                   controller: _thumbnailUrlController,
                   label: 'رابط الصورة المصغرة (Thumbnail)',
                   icon: Icons.image_outlined,
                   hint: 'اختياري',
+                  suffix: _isUploadingThumbnail 
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : IconButton(
+                        icon: const Icon(Icons.image_search_rounded, color: AppColors.secondaryGold),
+                        onPressed: _pickAndUploadThumbnail,
+                        tooltip: 'رفع صورة مصغرة محلياً',
+                      ),
                 ),
                 const SizedBox(height: 20),
                 
@@ -192,6 +301,7 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
     required String label,
     required IconData icon,
     String? hint,
+    Widget? suffix,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
@@ -204,6 +314,7 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
         hintStyle: const TextStyle(color: Colors.white24, fontSize: 13),
         labelStyle: const TextStyle(color: Colors.white54),
         prefixIcon: Icon(icon, color: Colors.white70),
+        suffixIcon: suffix,
         filled: true,
         fillColor: Colors.white.withOpacity(0.08),
         border: OutlineInputBorder(

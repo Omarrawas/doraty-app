@@ -14,8 +14,11 @@ class VideoPreviewWidget extends StatefulWidget {
     super.key,
     required this.videoUrl,
     this.showHeader = true,
-    this.thumbnailUrl, // ← تمت الإضافة
+    this.thumbnailUrl,
+    this.onDurationFetched, // Added callback
   });
+  
+  final Function(Duration)? onDurationFetched; // Added property
 
   @override
   State<VideoPreviewWidget> createState() => _VideoPreviewWidgetState();
@@ -57,10 +60,18 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
           enableCaption: false,
           isLive: false,
           disableDragSeek: false,
-          hideControls: true, // إخفاء أزرار اليوتيوب الأصلية
-          hideThumbnail: true, // نخفي Thumbnail اليوتيوب لنعرض thumbnail المخصصة
+          hideControls: true, 
+          hideThumbnail: true, 
         ),
-      );
+      )..addListener(_onControllerChange); // Added listener
+    }
+  }
+
+  void _onControllerChange() {
+    if (_controller != null && 
+        _controller!.value.isReady && 
+        _controller!.metadata.duration.inSeconds > 0) {
+      widget.onDurationFetched?.call(_controller!.metadata.duration);
     }
   }
 

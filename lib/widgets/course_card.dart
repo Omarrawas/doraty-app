@@ -192,7 +192,7 @@ class _CourseCardState extends State<CourseCard>
                           ),
                         ),
                         // Duration Badge (Bottom Right)
-                        if (widget.course.durationHours != null && widget.course.durationHours!.isNotEmpty)
+                        if (widget.course.durationHours != null && widget.course.durationHours!.isNotEmpty && !widget.course.isEnrolled)
                           Positioned(
                             bottom: 12,
                             right: 12,
@@ -296,28 +296,56 @@ class _CourseCardState extends State<CourseCard>
                           // --- Line 3: Pricing and Progress/Subscribe Action ---
                           Row(
                             children: [
-                              if (widget.progress != null)
+                              if (widget.progress != null || widget.course.isEnrolled)
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(
-                                        '${(widget.progress! * 100).toInt()}% ${AppStrings.get('completed', locale)}',
-                                        style: const TextStyle(
-                                          color: Colors.white60,
-                                          fontSize: 10,
+                                      if (widget.progress != null) ...[
+                                        Text(
+                                          '${(widget.progress! * 100).toInt()}% ${AppStrings.get('completed', locale)}',
+                                          style: const TextStyle(
+                                            color: Colors.white60,
+                                            fontSize: 10,
+                                          ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(4),
-                                        child: LinearProgressIndicator(
-                                          value: widget.progress,
-                                          backgroundColor: Colors.white10,
-                                          valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
-                                          minHeight: 4,
+                                        const SizedBox(height: 4),
+                                        ClipRRect(
+                                          borderRadius: BorderRadius.circular(4),
+                                          child: LinearProgressIndicator(
+                                            value: widget.progress,
+                                            backgroundColor: Colors.white10,
+                                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                                            minHeight: 4,
+                                          ),
                                         ),
-                                      ),
+                                      ] else ...[
+                                        Container(
+                                          width: double.infinity,
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          decoration: BoxDecoration(
+                                            gradient: AppColors.primaryGradient,
+                                            borderRadius: BorderRadius.circular(12),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: AppColors.primaryPurple.withOpacity(0.3),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 4),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              AppStrings.get('continue_learning', locale),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ],
                                   ),
                                 )

@@ -11,8 +11,8 @@ class GradientBackground extends StatelessWidget {
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: const BoxDecoration(
-        gradient: AppColors.backgroundGradient,
+      decoration: BoxDecoration(
+        gradient: AppColors.getBackgroundGradient(context),
       ),
       child: child,
     );

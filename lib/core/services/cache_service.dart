@@ -39,4 +39,5 @@ class CacheKeys {
   static String userProfile(String userId) => 'user_profile_$userId';
   static String userStats(String userId) => 'user_stats_$userId';
   static String tips = 'tips_all';
+  static String banners = 'banners_all';
 }

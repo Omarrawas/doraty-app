@@ -70,16 +70,44 @@ class PackageScreen extends StatelessWidget {
                         ),
                         child: Column(
                           children: [
-                            // Bundle Icon/Badge
-                            Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: AppColors.secondaryGold.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.collections_bookmark, 
-                                  color: AppColors.secondaryGold, size: 40),
-                            ),
+                            // Bundle Image or Icon
+                            displayBundle.imageUrl != null && displayBundle.imageUrl!.isNotEmpty
+                                ? Container(
+                                    width: double.infinity,
+                                    height: 180,
+                                    margin: const EdgeInsets.only(bottom: 20),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black26,
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 5),
+                                        ),
+                                      ],
+                                    ),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(20),
+                                      child: Image.network(
+                                        displayBundle.imageUrl!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) => Container(
+                                          color: AppColors.secondaryGold.withOpacity(0.2),
+                                          child: const Icon(Icons.collections_bookmark, 
+                                              color: AppColors.secondaryGold, size: 40),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.secondaryGold.withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.collections_bookmark, 
+                                        color: AppColors.secondaryGold, size: 40),
+                                  ),
                             const SizedBox(height: 20),
                             Text(
                               packageTitle,

@@ -20,6 +20,7 @@ import 'updates_management_screen.dart';
 import 'security_settings_screen.dart';
 import 'bundles_management_screen.dart';
 import 'tips_management_screen.dart';
+import 'banners_management_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -109,9 +110,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 _buildHeader(context),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
-                        )
+                        ? Center(
+                            child: CircularProgressIndicator(color: AppColors.primaryPurple),
+                          )
                       : RefreshIndicator(
                           onRefresh: _loadStats,
                           displacement: 20,
@@ -186,7 +187,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                   tooltip: 'رجوع',
                 ),
@@ -237,7 +238,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  icon: Icon(Icons.refresh, color: AppColors.getTextColor(context)),
                   onPressed: _loadStats,
                 ),
               ),
@@ -326,11 +327,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
         ),
         Text(
           label,
-          style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.5)),
+          style: TextStyle(fontSize: 10, color: AppColors.getTextColor(context).withOpacity(0.5)),
         ),
       ],
     );
@@ -506,6 +507,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               context,
               MaterialPageRoute(
                   builder: (context) => const TipsManagementScreen())),
+        },
+        {
+          'icon': Icons.view_carousel_rounded,
+          'title': 'الإعلانات',
+          'subtitle': 'إدارة صور البنر المتحركة',
+          'color': Colors.deepOrangeAccent,
+          'onTap': () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const BannersManagementScreen())),
         },
       ],
       {

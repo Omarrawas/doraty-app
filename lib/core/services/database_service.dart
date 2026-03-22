@@ -443,6 +443,87 @@ class DatabaseService {
 
 
 
+  // ==================== BANNERS / ADS (NEW) ====================
+  
+  Future<List<Map<String, dynamic>>> getBanners({bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: CacheKeys.banners,
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 12),
+      fetcher: () async {
+        try {
+          final response = await _client.from('banners').select().order('created_at', ascending: false);
+          return SafeParser.safeMapList(response);
+        } catch (e) {
+          debugPrint('Error getting banners: $e');
+          return [];
+        }
+      },
+    );
+  }
+
+  Future<void> createBanner({
+    required String title,
+    String? subtitle,
+    required String imageUrl,
+    required String type,
+    String? targetId,
+    String? linkUrl,
+  }) async {
+    try {
+      await _client.from('banners').insert({
+        'title': title,
+        'subtitle': subtitle,
+        'image_url': imageUrl,
+        'type': type,
+        'target_id': targetId,
+        'link_url': linkUrl,
+      });
+      await LocalDatabase().remove(CacheKeys.banners);
+    } catch (e) {
+      debugPrint('Error creating banner: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateBanner({
+    required String id,
+    String? title,
+    String? subtitle,
+    String? imageUrl,
+    String? type,
+    String? targetId,
+    String? linkUrl,
+  }) async {
+    try {
+      final updates = <String, dynamic>{};
+      if (title != null) updates['title'] = title;
+      if (subtitle != null) updates['subtitle'] = subtitle;
+      if (imageUrl != null) updates['image_url'] = imageUrl;
+      if (type != null) updates['type'] = type;
+      if (targetId != null) updates['target_id'] = targetId;
+      if (linkUrl != null) updates['link_url'] = linkUrl;
+
+      if (updates.isNotEmpty) {
+        await _client.from('banners').update(updates).eq('id', id);
+        await LocalDatabase().remove(CacheKeys.banners);
+      }
+    } catch (e) {
+      debugPrint('Error updating banner: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteBanner(String id) async {
+    try {
+      await _client.from('banners').delete().eq('id', id);
+      await LocalDatabase().remove(CacheKeys.banners);
+    } catch (e) {
+      debugPrint('Error deleting banner: $e');
+      rethrow;
+    }
+  }
+
   // ==================== SEARCH ====================
 
   /// Search courses with filters
@@ -4018,7 +4099,14 @@ class DatabaseService {
     try {
       final response =
           await _client.from('lessons').insert(data).select('id').single();
-      return response['id'];
+      final lessonId = response['id'];
+      
+      // Update course total duration
+      if (data['course_id'] != null) {
+        await updateCourseTotalDuration(data['course_id']);
+      }
+      
+      return lessonId;
     } catch (e) {
       rethrow;
     }
@@ -4028,6 +4116,17 @@ class DatabaseService {
   Future<void> updateLesson(String lessonId, Map<String, dynamic> data) async {
     try {
       await _client.from('lessons').update(data).eq('id', lessonId);
+      
+      // If we don't have course_id in data, we need to fetch it to update duration
+      String? courseId = data['course_id'];
+      if (courseId == null) {
+        final lesson = await _client.from('lessons').select('course_id').eq('id', lessonId).single();
+        courseId = lesson['course_id'];
+      }
+      
+      if (courseId != null) {
+        await updateCourseTotalDuration(courseId);
+      }
     } catch (e) {
       rethrow;
     }
@@ -4036,7 +4135,15 @@ class DatabaseService {
   /// Delete lesson (Admin only)
   Future<void> deleteLesson(String lessonId) async {
     try {
+      // Get course_id before deleting
+      final lesson = await _client.from('lessons').select('course_id').eq('id', lessonId).single();
+      final courseId = lesson['course_id'];
+      
       await _client.from('lessons').delete().eq('id', lessonId);
+      
+      if (courseId != null) {
+        await updateCourseTotalDuration(courseId);
+      }
     } catch (e) {
       rethrow;
     }
@@ -4060,14 +4167,79 @@ class DatabaseService {
   /// Reorder lessons
   Future<void> reorderLessons(List<Map<String, dynamic>> updates) async {
     try {
+      String? courseId;
       for (var update in updates) {
         final id = update.remove('id');
         if (id != null) {
           await _client.from('lessons').update(update).eq('id', id);
+          if (courseId == null) {
+            final lesson = await _client.from('lessons').select('course_id').eq('id', id).single();
+            courseId = lesson['course_id'];
+          }
         }
       }
+      // Reordering shouldn't change duration but let's be safe if order affects something
+      // Actually durations are the same.
     } catch (e) {
       rethrow;
+    }
+  }
+
+  /// Update the total duration of a course based on its lessons
+  Future<void> updateCourseTotalDuration(String courseId) async {
+    try {
+      final response = await _client
+          .from('lessons')
+          .select('duration')
+          .eq('course_id', courseId);
+      
+      final lessons = SafeParser.safeMapList(response);
+      int totalSeconds = 0;
+      
+      for (var lesson in lessons) {
+        final durationRaw = lesson['duration'];
+        if (durationRaw == null) continue;
+        
+        if (durationRaw is int) {
+          totalSeconds += durationRaw;
+        } else if (durationRaw is String) {
+          // Parse HH:MM:SS or MM:SS
+          final parts = durationRaw.split(':').reversed.toList();
+          if (parts.isNotEmpty) {
+            totalSeconds += int.tryParse(parts[0]) ?? 0; // seconds
+            if (parts.length > 1) {
+              totalSeconds += (int.tryParse(parts[1]) ?? 0) * 60; // minutes
+            }
+            if (parts.length > 2) {
+              totalSeconds += (int.tryParse(parts[2]) ?? 0) * 3600; // hours
+            }
+          }
+        }
+      }
+      
+      // Format the total duration
+      String formattedDuration;
+      final h = totalSeconds ~/ 3600;
+      final m = (totalSeconds % 3600) ~/ 60;
+      
+      if (h > 0) {
+        formattedDuration = '$h:${m.toString().padLeft(2, '0')} ساعة';
+      } else if (m > 0) {
+        formattedDuration = '$m دقيقة';
+      } else {
+        formattedDuration = '0';
+      }
+      
+      await _client
+          .from('courses')
+          .update({'duration_hours': formattedDuration})
+          .eq('id', courseId);
+          
+      // Clear cache for this course
+      await LocalDatabase().remove('course_$courseId');
+      await LocalDatabase().remove('courses_all');
+    } catch (e) {
+      debugPrint('Error updating course total duration: $e');
     }
   }
 

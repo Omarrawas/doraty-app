@@ -510,8 +510,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       children: [
         _buildStatBadge(Icons.bar_chart_rounded, _t(widget.course.level ?? 'all_levels')),
         const SizedBox(width: 12),
-        _buildStatBadge(Icons.access_time_rounded, '${widget.course.durationHours ?? "0"} ${_t("hours_short")}'),
-        const SizedBox(width: 12),
+        if (!_isEnrolled) ...[
+          _buildStatBadge(Icons.access_time_rounded, '${widget.course.durationHours ?? "0"} ${_t("hours_short")}'),
+          const SizedBox(width: 12),
+        ],
         _buildStatBadge(Icons.play_circle_outline_rounded, '${widget.course.lessonsCount} ${_t("lessons")}'),
       ],
     );

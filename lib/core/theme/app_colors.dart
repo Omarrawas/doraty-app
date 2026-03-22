@@ -16,14 +16,13 @@ class AppColors {
     end: Alignment.bottomRight,
   );
 
-  // Light Mode Background Gradient - Soft & Bright Daytime Mode
   static const LinearGradient backgroundGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFFF5F3FF), // Soft Purple-White
-      Color(0xFFEFF6FF), // Soft Blue-White
-      Color(0xFFF0F4FF), // Soft Sky-White
+      Color(0xFFEBF5FF), // Clear Blue-White
+      Color(0xFFE0EEFF), // Soft Blue
+      Color(0xFFF3F1FF), // Soft Sky-White/Purple
     ],
   );
 

@@ -1,7 +1,7 @@
 name: doraty
 description: " أكاديمية دوراتي التلعيمية"
 publish_to: 'none'
-version: 1.1.9+22
+version: 1.1.21+23
 
 environment:
   sdk: '>=3.2.0 <4.0.0'
@@ -12,6 +12,9 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   google_sign_in: ^6.2.1
+  googleapis: ^13.2.0
+  googleapis_auth: ^1.6.0
+  extension_google_sign_in_as_googleapis_auth: ^2.1.0
   
   # State Management
   provider: ^6.1.1

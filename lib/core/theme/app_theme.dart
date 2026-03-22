@@ -305,7 +305,7 @@ class AppTheme {
   }
 
   static ThemeData get lightTheme {
-    const Color lightSurface = Colors.white;
+    const Color lightSurface = Color(0xFFF9FAFF); // Almost white but with blue/purple hint
 
     return ThemeData(
       useMaterial3: true,
@@ -319,7 +319,7 @@ class AppTheme {
         onError: Colors.white,
         surfaceTint: Colors.transparent,
       ),
-      scaffoldBackgroundColor: Colors.transparent,
+      scaffoldBackgroundColor: AppColors.background,
       dialogBackgroundColor: lightSurface,
 
       fontFamily: 'Cairo',

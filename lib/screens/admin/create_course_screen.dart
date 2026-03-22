@@ -10,6 +10,9 @@ import '../../models/category_model.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
+import '../../services/youtube_upload_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class CreateCourseScreen extends StatefulWidget {
   final String? courseId;
@@ -48,6 +51,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   bool _isPublished = false;
   bool _isSaving = false;
   bool _isUploading = false;
+  bool _isUploadingToYoutube = false;
+  final YoutubeUploadService _youtubeService = YoutubeUploadService();
 
   List<Map<String, dynamic>> _teachers = [];
   String? _selectedTeacherId;
@@ -254,6 +259,43 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     super.dispose();
   }
 
+  Future<void> _pickAndUploadToYoutube() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
+    
+    if (video == null) return;
+
+    setState(() => _isUploadingToYoutube = true);
+    try {
+      final String? ytUrl = await _youtubeService.uploadUnlistedVideo(
+        File(video.path), 
+        _titleController.text.isEmpty ? "New Course Video" : "${_titleController.text} Preview",
+        "Course preview uploaded from Doraty App"
+      );
+      
+      if (ytUrl != null) {
+        setState(() {
+          _videoUrlController.text = ytUrl;
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تم الرفع إلى يوتيوب بنجاح!')),
+          );
+        }
+      } else {
+        throw Exception('فشل الحصول على رابط يوتيوب');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في الرفع: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingToYoutube = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.courseId != null;
@@ -287,7 +329,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                     hint: _t('course_title_hint'),
                                     icon: Icons.title,
                                   ),
-                                  style: const TextStyle(color: Colors.white),
+                                  style: TextStyle(color: AppColors.getTextColor(context)),
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
                                       return _t('error_enter_title');
@@ -303,7 +345,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                     hint: _t('course_description_hint'),
                                     icon: Icons.description,
                                   ),
-                                  style: const TextStyle(color: Colors.white),
+                                  style: TextStyle(color: AppColors.getTextColor(context)),
                                   maxLines: 4,
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
@@ -356,11 +398,11 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                             selectedColor: AppColors
                                                 .primaryPurple
                                                 .withOpacity(0.5),
-                                            checkmarkColor: Colors.white,
+                                            checkmarkColor: AppColors.getTextColor(context),
                                             labelStyle: TextStyle(
                                               color: isSelected
                                                   ? Colors.white
-                                                  : Colors.white70,
+                                                  : AppColors.getTextColor(context),
                                               fontSize: 13,
                                             ),
                                             backgroundColor:
@@ -389,8 +431,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           hint: _t('subject_hint'),
                                           icon: Icons.book,
                                         ),
-                                        style: const TextStyle(
-                                            color: Colors.white),
+                                        style: TextStyle(color: AppColors.getTextColor(context)),
                                         validator: (value) {
                                           if (value == null || value.isEmpty) {
                                             return _t('error_enter_subject');
@@ -410,8 +451,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           icon: Icons.signal_cellular_alt,
                                         ),
                                         dropdownColor: const Color(0xFF1A1A2E),
-                                        style: const TextStyle(
-                                            color: Colors.white),
+                                        style: TextStyle(color: AppColors.getTextColor(context)),
                                         items: _availableLevels.map((item) {
                                           return DropdownMenuItem(
                                             value: item,
@@ -508,7 +548,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           hint: _t('image_url_hint'),
                                           icon: Icons.image_rounded,
                                         ),
-                                        style: const TextStyle(color: Colors.white),
+                                        style: TextStyle(color: AppColors.getTextColor(context)),
                                       ),
                                       const SizedBox(height: 16),
                                       TextFormField(
@@ -517,8 +557,15 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           label: _t('video_url_label'),
                                           hint: _t('video_url_hint'),
                                           icon: Icons.video_collection_rounded,
+                                          suffix: _isUploadingToYoutube 
+                                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                            : IconButton(
+                                                icon: const Icon(Icons.cloud_upload, color: Colors.redAccent),
+                                                onPressed: _pickAndUploadToYoutube,
+                                                tooltip: 'رفع إلى يوتيوب (غير مدرج)',
+                                              ),
                                         ),
-                                        style: const TextStyle(color: Colors.white),
+                                        style: TextStyle(color: AppColors.getTextColor(context)),
                                       ),
                                     ],
                                   ),
@@ -552,7 +599,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                             )
                                           : const Icon(
                                               Icons.add_photo_alternate,
-                                              color: Colors.white),
+                                              color: AppColors.getTextColor(context)),
                                     ),
                                   ),
                                 ),
@@ -597,7 +644,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                               : Colors.white.withOpacity(0.05),
                                         ),
                                         style: TextStyle(
-                                          color: _isFree ? Colors.white38 : Colors.white,
+                                          color: _isFree ? AppColors.getTextColor(context, secondary: true) : AppColors.getTextColor(context),
                                         ),
                                         keyboardType: TextInputType.number,
                                       ),
@@ -613,7 +660,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           icon: Icons.payments_outlined,
                                         ),
                                         dropdownColor: const Color(0xFF1A1A2E),
-                                        style: const TextStyle(color: Colors.white),
+                                        style: TextStyle(color: AppColors.getTextColor(context)),
                                         items: const [
                                           DropdownMenuItem(
                                               value: 'ل.س', child: Text('ل.س')),
@@ -632,13 +679,16 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                       flex: 3,
                                       child: TextFormField(
                                         controller: _durationController,
+                                        readOnly: true,
                                         decoration: _inputDecoration(
                                           label: _t('duration_label'),
-                                          hint: '40',
-                                          icon: Icons.access_time,
+                                          hint: 'تلقائي',
+                                          icon: Icons.auto_awesome,
+                                        ).copyWith(
+                                          helperText: 'يُحسب تلقائياً من الدروس',
+                                          helperStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 10),
                                         ),
-                                        style: const TextStyle(color: Colors.white),
-                                        keyboardType: TextInputType.number,
+                                         style: TextStyle(color: AppColors.getTextColor(context, secondary: true)),
                                       ),
                                     ),
                                   ],
@@ -657,7 +707,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                         : Colors.white.withOpacity(0.05),
                                   ),
                                   style: TextStyle(
-                                    color: _isFree ? Colors.white38 : Colors.white,
+                                     color: _isFree ? AppColors.getTextColor(context, secondary: true) : AppColors.getTextColor(context),
                                   ),
                                   keyboardType: TextInputType.number,
                                   validator: (value) {
@@ -697,8 +747,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                               Icons.arrow_drop_down,
                                               color: Colors.white70),
                                         ),
-                                        style: const TextStyle(
-                                            color: Colors.white),
+                                        style: TextStyle(color: AppColors.getTextColor(context)),
                                       ),
                                 const SizedBox(height: 16),
                                 _buildSwitchTile(
@@ -748,7 +797,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                   icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -829,10 +878,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
           return Container(
             height: MediaQuery.of(context).size.height * 0.75,
             decoration: BoxDecoration(
-              color: const Color(0xFF1A1A2E),
+              color: AppColors.getSurfaceColor(context),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24)),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.1)),
             ),
             child: Column(
               children: [
@@ -846,13 +895,13 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  _t('select_teacher'),
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.normal),
-                ),
+                  child: Text(
+                    _t('select_teacher'),
+                    style: TextStyle(
+                        color: AppColors.getTextColor(context),
+                        fontSize: 18,
+                        fontWeight: FontWeight.normal),
+                  ),
                 const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -913,8 +962,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                           child: const Icon(Icons.person,
                               color: AppColors.primaryPurple),
                         ),
-                        title: Text(name,
-                            style: const TextStyle(color: Colors.white)),
+                          title: Text(name,
+                              style: TextStyle(color: AppColors.getTextColor(context))),
                         trailing: isSelected
                             ? const Icon(Icons.check_circle,
                                 color: Colors.greenAccent)
@@ -943,22 +992,24 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     String? label,
     String? hint,
     required IconData icon,
+    Widget? suffix,
   }) {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      prefixIcon: Icon(icon, color: Colors.white70),
-      labelStyle: const TextStyle(color: Colors.white70),
-      hintStyle: const TextStyle(color: Colors.white38),
+      prefixIcon: Icon(icon, color: AppColors.getTextColor(context, secondary: true)),
+      suffixIcon: suffix,
+      labelStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true)),
+      hintStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true).withOpacity(0.5)),
       filled: true,
-      fillColor: Colors.white.withOpacity(0.05),
+      fillColor: AppColors.getGlassColor(context, opacity: 0.05),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+        borderSide: BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -984,11 +1035,11 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       ),
       child: SwitchListTile(
         title: Text(title,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.normal)),
+            style: TextStyle(
+                color: AppColors.getTextColor(context), fontWeight: FontWeight.normal)),
         subtitle: Text(subtitle,
-            style: const TextStyle(color: Colors.white70, fontSize: 12)),
-        secondary: Icon(icon, color: value ? activeColor : Colors.white70),
+            style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 12)),
+        secondary: Icon(icon, color: value ? activeColor : AppColors.getTextColor(context, secondary: true)),
         value: value,
         onChanged: onChanged,
         activeColor: activeColor,
@@ -1189,12 +1240,14 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isUploading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطأ في رفع الصورة: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('خطأ في رفع الصورة: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }
