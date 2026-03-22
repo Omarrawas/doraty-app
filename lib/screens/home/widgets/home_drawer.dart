@@ -70,8 +70,8 @@ class HomeDrawer extends StatelessWidget {
                     context,
                     icon: Icons.dashboard_outlined,
                     title: (userProfile?['role'] == 'teacher') 
-                        ? 'لوحة تحكم المعلم' 
-                        : 'لوحة تحكم الأدمن',
+                        ? _t(context, 'teacher_dashboard') 
+                        : _t(context, 'admin_dashboard'),
                     onTap: () {
                       Navigator.pop(context);
                       Navigator.push(
@@ -113,7 +113,7 @@ class HomeDrawer extends StatelessWidget {
                 _buildDrawerItem(
                   context,
                   icon: Icons.library_books_outlined,
-                  title: 'دوراتي',
+                  title: _t(context, 'my_courses'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const CoursesListScreen(showBackButton: true)));
@@ -124,7 +124,7 @@ class HomeDrawer extends StatelessWidget {
                 _buildDrawerItem(
                   context,
                   icon: Icons.receipt_long_outlined,
-                  title: 'إيصالاتي',
+                  title: _t(context, 'my_receipts'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderHistoryScreen()));
@@ -134,7 +134,7 @@ class HomeDrawer extends StatelessWidget {
                 _buildDrawerItem(
                   context,
                   icon: Icons.people_outline,
-                  title: 'أبرز المعلمين',
+                  title: _t(context, 'top_teachers'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const TeachersListScreen()));
@@ -144,7 +144,7 @@ class HomeDrawer extends StatelessWidget {
                 _buildDrawerItem(
                   context,
                   icon: Icons.favorite_border,
-                  title: 'المفضلة', // Placeholder
+                  title: _t(context, 'favorites'),
                   onTap: () {
                     Navigator.pop(context);
                   },
@@ -153,7 +153,7 @@ class HomeDrawer extends StatelessWidget {
                 _buildDrawerItem(
                   context,
                   icon: Icons.lightbulb_outline,
-                  title: 'نصائح',
+                  title: _t(context, 'learning_tips_title'),
                   onTap: () {
                     Navigator.pop(context);
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const AllTipsScreen()));
@@ -196,10 +196,11 @@ class HomeDrawer extends StatelessWidget {
 
                 _buildDrawerItem(
                   context,
-                  icon: Icons.question_answer_outlined,
-                  title: 'الأسئلة الشائعة',
+                  icon: Icons.quiz_outlined,
+                  title: _t(context, 'faq'),
                   onTap: () {
                     Navigator.pop(context);
+                    // TODO: Implement FAQScreen
                   },
                 ),
 
@@ -216,7 +217,7 @@ class HomeDrawer extends StatelessWidget {
                 SwitchListTile(
                   secondary: Icon(isDark ? Icons.dark_mode : Icons.light_mode,
                     color: isDark ? Colors.white70 : Colors.black87),
-                  title: Text('الوضع الليلي', // Dark Mode
+                  title: Text(_t(context, 'dark_mode_title'),
                     style: TextStyle(
                       color: isDark ? Colors.white : Colors.black87,
                       fontWeight: FontWeight.w500,

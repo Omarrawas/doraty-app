@@ -20,6 +20,7 @@ import '../../core/utils/error_utils.dart';
 import '../lesson/pdf_viewer_screen.dart';
 import '../lesson/interactive_quiz_screen.dart';
 import '../../widgets/lesson/rich_content_viewer.dart';
+import '../../widgets/lesson/external_video_player.dart';
 
 
 class LessonViewScreen extends StatefulWidget {
@@ -45,6 +46,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   bool _isLocalVideo = false;
+  bool _isExternalPlayer = false;
 
   final DatabaseService _databaseService = DatabaseService();
   final TextEditingController _noteController = TextEditingController();
@@ -82,6 +84,14 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
       if (url.contains('youtu.be') || url.contains('youtube.com')) {
         _initializeYoutube(url);
+        return;
+      }
+
+      if (url.contains('avcaption.com') || 
+          url.contains('vimeo.com') || 
+          url.contains('drive.google.com') ||
+          url.contains('facebook.com')) {
+        _initializeExternalPlayer(url);
         return;
       }
 
@@ -173,6 +183,16 @@ class _LessonViewScreenState extends State<LessonViewScreen>
           _hasValidVideo = false;
         });
       }
+    }
+  }
+
+  void _initializeExternalPlayer(String url) {
+    if (mounted) {
+      setState(() {
+        _hasValidVideo = true;
+        _isLocalVideo = false;
+        _isExternalPlayer = true;
+      });
     }
   }
 
@@ -512,6 +532,12 @@ class _LessonViewScreenState extends State<LessonViewScreen>
         child: Chewie(
           controller: _chewieController!,
         ),
+      );
+    }
+
+    if (_isExternalPlayer) {
+      return ExternalVideoPlayer(
+        url: widget.lesson.videoUrl,
       );
     }
 

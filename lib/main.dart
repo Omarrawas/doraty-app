@@ -86,14 +86,6 @@ void main() {
     NotificationService().init();
   }
 
-  // Set system UI overlay style
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ),
-  );
-
   // Allow all orientations for video fullscreen
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

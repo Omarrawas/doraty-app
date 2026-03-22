@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 
@@ -398,6 +399,10 @@ class AppTheme {
           fontWeight: FontWeight.normal,
           color: AppColors.textPrimary,
         ),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.dark,
+        ),
       ),
 
       // Card Theme
@@ -552,6 +557,10 @@ class AppTheme {
           fontSize: 20,
           fontWeight: FontWeight.normal,
           color: Colors.white,
+        ),
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
         ),
       ),
 

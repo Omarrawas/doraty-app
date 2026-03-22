@@ -436,10 +436,10 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.normal,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
           ),
           GestureDetector(
@@ -528,8 +528,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               name,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.getTextColor(context),
                 fontSize: 14,
                 fontWeight: FontWeight.normal,
               ),
@@ -546,8 +546,8 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: AppColors.getTextColor(context),
             fontSize: 24,
             fontWeight: FontWeight.bold,
           ),
@@ -572,11 +572,11 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _t('continue_learning'), // Replaced hardcoded string
-            style: const TextStyle(
+            _t('continue_learning'),
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.normal,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
           ),
           const SizedBox(height: 12),
@@ -590,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white12),
+              border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.1)),
             ),
             child: Row(
               children: [
@@ -613,8 +613,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             Provider.of<LocaleProvider>(context).locale),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.getTextColor(context),
                           fontWeight: FontWeight.normal,
                         ),
                       ),
@@ -622,7 +622,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         '${_t('completed')} ${(_enrollmentProgress[lastCourse.id] ?? 0.0).toStringAsFixed(0)}%', // Replaced hardcoded string
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: AppColors.getTextColor(context, secondary: true),
                           fontSize: 12,
                         ),
                       ),
@@ -633,7 +633,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           value:
                               (_enrollmentProgress[lastCourse.id] ?? 0.0) / 100,
                           minHeight: 4,
-                          backgroundColor: Colors.white12,
+                          backgroundColor: AppColors.getGlassColor(context, opacity: 0.1),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                               Colors.cyanAccent),
                         ),
@@ -652,8 +652,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.play_circle_fill,
-                      color: Colors.white, size: 40),
+                  icon: Icon(Icons.play_circle_fill,
+                      color: AppColors.primaryPurple.withOpacity(0.9), size: 40),
                 ),
               ],
             ),
@@ -792,7 +792,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 shape: BoxShape.circle,
                 color: _currentBannerPage == index
                     ? AppColors.primaryPurple
-                    : Colors.white.withOpacity(0.3),
+                    : AppColors.getTextColor(context).withOpacity(0.3),
               ),
             ),
           ),
@@ -885,17 +885,17 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: AppColors.getGlassColor(context, opacity: 0.1),
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.white.withOpacity(0.2)),
+                  border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.2)),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.search, color: Colors.white70),
+                    Icon(Icons.search, color: AppColors.getTextColor(context, secondary: true)),
                     const SizedBox(width: 12),
                     Text(
                       _t('search_hint'),
-                      style: const TextStyle(color: Colors.white70, fontSize: 16),
+                      style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 16),
                     ),
                   ],
                 ),
@@ -1317,10 +1317,10 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppColors.getGlassColor(context, opacity: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.menu, color: Colors.white, size: 24),
+                          child: Icon(Icons.menu, color: AppColors.getTextColor(context), size: 24),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1329,10 +1329,10 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                           authService.isAuthenticated 
                             ? '${t('hello')}, ${userName ?? t('user')}'
                             : t('home'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                           ),
                         ),
                       ),
@@ -1366,7 +1366,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                           Provider.of<ThemeProvider>(context).isDarkMode 
                               ? Icons.light_mode_rounded 
                               : Icons.dark_mode_rounded, 
-                          color: Colors.white, 
+                          color: AppColors.getTextColor(context), 
                           size: 20
                         ),
                         onPressed: () {
@@ -1379,12 +1379,12 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                         child: Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
+                            color: AppColors.getGlassColor(context, opacity: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Stack(
                             children: [
-                              const Icon(Icons.notifications_outlined, color: Colors.white, size: 24),
+                              Icon(Icons.notifications_outlined, color: AppColors.getTextColor(context), size: 24),
                               if (hasUnreadNotifications)
                                 Positioned(
                                   top: 0,
