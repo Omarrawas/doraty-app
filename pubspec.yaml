@@ -11,10 +11,10 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  google_sign_in: ^6.2.1
+  google_sign_in: ^6.3.2
   googleapis: ^13.2.0
   googleapis_auth: ^1.6.0
-  extension_google_sign_in_as_googleapis_auth: ^3.0.0
+  extension_google_sign_in_as_googleapis_auth: ^2.0.13
   
   # State Management
   provider: ^6.1.1
@@ -67,7 +67,7 @@ dependencies:
   firebase_messaging: ^16.1.1
   
   # HTML & Markdown
-  flutter_markdown: ^0.7.7+1
+  flutter_markdown_plus: ^1.0.5
   flutter_widget_from_html: ^0.17.1
 
   flutter_tex: ^5.2.6

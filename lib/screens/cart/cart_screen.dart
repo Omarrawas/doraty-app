@@ -7,7 +7,6 @@ import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../subscription/payment_screen.dart';
 import '../../models/bundle.dart';
-import '../../models/course.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});

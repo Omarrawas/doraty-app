@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart';
 
 class TelegramUploadService {
   final String botToken = dotenv.get('TIPS_BOT_TOKEN', fallback: '');
@@ -35,7 +36,7 @@ class TelegramUploadService {
         return "$streamerHost/stream/$fileId";
       }
     } catch (e) {
-      print("Error Uploading to Telegram: $e");
+      debugPrint("Error Uploading to Telegram: $e");
     }
     return null;
   }

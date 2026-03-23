@@ -7,10 +7,8 @@ import '../../models/course.dart';
 import '../../models/lesson.dart';
 import '../../models/chapter.dart';
 import '../lesson/lesson_screen.dart' as lesson_ui;
-
 import '../../core/services/database_service.dart';
 import '../../widgets/video_preview_widget.dart';
-import '../subscription/payment_screen.dart';
 import '../teacher/teacher_profile_screen.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
@@ -609,13 +607,13 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         Text(
-          _t('register_and_get'),
+          _t('course_register_and_get'),
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
         ),
         const SizedBox(height: 12),
-        _buildBenefitItem(Icons.all_inclusive_rounded, _t('unending_views')),
-        _buildBenefitItem(Icons.workspace_premium_rounded, _t('completion_certificate')),
-        _buildBenefitItem(Icons.chat_bubble_outline_rounded, _t('contact_coach')),
+        _buildBenefitItem(Icons.all_inclusive_rounded, _t('course_unending_views')),
+        _buildBenefitItem(Icons.workspace_premium_rounded, _t('course_completion_certificate')),
+        _buildBenefitItem(Icons.chat_bubble_outline_rounded, _t('course_contact_coach')),
         
         const SizedBox(height: 30),
         
@@ -631,7 +629,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             shadowColor: AppColors.primaryPurple.withOpacity(0.5),
           ),
           child: Text(
-            '${_t("subscribe_now_prefix")}${widget.course.getLocalizedPrice(Provider.of<LocaleProvider>(context).locale)}',
+            '${_t("course_subscribe_now_prefix")}${widget.course.getLocalizedPrice(Provider.of<LocaleProvider>(context).locale)}',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),

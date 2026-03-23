@@ -15,6 +15,7 @@ import '../../teacher/teacher_dashboard_screen.dart';
 import '../../profile/order_history_screen.dart';
 import '../../auth/login_screen.dart';
 import '../../teacher/teachers_list_screen.dart';
+import '../../help/faq_screen.dart';
 
 class HomeDrawer extends StatelessWidget {
   final List<CategoryModel> categories;
@@ -200,7 +201,10 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'faq'),
                   onTap: () {
                     Navigator.pop(context);
-                    // TODO: Implement FAQScreen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const FAQScreen()),
+                    );
                   },
                 ),
 

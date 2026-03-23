@@ -5,7 +5,6 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:flutter/foundation.dart';
 import '../../models/tip.dart';
 import '../../core/services/video_pool_manager.dart';
-import '../../core/theme/app_colors.dart';
 import 'course_preview_modal.dart';
 import 'lesson/youtube_player_web_windows.dart';
 

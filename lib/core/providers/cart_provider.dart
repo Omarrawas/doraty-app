@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../models/course.dart';
-import '../../models/bundle.dart';
 
 class CartItem {
   final String id;

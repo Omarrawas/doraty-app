@@ -17,7 +17,7 @@ class YoutubeUploadService {
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
       if (account == null) return null;
 
-      final authClient = await account.authenticatedClient();
+      final authClient = await _googleSignIn.authenticatedClient();
       if (authClient == null) throw Exception("Failed to get auth client");
 
       final youtube = yt.YouTubeApi(authClient);
