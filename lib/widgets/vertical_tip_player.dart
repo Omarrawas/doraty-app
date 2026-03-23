@@ -156,6 +156,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
   bool _isYouTube = false;
   bool _hasLoadError = false;
   bool _endedTriggered = false;
+  String? _extractedVideoId;
 
   @override
   void initState() {

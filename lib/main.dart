@@ -12,6 +12,7 @@ import 'screens/tips/all_tips_screen.dart';
 import 'screens/categories/subjects_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'widgets/gradient_background.dart';
+import 'widgets/dynamic_gradient_background.dart';
 import 'core/providers/navigation_provider.dart';
 import 'core/providers/cart_provider.dart';
 import 'package:provider/provider.dart';

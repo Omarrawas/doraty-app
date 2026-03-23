@@ -597,7 +597,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                                 color: Colors.white,
                                               ),
                                             )
-                                          : const Icon(
+                                          : Icon(
                                               Icons.add_photo_alternate,
                                               color: AppColors.getTextColor(context)),
                                     ),
