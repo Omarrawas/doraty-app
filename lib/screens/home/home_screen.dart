@@ -132,6 +132,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
     SyncService().removeListener(_onSyncUpdate);
     _bannerController.dispose();
     _bottomBannerController.dispose();

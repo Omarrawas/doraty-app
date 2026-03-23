@@ -895,6 +895,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Text(
                     _t('select_teacher'),
                     style: TextStyle(
@@ -902,6 +904,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                         fontSize: 18,
                         fontWeight: FontWeight.normal),
                   ),
+                ),
                 const SizedBox(height: 20),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
