@@ -7,93 +7,98 @@ class CategoryCard extends StatelessWidget {
   final CategoryModel category;
   final VoidCallback onTap;
   final bool isSelected;
+  final EdgeInsetsGeometry? margin;
 
   const CategoryCard({
     super.key,
     required this.category,
     required this.onTap,
     this.isSelected = false,
+    this.margin,
   });
+
+  Color get _color {
+    final colors = [
+      const Color(0xFFE55A7E), // Pink
+      const Color(0xFF5A8DEE), // Blue
+      const Color(0xFFF18671), // Orange-Red
+      const Color(0xFF14B3C5), // Cyan
+      const Color(0xFF4CAF50), // Green
+      const Color(0xFFF09A36), // Yellow
+    ];
+    int hash = category.id.hashCode.abs();
+    return colors[hash % colors.length];
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final itemColor = _color;
+
     return GestureDetector(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(right: 16),
+      child: Container(
+        margin: margin ?? const EdgeInsets.only(right: 12),
+        width: 130, // Fixed default width suitable for a rectangular card
+        decoration: BoxDecoration(
+          color: isSelected
+              ? itemColor.withOpacity(isDark ? 0.3 : 0.1)
+              : AppColors.getSurfaceColor(context),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected
+                ? itemColor
+                : (isDark ? Colors.white12 : Colors.grey.shade200),
+            width: isSelected ? 1.5 : 1.0,
+          ),
+          boxShadow: isDark
+              ? []
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+        ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              width: 75,
-              height: 75,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: isSelected
-                    ? AppColors.primaryGradient
-                    : LinearGradient(
-                        colors: [
-                          Colors.white.withOpacity(0.1),
-                          Colors.white.withOpacity(0.05),
-                        ],
-                      ),
-                border: Border.all(
-                  color: isSelected 
-                      ? Colors.white.withOpacity(0.5)
-                      : Colors.white.withOpacity(0.1),
-                  width: 2,
+            // Icon
+            if (category.iconUrl != null && category.iconUrl!.isNotEmpty)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: CachedNetworkImage(
+                  imageUrl: category.iconUrl!,
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                  color: itemColor, // Tint the image with our matched color if it's an outline, otherwise it falls back nicely
+                  colorBlendMode: BlendMode.srcIn,
+                  errorWidget: (context, url, err) =>
+                      Icon(Icons.category_rounded, color: itemColor, size: 36),
                 ),
-                boxShadow: isSelected
-                    ? [
-                        BoxShadow(
-                          color: AppColors.primaryPurple.withOpacity(0.3),
-                          blurRadius: 10,
-                          spreadRadius: 2,
-                        )
-                      ]
-                    : [],
-              ),
-              padding: EdgeInsets.all(isSelected ? 3 : 0),
-              child: ClipOval(
-                child: category.iconUrl != null && category.iconUrl!.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: category.iconUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.white10,
-                          child: const Icon(Icons.category,
-                              color: Colors.white30, size: 24),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.white10,
-                          child: const Icon(Icons.error,
-                              color: Colors.white30, size: 24),
-                        ),
-                      )
-                    : Container(
-                        color: Colors.white.withOpacity(0.1),
-                        child: Icon(
-                          Icons.school,
-                          size: 30,
-                          color: isSelected
-                              ? Colors.white
-                              : AppColors.primaryPurple,
-                        ),
-                      ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: 75,
+              )
+            else
+              Icon(Icons.category_rounded, color: itemColor, size: 36),
+
+            const SizedBox(height: 12),
+
+            // Text
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 category.name,
                 textAlign: TextAlign.center,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight:
-                      isSelected ? FontWeight.normal : FontWeight.normal,
-                  color: isSelected ? Colors.white : Colors.white70,
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  // Use matched item color for text in light mode as requested in the mockup, white in dark mode.
+                  color: isDark ? Colors.white : itemColor.withOpacity(0.9),
+                  height: 1.2,
+                  fontFamily: 'Cairo', // Ensure standard smooth font
                 ),
               ),
             ),

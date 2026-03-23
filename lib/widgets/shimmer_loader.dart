@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import '../core/theme/app_colors.dart';
 
 class ShimmerLoader extends StatelessWidget {
   final double width;
@@ -24,15 +25,22 @@ class ShimmerLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Shimmer.fromColors(
-      baseColor: Colors.white.withOpacity(0.2),
-      highlightColor: Colors.white.withOpacity(0.4),
+      baseColor: isDark
+          ? Colors.white.withOpacity(0.15)
+          : AppColors.primaryPurple.withOpacity(0.08),
+      highlightColor: isDark
+          ? Colors.white.withOpacity(0.35)
+          : AppColors.primaryBlue.withOpacity(0.18),
       period: const Duration(seconds: 2),
       child: Container(
         width: width,
         height: height,
         decoration: ShapeDecoration(
-          color: Colors.white.withOpacity(0.1),
+          color: isDark
+              ? Colors.white.withOpacity(0.08)
+              : AppColors.primaryPurple.withOpacity(0.06),
           shape: shapeBorder,
         ),
       ),
@@ -45,14 +53,21 @@ class CourseCardShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.05),
+          color: isDark
+              ? Colors.white.withOpacity(0.05)
+              : AppColors.primaryPurple.withOpacity(0.04),
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(
+            color: isDark
+                ? Colors.white.withOpacity(0.1)
+                : AppColors.primaryPurple.withOpacity(0.1),
+          ),
         ),
         child: Row(
           children: [

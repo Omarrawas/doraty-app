@@ -13,12 +13,14 @@ class VerticalTipPlayer extends StatefulWidget {
   final List<Tip> tips;
   final int initialIndex;
   final bool isVisible;
+  final bool showCloseButton;
 
   const VerticalTipPlayer({
     super.key,
     required this.tips,
     this.initialIndex = 0,
     this.isVisible = true,
+    this.showCloseButton = true,
   });
 
   @override
@@ -81,26 +83,47 @@ class _VerticalTipPlayerState extends State<VerticalTipPlayer> {
                   tip: widget.tips[index],
                   isActive: _currentIndex == index,
                   isVisible: widget.isVisible,
+                  onVideoEnded: () {
+                    if (!mounted) return;
+                    if (_currentIndex < widget.tips.length - 1) {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeInOut,
+                      );
+                    } else {
+                      // Loop back to the first video
+                      _pageController.animateToPage(
+                        0,
+                        duration: const Duration(milliseconds: 600),
+                        curve: Curves.easeInOut,
+                      );
+                    }
+                  },
                 );
               },
             ),
             
             // Global Close Button
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 10,
-              left: 16,
-              child: IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.3),
-                    shape: BoxShape.circle,
+            if (widget.showCloseButton)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 10,
+                left: 16,
+                child: IconButton(
+                  icon: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.3),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.close, color: Colors.white),
                   ),
-                  child: const Icon(Icons.close, color: Colors.white),
+                  onPressed: () {
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
+                  },
                 ),
-                onPressed: () => Navigator.pop(context),
               ),
-            ),
           ],
         ),
       ),
@@ -112,12 +135,14 @@ class TipPlayerItem extends StatefulWidget {
   final Tip tip;
   final bool isActive;
   final bool isVisible;
+  final VoidCallback onVideoEnded;
 
   const TipPlayerItem({
     super.key,
     required this.tip,
     required this.isActive,
     required this.isVisible,
+    required this.onVideoEnded,
   });
 
   @override
@@ -129,8 +154,8 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
   YoutubePlayerController? _youtubeController;
   bool _isInitialized = false;
   bool _isYouTube = false;
-  String? _extractedVideoId;
   bool _hasLoadError = false;
+  bool _endedTriggered = false;
 
   @override
   void initState() {
@@ -141,6 +166,34 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
     
     if (widget.isActive && widget.isVisible) {
       _initializePlayer();
+    }
+  }
+
+  void _videoListener() {
+    if (_videoController == null || !mounted) return;
+    if (_videoController!.value.isInitialized) {
+      final position = _videoController!.value.position;
+      final duration = _videoController!.value.duration;
+      if (duration > Duration.zero && position >= duration) {
+        if (!_endedTriggered) {
+          _endedTriggered = true;
+          widget.onVideoEnded();
+        }
+      } else if (position < duration) {
+        _endedTriggered = false;
+      }
+    }
+  }
+
+  void _youtubeListener() {
+    if (_youtubeController == null || !mounted) return;
+    if (_youtubeController!.value.playerState == PlayerState.ended) {
+      if (!_endedTriggered) {
+        _endedTriggered = true;
+        widget.onVideoEnded();
+      }
+    } else {
+      _endedTriggered = false;
     }
   }
 
@@ -161,12 +214,16 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
       if (_isYouTube) {
         _youtubeController = controller as YoutubePlayerController;
         _extractedVideoId = YoutubePlayer.convertUrlToId(widget.tip.videoUrl);
+        _youtubeController?.addListener(_youtubeListener);
       } else {
         _videoController = controller as VideoPlayerController;
+        _videoController?.addListener(_videoListener);
       }
 
       if (widget.isActive && widget.isVisible && mounted) {
         _isYouTube ? _youtubeController?.play() : _videoController?.play();
+      } else {
+        _isYouTube ? _youtubeController?.pause() : _videoController?.pause();
       }
 
       setState(() => _isInitialized = true);
@@ -192,11 +249,18 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
     } else if (!shouldBeActive && wasActive) {
       _videoController?.pause();
       _youtubeController?.pause();
+      if (_isYouTube) {
+        setState(() => _isInitialized = false);
+      }
     }
   }
 
   @override
   void dispose() {
+    _videoController?.removeListener(_videoListener);
+    _youtubeController?.removeListener(_youtubeListener);
+    _videoController?.pause();
+    _youtubeController?.pause();
     // Controllers are managed by Pool, we only nullify refs
     _videoController = null;
     _youtubeController = null;
@@ -269,23 +333,28 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
 
                 // Info Overlay
                 Positioned(
-                  bottom: 40,
+                  bottom: 30,
                   left: 16,
                   right: 80,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+                        widget.tip.category,
+                        style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12, fontFamily: 'Cairo'),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
                         widget.tip.title,
                         style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
                       ),
-                      if (widget.tip.linkedCourse != null) ...[
-                        const SizedBox(height: 12),
-                        ElevatedButton.icon(
-                          onPressed: () => _showCoursePreview(),
-                          icon: const Icon(Icons.school, size: 18),
-                          label: const Text('استكشاف الدورة', style: TextStyle(fontFamily: 'Cairo')),
-                          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPurple),
+                      if (widget.tip.description.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.tip.description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Cairo'),
                         ),
                       ],
                     ],
@@ -294,17 +363,26 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
 
                 // Side Actions
                 Positioned(
-                  bottom: 120,
+                  bottom: 40,
                   right: 12,
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _buildAction(Icons.share, 'مشاركة', () {}),
-                      const SizedBox(height: 20),
+                      _buildAction(Icons.reply, '', () {}), // Share
+                      const SizedBox(height: 16),
                       _buildAction(
                         _videoController?.value.volume == 0 ? Icons.volume_off : Icons.volume_up, 
-                        'صوت', 
+                        '', 
                         _toggleMute
                       ),
+                      if (widget.tip.linkedCourse != null) ...[
+                        const SizedBox(height: 16),
+                        _buildAction(
+                          Icons.computer,
+                          '',
+                          _showCoursePreview,
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -338,11 +416,17 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
         children: [
           Container(
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.black.withOpacity(0.4), shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.white),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 1.5),
+            ),
+            child: Icon(icon, color: Colors.white, size: 24),
           ),
-          const SizedBox(height: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontFamily: 'Cairo')),
+          if (label.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontFamily: 'Cairo')),
+          ],
         ],
       ),
     );

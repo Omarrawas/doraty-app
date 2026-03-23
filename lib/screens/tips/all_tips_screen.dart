@@ -7,10 +7,12 @@ import '../../widgets/vertical_tip_player.dart';
 class AllTipsScreen extends StatefulWidget {
   final bool showAppBar;
   final bool isVisible;
+  final bool showCloseButton;
   const AllTipsScreen({
     super.key, 
     this.showAppBar = false,
     this.isVisible = true,
+    this.showCloseButton = true,
   });
 
   @override
@@ -65,9 +67,9 @@ class _AllTipsScreenState extends State<AllTipsScreen> with AutomaticKeepAliveCl
           }
         }
 
-        // Shuffle for randomness (TikTok style)
+        // Sort newest to oldest
         if (loadedTips.isNotEmpty) {
-          loadedTips.shuffle();
+          loadedTips.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         }
         
         setState(() {
@@ -126,6 +128,7 @@ class _AllTipsScreenState extends State<AllTipsScreen> with AutomaticKeepAliveCl
       tips: _tips,
       initialIndex: 0,
       isVisible: widget.isVisible,
+      showCloseButton: widget.showCloseButton,
     );
   }
 }

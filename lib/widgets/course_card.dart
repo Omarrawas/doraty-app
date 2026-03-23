@@ -90,322 +90,286 @@ class _CourseCardState extends State<CourseCard>
   @override
   Widget build(BuildContext context) {
     final locale = Provider.of<LocaleProvider>(context).locale;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ScaleTransition(
       scale: _scaleAnimation,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withAlpha((0.25 * 255).round()),
-                  Colors.white.withAlpha((0.15 * 255).round()),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: Colors.white.withAlpha((0.3 * 255).round()),
-                width: 1.5,
-              ),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(24),
-                onTapDown: (_) => _controller.forward(),
-                onTapUp: (_) => _controller.reverse(),
-                onTapCancel: () => _controller.reverse(),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CourseDetailsScreen(
-                        course: widget.course,
-                        heroTag: widget.heroTag,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.getSurfaceColor(context),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? Colors.white12 : Colors.grey.shade200,
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTapDown: (_) => _controller.forward(),
+            onTapUp: (_) => _controller.reverse(),
+            onTapCancel: () => _controller.reverse(),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CourseDetailsScreen(
+                    course: widget.course,
+                    heroTag: widget.heroTag,
+                  ),
+                ),
+              );
+            },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // --- 1. Top Image with Badges ---
+                Stack(
+                  children: [
+                    Hero(
+                      tag: widget.heroTag ?? 'course_image_${widget.course.id}',
+                      child: AspectRatio(
+                        aspectRatio: 16 / 9,
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          child: widget.course.imageUrl != null &&
+                                  widget.course.imageUrl!.isNotEmpty
+                              ? CachedNetworkImage(
+                                  imageUrl: widget.course.imageUrl!,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    child: const Center(
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryPurple),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    child: const Icon(Icons.broken_image, color: Colors.grey, size: 30),
+                                  ),
+                                )
+                              : Container(
+                                  color: Colors.grey.withOpacity(0.1),
+                                  child: const Icon(Icons.image_not_supported, color: Colors.grey),
+                                ),
+                        ),
                       ),
                     ),
-                  );
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // --- 1. Top Image with Badge ---
-                    Stack(
-                      children: [
-                        Hero(
-                          tag: widget.heroTag ?? 'course_image_${widget.course.id}',
-                          child: AspectRatio(
-                            aspectRatio: 16 / 9,
-                            child: ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(24)),
-                              child: widget.course.imageUrl != null &&
-                                      widget.course.imageUrl!.isNotEmpty
-                                    ? CachedNetworkImage(
-                                        imageUrl: widget.course.imageUrl!,
-                                        fit: BoxFit.cover,
-                                        placeholder: (context, url) => Container(
-                                          color: Colors.white10,
-                                          child: const Center(
-                                              child: CircularProgressIndicator(
-                                                  strokeWidth: 2)),
-                                        ),
-                                        errorWidget: (context, url, error) => Container(
-                                          color: Colors.white10,
-                                          child: const Icon(Icons.broken_image,
-                                              color: Colors.white24, size: 30),
-                                        ),
-                                      )
-                                  : Container(
-                                      color: Colors.white10,
-                                      child: const Icon(
-                                          Icons.image_not_supported,
-                                          color: Colors.white30),
-                                    ),
+                    // Wishlist Icon (Top Right)
+                    Positioned(
+                      top: 12,
+                      right: 12,
+                      child: GestureDetector(
+                        onTap: _toggleFavorite,
+                        child: Icon(
+                          _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                          color: _isFavorite ? Colors.redAccent : Colors.white,
+                          size: 26,
+                          shadows: const [Shadow(color: Colors.black45, blurRadius: 6)],
+                        ),
+                      ),
+                    ),
+                    // "New" Badge (Top Left)
+                    if (widget.course.isNew)
+                      Positioned(
+                        top: 12,
+                        left: 12,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.redAccent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            AppStrings.get('new_badge', locale) == 'new_badge' ? 'جديد' : AppStrings.get('new_badge', locale),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
-                        // Wishlist Icon (Top Right)
-                        Positioned(
-                          top: 12,
-                          right: 12,
-                          child: GestureDetector(
-                            onTap: _toggleFavorite,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.3),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                                color: _isFavorite ? Colors.redAccent : Colors.white,
-                                size: 18,
-                              ),
-                            ),
+                      ),
+                    // Duration Badge (Bottom Right matching image layout)
+                    if (widget.course.durationHours != null && widget.course.durationHours!.isNotEmpty)
+                      Positioned(
+                        bottom: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(6),
                           ),
-                        ),
-                        // Duration Badge (Bottom Right)
-                        if (widget.course.durationHours != null && widget.course.durationHours!.isNotEmpty && !widget.course.isEnrolled)
-                          Positioned(
-                            bottom: 12,
-                            right: 12,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.7),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.access_time_rounded,
-                                      color: Colors.white, size: 12),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${widget.course.durationHours} ${AppStrings.get('hours_short', locale)}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        // "New" Badge (Top Left)
-                        if (widget.course.isNew)
-                          Positioned(
-                            top: 12,
-                            left: 12,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.redAccent.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(10),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.redAccent.withOpacity(0.4),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                AppStrings.get('new_badge', locale) == 'new_badge' ? 'جديد' : AppStrings.get('new_badge', locale),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                // Quick logic to extract just hours and minutes if easily parseable, or simply show the string
+                                widget.course.durationHours!.replaceAll('ساعات', 'س').replaceAll('دقائق', 'د'),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // --- Line 1: Course Title ---
-                          Text(
-                            widget.course.getLocalizedTitle(locale),
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1.2,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 8),
-
-                          // --- Line 2: Instructor ---
-                          Row(
-                            children: [
-                              _buildSimpleAvatar(),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  '${AppStrings.get('by_prefix', locale)} ${StringUtils.cleanTeacherName(widget.course.getLocalizedInstructorName(locale))}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.white.withOpacity(0.7),
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                                textDirection: TextDirection.rtl,
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                        ),
+                      ),
+                  ],
+                ),
 
-                          // --- Line 3: Pricing and Progress/Subscribe Action ---
-                          Row(
-                            children: [
-                              if (widget.progress != null || widget.course.isEnrolled)
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      if (widget.progress != null) ...[
-                                        Text(
-                                          '${(widget.progress! * 100).toInt()}% ${AppStrings.get('completed', locale)}',
-                                          style: const TextStyle(
-                                            color: Colors.white60,
-                                            fontSize: 10,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: LinearProgressIndicator(
-                                            value: widget.progress,
-                                            backgroundColor: Colors.white10,
-                                            valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
-                                            minHeight: 4,
-                                          ),
-                                        ),
-                                      ] else ...[
-                                        Container(
-                                          width: double.infinity,
-                                          padding: const EdgeInsets.symmetric(vertical: 10),
-                                          decoration: BoxDecoration(
-                                            gradient: AppColors.primaryGradient,
-                                            borderRadius: BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: AppColors.primaryPurple.withOpacity(0.3),
-                                                blurRadius: 8,
-                                                offset: const Offset(0, 4),
-                                              ),
-                                            ],
-                                          ),
-                                          child: Center(
-                                            child: Text(
-                                              AppStrings.get('continue_learning', locale),
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ],
+                // --- 2. Content ---
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        // Title and Instructor
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              widget.course.getLocalizedTitle(locale),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.getTextColor(context),
+                                height: 1.3,
+                                fontFamily: 'Cairo',
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'تقديم ${StringUtils.cleanTeacherName(widget.course.getLocalizedInstructorName(locale))}',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: AppColors.getTextColor(context, secondary: true),
+                                fontFamily: 'Cairo',
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+
+                        // Prices and Button
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (widget.progress != null || widget.course.isEnrolled) ...[
+                              // Progress
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    AppStrings.get('progress_label', locale),
+                                    style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 11),
                                   ),
-                                )
-                              else ...[
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      if (widget.course.hasDiscount)
-                                        Text(
-                                          widget.course.getFormattedPrice(locale),
-                                          style: TextStyle(
-                                            color: Colors.white.withOpacity(0.3),
-                                            fontSize: 10,
-                                            decoration: TextDecoration.lineThrough,
-                                          ),
-                                        ),
-                                      Text(
-                                        widget.course.getLocalizedPrice(locale),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
+                                  Text(
+                                    '${((widget.progress ?? 0) * 100).toInt()}%',
+                                    style: TextStyle(color: AppColors.getTextColor(context), fontSize: 11, fontWeight: FontWeight.bold),
                                   ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: widget.progress ?? 0,
+                                  backgroundColor: AppColors.getGlassColor(context, opacity: 0.1),
+                                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                                  minHeight: 4,
                                 ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    gradient: AppColors.primaryGradient,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: AppColors.primaryPurple.withOpacity(0.3),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
+                              ),
+                              const SizedBox(height: 12),
+                            ] else if (widget.course.price > 0) ...[
+                              // Pricing
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  if (widget.course.hasDiscount) ...[
+                                    Text(
+                                      widget.course.getFormattedPrice(locale),
+                                      style: TextStyle(
+                                        color: AppColors.getTextColor(context, secondary: true).withOpacity(0.5),
+                                        fontSize: 12,
+                                        decoration: TextDecoration.lineThrough,
                                       ),
-                                    ],
-                                  ),
-                                  child: Text(
-                                    AppStrings.get('buy_now', locale),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  Text(
+                                    widget.course.getLocalizedPrice(locale),
+                                    style: TextStyle(
+                                      color: AppColors.getTextColor(context),
+                                      fontSize: 16,
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
+                              const SizedBox(height: 12),
                             ],
-                          ),
-                        ],
-                      ),
+
+                            // Independent Subscribe Button
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF434775), // Exact purple-blue color from the image
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => CourseDetailsScreen(
+                                        course: widget.course,
+                                        heroTag: widget.heroTag,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  (widget.progress != null || widget.course.isEnrolled) ? 'أكمل مشاهدة' : 'اشترك',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Cairo',
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -413,26 +377,7 @@ class _CourseCardState extends State<CourseCard>
     );
   }
 
-  Widget _buildSimpleAvatar() {
-    return Container(
-      width: 24,
-      height: 24,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white24, width: 1),
-      ),
-      child: ClipOval(
-        child: widget.course.instructorPhoto != null &&
-                widget.course.instructorPhoto!.isNotEmpty
-            ? CachedNetworkImage(
-                imageUrl: widget.course.instructorPhoto!,
-                fit: BoxFit.cover,
-                errorWidget: (context, url, error) => const Icon(Icons.person, size: 14, color: Colors.white30),
-              )
-            : const Icon(Icons.person, size: 14, color: Colors.white30),
-      ),
-    );
-  }
+
 
   void _showLoginRequiredDialog() {
     final locale = Provider.of<LocaleProvider>(context, listen: false).locale;

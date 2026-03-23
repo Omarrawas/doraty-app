@@ -13,6 +13,7 @@ import 'screens/categories/subjects_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'widgets/gradient_background.dart';
 import 'core/providers/navigation_provider.dart';
+import 'core/providers/cart_provider.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/services/supabase_service.dart';
@@ -107,6 +108,7 @@ void main() {
         ChangeNotifierProvider(create: (_) => AuthService()),
         ChangeNotifierProvider(create: (_) => SyncService()),
         ChangeNotifierProvider(create: (_) => NavigationProvider()),
+        ChangeNotifierProvider(create: (_) => CartProvider()),
       ],
       child: const MyApp(),
     ),
@@ -160,15 +162,30 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Check for updates after the first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       AppUpdateService().checkForUpdates(context);
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      debugPrint('📱 App Resumed: Triggering background sync...');
+      SyncService().syncAll();
+    }
   }
 
   @override
@@ -183,7 +200,7 @@ class _MainScreenState extends State<MainScreen> {
     final List<Widget> screens = [
       const HomeScreen(),
       const ExploreScreen(),
-      AllTipsScreen(showAppBar: false, isVisible: currentIndex == 2),
+      AllTipsScreen(showAppBar: false, isVisible: currentIndex == 2, showCloseButton: false),
       const SubjectsScreen(showBackButton: false),
       const ProfileScreen(),
     ];
@@ -365,7 +382,7 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         return const ExploreScreen();
       case 2:
-        return const AllTipsScreen(showAppBar: false, isVisible: true);
+        return const AllTipsScreen(showAppBar: false, isVisible: true, showCloseButton: false);
       case 3:
         return const SubjectsScreen(showBackButton: false);
       case 4:

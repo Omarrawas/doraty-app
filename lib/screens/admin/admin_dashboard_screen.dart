@@ -21,6 +21,7 @@ import 'security_settings_screen.dart';
 import 'bundles_management_screen.dart';
 import 'tips_management_screen.dart';
 import 'banners_management_screen.dart';
+import 'teacher_requests_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -477,6 +478,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               context,
               MaterialPageRoute(
                   builder: (context) => const CategoriesManagementScreen())),
+        },
+        {
+          'icon': Icons.how_to_reg_rounded,
+          'title': 'طلبات المدرسين',
+          'subtitle': 'مراجعة طلبات الانضمام',
+          'color': Colors.orangeAccent,
+          'onTap': () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const TeacherRequestsScreen())),
         },
         {
           'icon': Icons.school_rounded,

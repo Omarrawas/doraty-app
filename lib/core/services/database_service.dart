@@ -50,7 +50,7 @@ class DatabaseService {
     return fetchWithCache(
       key: 'categories_all',
       forceRefresh: forceRefresh,
-      duration: const Duration(days: 1),
+      duration: const Duration(hours: 1),
       fetcher: () async {
         try {
           final response =
@@ -162,7 +162,7 @@ class DatabaseService {
     return fetchWithCache(
       key: 'bundles_all',
       forceRefresh: forceRefresh,
-      duration: const Duration(hours: 12),
+      duration: const Duration(hours: 1),
       fetcher: () async {
         try {
           // Fetch bundles
@@ -296,7 +296,7 @@ class DatabaseService {
     return fetchWithCache(
       key: CacheKeys.tips, // Make sure to add this to CacheKeys
       forceRefresh: forceRefresh,
-      duration: const Duration(hours: 6),
+      duration: const Duration(minutes: 30),
       fetcher: () async {
         try {
           final response = await _client
@@ -449,7 +449,7 @@ class DatabaseService {
     return fetchWithCache(
       key: CacheKeys.banners,
       forceRefresh: forceRefresh,
-      duration: const Duration(hours: 12),
+      duration: const Duration(minutes: 30),
       fetcher: () async {
         try {
           final response = await _client.from('banners').select().order('created_at', ascending: false);
@@ -785,7 +785,7 @@ class DatabaseService {
     return fetchWithCache(
       key: cacheKey,
       forceRefresh: forceRefresh,
-      duration: const Duration(minutes: 15),
+      duration: const Duration(minutes: 5),
       fetcher: () async {
         try {
           // Join with users to get correct instructor details
@@ -2923,14 +2923,8 @@ class DatabaseService {
       // Upsert into the unified users table
       await _client.from('users').upsert(data);
       
-      // Also assign the teacher role if not already assigned
-      try {
-        await assignRole(userId, 'teacher');
-      } catch (e) {
-        debugPrint('⚠️ Could not assign teacher role automatically (permission?): $e');
-        // Don't rethrow as the profile data is already saved
-      }
-      
+      // Automatic role assignment is disabled because teacher accounts now require manual approval by admin.
+      // The admin will review the 'pending' status and assign the teacher role upon approval.
     } catch (e) {
       debugPrint('❌ Error saving teacher profile: $e');
       rethrow;
@@ -2996,6 +2990,41 @@ class DatabaseService {
         }
       },
     );
+  }
+
+  /// Get all pending teacher registration requests
+  Future<List<Map<String, dynamic>>> getPendingTeacherRequests() async {
+    try {
+      final response = await _client
+          .from('users')
+          .select()
+          .eq('status', 'pending');
+      
+      return SafeParser.safeMapList(response);
+    } catch (e) {
+      debugPrint('❌ Error fetching pending teacher requests: $e');
+      return [];
+    }
+  }
+
+  /// Update teacher registration status and optionally promote to teacher role
+  Future<void> updateTeacherStatus(String userId, String status) async {
+    try {
+      await _client
+          .from('users')
+          .update({
+            'status': status,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', userId);
+      
+      if (status == 'approved') {
+        await assignRole(userId, 'teacher');
+      }
+    } catch (e) {
+      debugPrint('❌ Error updating teacher status: $e');
+      rethrow;
+    }
   }
 
   /// Update student profile

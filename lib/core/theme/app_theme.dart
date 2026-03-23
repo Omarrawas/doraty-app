@@ -8,7 +8,15 @@ class AppTheme {
   static ThemeData get adminLightTheme {
     return ThemeData(
       useMaterial3: true,
-      scaffoldBackgroundColor: AppColors.cardBackground,
+      scaffoldBackgroundColor: Colors.transparent,
+      colorScheme: ColorScheme.light(
+        primary: AppColors.primaryPurple,
+        secondary: AppColors.primaryBlue,
+        surface: const Color(0xFFFAFBFF),
+        onSurface: AppColors.textPrimary,
+        onPrimary: Colors.white,
+        surfaceTint: Colors.transparent,
+      ),
 
       fontFamily: 'Cairo',
       // Arabic Font Support

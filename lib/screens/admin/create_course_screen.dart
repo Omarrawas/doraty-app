@@ -640,8 +640,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           icon: Icons.attach_money,
                                         ).copyWith(
                                           fillColor: _isFree 
-                                              ? Colors.white.withOpacity(0.02)
-                                              : Colors.white.withOpacity(0.05),
+                                              ? AppColors.getGlassColor(context, opacity: 0.02)
+                                              : AppColors.getGlassColor(context, opacity: 0.05),
                                         ),
                                         style: TextStyle(
                                           color: _isFree ? AppColors.getTextColor(context, secondary: true) : AppColors.getTextColor(context),
@@ -890,7 +890,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: AppColors.getGlassColor(context, opacity: 0.2),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -910,7 +910,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                       label: _t('search_teacher'),
                       icon: Icons.search,
                     ),
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.getTextColor(context)),
                     onChanged: (val) {
                       setModalState(() {
                         searchQuery = val;
@@ -1029,9 +1029,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppColors.getGlassColor(context, opacity: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.1)),
       ),
       child: SwitchListTile(
         title: Text(title,

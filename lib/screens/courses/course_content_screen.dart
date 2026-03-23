@@ -12,6 +12,8 @@ import '../../widgets/empty_state.dart';
 import '../../core/services/auth_service.dart';
 import '../auth/login_screen.dart';
 import '../../core/utils/safe_parser.dart';
+import '../cart/cart_screen.dart';
+import '../../core/providers/cart_provider.dart';
 
 class CourseContentScreen extends StatefulWidget {
   final Course course;
@@ -215,6 +217,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
   }
 
   Widget _buildLessonItem(Lesson lesson, bool isLast, bool isRTL) {
+    final canAccess = lesson.isFree || widget.isEnrolled;
     return Column(
       children: [
         Divider(height: 1, color: Colors.white.withOpacity(0.1)),
@@ -223,9 +226,15 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           child: InkWell(
             onTap: () {
               final authService = Provider.of<AuthService>(context, listen: false);
+              final canAccess = lesson.isFree || widget.isEnrolled;
               
               if (!authService.isAuthenticated && !lesson.isFree) {
                 _showLoginRequiredDialog(context);
+                return;
+              }
+
+              if (!canAccess) {
+                _showSubscriptionRequiredDialog(context);
                 return;
               }
 
@@ -248,12 +257,14 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryPurple.withOpacity(0.2),
+                      color: canAccess 
+                          ? AppColors.primaryPurple.withOpacity(0.2)
+                          : Colors.white.withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.play_arrow_rounded,
-                      color: AppColors.primaryPurple,
+                    child: Icon(
+                      canAccess ? Icons.play_arrow_rounded : Icons.lock_outline,
+                      color: canAccess ? AppColors.primaryPurple : Colors.white.withOpacity(0.4),
                       size: 20,
                     ),
                   ),
@@ -292,11 +303,69 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     );
   }
 
+  void _showSubscriptionRequiredDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1E1E2C),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            const Icon(Icons.lock_person_rounded, color: Colors.orangeAccent),
+            const SizedBox(width: 10),
+            Text(
+              _t('login_required_title'), // Or a more specific string if available
+              style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+            ),
+          ],
+        ),
+        content: Text(
+          _t('must_subscribe'),
+          style: TextStyle(color: Colors.white.withOpacity(0.7), fontFamily: 'Cairo'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(_t('cancel'), style: const TextStyle(fontFamily: 'Cairo')),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Handle adding to cart
+              final cart = Provider.of<CartProvider>(context, listen: false);
+              cart.addItem(
+                id: widget.course.id,
+                title: widget.course.title,
+                price: widget.course.discountedPrice,
+                originalPrice: widget.course.price.toDouble(),
+                discountAmount: widget.course.hasDiscount ? (widget.course.price - widget.course.discountedPrice).toDouble() : 0,
+                imageUrl: widget.course.imageUrl,
+                originalObject: widget.course,
+              );
+
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CartScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPurple,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: Text(_t('buy_now'), style: const TextStyle(fontFamily: 'Cairo')),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showLoginRequiredDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E2C),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           _t('login_required_title'),
           style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
@@ -323,6 +392,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple,
               foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: Text(_t('login_now'), style: const TextStyle(fontFamily: 'Cairo')),
           ),

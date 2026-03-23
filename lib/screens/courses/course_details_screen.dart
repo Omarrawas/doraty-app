@@ -15,6 +15,8 @@ import '../teacher/teacher_profile_screen.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
 import 'course_content_screen.dart';
+import '../cart/cart_screen.dart';
+import '../../core/providers/cart_provider.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/error_utils.dart';
 import '../../core/localization/locale_provider.dart';
@@ -239,7 +241,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     bool isRTL = Provider.of<LocaleProvider>(context).locale == 'ar';
     
     return Scaffold(
-      bottomNavigationBar: _isEnrolled ? null : _buildStickyBuyBar(isRTL),
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -1016,84 +1017,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
   }
 
-  Widget _buildStickyBuyBar(bool isRTL) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(20, 15, 20, MediaQuery.of(context).padding.bottom + 15),
-      decoration: BoxDecoration(
-        color: const Color(0xFF161621), // Darkest theme color
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _t('course_price') == 'course_price' ? 'سعر الدورة' : _t('course_price'),
-                  style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (widget.course.discountPercentage > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: Text(
-                          '${widget.course.price} ${widget.course.currency}',
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.3),
-                            fontSize: 14,
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                      ),
-                    Text(
-                      widget.course.getLocalizedPrice(Provider.of<LocaleProvider>(context, listen: false).locale),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 20),
-          Expanded(
-            flex: 2,
-            child: ElevatedButton(
-              onPressed: _handleEnrollment,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryPurple,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 56),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 8,
-                shadowColor: AppColors.primaryPurple.withOpacity(0.5),
-              ),
-              child: Text(
-                _t('enroll_now') == 'enroll_now' ? 'اشترك الآن' : _t('enroll_now'),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
 
 
@@ -1205,6 +1128,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
   Future<void> _handleEnrollment() async {
     if (!_checkAuthAndShowDialog()) return;
+    
+    // Check if enrolled first to jump to lessons
     if (_isEnrolled && _lessons.isNotEmpty) {
       final firstLesson = Lesson.fromJson(_lessons.first);
       Navigator.push(
@@ -1220,20 +1145,22 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       return;
     }
 
-    // Navigate to payment screen directly for this course
+    // New Behavior: Add to Cart and Go to Cart Screen
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    cart.addItem(
+      id: widget.course.id,
+      title: widget.course.title,
+      price: widget.course.discountedPrice,
+      originalPrice: widget.course.price.toDouble(),
+      discountAmount: widget.course.hasDiscount ? (widget.course.price - widget.course.discountedPrice).toDouble() : 0,
+      imageUrl: widget.course.imageUrl,
+      originalObject: widget.course,
+    );
+
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => PaymentScreen(
-          amount: widget.course.discountedPrice,
-          title: widget.course.title,
-          course: widget.course,
-        ),
-      ),
-    ).then((_) {
-      // Re-check enrollment after returning
-      _checkEnrollment();
-    });
+      MaterialPageRoute(builder: (context) => const CartScreen()),
+    );
   }
 
   Widget _buildReviewsTab() {

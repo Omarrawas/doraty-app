@@ -216,7 +216,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildDialogField('العنوان الرئيسي', titleController),
-                _buildDialogField('العنوان الفرعي', subtitleController),
+                _buildDialogField('العنوان الفرعي / نص زر التفاعل (اختياري)', subtitleController),
                 Row(
                   children: [
                     Expanded(child: _buildDialogField('رابط الصورة', imageUrlController)),

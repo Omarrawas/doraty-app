@@ -82,12 +82,15 @@ class AppColors {
 
   static Color getSurfaceColor(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark ? const Color(0xFF1A1A2E) : Colors.white;
+    return isDark ? const Color(0xFF1A1A2E) : const Color(0xFFFAFBFF);
   }
 
   static Color getGlassColor(BuildContext context, {double opacity = 0.2}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return (isDark ? Colors.black : Colors.white).withOpacity(opacity);
+    // Dark mode: white tint for glass; Light mode: purple/blue tint for glass
+    return isDark
+        ? Colors.white.withOpacity(opacity)
+        : AppColors.primaryPurple.withOpacity(opacity * 0.5);
   }
 
   static Color getTextColor(BuildContext context, {bool secondary = false}) {

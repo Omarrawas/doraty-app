@@ -15,7 +15,8 @@ import '../../main.dart';
 
 class RegisterScreen extends StatefulWidget {
   final bool isCompletingProfile;
-  const RegisterScreen({super.key, this.isCompletingProfile = false});
+  final String? initialRole;
+  const RegisterScreen({super.key, this.isCompletingProfile = false, this.initialRole});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -34,7 +35,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  String _selectedRole = 'student'; // 'student' or 'teacher'
+  late String _selectedRole; 
 
   // Student Specific Fields
   String _educationLevel = 'school'; // 'school' or 'university'
@@ -74,6 +75,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedRole = widget.initialRole ?? 'student';
     // If completing profile, pre-fill from already authenticated user if possible
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthService>(context, listen: false);
@@ -451,7 +453,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _buildHeader(_t('professional_info')),
         _buildGlassField(controller: _teacherPhoneController, label: _t('phone_number_label'), icon: Icons.phone_android_rounded, keyboardType: TextInputType.phone, validator: (v) => v!.isEmpty ? _t('required_field') : null),
         const SizedBox(height: 16),
-        _buildGlassField(controller: _teacherSpecializationController, label: _t('specialization'), icon: Icons.workspace_premium_outlined, validator: (v) => v!.isEmpty ? _t('required_field') : null),
+        _buildGlassField(controller: _teacherSpecializationController, label: _t('specialization'), icon: Icons.workspace_premium_outlined, helperText: 'اختصار المسمى الوظيفي (مثال: مصور، مصمم، مبرمج...)', maxLength: 30, validator: (v) => v!.isEmpty ? _t('required_field') : null),
         const SizedBox(height: 16),
         _buildGlassField(controller: _teacherCountryController, label: _t('country_label'), icon: Icons.public_rounded),
         const SizedBox(height: 16),
@@ -502,13 +504,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildGlassField({required TextEditingController controller, required String label, required IconData icon, bool obscureText = false, Widget? suffixIcon, TextInputType? keyboardType, int maxLines = 1, String? Function(String?)? validator, bool enabled = true}) {
+  Widget _buildGlassField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool obscureText = false,
+    Widget? suffixIcon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+    bool enabled = true,
+    int? maxLength,
+    String? helperText,
+  }) {
     return Container(
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.1))),
+      decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.1))),
       child: TextFormField(
-        controller: controller, obscureText: obscureText, keyboardType: keyboardType, maxLines: maxLines, textAlign: TextAlign.right, enabled: enabled,
-        style: TextStyle(color: enabled ? Colors.white : Colors.white38, fontSize: 15),
-        decoration: InputDecoration(labelText: label, labelStyle: TextStyle(color: Colors.white70, fontSize: 14), prefixIcon: Icon(icon, color: Colors.white60, size: 20), suffixIcon: suffixIcon, border: InputBorder.none, contentPadding: const EdgeInsets.all(16)),
+        controller: controller,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        textAlign: TextAlign.right,
+        enabled: enabled,
+        maxLength: maxLength,
+        style: TextStyle(
+            color: enabled ? Colors.white : Colors.white38, fontSize: 15),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Colors.white70, fontSize: 14),
+          helperText: helperText,
+          helperStyle: TextStyle(color: Colors.white38, fontSize: 10),
+          prefixIcon: Icon(icon, color: Colors.white60, size: 20),
+          suffixIcon: suffixIcon,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(16),
+          counterStyle: const TextStyle(color: Colors.white38, fontSize: 10),
+        ),
         validator: validator,
       ),
     );

@@ -7,6 +7,8 @@ import '../../widgets/course_card.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
+import '../cart/cart_screen.dart';
+import '../../core/providers/cart_provider.dart';
 
 class PackageScreen extends StatelessWidget {
   final String packageTitle;
@@ -145,6 +147,44 @@ class PackageScreen extends StatelessWidget {
                                 ),
                               ),
                             ],
+                            const SizedBox(height: 24),
+                            // Subscribe Button inside the card
+                            ElevatedButton(
+                              onPressed: () {
+                                final cart = Provider.of<CartProvider>(context, listen: false);
+                                cart.addItem(
+                                  id: displayBundle.id,
+                                  title: displayBundle.title,
+                                  price: displayBundle.discountedPrice,
+                                  originalPrice: displayBundle.price,
+                                  discountAmount: displayBundle.price - displayBundle.discountedPrice,
+                                  imageUrl: displayBundle.imageUrl,
+                                  isBundle: true,
+                                  originalObject: displayBundle,
+                                );
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const CartScreen()),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryPurple,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 0,
+                              ),
+                              child: Text(
+                                '${t('subscribe_now_prefix')}${displayBundle.getFormattedPrice(locale)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Cairo',
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -218,81 +258,6 @@ class PackageScreen extends StatelessWidget {
                           ),
                   ),
                   const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
-                ],
-              ),
-            ),
-            
-            // Sticky Buy Bar (Dawrat Style)
-            Container(
-              padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + MediaQuery.of(context).padding.bottom),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.8),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                border: Border.all(color: Colors.white10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.5),
-                    blurRadius: 20,
-                    offset: const Offset(0, -5),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Price Tag
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (displayBundle.hasDiscount)
-                          Text(
-                            displayBundle.getOriginalPrice(locale),
-                            style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 14,
-                              decoration: TextDecoration.lineThrough,
-                            ),
-                          ),
-                        Text(
-                          displayBundle.getFormattedPrice(locale),
-                          style: TextStyle(
-                            color: displayBundle.hasDiscount ? Colors.greenAccent : Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  // Buy Button
-                  SizedBox(
-                    height: 54,
-                    width: 160,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text(t('pending_request'))),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryPurple,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 8,
-                      ),
-                      child: Text(
-                        t('buy_bundle'),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),

@@ -268,11 +268,20 @@ class LocalDatabase {
 
       // Requirement: Show cached content instantly
       if (cachedData != null) {
-        // If expired or forceRefresh, trigger background update but return cached immediately
-        if (expired || forceRefresh) {
-          debugPrint('🕰️ LocalDatabase Hit (Stale/Force): $key - Fetching new data in background');
+        // SCENARIO 1: Force Refresh — Bypasses cache return to wait for fresh data
+        if (forceRefresh) {
+          debugPrint('🌐 Force Refresh requested for $key: Fetching fresh data...');
+          final freshData = await fetcher();
+          await set(key, freshData, boxName: boxName);
+          return freshData;
+        }
+
+        // SCENARIO 2: Stale data — Return cache immediately but sync in background
+        if (expired) {
+          debugPrint('🕰️ LocalDatabase Stale Hit: $key - Fetching new data in background');
           _backgroundUpdate(key, fetcher, boxName);
         }
+        
         return cachedData;
       }
 

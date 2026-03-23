@@ -174,7 +174,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       } else if (_initialFilter == 'popular') {
         filtered.sort((a, b) => b.studentsCount.compareTo(a.studentsCount));
       } else if (_initialFilter == 'recorded') {
-        filtered = filtered.where((c) => c.status == 'recorded').toList();
+        filtered = filtered.toList(); // Since all courses are VOD uploaded courses
       }
       // Reset after first apply to allow user navigation to change it?
       // Or keep it. Usually initial means start state.
@@ -304,7 +304,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 child: _buildDropdown(
                                   'النوع',
                                   _selectedType,
-                                  ['الكل', 'مسجلة', 'بث مباشر', 'حضورية'],
+                                  ['الكل', 'محملة', 'بث مباشر', 'حضورية'],
                                   (val) {
                                     setState(() {
                                       _selectedType = val!;
