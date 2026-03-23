@@ -41,7 +41,7 @@ class HomeDrawer extends StatelessWidget {
     final isDark = themeProvider.isDarkMode;
 
     return Drawer(
-      backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+      backgroundColor: AppColors.getDrawerBackground(context),
       child: Column(
         children: [
           // Header
@@ -104,7 +104,7 @@ class HomeDrawer extends StatelessWidget {
                         style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 14)),
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ExploreScreen()));
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ExploreScreen(showBackButton: true)));
                         // Note: In a real app, we'd pass the category ID to ExploreScreen
                       },
                     )).toList(),

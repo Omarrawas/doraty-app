@@ -38,7 +38,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
         setState(() {
           _categories = data
               .map((json) => CategoryModel.fromJson(json))
-              .where((cat) => cat.parentId == null)
+              .where((cat) => cat.parentId == null || cat.parentId!.isEmpty)
               .toList();
           _isLoading = false;
         });
@@ -147,7 +147,13 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                   ),
                 ),
                 child: widget.showBackButton ? IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(
+                    Provider.of<LocaleProvider>(context, listen: false).locale == 'ar'
+                        ? Icons.arrow_forward_ios_rounded
+                        : Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ) : const SizedBox(width: 48, height: 48),
               ),

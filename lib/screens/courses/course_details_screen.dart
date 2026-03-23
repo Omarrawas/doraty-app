@@ -22,6 +22,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
 import '../../core/services/auth_service.dart';
 import '../auth/login_screen.dart';
+import '../../core/theme/theme_provider.dart';
 
 
 
@@ -344,10 +345,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         IconButton(
           icon: const Icon(Icons.dark_mode_rounded, color: Colors.white, size: 22),
           onPressed: () {
-            // Theme toggle is global, but we can show feedback
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('تغيير السمة متاح من القائمة الجانبية')),
-            );
+            Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
           },
         ),
       ],

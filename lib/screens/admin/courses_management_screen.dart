@@ -5,7 +5,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
-import '../../core/services/supabase_service.dart';
 import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import 'create_course_screen.dart';
@@ -49,35 +48,16 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
         instructorId: widget.instructorId,
       );
 
-      // Load teacher for each course
+      // Note: _db.getCourses() already joins with users!instructor_id and provides instructor_name.
+      // We also map it for compatibility with the UI component's expectation of 'teacher' object if needed.
       for (var course in courses) {
-        try {
-          // Get teacher assignment from teacher_courses table
-          final teacherCourseData = await SupabaseService.instance.client
-              .from('teacher_courses')
-              .select('teacher_id')
-              .eq('course_id', course['id'])
-              .maybeSingle();
-
-          if (teacherCourseData != null) {
-            // Get teacher user data
-            final teacherData = await SupabaseService.instance.client
-                .from('users')
-                .select('*')
-                .eq('id', teacherCourseData['teacher_id'])
-                .maybeSingle();
-
-            if (teacherData != null) {
-              course['teacher'] = teacherData;
-            } else {
-              course['teacher'] = null;
-            }
-          } else {
-            course['teacher'] = null;
-          }
-        } catch (e) {
-          debugPrint('Error loading teacher for course ${course['id']}: $e');
-          course['teacher'] = null;
+        if (course['users'] != null && course['teacher'] == null) {
+          course['teacher'] = course['users'];
+        } else if (course['instructor_name'] != null && course['teacher'] == null) {
+          course['teacher'] = {
+            'full_name': course['instructor_name'],
+            'avatar_url': course['instructor_photo'],
+          };
         }
       }
 

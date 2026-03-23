@@ -398,14 +398,14 @@ class _LoginScreenState extends State<LoginScreen> {
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [
-            Color(0xFF7B2CBF),
-            Color(0xFF5A67D8),
+            AppColors.lightPurple,
+            AppColors.indigoBlue,
           ],
         ),
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7B2CBF).withOpacity(0.4),
+            color: AppColors.lightPurple.withOpacity(0.4),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -547,7 +547,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(15),
                         borderSide: const BorderSide(
-                          color: Color(0xFF7B2CBF),
+                          color: AppColors.primaryPurple,
                           width: 2,
                         ),
                       ),
@@ -633,7 +633,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF7B2CBF),
+                          backgroundColor: AppColors.primaryPurple,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
                           ),

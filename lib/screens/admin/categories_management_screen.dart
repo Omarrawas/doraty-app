@@ -66,13 +66,23 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                   child: _isLoading
                       ? const Center(
                           child: CircularProgressIndicator(color: Colors.white))
-                      : ListView.builder(
-                          padding: const EdgeInsets.all(20),
-                          itemCount: _categories.length,
-                          itemBuilder: (context, index) {
-                            final cat = _categories[index];
-                            return _buildCategoryCard(cat);
-                          },
+                      : Builder(
+                          builder: (context) {
+                            final parents = _categories.where((c) => c.parentId == null || c.parentId!.isEmpty).toList();
+                            if (parents.isEmpty && _categories.isNotEmpty) {
+                               // Fallback if some categories don't have parents but are standalone
+                               parents.addAll(_categories);
+                            }
+                            return ListView.builder(
+                              padding: const EdgeInsets.all(20),
+                              itemCount: parents.length,
+                              itemBuilder: (context, index) {
+                                final parent = parents[index];
+                                final children = _categories.where((c) => c.parentId == parent.id).toList();
+                                return _buildCategoryGroup(parent, children);
+                              },
+                            );
+                          }
                         ),
                 ),
               ],
@@ -130,89 +140,196 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
     );
   }
 
-  Widget _buildCategoryCard(CategoryModel cat) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+  Widget _buildCategoryGroup(CategoryModel parent, List<CategoryModel> children) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 24),
+      elevation: 0,
+      color: Colors.transparent,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.getGlassColor(context, opacity: 0.15),
+              color: AppColors.getGlassColor(context, opacity: 0.1),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: AppColors.getGlassColor(context, opacity: 0.3),
                 width: 1.5,
               ),
             ),
-            child: ListTile(
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.primaryPurple.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: cat.iconUrl != null
-                    ? Image.network(cat.iconUrl!,
-                        width: 24,
-                        height: 24,
-                        errorBuilder: (_, __, ___) =>
-                            const Icon(Icons.category, color: Colors.white))
-                    : const Icon(Icons.category, color: Colors.white),
-              ),
-              title: Text(
-                cat.name,
-                style: TextStyle(
-                  fontWeight: FontWeight.normal,
-                  color: AppColors.getTextColor(context),
-                  fontSize: 16,
-                ),
-              ),
-              subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    cat.slug,
-                    style: TextStyle(
-                      color: AppColors.getTextColor(context).withOpacity(0.6),
-                      fontSize: 12,
-                    ),
-                  ),
-                  if (cat.parentId != null)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Text(
-                        'ينتمي إلى: ${_categories.firstWhere((c) => c.id == cat.parentId, orElse: () => CategoryModel(id: '', name: 'غير معروف', slug: '')).name}',
-                        style: TextStyle(
-                          color: AppColors.primaryPurple.withOpacity(0.8),
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                        ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Parent Header
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryPurple.withOpacity(0.15),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: AppColors.getGlassColor(context, opacity: 0.2),
                       ),
                     ),
-                ],
-              ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit_rounded,
-                        color: Colors.blueAccent),
-                    onPressed: () => _showAddEditDialog(category: cat),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded,
-                        color: Colors.redAccent),
-                    onPressed: () => _deleteCategory(cat.id),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPurple.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: parent.iconUrl != null && parent.iconUrl!.isNotEmpty
+                            ? Image.network(parent.iconUrl!,
+                                width: 24,
+                                height: 24,
+                                errorBuilder: (_, __, ___) =>
+                                    const Icon(Icons.category, color: Colors.white))
+                            : const Icon(Icons.category, color: Colors.white),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              parent.name,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.getTextColor(context),
+                                fontSize: 18,
+                              ),
+                            ),
+                            Text(
+                              'التصنيف الأساسي (${parent.slug})',
+                              style: TextStyle(
+                                color: AppColors.getTextColor(context).withOpacity(0.6),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent),
+                        onPressed: () => _showAddEditDialog(category: parent),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                        onPressed: () => _deleteCategory(parent.id),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                
+                // Children Categories Grid
+                if (children.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'التصنيفات الفرعية:',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.getTextColor(context).withOpacity(0.8),
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 12,
+                          children: children.map((child) => _buildChildChip(child)).toList(),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      'لا توجد تصنيفات فرعية',
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context).withOpacity(0.5),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildChildChip(CategoryModel child) {
+    return Container(
+      width: MediaQuery.of(context).size.width > 600 ? 250 : double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.getGlassColor(context, opacity: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.getGlassColor(context, opacity: 0.2),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.primaryPurple.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: child.iconUrl != null && child.iconUrl!.isNotEmpty
+                ? Image.network(child.iconUrl!, width: 16, height: 16, errorBuilder: (_, __, ___) => const Icon(Icons.subdirectory_arrow_right, size: 16, color: Colors.white))
+                : const Icon(Icons.subdirectory_arrow_right, size: 16, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  child.name,
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  child.slug,
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context).withOpacity(0.6),
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.edit, size: 18, color: Colors.blueAccent),
+                onPressed: () => _showAddEditDialog(category: child),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: const Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                onPressed: () => _deleteCategory(child.id),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

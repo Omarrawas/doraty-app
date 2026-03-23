@@ -51,55 +51,76 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   Future<void> _checkAuthStatus() async {
-    // Wait for animation to complete
+    // Wait for minimum splash duration (animation)
     await Future.delayed(const Duration(milliseconds: 2000));
 
     if (!mounted) return;
 
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final isAuthenticated = authService.isAuthenticated;
-
-      debugPrint(
-          '🔐 Auth check: ${isAuthenticated ? "Authenticated" : "Not authenticated"}');
-
-      if (isAuthenticated) {
-        // Load user profile (handles caching internally now)
-        await authService.loadUserProfile();
-        
-        // Wait a bit to ensure profile is loaded from cache/network
-        final profile = authService.userProfile;
-        final hasRole = profile != null && profile['role'] != null;
-
-        // Apply screen security
-        await _applyScreenSecurity();
-
-        if (!mounted) return;
-        
-        if (!hasRole) {
-          // If we are definitely online and have no role, go to selection
-          // If we are offline and have no cached role, we're stuck anyway, but selection screen is better than nothing
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const RegisterScreen()),
-          );
-        } else {
-          // User is logged in and has a role (cached or fetched), go to main screen
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-          );
-        }
-      } else {
-        // User is not logged in, go to main screen as guest
+      // Use a global timeout for the entire auth/init sequence on splash screen
+      // If something takes more than 10 seconds, we fallback to guest mode or MainScreen
+      await Future.any([
+        _performAuthCheck(),
+        Future.delayed(const Duration(seconds: 15)).then((_) {
+          debugPrint('⚠️ SplashScreen: Init sequence TIMED OUT. Proceeding to main...');
+          if (mounted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const MainScreen()),
+            );
+          }
+        }),
+      ]);
+    } catch (e) {
+      debugPrint('❌ Error in splash screen sequence: $e');
+      if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       }
-    } catch (e) {
-      debugPrint('❌ Error checking auth status: $e');
-      // On error, still go to main screen as guest or try to let them use what they can
+    }
+  }
+
+  Future<void> _performAuthCheck() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final isAuthenticated = authService.isAuthenticated;
+
+    debugPrint('🔐 Auth status: ${isAuthenticated ? "Logged In" : "Guest"}');
+
+    if (isAuthenticated) {
+      // Load user profile with timeout
+      try {
+        await authService.loadUserProfile().timeout(const Duration(seconds: 5));
+      } catch (e) {
+        debugPrint('⚠️ Profile load timed out: $e');
+      }
+      
+      final profile = authService.userProfile;
+      final hasRole = profile != null && profile['role'] != null;
+
+      // Apply screen security with timeout
+      try {
+        await _applyScreenSecurity().timeout(const Duration(seconds: 5));
+      } catch (e) {
+        debugPrint('⚠️ Security check timed out: $e');
+      }
+
+      if (!mounted) return;
+      
+      if (!hasRole) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      }
+    } else {
+      // Not authenticated
       if (mounted) {
         Navigator.pushReplacement(
           context,

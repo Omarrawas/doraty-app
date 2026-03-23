@@ -528,8 +528,8 @@ class _SearchScreenState extends State<SearchScreen> {
             gradient: isSelected
                 ? const LinearGradient(
                     colors: [
-                      Color(0xFF7B2CBF),
-                      Color(0xFF5A67D8),
+                      AppColors.lightPurple,
+                      AppColors.indigoBlue,
                     ],
                   )
                 : null,

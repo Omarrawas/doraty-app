@@ -316,7 +316,13 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                     ),
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: Icon(
+                      Provider.of<LocaleProvider>(context, listen: false).locale == 'ar'
+                          ? Icons.arrow_forward_ios_rounded
+                          : Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),

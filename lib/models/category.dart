@@ -4,6 +4,7 @@ class Category {
   final String description;
   final String icon;
   final int coursesCount;
+  final String? parentId;
 
   Category({
     required this.id,
@@ -11,6 +12,7 @@ class Category {
     required this.description,
     required this.icon,
     this.coursesCount = 0,
+    this.parentId,
   });
 
   Map<String, dynamic> toJson() {
@@ -20,6 +22,7 @@ class Category {
       'description': description,
       'icon': icon,
       'coursesCount': coursesCount,
+      if (parentId != null) 'parentId': parentId,
     };
   }
 
@@ -30,6 +33,7 @@ class Category {
       description: json['description'],
       icon: json['icon'],
       coursesCount: json['coursesCount'] ?? 0,
+      parentId: json['parentId'],
     );
   }
 }

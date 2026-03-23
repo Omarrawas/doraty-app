@@ -4,6 +4,7 @@ class BannerAd {
   final String? subtitle;
   final String imageUrl;
   final String type; // 'ad', 'course', 'package', 'external'
+  final String location; // 'top', 'bottom'
   final String? targetId; // could be course_id or package_id
   final String? linkUrl; // for external links
   final DateTime createdAt;
@@ -14,6 +15,7 @@ class BannerAd {
     this.subtitle,
     required this.imageUrl,
     required this.type,
+    this.location = 'top',
     this.targetId,
     this.linkUrl,
     required this.createdAt,
@@ -26,6 +28,7 @@ class BannerAd {
       subtitle: json['subtitle'],
       imageUrl: json['image_url'],
       type: json['type'] ?? 'ad',
+      location: json['location'] ?? 'top',
       targetId: json['target_id'],
       linkUrl: json['link_url'],
       createdAt: json['created_at'] != null 
@@ -40,6 +43,7 @@ class BannerAd {
       'subtitle': subtitle,
       'image_url': imageUrl,
       'type': type,
+      'location': location,
       'target_id': targetId,
       'link_url': linkUrl,
     };

@@ -271,7 +271,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final bannersData = await _databaseService.getBanners(forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
-          _banners = bannersData.map((e) => BannerAd.fromJson(e)).toList();
+          final allBanners = bannersData.map((e) => BannerAd.fromJson(e)).toList();
+          _banners = allBanners; // Keep the full list if needed elsewhere
         });
       }
     } catch (e) {
@@ -839,9 +840,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisSpacing: 12,
                 childAspectRatio: 0.75, // height/width ratio: ~ 95 / 130
               ),
-              itemCount: _categories.length,
+              itemCount: _categories.where((c) => c.parentId == null || c.parentId!.isEmpty).length,
               itemBuilder: (context, index) {
-                final category = _categories[index];
+                final parentCategories = _categories.where((c) => c.parentId == null || c.parentId!.isEmpty).toList();
+                final category = parentCategories[index];
                 return CategoryCard(
                   category: category,
                   margin: EdgeInsets.zero, // Margin handled by Grid spacing
@@ -849,7 +851,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ExploreScreen(initialFilter: category.id),
+                        builder: (context) => ExploreScreen(initialFilter: category.id, showBackButton: true),
                       ),
                     );
                   },
@@ -878,7 +880,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(initialFilter: 'newest'),
+                builder: (context) => ExploreScreen(initialFilter: 'newest', showBackButton: true),
               ),
             );
           }),
@@ -916,7 +918,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(initialFilter: 'popular'),
+                builder: (context) => ExploreScreen(initialFilter: 'popular', showBackButton: true),
               ),
             );
           }),
@@ -957,7 +959,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(initialFilter: 'recorded'),
+                builder: (context) => ExploreScreen(initialFilter: 'recorded', showBackButton: true),
               ),
             );
           }),
@@ -1007,8 +1009,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [
-                      Color(0xFF6A11CB), // Deep Purple
-                      Color(0xFF2575FC), // Professional Blue
+                      AppColors.deepPurple, // Deep Purple
+                      AppColors.professionalBlue, // Professional Blue
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -1071,7 +1073,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: const Color(0xFF6A11CB),
+                        foregroundColor: AppColors.deepPurple,
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1284,7 +1286,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     width: double.infinity,
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: const Color(0xFF434775),
+                                        backgroundColor: AppColors.mutedPurpleBlue,
                                         foregroundColor: Colors.white,
                                         elevation: 0,
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -1355,8 +1357,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildUnifiedBannerCarousel() {
-    final bannerItems = _banners.isNotEmpty 
-        ? _banners 
+    final topBanners = _banners.where((b) => b.location == 'top').toList();
+    final bannerItems = topBanners.isNotEmpty 
+        ? topBanners 
         : _allCourses.where((c) => c.isFeatured).map((c) => BannerAd(
             id: c.id,
             title: c.getLocalizedTitle(Provider.of<LocaleProvider>(context).locale),
@@ -1413,8 +1416,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBottomAdBanners() {
     // Determine which banners to show at the bottom
-    // We can show all _banners. If empty, return nothing.
-    if (_banners.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    final bottomBanners = _banners.where((b) => b.location == 'bottom').toList();
+    if (bottomBanners.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: Column(
@@ -1426,10 +1429,16 @@ class _HomeScreenState extends State<HomeScreen> {
               onPageChanged: (index) {
                 if (mounted) setState(() => _currentBottomBannerPage = index);
               },
-              itemCount: _banners.length,
+              itemCount: bottomBanners.length,
               itemBuilder: (context, index) {
-                final item = _banners[index];
+                final item = bottomBanners[index];
                 final isLottie = item.imageUrl.toLowerCase().endsWith('.json') || item.imageUrl.toLowerCase().endsWith('.lottie');
+
+                // Determine button text
+                String? buttonText = item.subtitle;
+                if ((buttonText == null || buttonText.isEmpty) && item.type == 'external') {
+                  buttonText = 'زيارة الرابط';
+                }
 
                 return InkWell(
                   onTap: () => _handleBannerTap(item),
@@ -1451,7 +1460,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             
                       // Action Button Overlay
-                      if (item.subtitle != null && item.subtitle!.isNotEmpty)
+                      if (buttonText != null && buttonText.isNotEmpty)
                         Positioned(
                           bottom: 20,
                           left: 20, // Bottom-left by default
@@ -1469,7 +1478,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                               onPressed: () => _handleBannerTap(item),
                               child: Text(
-                                item.subtitle!,
+                                buttonText,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -1490,7 +1499,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
-              _banners.length,
+              bottomBanners.length,
               (index) => Container(
                 width: 6,
                 height: 6,
@@ -1553,55 +1562,57 @@ class _HomeScreenState extends State<HomeScreen> {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                child: ClipRRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.black.withOpacity(0.0),
-                            Colors.black.withOpacity(0.6),
-                          ],
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (item.subtitle != null && item.subtitle!.isNotEmpty)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryPurple.withOpacity(0.8),
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white24),
-                              ),
-                              child: Text(
-                                item.subtitle!,
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          const SizedBox(height: 10),
-                          Text(
-                            item.title,
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (item.subtitle != null && item.subtitle!.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryPurple.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Text(
+                            item.subtitle!,
                             style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              shadows: [
-                                Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
-                              ],
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.title,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                shadows: [
+                                  Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+                                ],
+                              ),
                             ),
                           ),
+                          if (item.type == 'external' || (item.subtitle != null && item.subtitle!.isNotEmpty))
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white24,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white24),
+                              ),
+                              child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                            ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ),

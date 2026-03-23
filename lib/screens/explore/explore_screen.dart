@@ -14,7 +14,8 @@ import '../../core/providers/navigation_provider.dart';
 
 class ExploreScreen extends StatefulWidget {
   final String? initialFilter;
-  const ExploreScreen({super.key, this.initialFilter});
+  final bool showBackButton;
+  const ExploreScreen({super.key, this.initialFilter, this.showBackButton = false});
 
   @override
   State<ExploreScreen> createState() => _ExploreScreenState();
@@ -29,8 +30,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
   bool _isLoading = true;
   String? _selectedCategoryId;
   String _searchQuery = '';
-  String _selectedType = 'الكل';
-  String? _selectedLevel;
+  String _selectedType = 'all'; // all, recorded, live, in_person
+  String _selectedLevel = 'all'; // all, beginner, intermediate, advanced
   String? _initialFilter;
   final FocusNode _searchFocusNode = FocusNode();
 
@@ -41,6 +42,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
   void initState() {
     super.initState();
     _initialFilter = widget.initialFilter;
+    if (_initialFilter != null &&
+        _initialFilter != 'newest' &&
+        _initialFilter != 'popular' &&
+        _initialFilter != 'recorded') {
+      _selectedCategoryId = _initialFilter;
+    }
     _loadData();
   }
 
@@ -150,16 +157,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
 
     // Filter by Type
-    if (_selectedType != 'الكل') {
+    if (_selectedType != 'all') {
+      final typeMatch = _getTypeLabel(_selectedType);
       filtered = filtered.where((course) {
-        return course.tags.contains(_selectedType) || course.tags.isEmpty; // soft return if tags are empty placeholder
+        return course.tags.contains(typeMatch) || course.tags.isEmpty; 
       }).toList();
     }
 
     // Filter by Level
-    if (_selectedLevel != null && _selectedLevel != 'الكل') {
+    if (_selectedLevel != 'all') {
+      final levelMatch = _getLevelLabel(_selectedLevel);
       filtered = filtered.where((course) {
-        return course.level == _selectedLevel || course.level == null; // soft return if null placeholder
+        return course.level == levelMatch || course.level == null;
       }).toList();
     } 
 
@@ -185,11 +194,37 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _filteredCourses = filtered.where((c) => seenIds.add(c.id)).toList();
   }
 
+  List<CategoryModel> get _displayCategories {
+    if (_selectedCategoryId != null) {
+      // 1. Check if the selected category has children (subcategories)
+      final subCategories = _categories.where((c) => c.parentId == _selectedCategoryId).toList();
+      if (subCategories.isNotEmpty) {
+        return subCategories;
+      }
+      
+      // 2. If no children, check if it is a subcategory itself and return siblings
+      final selectedCat = _categories.where((c) => c.id == _selectedCategoryId).firstOrNull;
+      if (selectedCat != null && selectedCat.parentId != null && selectedCat.parentId!.isNotEmpty) {
+        return _categories.where((c) => c.parentId == selectedCat.parentId).toList();
+      }
+      
+      // 3. If it's a parent with no children, return empty (don't show bubbles)
+      return [];
+    }
+    // Default: return nothing for bubbles if no parent category selected in dropdown
+    return [];
+  }
+
   void _onCategorySelected(String? categoryId) {
     setState(() {
       if (_selectedCategoryId == categoryId) {
-        // Deselect
-        _selectedCategoryId = null;
+        // Deselecting: if it's a subcategory, maybe go back to parent? Or just null
+        final selectedCat = _categories.where((c) => c.id == categoryId).firstOrNull;
+        if (selectedCat != null && selectedCat.parentId != null && selectedCat.parentId!.isNotEmpty) {
+           _selectedCategoryId = selectedCat.parentId; // Go up a level
+        } else {
+           _selectedCategoryId = null; // Go to root
+        }
       } else {
         _selectedCategoryId = categoryId;
       }
@@ -221,6 +256,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
       childAspectRatio = 0.62;
     }
 
+    final displayCats = _displayCategories;
+
     return Scaffold(
       body: DynamicGradientBackground(
         child: SafeArea(
@@ -243,6 +280,24 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
+                          if (widget.showBackButton)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8, right: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: IconButton(
+                                icon: Icon(
+                                  Provider.of<LocaleProvider>(context, listen: false).locale == 'ar'
+                                      ? Icons.arrow_forward_ios_rounded
+                                      : Icons.arrow_back_ios_new_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ),
                           Text(
                             _t('explore_courses'),
                             style: const TextStyle(
@@ -251,6 +306,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               color: Colors.white,
                             ),
                           ),
+                          const Spacer(),
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
@@ -302,9 +358,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             children: [
                               Expanded(
                                 child: _buildDropdown(
-                                  'النوع',
+                                  _t('type_label'),
                                   _selectedType,
-                                  ['الكل', 'محملة', 'بث مباشر', 'حضورية'],
+                                  ['all', 'recorded', 'live', 'in_person'],
                                   (val) {
                                     setState(() {
                                       _selectedType = val!;
@@ -313,19 +369,23 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: _buildDropdown(
-                                  'المستوى',
-                                  _selectedLevel ?? 'الكل',
-                                  ['الكل', 'مبتدئ', 'متوسط', 'متقدم'],
+                                  _t('level_label'),
+                                  _selectedLevel,
+                                  ['all', 'beginner', 'intermediate', 'advanced'],
                                   (val) {
                                     setState(() {
-                                      _selectedLevel = val == 'الكل' ? null : val;
+                                      _selectedLevel = val!;
                                       _applyFilters();
                                     });
                                   },
                                 ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _buildCategoryDropdown(),
                               ),
                             ],
                           ),
@@ -336,36 +396,54 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                   const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
 
-                  // Categories List (Circular)
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: 120,
-                      child: _categories.isEmpty && !_isLoading
-                          ? Center(
-                              child: Text(_t('no_categories_found'),
-                                  style: const TextStyle(color: Colors.white)))
-                          : ListView.builder(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _isLoading ? 5 : _categories.length,
-                              itemBuilder: (context, index) {
-                                if (_isLoading) {
-                                  return _buildShimmerCategory();
-                                }
-
-                                final cat = _categories[index];
-                                return CategoryCard(
-                                  category: cat,
-                                  isSelected: _selectedCategoryId == cat.id,
-                                  onTap: () => _onCategorySelected(cat.id),
-                                );
-                              },
+                  if (displayCats.isNotEmpty && _selectedCategoryId != null) ...[
+                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                    SliverToBoxAdapter(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                              child: Text(
+                                _categories.any((c) => c.id == _selectedCategoryId && (c.parentId == null || c.parentId!.isEmpty)) 
+                                    ? 'التصنيفات الفرعية' 
+                                    : 'تصنيفات مشابهة',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.5),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
                             ),
+                            SizedBox(
+                              height: 110,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 20),
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _isLoading ? 5 : displayCats.length,
+                                itemBuilder: (context, index) {
+                                  if (_isLoading) {
+                                    return _buildShimmerCategory();
+                                  }
+                                  final cat = displayCats[index];
+                                  return CategoryCard(
+                                    category: cat,
+                                    isSelected: _selectedCategoryId == cat.id,
+                                    onTap: () => _onCategorySelected(cat.id),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
+                  ],
 
-                  const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
 
                   // Courses Grid
                   SliverPadding(
@@ -425,13 +503,58 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               ),
                   ),
 
-                  const SliverPadding(
-                      padding:
-                          EdgeInsets.only(bottom: 100)), // Space for BottomNav
+                  const SliverToBoxAdapter(child: SizedBox(height: 100)), // Space for BottomNav
                 ],
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryDropdown() {
+    final parentCategories = _categories.where((c) => c.parentId == null || c.parentId!.isEmpty).toList();
+    final locale = Provider.of<LocaleProvider>(context).locale;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.getGlassColor(context, opacity: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.2)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String?>(
+          value: (_selectedCategoryId != null && (_categories.where((c) => c.id == _selectedCategoryId && (c.parentId == null || c.parentId!.isEmpty)).isNotEmpty))
+              ? _selectedCategoryId
+              : (_selectedCategoryId != null ? _categories.where((c) => c.id == _selectedCategoryId).firstOrNull?.parentId : null),
+          isExpanded: true,
+          dropdownColor: AppColors.primaryPurple,
+          icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+          onChanged: (val) {
+            setState(() {
+              _selectedCategoryId = val;
+              _applyFilters();
+            });
+          },
+          items: [
+            DropdownMenuItem<String?>(
+              value: null,
+              child: Text(_t('all_categories'), style: const TextStyle(fontSize: 12)),
+            ),
+            ...parentCategories.map((cat) {
+              return DropdownMenuItem<String?>(
+                value: cat.id,
+                child: Text(
+                  cat.getLocalizedName(locale),
+                  style: const TextStyle(fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              );
+            }).toList(),
+          ],
         ),
       ),
     );
@@ -507,16 +630,61 @@ class _ExploreScreenState extends State<ExploreScreen> {
           isExpanded: true,
           dropdownColor: AppColors.primaryPurple,
           icon: const Icon(Icons.arrow_drop_down, color: Colors.white70),
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          style: const TextStyle(color: Colors.white, fontSize: 13),
           onChanged: onChanged,
+          selectedItemBuilder: (context) {
+            return options.map((opt) {
+              return Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  _getLocalizedOption(opt),
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
+                ),
+              );
+            }).toList();
+          },
           items: options.map((opt) {
             return DropdownMenuItem<String>(
               value: opt,
-              child: Text(opt),
+              child: Text(
+                _getLocalizedOption(opt),
+                style: const TextStyle(fontSize: 12),
+              ),
             );
           }).toList(),
         ),
       ),
     );
+  }
+
+  String _getLocalizedOption(String opt) {
+    switch (opt) {
+      case 'all': return _t('all');
+      case 'recorded': return _t('recorded');
+      case 'live': return _t('live');
+      case 'in_person': return _t('in_person');
+      case 'beginner': return _t('beginner');
+      case 'intermediate': return _t('intermediate');
+      case 'advanced': return _t('advanced');
+      default: return opt;
+    }
+  }
+
+  String _getTypeLabel(String key) {
+    switch (key) {
+      case 'recorded': return 'محملة';
+      case 'live': return 'بث مباشر';
+      case 'in_person': return 'حضورية';
+      default: return 'الكل';
+    }
+  }
+
+  String _getLevelLabel(String key) {
+    switch (key) {
+      case 'beginner': return 'مبتدئ';
+      case 'intermediate': return 'متوسط';
+      case 'advanced': return 'متقدم';
+      default: return 'الكل';
+    }
   }
 }

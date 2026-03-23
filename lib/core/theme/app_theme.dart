@@ -176,7 +176,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: const Color(0xFF13131D),
+      scaffoldBackgroundColor: AppColors.darkScaffold,
 
       fontFamily: 'Cairo',
       textTheme:
@@ -228,7 +228,7 @@ class AppTheme {
       // AppBar Theme
       appBarTheme: AppBarTheme(
         elevation: 2,
-        backgroundColor: const Color(0xFF1E1E2E),
+        backgroundColor: AppColors.darkCardSurface,
         foregroundColor: Colors.white,
         centerTitle: true,
         titleTextStyle: GoogleFonts.cairo(
@@ -244,14 +244,14 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        color: const Color(0xFF1E1E2E),
+        color: AppColors.darkCardSurface,
         shadowColor: Colors.black.withOpacity(0.3),
       ),
 
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF252535),
+        fillColor: AppColors.darkInputFill,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
@@ -296,7 +296,7 @@ class AppTheme {
 
       // Bottom Navigation Bar Theme
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: const Color(0xFF1E1E2E),
+        backgroundColor: AppColors.darkCardSurface,
         selectedItemColor: AppColors.primaryPurple,
         unselectedItemColor: Colors.white,
         selectedLabelStyle: GoogleFonts.cairo(
@@ -488,7 +488,7 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    const Color darkSurface = Color(0xFF1A1A2E);
+    const Color darkSurface = AppColors.darkBackground;
 
     return ThemeData(
       useMaterial3: true,
@@ -578,14 +578,14 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        color: const Color(0xFF1E1E2E).withOpacity(0.8),
+        color: AppColors.darkCardSurface.withOpacity(0.8),
         shadowColor: Colors.black.withOpacity(0.2),
       ),
 
       // Dialog Theme
       dialogTheme: DialogThemeData(
-        backgroundColor: const Color(0xFF1A1A2E),
-        surfaceTintColor: const Color(0xFF1A1A2E),
+        backgroundColor: AppColors.darkBackground,
+        surfaceTintColor: AppColors.darkBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         titleTextStyle: GoogleFonts.cairo(
           fontSize: 18,
@@ -601,7 +601,7 @@ class AppTheme {
       // Input Decoration Theme
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF2D2D44).withOpacity(0.8),
+        fillColor: AppColors.darkInputFillAlt.withOpacity(0.8),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),

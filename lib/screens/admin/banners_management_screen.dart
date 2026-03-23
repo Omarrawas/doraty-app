@@ -170,12 +170,25 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                   fontSize: 16,
                 ),
               ),
-              subtitle: Text(
-                'النوع: ${banner.type}',
-                style: TextStyle(
-                  color: AppColors.getTextColor(context).withOpacity(0.6),
-                  fontSize: 13,
-                ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'النوع: ${banner.type}',
+                    style: TextStyle(
+                      color: AppColors.getTextColor(context).withOpacity(0.6),
+                      fontSize: 13,
+                    ),
+                  ),
+                  Text(
+                    'المكان: ${banner.location == 'top' ? 'علوي' : 'سفلي'}',
+                    style: TextStyle(
+                      color: AppColors.primaryPurple.withOpacity(0.8),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -204,6 +217,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
     final linkUrlController = TextEditingController(text: banner?.linkUrl);
     final targetIdController = TextEditingController(text: banner?.targetId);
     String selectedType = banner?.type ?? 'ad';
+    String selectedLocation = banner?.location ?? 'top';
 
     await showDialog(
       context: context,
@@ -215,11 +229,39 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildDialogField('العنوان الرئيسي', titleController),
-                _buildDialogField('العنوان الفرعي / نص زر التفاعل (اختياري)', subtitleController),
+                // PREVIEW SECTION
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: Colors.white10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('معاينة الإعلان:', style: TextStyle(color: Colors.white60, fontSize: 12, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      _buildPreviewItem(
+                        BannerAd(
+                          id: '',
+                          title: titleController.text,
+                          subtitle: subtitleController.text,
+                          imageUrl: imageUrlController.text,
+                          type: selectedType,
+                          location: selectedLocation,
+                          createdAt: DateTime.now(),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                _buildDialogField('العنوان الرئيسي', titleController, (val) => setDialogState(() {})),
+                _buildDialogField('العنوان الفرعي / نص زر التفاعل (اختياري)', subtitleController, (val) => setDialogState(() {})),
                 Row(
                   children: [
-                    Expanded(child: _buildDialogField('رابط الصورة', imageUrlController)),
+                    Expanded(child: _buildDialogField('رابط الصورة', imageUrlController, (val) => setDialogState(() {}))),
                     IconButton(
                       icon: _isUploading 
                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
@@ -248,16 +290,71 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                   dropdownColor: AppColors.getSurfaceColor(context),
                   decoration: const InputDecoration(labelText: 'نوع الإعلان'),
                   items: ['ad', 'course', 'package', 'external'].map((type) {
-                    return DropdownMenuItem(value: type, child: Text(type));
+                    String label = type;
+                    if (type == 'ad') label = 'إعلان عام';
+                    if (type == 'course') label = 'كورس محدد';
+                    if (type == 'package') label = 'باقة / عرض';
+                    if (type == 'external') label = 'رابط خارجي';
+                    return DropdownMenuItem(value: type, child: Text(label));
                   }).toList(),
                   onChanged: (val) {
-                    if (val != null) setDialogState(() => selectedType = val);
+                    if (val != null) {
+                      setDialogState(() {
+                        selectedType = val;
+                        // Clear target if type changed
+                        if (selectedType != (banner?.type ?? '')) {
+                          targetIdController.clear();
+                        }
+                      });
+                    }
                   },
                 ),
-                if (selectedType == 'course' || selectedType == 'package')
-                  _buildDialogField('المعرف (Target ID)', targetIdController),
-                if (selectedType == 'external')
+                const SizedBox(height: 16),
+                if (selectedType == 'course')
+                  _buildTargetSelector(
+                    label: 'اختر الكورس',
+                    targetId: targetIdController.text,
+                    type: 'course',
+                    onSelected: (String id, String name, String? imageUrl) {
+                      setDialogState(() {
+                        targetIdController.text = id;
+                        if (imageUrlController.text.isEmpty && imageUrl != null) {
+                          imageUrlController.text = imageUrl;
+                        }
+                      });
+                    },
+                  )
+                else if (selectedType == 'package')
+                  _buildTargetSelector(
+                    label: 'اختر الباقة',
+                    targetId: targetIdController.text,
+                    type: 'package',
+                    onSelected: (String id, String name, String? imageUrl) {
+                      setDialogState(() {
+                        targetIdController.text = id;
+                        if (imageUrlController.text.isEmpty && imageUrl != null) {
+                          imageUrlController.text = imageUrl;
+                        }
+                      });
+                    },
+                  )
+                else if (selectedType == 'external')
                   _buildDialogField('رابط خارجي', linkUrlController),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedLocation,
+                  dropdownColor: AppColors.getSurfaceColor(context),
+                  decoration: const InputDecoration(labelText: 'مكان الظهور'),
+                  items: [
+                    {'value': 'top', 'label': 'رئيسي (أعلى)'},
+                    {'value': 'bottom', 'label': 'ثانوي (أسفل)'},
+                  ].map((loc) {
+                    return DropdownMenuItem(value: loc['value'], child: Text(loc['label']!));
+                  }).toList(),
+                  onChanged: (val) {
+                    if (val != null) setDialogState(() => selectedLocation = val);
+                  },
+                ),
               ],
             ),
           ),
@@ -277,6 +374,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                       subtitle: subtitleController.text,
                       imageUrl: imageUrlController.text,
                       type: selectedType,
+                      location: selectedLocation,
                       targetId: targetIdController.text.isEmpty ? null : targetIdController.text,
                       linkUrl: linkUrlController.text.isEmpty ? null : linkUrlController.text,
                     );
@@ -287,6 +385,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                       subtitle: subtitleController.text,
                       imageUrl: imageUrlController.text,
                       type: selectedType,
+                      location: selectedLocation,
                       targetId: targetIdController.text.isEmpty ? null : targetIdController.text,
                       linkUrl: linkUrlController.text.isEmpty ? null : linkUrlController.text,
                     );
@@ -311,16 +410,199 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
     );
   }
 
-  Widget _buildDialogField(String label, TextEditingController controller) {
+  Widget _buildDialogField(String label, TextEditingController controller, [Function(String)? onChanged]) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
         controller: controller,
+        onChanged: onChanged,
         decoration: InputDecoration(
           labelText: label,
           labelStyle: const TextStyle(color: Colors.white70),
           enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
+          focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primaryPurple)),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPreviewItem(BannerAd item) {
+    if (item.location == 'bottom') {
+      // Small landscape preview
+      String? buttonText = item.subtitle;
+      if ((buttonText == null || buttonText.isEmpty) && item.type == 'external') {
+        buttonText = 'زيارة الرابط';
+      }
+
+      return Container(
+        height: 120,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (item.imageUrl.isNotEmpty)
+                CachedNetworkImage(
+                  imageUrl: item.imageUrl,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Container(color: Colors.black12),
+                )
+              else
+                Container(color: Colors.black12, child: const Icon(Icons.image, color: Colors.white24)),
+              
+              if (buttonText != null && buttonText.isNotEmpty)
+                Positioned(
+                  bottom: 10,
+                  left: 10,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryPurple,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(buttonText, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      // Large Top-style preview
+      return Container(
+        height: 150,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: Stack(
+            children: [
+              if (item.imageUrl.isNotEmpty)
+                CachedNetworkImage(
+                  imageUrl: item.imageUrl,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, __, ___) => Container(color: Colors.black12),
+                )
+              else
+                Container(color: Colors.black12, height: double.infinity, width: double.infinity, child: const Icon(Icons.image, color: Colors.white24)),
+              
+              // Gradient for readability
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                  ),
+                ),
+              ),
+              
+              Positioned(
+                bottom: 10,
+                left: 10,
+                right: 10,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (item.subtitle != null && item.subtitle!.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryPurple.withOpacity(0.8),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(item.subtitle!, style: const TextStyle(color: Colors.white, fontSize: 8)),
+                      ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            item.title.isEmpty ? 'عنوان الإعلان' : item.title,
+                            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        if (item.type == 'external' || (item.subtitle != null && item.subtitle!.isNotEmpty))
+                          const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 16),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  Widget _buildTargetSelector({
+    required String label,
+    required String targetId,
+    required String type,
+    required Function(String id, String name, String? imageUrl) onSelected,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+        const SizedBox(height: 8),
+        InkWell(
+          onTap: () => _openSearchDialog(type, onSelected),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  type == 'course' ? Icons.school_rounded : Icons.inventory_2_rounded,
+                  color: AppColors.primaryPurple,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    targetId.isEmpty ? 'انقر للاختيار...' : 'مُعرّف: $targetId',
+                    style: TextStyle(
+                      color: targetId.isEmpty ? Colors.white30 : Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.search, color: Colors.white70, size: 20),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  void _openSearchDialog(String type, Function(String id, String name, String? imageUrl) onSelected) async {
+    showDialog(
+      context: context,
+      builder: (context) => _TargetSearchDialog(
+        type: type,
+        onSelected: (id, name, imageUrl) {
+          onSelected(id, name, imageUrl);
+          Navigator.pop(context);
+        },
       ),
     );
   }
@@ -391,5 +673,128 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
         );
       }
     }
+  }
+}
+
+class _TargetSearchDialog extends StatefulWidget {
+  final String type;
+  final Function(String id, String name, String? imageUrl) onSelected;
+
+  const _TargetSearchDialog({required this.type, required this.onSelected});
+
+  @override
+  State<_TargetSearchDialog> createState() => _TargetSearchDialogState();
+}
+
+class _TargetSearchDialogState extends State<_TargetSearchDialog> {
+  final TextEditingController _searchController = TextEditingController();
+  final DatabaseService _db = DatabaseService();
+  List<dynamic> _items = [];
+  List<dynamic> _filteredItems = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadItems();
+    _searchController.addListener(_filterItems);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadItems() async {
+    setState(() => _isLoading = true);
+    try {
+      if (widget.type == 'course') {
+        final data = await _db.getCourses(forceRefresh: true);
+        _items = data;
+      } else {
+        final data = await _db.getBundles(forceRefresh: true);
+        _items = data;
+      }
+      _filteredItems = _items;
+      if (mounted) setState(() => _isLoading = false);
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _filterItems() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredItems = _items.where((item) {
+        final title = item['title'].toString().toLowerCase();
+        final instructor = item['instructor_name']?.toString().toLowerCase() ?? '';
+        return title.contains(query) || instructor.contains(query);
+      }).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: const Color(0xFF1E1E2C),
+      title: Text(widget.type == 'course' ? 'اختر الكورس' : 'اختر الباقة'),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'بحث بالاسم أو اسم المعلم...',
+                hintStyle: const TextStyle(color: Colors.white30),
+                prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                filled: true,
+                fillColor: Colors.white.withOpacity(0.05),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              ),
+              style: const TextStyle(color: Colors.white),
+            ),
+            const SizedBox(height: 16),
+            if (_isLoading)
+              const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple))
+            else
+              Expanded(
+                child: _filteredItems.isEmpty
+                    ? const Center(child: Text('لا توجد نتائج', style: TextStyle(color: Colors.white30)))
+                    : ListView.builder(
+                        itemCount: _filteredItems.length,
+                        itemBuilder: (context, index) {
+                          final item = _filteredItems[index];
+                          return ListTile(
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: item['image_url'] != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: item['image_url'],
+                                      width: 40,
+                                      height: 40,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : Container(width: 40, height: 40, color: Colors.white10),
+                            ),
+                            title: Text(item['title'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 14)),
+                            subtitle: Text(
+                              item['instructor_name'] ?? (widget.type == 'package' ? 'باقة' : ''),
+                              style: const TextStyle(color: Colors.white54, fontSize: 12),
+                            ),
+                            onTap: () => widget.onSelected(item['id'], item['title'], item['image_url']),
+                          );
+                        },
+                      ),
+              ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق')),
+      ],
+    );
   }
 }

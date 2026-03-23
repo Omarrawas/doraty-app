@@ -181,7 +181,15 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   Future<void> _loadTeachers() async {
     try {
-      final teachers = await _db.getAllTeachers();
+      // Load all users to allow admin to pick any user as an instructor
+      final users = await _db.getAllUsers();
+      
+      // Transform users list to match the structure expected by the teacher picker
+      // The picker expects: List<Map<String, dynamic>> where each map has 'user_id' and 'users' map
+      final teachers = users.map((u) => {
+        'user_id': u['id'],
+        'users': u,
+      }).toList();
 
       // If editing, get the assigned teacher from teacher_courses
       if (widget.courseId != null) {
@@ -954,7 +962,15 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                       final teacher = filteredTeachers[teacherIndex];
                       final userData = teacher['users'] as Map<String, dynamic>;
                       final name =
-                          userData['full_name'] ?? userData['name'] ?? 'مدرس';
+                          userData['full_name'] ?? userData['name'] ?? 'مستخدم';
+                      final avatarUrl = userData['avatar_url'] as String?;
+                      
+                      // Get role display name
+                      final userRoles = userData['user_roles'] as List? ?? [];
+                      final roleName = userRoles.isNotEmpty
+                          ? (userRoles.first['roles']?['display_name'] ?? 'طالب')
+                          : 'طالب';
+                          
                       final isSelected =
                           _selectedTeacherId == teacher['user_id'];
 
@@ -962,11 +978,17 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                         leading: CircleAvatar(
                           backgroundColor:
                               AppColors.primaryPurple.withOpacity(0.2),
-                          child: const Icon(Icons.person,
-                              color: AppColors.primaryPurple),
+                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+                              ? NetworkImage(avatarUrl)
+                              : null,
+                          child: avatarUrl == null || avatarUrl.isEmpty
+                              ? const Icon(Icons.person, color: AppColors.primaryPurple)
+                              : null,
                         ),
-                          title: Text(name,
-                              style: TextStyle(color: AppColors.getTextColor(context))),
+                        title: Text(name,
+                            style: TextStyle(color: AppColors.getTextColor(context))),
+                        subtitle: Text(roleName, 
+                            style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 12)),
                         trailing: isSelected
                             ? const Icon(Icons.check_circle,
                                 color: Colors.greenAccent)
@@ -1148,6 +1170,16 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             .select('id')
             .single();
         courseId = response['id'];
+        
+        // Ensure assigned instructor has the teacher role if they are currently a student
+        if (_selectedTeacherId != null) {
+          final currentRole = await _db.getUserRole(_selectedTeacherId!);
+          if (currentRole == 'student') {
+            await _db.assignRole(_selectedTeacherId!, 'teacher');
+            debugPrint('✅ Automatically promoted instructor ${_selectedTeacherId} to teacher role');
+          }
+        }
+
         await _db.addCourseTags(courseId, _selectedTags);
         // Insert new category junction rows
         await _updateCourseCategories(courseId, _selectedCategoryIds);
@@ -1157,6 +1189,16 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             .from('courses')
             .update(courseData)
             .eq('id', courseId);
+
+        // Ensure assigned instructor has the teacher role if they are currently a student
+        if (_selectedTeacherId != null) {
+          final currentRole = await _db.getUserRole(_selectedTeacherId!);
+          if (currentRole == 'student') {
+            await _db.assignRole(_selectedTeacherId!, 'teacher');
+            debugPrint('✅ Automatically promoted instructor ${_selectedTeacherId} to teacher role');
+          }
+        }
+
         await _db.updateCourseTags(courseId, _selectedTags);
         // Replace category junction rows
         await _updateCourseCategories(courseId, _selectedCategoryIds);

@@ -35,87 +35,72 @@ import 'core/utils/url_strategy_noop.dart'
     if (dart.library.html) 'core/utils/url_strategy_web.dart';
 
 void main() {
+  // Use runZonedGuarded for production safety
   runZonedGuarded(() async {
-    // Use path URL strategy for clean URLs on web
+    // 1. Minimum possible setup to reach runApp quickly
+    WidgetsFlutterBinding.ensureInitialized();
     configureUrlStrategy();
     
-    WidgetsFlutterBinding.ensureInitialized();
-    
-    // Load environment variables
-    await dotenv.load(fileName: ".env");
+    // 2. Parallelize critical initializations
+    try {
+      await Future.wait([
+        dotenv.load(fileName: ".env"),
+        Hive.initFlutter(),
+      ]);
+      
+      // Initialize LocalDatabase (depends on Hive)
+      await LocalDatabase().init();
+      
+      // Initialize Settings (depends on shared_preferences)
+      await SettingsService().init();
+    } catch (e) {
+      debugPrint('🚨 [InitError] Critical initialization failed: $e');
+    }
 
-    // Global Flutter error handler
-    FlutterError.onError = (details) {
-      FlutterError.presentError(details);
-      debugPrint('🚨 [FlutterError] ${details.exception}\n${details.stack}');
-    };
-  // We initialize Hive first as it's a prerequisite for some adapters
-  await Hive.initFlutter();
-  // Initialize LocalDatabase first as it's a prerequisite for some services
-  await LocalDatabase().init();
+    // 3. Initialize Supabase with a timeout safeguard
+    const String ciUrl = String.fromEnvironment('SUPABASE_URL');
+    const String ciAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+    final String url = (ciUrl.isNotEmpty ? ciUrl : Env.supabaseUrl).trim();
+    final String anonKey = (ciAnonKey.isNotEmpty ? ciAnonKey : Env.supabaseAnonKey).trim();
 
-  final List<Future> remainingInitializations = [
-    SettingsService().init(),
-  ];
+    try {
+      await SupabaseService.initialize(
+        supabaseUrl: url,
+        supabaseAnonKey: anonKey,
+      ).timeout(const Duration(seconds: 10));
+      debugPrint('✅ Supabase initialized');
+    } catch (e) {
+      debugPrint('⚠️ Supabase Init failed or timed out: $e');
+    }
 
-  if (!kIsWeb) {
-  }
+    // 4. Background Services (Non-blocking)
+    SyncService().init(skipInitialSync: kIsWeb);
+    if (!kIsWeb) {
+      NotificationService().init();
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+    }
 
-
-  await Future.wait(remainingInitializations);
-
-  // Initialize Supabase
-  const String ciUrl = String.fromEnvironment('SUPABASE_URL');
-  const String ciAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-
-  final String url = (ciUrl.isNotEmpty ? ciUrl : Env.supabaseUrl).trim();
-  final String anonKey =
-      (ciAnonKey.isNotEmpty ? ciAnonKey : Env.supabaseAnonKey).trim();
-
-  try {
-    debugPrint('🔄 Initializing Supabase...');
-    await SupabaseService.initialize(
-      supabaseUrl: url,
-      supabaseAnonKey: anonKey,
+    // 5. Start the App
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ChangeNotifierProvider(create: (_) => LocaleProvider()),
+          ChangeNotifierProvider(create: (_) => AuthService()),
+          ChangeNotifierProvider(create: (_) => SyncService()),
+          ChangeNotifierProvider(create: (_) => NavigationProvider()),
+          ChangeNotifierProvider(create: (_) => CartProvider()),
+        ],
+        child: const MyApp(),
+      ),
     );
-    debugPrint('✅ Supabase initialized successfully');
-  } catch (e) {
-    debugPrint('⚠️ WARNING: Failed to initialize Supabase. The app will continue in OFFLINE mode.');
-    debugPrint('Error: $e');
-  }
-
-  // Initialize SyncService (Background) - AFTER Supabase
-  SyncService().init(skipInitialSync: kIsWeb);
-
-  // Initialize Notification Service - AFTER Supabase (Non-blocking)
-  if (!kIsWeb) {
-    NotificationService().init();
-  }
-
-  // Allow all orientations for video fullscreen
-  SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
-
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => LocaleProvider()),
-        ChangeNotifierProvider(create: (_) => AuthService()),
-        ChangeNotifierProvider(create: (_) => SyncService()),
-        ChangeNotifierProvider(create: (_) => NavigationProvider()),
-        ChangeNotifierProvider(create: (_) => CartProvider()),
-      ],
-      child: const MyApp(),
-    ),
-  );
   }, (error, stack) {
-    // Zone-level error catcher — catches async errors missed by FlutterError
-    debugPrint('🚨 [ZoneError] Unhandled: $error\n$stack');
+    debugPrint('🚨 [ZoneError] $error\n$stack');
   });
 }
 

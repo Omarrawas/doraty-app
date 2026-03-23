@@ -595,21 +595,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Color _getNotificationColor(NotificationCategory category) {
     switch (category) {
       case NotificationCategory.newLesson:
-        return const Color(0xFF4299E1);
+        return AppColors.notifLesson;
       case NotificationCategory.exam:
-        return const Color(0xFFEF5350);
+        return AppColors.notifExam;
       case NotificationCategory.reply:
-        return const Color(0xFF26A69A);
+        return AppColors.notifReply;
       case NotificationCategory.achievement:
-        return const Color(0xFFFFB74D);
+        return AppColors.notifAchievement;
       case NotificationCategory.announcement:
-        return const Color(0xFF7B2CBF);
+        return AppColors.notifAnnouncement;
       case NotificationCategory.promo:
-        return const Color(0xFFE91E63);
+        return AppColors.notifPromo;
       case NotificationCategory.system:
-        return const Color(0xFF607D8B);
+        return AppColors.notifSystem;
       default:
-        return const Color(0xFF9E9E9E);
+        return AppColors.notifDefault;
     }
   }
 

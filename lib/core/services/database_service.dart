@@ -467,6 +467,7 @@ class DatabaseService {
     String? subtitle,
     required String imageUrl,
     required String type,
+    String? location,
     String? targetId,
     String? linkUrl,
   }) async {
@@ -476,6 +477,7 @@ class DatabaseService {
         'subtitle': subtitle,
         'image_url': imageUrl,
         'type': type,
+        'location': location ?? 'top',
         'target_id': targetId,
         'link_url': linkUrl,
       });
@@ -492,6 +494,7 @@ class DatabaseService {
     String? subtitle,
     String? imageUrl,
     String? type,
+    String? location,
     String? targetId,
     String? linkUrl,
   }) async {
@@ -501,6 +504,7 @@ class DatabaseService {
       if (subtitle != null) updates['subtitle'] = subtitle;
       if (imageUrl != null) updates['image_url'] = imageUrl;
       if (type != null) updates['type'] = type;
+      if (location != null) updates['location'] = location;
       if (targetId != null) updates['target_id'] = targetId;
       if (linkUrl != null) updates['link_url'] = linkUrl;
 
@@ -2938,6 +2942,7 @@ class DatabaseService {
       if (userId == null) throw 'User ID is required';
 
       data['updated_at'] = DateTime.now().toUtc().toIso8601String();
+      data['status'] = 'approved';
 
       // Upsert into the unified users table
       await _client.from('users').upsert(data);
@@ -2998,7 +3003,8 @@ class DatabaseService {
       final response = await _client
           .from('users')
           .select()
-          .eq('status', 'pending');
+          .eq('status', 'pending')
+          .not('subscription_type', 'is', null);
       
       return SafeParser.safeMapList(response);
     } catch (e) {
@@ -3362,10 +3368,11 @@ class DatabaseService {
 
   // ==================== ADMIN DASHBOARD ====================
 
-  /// Get all users (Admin only)
   Future<List<Map<String, dynamic>>> getAllUsers() async {
     try {
-      final response = await _client.from('users').select('*');
+      final response = await _client
+          .from('users')
+          .select('*, user_roles(*, roles(*))');
       return SafeParser.safeMapList(response);
     } catch (e) {
       rethrow;
