@@ -9,7 +9,7 @@ import '../../core/theme/theme_provider.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class PaymentSettingsScreen extends StatefulWidget {
-  PaymentSettingsScreen({super.key});
+  const PaymentSettingsScreen({super.key});
 
   @override
   State<PaymentSettingsScreen> createState() => _PaymentSettingsScreenState();

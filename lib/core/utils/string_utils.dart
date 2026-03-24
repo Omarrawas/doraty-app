@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 /// String utility functions for the application.
 class StringUtils {
   /// Cleans a teacher's name by removing hardcoded titles like "Dr." or "د.".
@@ -13,5 +16,15 @@ class StringUtils {
     cleaned = cleaned.replaceAll(RegExp(r'\s+'), ' ');
 
     return cleaned;
+  }
+
+  /// Decodes a base64 string from a data: URI.
+  static Uint8List decodeBase64Image(String dataUri) {
+    try {
+      final String base64String = dataUri.split(',').last;
+      return base64Decode(base64String);
+    } catch (e) {
+      return Uint8List(0);
+    }
   }
 }

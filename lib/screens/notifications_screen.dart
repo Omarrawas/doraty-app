@@ -6,7 +6,7 @@ import '../models/app_notification.dart';
 import '../core/utils/error_utils.dart';
 
 class NotificationsScreen extends StatefulWidget {
-  NotificationsScreen({super.key});
+ const NotificationsScreen({super.key});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();

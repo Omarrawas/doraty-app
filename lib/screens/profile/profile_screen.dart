@@ -20,7 +20,7 @@ import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  ProfileScreen({super.key});
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();

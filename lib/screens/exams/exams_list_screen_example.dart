@@ -7,7 +7,7 @@ import 'exam_taking_screen.dart';
 import 'exam_result_screen.dart';
 
 class ExamsListScreen extends StatefulWidget {
-  ExamsListScreen({super.key});
+  const ExamsListScreen({super.key});
 
   @override
   State<ExamsListScreen> createState() => _ExamsListScreenState();

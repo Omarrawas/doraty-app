@@ -11,7 +11,7 @@ import 'package:doraty/core/constants/app_strings.dart';
 
 class SubjectsScreen extends StatefulWidget {
   final bool showBackButton;
-  SubjectsScreen({super.key, this.showBackButton = true});
+  const SubjectsScreen({super.key, this.showBackButton = true});
 
   @override
   State<SubjectsScreen> createState() => _SubjectsScreenState();

@@ -10,7 +10,7 @@ class BookmarksWidget extends StatefulWidget {
   final String lessonId;
   final YoutubePlayerController? youtubeController;
 
-  BookmarksWidget({
+  const BookmarksWidget({
     super.key,
     required this.lessonId,
     this.youtubeController,

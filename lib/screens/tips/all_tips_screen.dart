@@ -9,7 +9,7 @@ class AllTipsScreen extends StatefulWidget {
   final bool showAppBar;
   final bool isVisible;
   final bool showCloseButton;
-  AllTipsScreen({
+  const AllTipsScreen({
     super.key, 
     this.showAppBar = false,
     this.isVisible = true,

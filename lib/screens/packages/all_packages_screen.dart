@@ -9,7 +9,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/services/database_service.dart';
 
 class AllPackagesScreen extends StatefulWidget {
-  AllPackagesScreen({super.key});
+  const AllPackagesScreen({super.key});
 
   @override
   State<AllPackagesScreen> createState() => _AllPackagesScreenState();

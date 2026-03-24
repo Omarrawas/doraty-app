@@ -42,7 +42,7 @@ import 'package:url_launcher/url_launcher.dart'; // Added
 import 'package:lottie/lottie.dart';
 
 class HomeScreen extends StatefulWidget {
-  HomeScreen({super.key});
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -516,9 +516,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final Map<String, dynamic>? userData =
         usersRaw is Map ? SafeParser.safeMap(usersRaw) : null;
     final name = StringUtils.cleanTeacherName(
-        userData?['full_name'] ?? userData?['name'] ?? _t('teacher'));
-    final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'];
-    final specialization = userData?['specialization'] ?? '';
+        userData?['full_name'] ?? userData?['name'] ?? teacher['full_name'] ?? teacher['name'] ?? _t('teacher'));
+    final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'] ?? teacher['photo_url'] ?? teacher['avatar_url'];
+    final rawSubjects = userData?['subjects'] ?? teacher['subjects'] ?? teacher['specialization'];
+    String specialization = '';
+    if (rawSubjects is List) {
+      specialization = rawSubjects.join('، ');
+    } else if (rawSubjects is String) {
+      specialization = rawSubjects;
+    }
 
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 16),
@@ -565,21 +571,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: ClipOval(
                   child: avatarUrl != null && avatarUrl.toString().isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: avatarUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) =>
-                              ShimmerLoader.circular(height: 85, width: 85),
-                          errorWidget: (context, url, e) => Container(
-                            color: Colors.grey.shade900,
-                            child: Icon(Icons.person,
-                                color: AppColors.getTextColor(context).withOpacity(0.24), size: 40),
-                          ),
-                        )
+                      ? (avatarUrl.toString().startsWith('data:')
+                          ? Image.memory(
+                              StringUtils.decodeBase64Image(avatarUrl.toString()),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(
+                                color: Colors.grey.shade900,
+                                child: Icon(Icons.person,
+                                    color: AppColors.getTextColor(context)
+                                        .withOpacity(0.24),
+                                    size: 40),
+                              ),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: avatarUrl,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) =>
+                                  ShimmerLoader.circular(height: 85, width: 85),
+                              errorWidget: (context, url, e) => Container(
+                                color: Colors.grey.shade900,
+                                child: Icon(Icons.person,
+                                    color: AppColors.getTextColor(context)
+                                        .withOpacity(0.24),
+                                    size: 40),
+                              ),
+                            ))
                       : Container(
                           color: Colors.grey.shade900,
                           child: Icon(Icons.person,
-                              color: AppColors.getTextColor(context).withOpacity(0.24), size: 40),
+                              color: AppColors.getTextColor(context)
+                                  .withOpacity(0.24),
+                              size: 40),
                         ),
                 ),
               ),

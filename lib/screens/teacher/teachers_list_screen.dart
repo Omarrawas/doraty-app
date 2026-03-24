@@ -10,7 +10,7 @@ import 'teacher_profile_screen.dart';
 import '../../core/theme/app_colors.dart';
 
 class TeachersListScreen extends StatefulWidget {
-  TeachersListScreen({super.key});
+  const TeachersListScreen({super.key});
 
   @override
   State<TeachersListScreen> createState() => _TeachersListScreenState();
@@ -45,7 +45,14 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
       final Set<String> subjectsSet = {};
       for (var t in teachers) {
         final userData = t['users'] as Map<String, dynamic>?;
-        final subjects = userData?['subjects'] as List?;
+        final rawSubjects = userData?['subjects'] ?? t['subjects'] ?? t['specialization'];
+        List? subjects;
+        if (rawSubjects is List) {
+          subjects = rawSubjects;
+        } else if (rawSubjects is String && rawSubjects.isNotEmpty) {
+          subjects = rawSubjects.split(',').map((s) => s.trim()).toList();
+        }
+
         if (subjects != null) {
           for (var s in subjects) {
             if (s != null && s.toString().isNotEmpty) {
@@ -76,8 +83,14 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
     if (_selectedSubject != 'all') {
       results = results.where((t) {
         final userData = t['users'] as Map<String, dynamic>?;
-        final subjects = userData?['subjects'] as List?;
-        return subjects?.contains(_selectedSubject) ?? false;
+        final rawSubjects = userData?['subjects'] ?? t['subjects'] ?? t['specialization'];
+        List subjects = [];
+        if (rawSubjects is List) {
+          subjects = rawSubjects;
+        } else if (rawSubjects is String && rawSubjects.isNotEmpty) {
+          subjects = rawSubjects.split(',').map((s) => s.trim()).toList();
+        }
+        return subjects.contains(_selectedSubject);
       }).toList();
     }
 
@@ -85,10 +98,10 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
     if (_searchQuery.isNotEmpty) {
       results = results.where((t) {
         final userData = t['users'] as Map<String, dynamic>?;
-        final name = (userData?['full_name'] ?? userData?['name'] ?? '')
+        final name = (userData?['full_name'] ?? userData?['name'] ?? t['full_name'] ?? t['name'] ?? '')
             .toString()
             .toLowerCase();
-        final bio = (userData?['bio'] ?? '').toString().toLowerCase();
+        final bio = (userData?['bio'] ?? t['bio'] ?? '').toString().toLowerCase();
         return name.contains(_searchQuery.toLowerCase()) ||
             bio.contains(_searchQuery.toLowerCase());
       }).toList();
@@ -281,10 +294,17 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
   Widget _buildTeacherCard(Map<String, dynamic> teacher) {
     final userData = teacher['users'] as Map<String, dynamic>?;
     final name = StringUtils.cleanTeacherName(
-        userData?['full_name'] ?? userData?['name'] ?? _t('teacher'));
-    final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'];
-    final bio = userData?['bio'] as String?;
-    final subjects = (userData?['subjects'] as List?)?.cast<String>() ?? [];
+        userData?['full_name'] ?? userData?['name'] ?? teacher['full_name'] ?? teacher['name'] ?? _t('teacher'));
+    final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'] ?? teacher['photo_url'] ?? teacher['avatar_url'];
+    final bio = userData?['bio'] ?? teacher['bio'] as String?;
+    
+    final rawSubjects = userData?['subjects'] ?? teacher['subjects'] ?? teacher['specialization'];
+    List<String> subjects = [];
+    if (rawSubjects is List) {
+      subjects = rawSubjects.cast<String>();
+    } else if (rawSubjects is String && rawSubjects.isNotEmpty) {
+      subjects = rawSubjects.split(',').map((s) => s.trim()).toList();
+    }
 
     return GestureDetector(
       onTap: () {
@@ -329,14 +349,24 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
               ),
               child: ClipOval(
                 child: avatarUrl != null && avatarUrl.toString().isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: avatarUrl,
-                        fit: BoxFit.cover,
-                        errorWidget: (context, url, error) => Image.network(
-                          'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=random&color=fff',
-                          fit: BoxFit.cover,
-                        ),
-                      )
+                    ? (avatarUrl.toString().startsWith('data:')
+                        ? Image.memory(
+                            StringUtils.decodeBase64Image(avatarUrl.toString()),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Image.network(
+                              'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=random&color=fff',
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: avatarUrl,
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => Image.network(
+                              'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=random&color=fff',
+                              fit: BoxFit.cover,
+                            ),
+                          ))
                     : Image.network(
                         'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=random&color=fff',
                         fit: BoxFit.cover,

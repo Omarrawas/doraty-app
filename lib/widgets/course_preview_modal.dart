@@ -6,7 +6,7 @@ import '../../screens/courses/course_details_screen.dart';
 class CoursePreviewModal extends StatelessWidget {
   final Course course;
 
-  CoursePreviewModal({
+  const CoursePreviewModal({
     super.key,
     required this.course,
   });

@@ -14,7 +14,7 @@ class VideoPlayerControls extends StatefulWidget {
   final Lesson? lesson;
   final String courseTitle;
 
-  VideoPlayerControls({
+  const VideoPlayerControls({
     super.key,
     this.youtubeController,
     this.videoController,

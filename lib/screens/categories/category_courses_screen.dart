@@ -12,7 +12,7 @@ import '../../widgets/course_card.dart';
 class CategoryCoursesScreen extends StatefulWidget {
   final CategoryModel category;
 
-  CategoryCoursesScreen({super.key, required this.category});
+  const CategoryCoursesScreen({super.key, required this.category});
 
   @override
   State<CategoryCoursesScreen> createState() => _CategoryCoursesScreenState();

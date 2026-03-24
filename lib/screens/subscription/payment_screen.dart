@@ -13,7 +13,7 @@ class PaymentScreen extends StatefulWidget {
   final double amount;
   final String title;
 
-  PaymentScreen({
+  const PaymentScreen({
     super.key,
     this.course,
     required this.amount,

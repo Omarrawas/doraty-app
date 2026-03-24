@@ -14,7 +14,7 @@ class ExamTakingScreen extends StatefulWidget {
   final VoidCallback? onFinish;
   final VoidCallback? onNext;
 
-  ExamTakingScreen({
+  const ExamTakingScreen({
     super.key,
     required this.exam,
     VoidCallback? onFinish,

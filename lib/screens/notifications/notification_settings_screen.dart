@@ -4,7 +4,7 @@ import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
-  NotificationSettingsScreen({super.key});
+  const NotificationSettingsScreen({super.key});
 
   @override
   State<NotificationSettingsScreen> createState() =>

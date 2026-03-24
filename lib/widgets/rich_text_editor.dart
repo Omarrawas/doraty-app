@@ -13,7 +13,7 @@ class RichTextEditor extends StatefulWidget {
   final bool isCompact;
   final Color? textColor;
 
-  RichTextEditor({
+  const RichTextEditor({
     super.key,
     this.initialHtml,
     required this.onContentChanged,

@@ -17,7 +17,7 @@ class CourseEnrollmentsScreen extends StatefulWidget {
   final String courseId;
   final String courseTitle;
 
-  CourseEnrollmentsScreen({
+  const CourseEnrollmentsScreen({
     super.key,
     required this.courseId,
     required this.courseTitle,

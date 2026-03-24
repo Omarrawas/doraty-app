@@ -20,7 +20,7 @@ class CreateCourseScreen extends StatefulWidget {
 
   final String? preselectedInstructorId;
 
-  CreateCourseScreen({
+  const CreateCourseScreen({
     super.key,
     this.courseId,
     this.courseData,

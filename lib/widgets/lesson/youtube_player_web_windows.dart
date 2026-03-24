@@ -11,7 +11,7 @@ class YoutubePlayerWebWindows extends StatefulWidget {
   final String videoId;
   final double? height;
 
-  YoutubePlayerWebWindows({
+  const YoutubePlayerWebWindows({
     super.key,
     required this.videoId,
     this.height,

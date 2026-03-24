@@ -6,7 +6,7 @@ class MathSymbolToolbar extends StatelessWidget {
   final Function(String) onSymbolSelected;
   final ScrollController? scrollController;
 
-  MathSymbolToolbar({
+  const MathSymbolToolbar({
     super.key,
     required this.onSymbolSelected,
     this.scrollController,

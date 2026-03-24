@@ -4,7 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class TermsConditionsScreen extends StatelessWidget {
-  TermsConditionsScreen({super.key});
+  const TermsConditionsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

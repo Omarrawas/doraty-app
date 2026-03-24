@@ -5,7 +5,7 @@ class ImageViewerScreen extends StatefulWidget {
   final String url;
   final String title;
 
-  ImageViewerScreen({
+  const ImageViewerScreen({
     super.key,
     required this.url,
     required this.title,

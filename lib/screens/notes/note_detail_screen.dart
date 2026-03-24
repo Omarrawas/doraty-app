@@ -6,7 +6,7 @@ import '../../models/note.dart';
 class NoteDetailScreen extends StatefulWidget {
   final Note note;
 
-  NoteDetailScreen({
+  const NoteDetailScreen({
     super.key,
     required this.note,
   });

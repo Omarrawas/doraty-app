@@ -9,7 +9,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../widgets/empty_state.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
-  OrderHistoryScreen({super.key});
+  const OrderHistoryScreen({super.key});
 
   @override
   State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();

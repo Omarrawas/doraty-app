@@ -8,7 +8,7 @@ class TipPreviewCard extends StatefulWidget {
   final Tip tip;
   final VoidCallback onTap;
 
-  TipPreviewCard({
+  const TipPreviewCard({
     super.key,
     required this.tip,
     required this.onTap,

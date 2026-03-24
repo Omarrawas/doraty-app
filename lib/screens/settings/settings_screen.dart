@@ -15,7 +15,7 @@ import 'dart:ui' as ui;
 
 
 class SettingsScreen extends StatefulWidget {
-  SettingsScreen({super.key});
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();

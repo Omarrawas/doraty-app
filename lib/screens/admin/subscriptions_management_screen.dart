@@ -17,7 +17,7 @@ import 'course_enrollments_screen.dart';
 import 'teacher_enrollment_stats_screen.dart';
 
 class SubscriptionsManagementScreen extends StatefulWidget {
-  SubscriptionsManagementScreen({super.key});
+  const SubscriptionsManagementScreen({super.key});
 
   @override
   State<SubscriptionsManagementScreen> createState() =>

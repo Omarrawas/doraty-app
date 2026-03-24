@@ -14,7 +14,7 @@ import '../../core/utils/error_utils.dart';
 class CoursesListScreen extends StatefulWidget {
   final bool showBackButton;
 
-  CoursesListScreen({
+  const CoursesListScreen({
     super.key,
     this.showBackButton = true,
   });

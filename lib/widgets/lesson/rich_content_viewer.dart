@@ -9,7 +9,7 @@ class RichContentViewer extends StatelessWidget {
   final String? htmlContent;
   final String? markdownContent;
 
-  RichContentViewer({
+  const RichContentViewer({
     super.key,
     this.htmlContent,
     this.markdownContent,

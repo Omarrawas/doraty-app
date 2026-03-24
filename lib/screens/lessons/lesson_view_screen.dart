@@ -28,7 +28,7 @@ class LessonViewScreen extends StatefulWidget {
   final List<Lesson> allLessons;
   final String courseTitle;
 
-  LessonViewScreen({
+  const LessonViewScreen({
     super.key,
     required this.lesson,
     required this.allLessons,

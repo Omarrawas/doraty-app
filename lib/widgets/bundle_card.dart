@@ -11,7 +11,7 @@ class BundleCard extends StatefulWidget {
   final Bundle bundle;
   final String? heroTag;
 
-  BundleCard({
+  const BundleCard({
     super.key,
     required this.bundle,
     this.heroTag,
@@ -53,12 +53,14 @@ class _BundleCardState extends State<BundleCard>
       onTapUp: (_) => _controller.reverse(),
       onTapCancel: () => _controller.reverse(),
       onTap: () {
+        final bundleToPush = widget.bundle;
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => PackageScreen(
-              packageTitle: widget.bundle.title,
-              courses: widget.bundle.courses,
+              packageTitle: bundleToPush.title,
+              courses: bundleToPush.courses,
+              bundle: bundleToPush,
             ),
           ),
         );

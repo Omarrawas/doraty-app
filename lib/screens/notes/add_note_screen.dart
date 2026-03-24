@@ -10,7 +10,7 @@ class AddNoteScreen extends StatefulWidget {
   final String? courseId;
   final int? videoTimestamp;
 
-  AddNoteScreen({
+  const AddNoteScreen({
     super.key,
     this.lessonId,
     this.courseId,

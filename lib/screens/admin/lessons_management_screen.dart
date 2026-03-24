@@ -16,7 +16,7 @@ class LessonsManagementScreen extends StatefulWidget {
   final String courseId;
   final String courseTitle;
 
-  LessonsManagementScreen({
+  const LessonsManagementScreen({
     super.key,
     required this.courseId,
     required this.courseTitle,

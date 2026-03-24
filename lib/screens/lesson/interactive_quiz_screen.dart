@@ -10,7 +10,7 @@ class InteractiveQuizScreen extends StatefulWidget {
   final String title;
   final bool isHtml;
 
-  InteractiveQuizScreen({
+  const InteractiveQuizScreen({
     super.key,
     this.content,
     this.url,

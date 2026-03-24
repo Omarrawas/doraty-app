@@ -7,7 +7,7 @@ import 'exam_stats_screen.dart';
 class StudentsResultsScreen extends StatefulWidget {
   final String? examId;
 
-  StudentsResultsScreen({super.key, this.examId});
+  const StudentsResultsScreen({super.key, this.examId});
 
   @override
   State<StudentsResultsScreen> createState() => _StudentsResultsScreenState();

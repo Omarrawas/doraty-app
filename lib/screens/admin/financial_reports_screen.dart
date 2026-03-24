@@ -8,7 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 
 class FinancialReportsScreen extends StatefulWidget {
-  FinancialReportsScreen({super.key});
+  const FinancialReportsScreen({super.key});
 
   @override
   State<FinancialReportsScreen> createState() => _FinancialReportsScreenState();

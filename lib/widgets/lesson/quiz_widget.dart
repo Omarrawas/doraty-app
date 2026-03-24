@@ -8,7 +8,7 @@ class QuizWidget extends StatefulWidget {
   final String title;
   final VoidCallback? onComplete;
 
-  QuizWidget({
+  const QuizWidget({
     super.key,
     required this.questions,
     required this.title,

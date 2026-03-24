@@ -11,7 +11,7 @@ import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
 
 class SearchScreen extends StatefulWidget {
-  SearchScreen({super.key});
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();

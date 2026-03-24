@@ -9,7 +9,7 @@ class CategoryCard extends StatelessWidget {
   final bool isSelected;
   final EdgeInsetsGeometry? margin;
 
-  CategoryCard({
+  const CategoryCard({
     super.key,
     required this.category,
     required this.onTap,

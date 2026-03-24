@@ -17,7 +17,7 @@ class CourseCard extends StatefulWidget {
   final String? heroTag;
   final double? progress;
 
-  CourseCard({
+  const CourseCard({
     super.key,
     required this.course,
     this.heroTag,
@@ -140,12 +140,14 @@ class _CourseCardState extends State<CourseCard>
             onTapUp: (_) => _controller.reverse(),
             onTapCancel: () => _controller.reverse(),
             onTap: () {
+              final courseToPush = widget.course;
+              final heroTagToPush = widget.heroTag;
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => CourseDetailsScreen(
-                    course: widget.course,
-                    heroTag: widget.heroTag,
+                    course: courseToPush,
+                    heroTag: heroTagToPush,
                   ),
                 ),
               );

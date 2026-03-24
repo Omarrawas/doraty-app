@@ -15,7 +15,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/error_utils.dart';
 
 class QrManagementScreen extends StatefulWidget {
-  QrManagementScreen({super.key});
+  const QrManagementScreen({super.key});
 
   @override
   State<QrManagementScreen> createState() => _QrManagementScreenState();
@@ -890,7 +890,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
 
 // Dialog for creating bulk QR codes (unchanged from previous version)
 class CreateQrBulkDialog extends StatefulWidget {
-  CreateQrBulkDialog({super.key});
+  const CreateQrBulkDialog({super.key});
 
   @override
   State<CreateQrBulkDialog> createState() => _CreateQrBulkDialogState();

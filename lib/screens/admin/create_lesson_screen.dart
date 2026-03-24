@@ -23,7 +23,7 @@ class CreateLessonScreen extends StatefulWidget {
   final String? lessonId;
   final Map<String, dynamic>? lessonData;
 
-  CreateLessonScreen({
+  const CreateLessonScreen({
     super.key,
     required this.courseId,
     this.lessonId,

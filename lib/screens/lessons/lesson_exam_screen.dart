@@ -7,7 +7,7 @@ class LessonExamScreen extends StatelessWidget {
   final InteractiveElement quizElement;
   final String lessonTitle;
 
-  LessonExamScreen({
+  const LessonExamScreen({
     super.key,
     required this.quizElement,
     required this.lessonTitle,

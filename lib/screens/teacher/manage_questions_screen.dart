@@ -15,7 +15,7 @@ class ManageQuestionsScreen extends StatefulWidget {
   final String examId;
   final String examTitle;
 
-  ManageQuestionsScreen({
+  const ManageQuestionsScreen({
     super.key,
     required this.examId,
     required this.examTitle,

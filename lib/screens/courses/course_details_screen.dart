@@ -29,7 +29,7 @@ class CourseDetailsScreen extends StatefulWidget {
 
   final String? heroTag;
 
-  CourseDetailsScreen({
+  const CourseDetailsScreen({
     super.key,
     required this.course,
     this.heroTag,
@@ -345,8 +345,12 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           onPressed: _toggleFavorite,
         ),
         IconButton(
-          icon: Icon(Icons.dark_mode_rounded,
-              color: AppColors.getTextColor(context), size: 22),
+          icon: Icon(
+              Provider.of<ThemeProvider>(context).isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              color: AppColors.getTextColor(context),
+              size: 22),
           onPressed: () {
             Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
           },

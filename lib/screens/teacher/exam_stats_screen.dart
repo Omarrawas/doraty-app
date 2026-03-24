@@ -11,7 +11,7 @@ class ExamStatsScreen extends StatefulWidget {
   final String examId;
   final String examTitle;
 
-  ExamStatsScreen({
+  const ExamStatsScreen({
     super.key,
     required this.examId,
     required this.examTitle,

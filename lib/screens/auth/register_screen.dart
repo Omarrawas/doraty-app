@@ -16,7 +16,7 @@ import '../../main.dart';
 class RegisterScreen extends StatefulWidget {
   final bool isCompletingProfile;
   final String? initialRole;
-  RegisterScreen({super.key, this.isCompletingProfile = false, this.initialRole});
+  const RegisterScreen({super.key, this.isCompletingProfile = false, this.initialRole});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();

@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
-  SplashScreen({super.key});
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();

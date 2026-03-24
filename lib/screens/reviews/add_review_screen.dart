@@ -9,7 +9,7 @@ class AddReviewScreen extends StatefulWidget {
   final String courseId;
   final String courseName;
 
-  AddReviewScreen({
+  const AddReviewScreen({
     super.key,
     required this.courseId,
     required this.courseName,

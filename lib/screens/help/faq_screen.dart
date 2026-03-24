@@ -7,7 +7,7 @@ import '../../core/theme/theme_provider.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class FAQScreen extends StatefulWidget {
-  FAQScreen({super.key});
+  const FAQScreen({super.key});
 
   @override
   State<FAQScreen> createState() => _FAQScreenState();

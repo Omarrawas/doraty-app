@@ -10,7 +10,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/error_utils.dart';
 
 class CategoriesManagementScreen extends StatefulWidget {
-  CategoriesManagementScreen({super.key});
+  const CategoriesManagementScreen({super.key});
 
   @override
   State<CategoriesManagementScreen> createState() => _CategoriesManagementScreenState();

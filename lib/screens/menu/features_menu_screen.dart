@@ -7,7 +7,7 @@ import '../tips/all_tips_screen.dart';
 import '../categories/subjects_screen.dart';
 
 class FeaturesMenuScreen extends StatelessWidget {
-  FeaturesMenuScreen({super.key});
+  const FeaturesMenuScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

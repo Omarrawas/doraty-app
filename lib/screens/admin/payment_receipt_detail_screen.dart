@@ -11,7 +11,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 class PaymentReceiptDetailScreen extends StatefulWidget {
   final String receiptId;
 
-  PaymentReceiptDetailScreen({
+  const PaymentReceiptDetailScreen({
     super.key,
     required this.receiptId,
   });

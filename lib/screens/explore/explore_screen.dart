@@ -15,7 +15,7 @@ import '../../core/providers/navigation_provider.dart';
 class ExploreScreen extends StatefulWidget {
   final String? initialFilter;
   final bool showBackButton;
-  ExploreScreen(
+  const ExploreScreen(
       {super.key, this.initialFilter, this.showBackButton = false});
 
   @override

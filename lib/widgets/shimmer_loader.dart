@@ -51,7 +51,7 @@ class ShimmerLoader extends StatelessWidget {
 }
 
 class CourseCardShimmer extends StatelessWidget {
-  CourseCardShimmer({super.key});
+  const CourseCardShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {

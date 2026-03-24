@@ -6,7 +6,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'create_tip_screen.dart';
 
 class TipsManagementScreen extends StatefulWidget {
-  TipsManagementScreen({super.key});
+  const TipsManagementScreen({super.key});
 
   @override
   State<TipsManagementScreen> createState() => _TipsManagementScreenState();

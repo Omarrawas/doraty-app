@@ -12,7 +12,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/services/image_upload_service.dart'; // Added
 
 class BannersManagementScreen extends StatefulWidget {
-  BannersManagementScreen({super.key});
+  const BannersManagementScreen({super.key});
 
   @override
   State<BannersManagementScreen> createState() => _BannersManagementScreenState();

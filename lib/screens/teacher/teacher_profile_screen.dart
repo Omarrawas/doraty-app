@@ -14,7 +14,7 @@ class TeacherProfileScreen extends StatefulWidget {
   final String? teacherPhoto;
   final String? bio;
 
-  TeacherProfileScreen({
+  const TeacherProfileScreen({
     super.key,
     required this.teacherId,
     required this.teacherName,
@@ -208,14 +208,25 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
             ),
             child: ClipOval(
               child: _teacherPhoto != null && _teacherPhoto!.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: _teacherPhoto!,
-                      fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(color: AppColors.getTextColor(context).withOpacity(0.10)),
-                      errorWidget: (context, url, error) => Image.network(
-                        'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_teacherName)}&background=random&color=fff&size=200',
-                      ),
-                    )
+                  ? (_teacherPhoto!.startsWith('data:')
+                      ? Image.memory(
+                          StringUtils.decodeBase64Image(_teacherPhoto!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Image.network(
+                            'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_teacherName)}&background=random&color=fff&size=200',
+                          ),
+                        )
+                      : CachedNetworkImage(
+                          imageUrl: _teacherPhoto!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                              color: AppColors.getTextColor(context)
+                                  .withOpacity(0.10)),
+                          errorWidget: (context, url, error) => Image.network(
+                            'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_teacherName)}&background=random&color=fff&size=200',
+                          ),
+                        ))
                   : Image.network(
                       'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_teacherName)}&background=random&color=fff&size=200',
                     ),

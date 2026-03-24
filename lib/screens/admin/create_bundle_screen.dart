@@ -9,7 +9,7 @@ import '../../core/services/image_upload_service.dart';
 
 class CreateBundleScreen extends StatefulWidget {
   final Bundle? bundle;
-  CreateBundleScreen({super.key, this.bundle});
+  const CreateBundleScreen({super.key, this.bundle});
 
   @override
   State<CreateBundleScreen> createState() => _CreateBundleScreenState();

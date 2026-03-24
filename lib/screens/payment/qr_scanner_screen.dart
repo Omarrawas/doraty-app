@@ -5,7 +5,7 @@ import '../../core/utils/error_utils.dart';
 import '../../core/services/database_service.dart';
 
 class QrScannerScreen extends StatefulWidget {
-  QrScannerScreen({super.key});
+  const QrScannerScreen({super.key});
 
   @override
   State<QrScannerScreen> createState() => _QrScannerScreenState();
@@ -189,7 +189,7 @@ class QrScannerOverlayShape extends ShapeBorder {
   final double borderLength;
   final double cutOutSize;
 
-  QrScannerOverlayShape({
+  const QrScannerOverlayShape({
     this.borderColor = Colors.red,
     this.borderWidth = 10.0,
     this.overlayColor = const Color.fromRGBO(0, 0, 0, 80),

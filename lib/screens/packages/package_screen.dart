@@ -17,7 +17,7 @@ class PackageScreen extends StatefulWidget {
   final List<Course> courses;
   final Bundle? bundle;
 
-  PackageScreen({
+  const PackageScreen({
     super.key,
     required this.packageTitle,
     required this.courses,

@@ -12,7 +12,7 @@ import '../../core/constants/app_strings.dart';
 import 'courses_management_screen.dart';
 
 class TeachersManagementScreen extends StatefulWidget {
-  TeachersManagementScreen({super.key});
+  const TeachersManagementScreen({super.key});
 
   @override
   State<TeachersManagementScreen> createState() =>

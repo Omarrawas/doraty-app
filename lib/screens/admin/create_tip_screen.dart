@@ -11,7 +11,7 @@ import 'dart:io';
 
 class CreateTipScreen extends StatefulWidget {
   final Tip? tip;
-  CreateTipScreen({super.key, this.tip});
+  const CreateTipScreen({super.key, this.tip});
 
   @override
   State<CreateTipScreen> createState() => _CreateTipScreenState();

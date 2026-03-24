@@ -7,7 +7,7 @@ class CategoryChip extends StatelessWidget {
   final VoidCallback onTap;
   final IconData? icon;
 
-  CategoryChip({
+  const CategoryChip({
     super.key,
     required this.label,
     required this.isSelected,

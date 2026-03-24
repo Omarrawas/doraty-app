@@ -14,7 +14,7 @@ class AdminExamsManagementScreen extends StatefulWidget {
   final String courseId;
   final String courseTitle;
 
-  AdminExamsManagementScreen({
+  const AdminExamsManagementScreen({
     super.key,
     required this.courseId,
     required this.courseTitle,

@@ -14,7 +14,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
-  TeacherDashboardScreen({super.key});
+  const TeacherDashboardScreen({super.key});
 
   @override
   State<TeacherDashboardScreen> createState() => _TeacherDashboardScreenState();

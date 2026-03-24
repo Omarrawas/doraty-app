@@ -5,7 +5,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'dart:ui';
 
 class AnalyticsScreen extends StatefulWidget {
-  AnalyticsScreen({super.key});
+  const AnalyticsScreen({super.key});
 
   @override
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();

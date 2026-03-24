@@ -11,7 +11,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/safe_parser.dart';
 
 class NotificationsManagementScreen extends StatefulWidget {
-  NotificationsManagementScreen({super.key});
+  const NotificationsManagementScreen({super.key});
 
   @override
   State<NotificationsManagementScreen> createState() =>

@@ -8,7 +8,7 @@ class ProfessionalEmptyState extends StatelessWidget {
   final VoidCallback? onRetry;
   final String? retryText;
 
-  ProfessionalEmptyState({
+  const ProfessionalEmptyState({
     super.key,
     required this.title,
     required this.message,

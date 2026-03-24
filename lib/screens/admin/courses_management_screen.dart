@@ -16,7 +16,7 @@ import '../../core/localization/locale_provider.dart';
 class CoursesManagementScreen extends StatefulWidget {
   final String? instructorId; // Added
 
-  CoursesManagementScreen({super.key, this.instructorId});
+  const CoursesManagementScreen({super.key, this.instructorId});
 
   @override
   State<CoursesManagementScreen> createState() =>

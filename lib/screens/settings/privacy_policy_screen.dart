@@ -4,7 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class PrivacyPolicyScreen extends StatelessWidget {
-  PrivacyPolicyScreen({super.key});
+  const PrivacyPolicyScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

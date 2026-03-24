@@ -19,7 +19,7 @@ class TeacherEnrollmentStatsScreen extends StatefulWidget {
   final String teacherName;
   final String? avatarUrl;
 
-  TeacherEnrollmentStatsScreen({
+  const TeacherEnrollmentStatsScreen({
     super.key,
     required this.teacherId,
     required this.teacherName,

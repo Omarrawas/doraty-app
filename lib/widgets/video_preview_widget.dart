@@ -11,12 +11,12 @@ class VideoPreviewWidget extends StatefulWidget {
   final bool showHeader;
   final String? thumbnailUrl; // ← تمت الإضافة
 
-  VideoPreviewWidget({
+  const VideoPreviewWidget({
     super.key,
     required this.videoUrl,
     this.showHeader = true,
     this.thumbnailUrl,
-    this.onDurationFetched, // Added callback
+    this.onDurationFetched,
   });
   
   final Function(Duration)? onDurationFetched; // Added property

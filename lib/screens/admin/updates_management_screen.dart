@@ -8,7 +8,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class UpdatesManagementScreen extends StatefulWidget {
-  UpdatesManagementScreen({super.key});
+  const UpdatesManagementScreen({super.key});
 
   @override
   State<UpdatesManagementScreen> createState() => _UpdatesManagementScreenState();

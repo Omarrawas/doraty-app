@@ -15,7 +15,7 @@ class VerticalTipPlayer extends StatefulWidget {
   final bool isVisible;
   final bool showCloseButton;
 
-  VerticalTipPlayer({
+  const VerticalTipPlayer({
     super.key,
     required this.tips,
     this.initialIndex = 0,
@@ -137,7 +137,7 @@ class TipPlayerItem extends StatefulWidget {
   final bool isVisible;
   final VoidCallback onVideoEnded;
 
-  TipPlayerItem({
+  const TipPlayerItem({
     super.key,
     required this.tip,
     required this.isActive,

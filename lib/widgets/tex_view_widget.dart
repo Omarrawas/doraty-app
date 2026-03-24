@@ -8,7 +8,7 @@ class TexViewWidget extends StatelessWidget {
   final TextStyle? style;
   final bool isTitle;
 
-  TexViewWidget(
+  const TexViewWidget(
     this.content, {
     super.key,
     this.style,

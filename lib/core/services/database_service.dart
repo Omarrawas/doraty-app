@@ -33,11 +33,10 @@ class DatabaseService {
   String? _formatAvatarUrl(String? avatarUrl, {String? userId}) {
     if (avatarUrl == null || avatarUrl.isEmpty) return null;
 
-    // If it's already a full URL, return it
-    if (avatarUrl.startsWith('http')) return avatarUrl;
+    // If it's already a full URL or a data URI, return it
+    if (avatarUrl.startsWith('http') || avatarUrl.startsWith('data:')) return avatarUrl;
 
     // If it's a relative path, assume it's in the old Supabase storage 'avatars' bucket
-    // Format: user_id/filename.jpg
     final baseUrl =
         'https://cstlqyjoflhxtocrtypg.supabase.co/storage/v1/object/public/avatars/';
     return '$baseUrl$avatarUrl';

@@ -32,3 +32,10 @@
 -keepclasseswithmembernames class * {
     native <methods>;
 }
+
+# Flutter Play Store Split / Deferred Components (Resolves R8 Missing Class errors)
+-dontwarn com.google.android.play.core.**
+-keep class com.google.android.play.core.** { *; }
+-dontwarn io.flutter.embedding.engine.deferredcomponents.**
+-keep class io.flutter.embedding.engine.deferredcomponents.** { *; }
+

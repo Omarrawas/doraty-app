@@ -20,7 +20,7 @@ import '../../help/faq_screen.dart';
 class HomeDrawer extends StatelessWidget {
   final List<CategoryModel> categories;
 
-  HomeDrawer({
+  const HomeDrawer({
     super.key,
     required this.categories,
   });

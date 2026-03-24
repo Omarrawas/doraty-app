@@ -11,7 +11,7 @@ import '../../core/utils/error_utils.dart';
 import 'create_bundle_screen.dart';
 
 class BundlesManagementScreen extends StatefulWidget {
-  BundlesManagementScreen({super.key});
+  const BundlesManagementScreen({super.key});
 
   @override
   State<BundlesManagementScreen> createState() => _BundlesManagementScreenState();

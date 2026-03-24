@@ -13,7 +13,7 @@ import '../core/services/sync_service.dart';
 /// ])
 /// ```
 class OfflineBanner extends StatefulWidget {
-  OfflineBanner({super.key});
+ const OfflineBanner({super.key});
 
   @override
   State<OfflineBanner> createState() => _OfflineBannerState();

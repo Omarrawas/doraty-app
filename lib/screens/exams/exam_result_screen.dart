@@ -12,7 +12,7 @@ class ExamResultScreen extends StatefulWidget {
   final VoidCallback? onFinish;
   final VoidCallback? onNext;
 
-  ExamResultScreen({
+  const ExamResultScreen({
     super.key,
     required this.exam,
     this.userAnswers,

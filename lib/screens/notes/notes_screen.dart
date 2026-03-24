@@ -6,7 +6,7 @@ import 'add_note_screen.dart';
 import 'note_detail_screen.dart';
 
 class NotesScreen extends StatefulWidget {
-  NotesScreen({super.key});
+  const NotesScreen({super.key});
 
   @override
   State<NotesScreen> createState() => _NotesScreenState();

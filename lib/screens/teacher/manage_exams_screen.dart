@@ -7,7 +7,7 @@ import 'create_exam_screen.dart';
 import 'manage_questions_screen.dart';
 
 class ManageExamsScreen extends StatefulWidget {
-  ManageExamsScreen({super.key});
+  const ManageExamsScreen({super.key});
 
   @override
   State<ManageExamsScreen> createState() => _ManageExamsScreenState();

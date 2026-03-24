@@ -14,7 +14,7 @@ import '../../core/utils/error_utils.dart';
 import '../../main.dart';
 
 class LoginScreen extends StatefulWidget {
-  LoginScreen({super.key});
+  const LoginScreen({super.key});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();

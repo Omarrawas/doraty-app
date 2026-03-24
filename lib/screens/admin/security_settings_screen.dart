@@ -4,7 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
-  SecuritySettingsScreen({super.key});
+  const SecuritySettingsScreen({super.key});
 
   @override
   State<SecuritySettingsScreen> createState() => _SecuritySettingsScreenState();

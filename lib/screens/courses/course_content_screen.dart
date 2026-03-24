@@ -21,7 +21,7 @@ class CourseContentScreen extends StatefulWidget {
   final List<Chapter> chapters;
   final bool isEnrolled;
 
-  CourseContentScreen({
+  const CourseContentScreen({
     super.key,
     required this.course,
     required this.lessonsData,

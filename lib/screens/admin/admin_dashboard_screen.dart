@@ -24,7 +24,7 @@ import 'banners_management_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
-  AdminDashboardScreen({super.key});
+  const AdminDashboardScreen({super.key});
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
@@ -466,7 +466,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => UsersManagementScreen())),
+                  builder: (context) => const UsersManagementScreen())),
         },
         {
           'icon': Icons.category_rounded,
@@ -476,7 +476,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => CategoriesManagementScreen())),
+                  builder: (context) => const CategoriesManagementScreen())),
         },
         {
           'icon': Icons.school_rounded,
@@ -486,7 +486,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => TeachersManagementScreen())),
+                  builder: (context) => const TeachersManagementScreen())),
         },
         {
           'icon': Icons.collections_bookmark_rounded,
@@ -496,7 +496,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => BundlesManagementScreen())),
+                  builder: (context) => const BundlesManagementScreen())),
         },
         {
           'icon': Icons.lightbulb_rounded,
@@ -506,7 +506,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => TipsManagementScreen())),
+                  builder: (context) => const TipsManagementScreen())),
         },
         {
           'icon': Icons.view_carousel_rounded,
@@ -516,7 +516,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => BannersManagementScreen())),
+                  builder: (context) => const BannersManagementScreen())),
         },
       ],
       {
@@ -539,7 +539,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => SubscriptionsManagementScreen())),
+                  builder: (context) => const SubscriptionsManagementScreen())),
         },
         {
           'icon': Icons.receipt_long_rounded,
@@ -549,7 +549,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => PaymentReceiptsScreen())),
+                  builder: (context) => const PaymentReceiptsScreen())),
         },
         {
           'icon': Icons.account_balance_wallet_rounded,
@@ -559,7 +559,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => PaymentSettingsScreen())),
+                  builder: (context) => const PaymentSettingsScreen())),
         },
         {
           'icon': Icons.notifications_active_rounded,
@@ -569,7 +569,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => NotificationsManagementScreen())),
+                  builder: (context) => const NotificationsManagementScreen())),
         },
         {
           'icon': Icons.qr_code_2_rounded,
@@ -579,7 +579,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => QrManagementScreen())),
+                  builder: (context) => const QrManagementScreen())),
         },
         if (_userRole == 'super_admin')
           {
@@ -590,7 +590,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             'onTap': () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => UpdatesManagementScreen())),
+                    builder: (context) => const UpdatesManagementScreen())),
           },
         {
           'icon': Icons.security,
@@ -600,7 +600,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => SecuritySettingsScreen())),
+                  builder: (context) => const SecuritySettingsScreen())),
         },
       ],
     ];

@@ -18,7 +18,7 @@ class AddQuestionScreen extends StatefulWidget {
   final Map<String, dynamic>? questionData;
   final int orderIndex;
 
-  AddQuestionScreen({
+  const AddQuestionScreen({
     super.key,
     required this.examId,
     this.questionId,

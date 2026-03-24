@@ -9,7 +9,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TeacherRequestsScreen extends StatefulWidget {
-  TeacherRequestsScreen({super.key});
+  const TeacherRequestsScreen({super.key});
 
   @override
   State<TeacherRequestsScreen> createState() => _TeacherRequestsScreenState();

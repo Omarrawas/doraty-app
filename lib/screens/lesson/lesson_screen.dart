@@ -37,7 +37,7 @@ class LessonScreen extends StatefulWidget {
   final String courseTitle;
   final bool isEnrolled;
 
-  LessonScreen({
+  const LessonScreen({
     super.key,
     required this.lesson,
     this.allLessons = const [],

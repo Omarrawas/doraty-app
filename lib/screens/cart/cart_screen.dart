@@ -9,7 +9,7 @@ import '../subscription/payment_screen.dart';
 import '../../models/bundle.dart';
 
 class CartScreen extends StatelessWidget {
-  CartScreen({super.key});
+  const CartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

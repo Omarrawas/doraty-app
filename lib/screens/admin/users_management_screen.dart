@@ -10,7 +10,7 @@ import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class UsersManagementScreen extends StatefulWidget {
-  UsersManagementScreen({super.key});
+  const UsersManagementScreen({super.key});
 
   @override
   State<UsersManagementScreen> createState() => _UsersManagementScreenState();

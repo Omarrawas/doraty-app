@@ -8,7 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 class DiscussionsTab extends StatefulWidget {
   final String courseId;
 
-  DiscussionsTab({super.key, required this.courseId});
+  const DiscussionsTab({super.key, required this.courseId});
 
   @override
   State<DiscussionsTab> createState() => _DiscussionsTabState();

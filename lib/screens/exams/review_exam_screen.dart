@@ -8,7 +8,7 @@ import '../../core/utils/safe_parser.dart';
 class ReviewExamScreen extends StatefulWidget {
   final String attemptId;
 
-  ReviewExamScreen({super.key, required this.attemptId});
+  const ReviewExamScreen({super.key, required this.attemptId});
 
   @override
   State<ReviewExamScreen> createState() => _ReviewExamScreenState();

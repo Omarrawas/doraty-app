@@ -15,7 +15,7 @@ class CreateExamScreen extends StatefulWidget {
   final String? lessonId; // Added lessonId
   final bool loadAllCourses;
 
-  CreateExamScreen({
+  const CreateExamScreen({
     super.key,
     this.examId,
     this.examData,

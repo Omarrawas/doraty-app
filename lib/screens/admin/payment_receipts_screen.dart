@@ -10,7 +10,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'payment_receipt_detail_screen.dart';
 
 class PaymentReceiptsScreen extends StatefulWidget {
-  PaymentReceiptsScreen({super.key});
+  const PaymentReceiptsScreen({super.key});
 
   @override
   State<PaymentReceiptsScreen> createState() => _PaymentReceiptsScreenState();
