@@ -6,7 +6,7 @@ import 'add_note_screen.dart';
 import 'note_detail_screen.dart';
 
 class NotesScreen extends StatefulWidget {
-  const NotesScreen({super.key});
+  NotesScreen({super.key});
 
   @override
   State<NotesScreen> createState() => _NotesScreenState();
@@ -32,8 +32,8 @@ class _NotesScreenState extends State<NotesScreen> {
         lessonId: '1',
         title: 'قوانين نيوتن للحركة',
         content: 'القانون الأول: الجسم الساكن يبقى ساكناً والجسم المتحرك يبقى متحركاً بسرعة ثابتة ما لم تؤثر عليه قوة خارجية.',
-        createdAt: DateTime.now().subtract(const Duration(days: 2)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 2)),
+        createdAt: DateTime.now().subtract(Duration(days: 2)),
+        updatedAt: DateTime.now().subtract(Duration(days: 2)),
         tags: ['فيزياء', 'حركة'],
         isPinned: true,
         videoTimestamp: 125,
@@ -44,8 +44,8 @@ class _NotesScreenState extends State<NotesScreen> {
         courseId: '2',
         title: 'المعادلات التربيعية',
         content: 'الصيغة العامة: ax² + bx + c = 0\nالحل: x = (-b ± √(b²-4ac)) / 2a',
-        createdAt: DateTime.now().subtract(const Duration(days: 5)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 3)),
+        createdAt: DateTime.now().subtract(Duration(days: 5)),
+        updatedAt: DateTime.now().subtract(Duration(days: 3)),
         tags: ['رياضيات', 'معادلات'],
         isPinned: false,
       ),
@@ -56,8 +56,8 @@ class _NotesScreenState extends State<NotesScreen> {
         lessonId: '3',
         title: 'الجدول الدوري',
         content: 'العناصر مرتبة حسب العدد الذري. المجموعات الرأسية لها خصائص متشابهة.',
-        createdAt: DateTime.now().subtract(const Duration(days: 1)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 1)),
+        createdAt: DateTime.now().subtract(Duration(days: 1)),
+        updatedAt: DateTime.now().subtract(Duration(days: 1)),
         tags: ['كيمياء', 'عناصر'],
         isPinned: false,
         videoTimestamp: 340,
@@ -95,7 +95,7 @@ class _NotesScreenState extends State<NotesScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -104,28 +104,28 @@ class _NotesScreenState extends State<NotesScreen> {
               // Header
               _buildHeader(),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // Search Bar
               _buildSearchBar(),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Tags Filter
               if (_allTags.isNotEmpty) _buildTagsFilter(),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // Notes List
               Expanded(
                 child: _filteredNotes.isEmpty
                     ? _buildEmptyState()
                     : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(horizontal: 20),
                         itemCount: _filteredNotes.length,
                         itemBuilder: (context, index) {
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
+                            padding: EdgeInsets.only(bottom: 12),
                             child: _buildNoteCard(_filteredNotes[index]),
                           );
                         },
@@ -141,7 +141,7 @@ class _NotesScreenState extends State<NotesScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -150,32 +150,32 @@ class _NotesScreenState extends State<NotesScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'ملاحظاتي',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
@@ -183,34 +183,34 @@ class _NotesScreenState extends State<NotesScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppColors.getMutedTextColor(context),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: AppColors.getMutedTextColor(context),
                 width: 1,
               ),
             ),
             child: TextField(
               textAlign: TextAlign.right,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.getTextColor(context)),
               decoration: InputDecoration(
                 hintText: 'ابحث في الملاحظات...',
                 hintStyle: TextStyle(
-                  color: Colors.white.withOpacity(0.5),
+                  color: AppColors.getTextColor(context, secondary: true),
                 ),
                 prefixIcon: Icon(
                   Icons.search,
-                  color: Colors.white.withOpacity(0.7),
+                  color: AppColors.getTextColor(context, secondary: true),
                 ),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
+                contentPadding: EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 14,
                 ),
@@ -232,13 +232,13 @@ class _NotesScreenState extends State<NotesScreen> {
       height: 40,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.symmetric(horizontal: 20),
         children: [
           _buildTagChip('الكل', null),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           ..._allTags.map((tag) {
             return Padding(
-              padding: const EdgeInsets.only(left: 8),
+              padding: EdgeInsets.only(left: 8),
               child: _buildTagChip(tag, tag),
             );
           }),
@@ -260,7 +260,7 @@ class _NotesScreenState extends State<NotesScreen> {
             color: isSelected ? null : Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1,
             ),
           ),
@@ -274,14 +274,14 @@ class _NotesScreenState extends State<NotesScreen> {
                 });
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
                 ),
                 child: Text(
                   label,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -335,7 +335,7 @@ class _NotesScreenState extends State<NotesScreen> {
                 }
               },
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -345,17 +345,17 @@ class _NotesScreenState extends State<NotesScreen> {
                         Expanded(
                           child: Text(
                             note.title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: AppColors.getTextColor(context),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (note.isPinned)
-                          const Icon(
+                          Icon(
                             Icons.push_pin,
                             color: Colors.amber,
                             size: 20,
@@ -363,21 +363,21 @@ class _NotesScreenState extends State<NotesScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
 
                     // Content Preview
                     Text(
                       note.content,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.white.withOpacity(0.8),
+                        color: AppColors.getTextColor(context, secondary: true),
                         height: 1.5,
                       ),
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
 
                     // Tags and Timestamp
                     Row(
@@ -389,19 +389,19 @@ class _NotesScreenState extends State<NotesScreen> {
                               runSpacing: 6,
                               children: note.tags.take(2).map((tag) {
                                 return Container(
-                                  padding: const EdgeInsets.symmetric(
+                                  padding: EdgeInsets.symmetric(
                                     horizontal: 8,
                                     vertical: 4,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.2),
+                                    color: AppColors.getMutedTextColor(context),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
                                     '#$tag',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 11,
-                                      color: Colors.white,
+                                      color: AppColors.getTextColor(context),
                                     ),
                                   ),
                                 );
@@ -409,9 +409,9 @@ class _NotesScreenState extends State<NotesScreen> {
                             ),
                           ),
                         if (note.videoTimestamp != null) ...[
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(
+                            padding: EdgeInsets.symmetric(
                               horizontal: 8,
                               vertical: 4,
                             ),
@@ -423,17 +423,17 @@ class _NotesScreenState extends State<NotesScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
+                                Icon(
                                   Icons.play_circle_outline,
-                                  color: Colors.white,
+                                  color: AppColors.getTextColor(context),
                                   size: 14,
                                 ),
-                                const SizedBox(width: 4),
+                                SizedBox(width: 4),
                                 Text(
                                   note.formattedTimestamp,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 11,
-                                    color: Colors.white,
+                                    color: AppColors.getTextColor(context),
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -444,14 +444,14 @@ class _NotesScreenState extends State<NotesScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
 
                     // Date
                     Text(
                       _formatDate(note.updatedAt),
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.6),
+                        color: AppColors.getTextColor(context, secondary: true),
                       ),
                     ),
                   ],
@@ -469,25 +469,25 @@ class _NotesScreenState extends State<NotesScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
+          Text(
             '📝',
             style: TextStyle(fontSize: 64),
           ),
-          const SizedBox(height: 16),
-          const Text(
+          SizedBox(height: 16),
+          Text(
             'لا توجد ملاحظات',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'ابدأ بإضافة ملاحظاتك الأولى',
             style: TextStyle(
               fontSize: 15,
-              color: Colors.white.withOpacity(0.8),
+              color: AppColors.getTextColor(context, secondary: true),
             ),
           ),
         ],
@@ -508,7 +508,7 @@ class _NotesScreenState extends State<NotesScreen> {
               BoxShadow(
                 color: AppColors.primaryPurple.withOpacity(0.5),
                 blurRadius: 12,
-                offset: const Offset(0, 4),
+                offset: Offset(0, 4),
               ),
             ],
           ),
@@ -520,7 +520,7 @@ class _NotesScreenState extends State<NotesScreen> {
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AddNoteScreen(),
+                    builder: (context) => AddNoteScreen(),
                   ),
                 );
                 if (result == true) {
@@ -529,17 +529,17 @@ class _NotesScreenState extends State<NotesScreen> {
                   });
                 }
               },
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.add, color: Colors.white),
+                    Icon(Icons.add, color: AppColors.getTextColor(context)),
                     SizedBox(width: 8),
                     Text(
                       'ملاحظة جديدة',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),

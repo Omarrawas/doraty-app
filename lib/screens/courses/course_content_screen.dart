@@ -21,7 +21,7 @@ class CourseContentScreen extends StatefulWidget {
   final List<Chapter> chapters;
   final bool isEnrolled;
 
-  const CourseContentScreen({
+  CourseContentScreen({
     super.key,
     required this.course,
     required this.lessonsData,
@@ -51,7 +51,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
         elevation: 0,
       ),
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -63,7 +63,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
             child: _buildContentList(isRTL),
           ),
         ),
@@ -122,7 +122,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
         final index = entry.key;
         final section = entry.value;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.only(bottom: 16),
           child: _buildCurriculumSection(
             title: section['title'],
             lessons: SafeParser.safeMapList(section['lessons']),
@@ -158,7 +158,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.2),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -173,16 +173,16 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                     });
                   },
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                     child: Row(
                       children: [
                         Expanded(
                           child: Text(
                             title,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: AppColors.getTextColor(context),
                               fontFamily: 'Cairo',
                             ),
                           ),
@@ -201,7 +201,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
               if (isExpanded)
                 ListView.builder(
                   shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
+                  physics: NeverScrollableScrollPhysics(),
                   padding: EdgeInsets.zero,
                   itemCount: lessons.length,
                   itemBuilder: (context, index) {
@@ -220,7 +220,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     final canAccess = lesson.isFree || widget.isEnrolled;
     return Column(
       children: [
-        Divider(height: 1, color: Colors.white.withOpacity(0.1)),
+        Divider(height: 1, color: AppColors.getMutedTextColor(context)),
         Material(
           color: Colors.transparent,
           child: InkWell(
@@ -250,7 +250,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
               );
             },
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: Row(
                 children: [
                   Container(
@@ -268,15 +268,15 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                       size: 20,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           lesson.title,
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppColors.getTextColor(context),
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
                           ),
@@ -285,7 +285,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                           Text(
                             lesson.duration,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
+                              color: AppColors.getTextColor(context, secondary: true),
                               fontSize: 12,
                             ),
                           ),
@@ -293,7 +293,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                     ),
                   ),
                   if (lesson.isCompleted)
-                    const Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
+                    Icon(Icons.check_circle, color: Colors.greenAccent, size: 20),
                 ],
               ),
             ),
@@ -307,26 +307,26 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E2C),
+        backgroundColor: Color(0xFF1E1E2C),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Row(
           children: [
-            const Icon(Icons.lock_person_rounded, color: Colors.orangeAccent),
-            const SizedBox(width: 10),
+            Icon(Icons.lock_person_rounded, color: Colors.orangeAccent),
+            SizedBox(width: 10),
             Text(
               _t('login_required_title'), // Or a more specific string if available
-              style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+              style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
             ),
           ],
         ),
         content: Text(
           _t('must_subscribe'),
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontFamily: 'Cairo'),
+          style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontFamily: 'Cairo'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(_t('cancel'), style: const TextStyle(fontFamily: 'Cairo')),
+            child: Text(_t('cancel'), style: TextStyle(fontFamily: 'Cairo')),
           ),
           ElevatedButton(
             onPressed: () {
@@ -345,7 +345,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
 
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const CartScreen()),
+                MaterialPageRoute(builder: (context) => CartScreen()),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -353,7 +353,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text(_t('buy_now'), style: const TextStyle(fontFamily: 'Cairo')),
+            child: Text(_t('buy_now'), style: TextStyle(fontFamily: 'Cairo')),
           ),
         ],
       ),
@@ -364,29 +364,29 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E2C),
+        backgroundColor: Color(0xFF1E1E2C),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           _t('login_required_title'),
-          style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+          style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
           textAlign: TextAlign.right,
         ),
         content: Text(
           _t('login_required_desc'),
-          style: TextStyle(color: Colors.white.withOpacity(0.7), fontFamily: 'Cairo'),
+          style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontFamily: 'Cairo'),
           textAlign: TextAlign.right,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(_t('cancel'), style: const TextStyle(fontFamily: 'Cairo')),
+            child: Text(_t('cancel'), style: TextStyle(fontFamily: 'Cairo')),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                MaterialPageRoute(builder: (_) => LoginScreen()),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -394,7 +394,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
-            child: Text(_t('login_now'), style: const TextStyle(fontFamily: 'Cairo')),
+            child: Text(_t('login_now'), style: TextStyle(fontFamily: 'Cairo')),
           ),
         ],
       ),

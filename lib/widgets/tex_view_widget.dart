@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
 import 'package:flutter_tex/flutter_tex.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
@@ -7,7 +8,7 @@ class TexViewWidget extends StatelessWidget {
   final TextStyle? style;
   final bool isTitle;
 
-  const TexViewWidget(
+  TexViewWidget(
     this.content, {
     super.key,
     this.style,
@@ -57,7 +58,7 @@ class TexViewWidget extends StatelessWidget {
           fontFamily: 'Cairo',
           height: 1.5,
           color: style?.color ?? Colors.white,
-        ) ?? const TextStyle(color: Colors.white, fontSize: 16),
+        ) ?? TextStyle(color: AppColors.getTextColor(context), fontSize: 16),
         renderMode: RenderMode.column,
       );
     }
@@ -95,11 +96,11 @@ class TexViewWidget extends StatelessWidget {
           padding: const TeXViewPadding.all(10),
         ),
       ),
-      style: const TeXViewStyle(
+      style: TeXViewStyle(
         backgroundColor: Colors.transparent,
       ),
       loadingWidgetBuilder: (context) => Padding(
-        padding: const EdgeInsets.all(10),
+        padding: EdgeInsets.all(10),
         child: Text(content, style: style),
       ),
     );

@@ -8,7 +8,7 @@ import '../../core/utils/safe_parser.dart';
 class ReviewExamScreen extends StatefulWidget {
   final String attemptId;
 
-  const ReviewExamScreen({super.key, required this.attemptId});
+  ReviewExamScreen({super.key, required this.attemptId});
 
   @override
   State<ReviewExamScreen> createState() => _ReviewExamScreenState();
@@ -71,13 +71,13 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_attemptData == null) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(child: Text('لم يتم العثور على تفاصيل المحاولة')),
       );
     }
@@ -91,13 +91,13 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('مراجعة الإجابات'),
+        title: Text('مراجعة الإجابات'),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       extendBodyBehindAppBar: true,
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -106,7 +106,7 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
               _buildScoreSummary(score, totalPointsToUse),
               Expanded(
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   itemCount: _questions.length,
                   itemBuilder: (context, index) {
                     final question = _questions[index];
@@ -124,10 +124,10 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
 
   Widget _buildScoreSummary(dynamic score, dynamic totalPoints) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(20),
+      margin: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: AppColors.getMutedTextColor(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
@@ -136,11 +136,11 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
         children: [
           Column(
             children: [
-             const Text(
+             Text(
                 'النتيجة النهائية',
-                style: TextStyle(color: Colors.white70),
+                style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 '${((score ?? 0) / (totalPoints > 0 ? totalPoints : 1) * 100).toStringAsFixed(1)}%',
                 style: TextStyle(
@@ -166,11 +166,11 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
     final correctIndex = question['correct_answer'] as int;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      color: Colors.white.withOpacity(0.05),
+      margin: EdgeInsets.only(bottom: 16),
+      color: AppColors.getMutedTextColor(context),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -186,29 +186,29 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
                         ? (isCorrect ? Icons.check : Icons.close)
                         : Icons.question_mark,
                     size: 16,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Text(
                   'السؤال $index',
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context).withOpacity(0.70),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TexViewWidget(
               question['question_text'] ?? '',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.getTextColor(context),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             ...List.generate(options.length, (optIndex) {
               final isUserSelection = userAnswer == optIndex; // Assuming int answers for now
               final isCorrectOption = correctIndex == optIndex;
@@ -237,8 +237,8 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
               }
 
               return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.all(12),
+                margin: EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(8),
@@ -249,7 +249,7 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
                     Expanded(
                       child: TexViewWidget(
                         options[optIndex],
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: AppColors.getTextColor(context)),
                       ),
                     ),
                     if (icon != null)
@@ -259,9 +259,9 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
               );
             }),
             if (question['explanation'] != null && question['explanation'].isNotEmpty) ...[
-               const SizedBox(height: 12),
+               SizedBox(height: 12),
                Container(
-                 padding: const EdgeInsets.all(12),
+                 padding: EdgeInsets.all(12),
                  decoration: BoxDecoration(
                    color: Colors.blue.withOpacity(0.1),
                    borderRadius: BorderRadius.circular(8),
@@ -269,12 +269,12 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
                  child: Row(
                    crossAxisAlignment: CrossAxisAlignment.start,
                    children: [
-                     const Icon(Icons.info_outline, color: Colors.blue, size: 20),
-                     const SizedBox(width: 8),
+                     Icon(Icons.info_outline, color: Colors.blue, size: 20),
+                     SizedBox(width: 8),
                      Expanded(
                       child: TexViewWidget(
                          'توضيح: ${question['explanation']}',
-                         style: const TextStyle(color: Colors.white70, fontSize: 13),
+                         style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 13),
                        ),
                      ),
                    ],

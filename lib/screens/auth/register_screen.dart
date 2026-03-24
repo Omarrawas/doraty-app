@@ -16,7 +16,7 @@ import '../../main.dart';
 class RegisterScreen extends StatefulWidget {
   final bool isCompletingProfile;
   final String? initialRole;
-  const RegisterScreen({super.key, this.isCompletingProfile = false, this.initialRole});
+  RegisterScreen({super.key, this.isCompletingProfile = false, this.initialRole});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -226,7 +226,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         
         if (mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const MainScreen()));
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
         }
       }
     } catch (e) {
@@ -240,7 +240,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, textAlign: TextAlign.right, style: const TextStyle(fontFamily: 'Cairo')),
+        content: Text(message, textAlign: TextAlign.right, style: TextStyle(fontFamily: 'Cairo')),
         backgroundColor: Colors.red.shade400,
         behavior: SnackBarBehavior.floating,
       ),
@@ -255,38 +255,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(gradient: AppColors.backgroundGradient),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildTopBar(),
-                  const SizedBox(height: 20),
-                  Text(isAlreadyAuth ? 'إكمال الملف الشخصي' : _t('register_title'), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Cairo')),
-                  Text(isAlreadyAuth ? 'الرجاء تزويدنا ببعض المعلومات الإضافية' : _t('register_subtitle'), style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.8), fontFamily: 'Cairo')),
-                  const SizedBox(height: 30),
+                  SizedBox(height: 20),
+                  Text(isAlreadyAuth ? 'إكمال الملف الشخصي' : _t('register_title'), style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
+                  Text(isAlreadyAuth ? 'الرجاء تزويدنا ببعض المعلومات الإضافية' : _t('register_subtitle'), style: TextStyle(fontSize: 16, color: AppColors.getTextColor(context, secondary: true), fontFamily: 'Cairo')),
+                  SizedBox(height: 30),
                   
                   _buildProfileImagePicker(),
-                  const SizedBox(height: 30),
+                  SizedBox(height: 30),
 
                   _buildHeader(_t('personal_info')),
                   _buildGlassField(controller: _nameController, label: _t('name'), icon: Icons.person_outline, validator: (v) => v!.isEmpty ? _t('required_field') : null, enabled: !isAlreadyAuth),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   _buildGlassField(controller: _emailController, label: _t('email_label'), icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress, validator: (v) => v!.isEmpty ? _t('required_field') : null, enabled: !isAlreadyAuth),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   
                   _buildPremiumRoleSelector(),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
 
                   // Role-Specific Sections
                   if (_selectedRole == 'student') _buildStudentSection() else _buildTeacherSection(),
 
                   if (!isAlreadyAuth) ...[
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
                     _buildHeader(_t('security_header')),
                     _buildGlassField(
                       controller: _passwordController,
@@ -295,39 +295,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       obscureText: _obscurePassword,
                       validator: (v) => v!.length < 6 ? _t('pass_min_char') : null,
                       suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
+                        icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility, color: AppColors.getTextColor(context).withOpacity(0.70)),
                         onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     _buildGlassField(
                       controller: _confirmPasswordController,
                       label: _t('confirm_password_label'),
                       icon: Icons.lock_outline,
                       obscureText: _obscureConfirmPassword,
                       suffixIcon: IconButton(
-                        icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility, color: Colors.white70),
+                        icon: Icon(_obscureConfirmPassword ? Icons.visibility_off : Icons.visibility, color: AppColors.getTextColor(context).withOpacity(0.70)),
                         onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                       ),
                     ),
                   ],
                   
-                  const SizedBox(height: 40),
+                  SizedBox(height: 40),
                   _buildRegisterButton(isAlreadyAuth),
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   if (!isAlreadyAuth)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(_t('already_have_account'), style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontFamily: 'Cairo')),
+                        Text(_t('already_have_account'), style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 14, fontFamily: 'Cairo')),
                         GestureDetector(
                           onTap: () => Navigator.pop(context),
-                          child: Text(' ${_t('login_now')}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, fontFamily: 'Cairo')),
+                          child: Text(' ${_t('login_now')}', style: TextStyle(color: AppColors.getTextColor(context), fontSize: 14, fontWeight: FontWeight.bold, decoration: TextDecoration.underline, fontFamily: 'Cairo')),
                         ),
                       ],
                     ),
-                  const SizedBox(height: 40),
+                  SizedBox(height: 40),
                 ],
               ),
             ),
@@ -344,17 +344,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        IconButton(icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70), onPressed: () => Navigator.pop(context)),
+        IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.getTextColor(context).withOpacity(0.70)), onPressed: () => Navigator.pop(context)),
         GestureDetector(
           onTap: () => localeProvider.setLocale(isArabic ? 'en' : 'ar'),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withOpacity(0.3))),
             child: Row(
               children: [
-                Icon(Icons.language_rounded, size: 18, color: Colors.white.withOpacity(0.9)),
-                const SizedBox(width: 8),
-                Text(isArabic ? 'English' : 'العربية', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                Icon(Icons.language_rounded, size: 18, color: AppColors.getTextColor(context, secondary: true)),
+                SizedBox(width: 8),
+                Text(isArabic ? 'English' : 'العربية', style: TextStyle(color: AppColors.getTextColor(context), fontSize: 14, fontWeight: FontWeight.w600)),
               ],
             ),
           ),
@@ -375,10 +375,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: ClipOval(
                 child: _profileImage != null 
                   ? Image.file(_profileImage!, fit: BoxFit.cover) 
-                  : Container(color: Colors.white10, child: const Icon(Icons.person, size: 50, color: Colors.white60)),
+                  : Container(color: AppColors.getTextColor(context).withOpacity(0.10), child: Icon(Icons.person, size: 50, color: AppColors.getTextColor(context).withOpacity(0.60))),
               ),
             ),
-            Positioned(bottom: 0, right: 0, child: Container(padding: const EdgeInsets.all(6), decoration: const BoxDecoration(color: AppColors.primaryPurple, shape: BoxShape.circle), child: const Icon(Icons.camera_alt, color: Colors.white, size: 16))),
+            Positioned(bottom: 0, right: 0, child: Container(padding: EdgeInsets.all(6), decoration: BoxDecoration(color: AppColors.primaryPurple, shape: BoxShape.circle), child: Icon(Icons.camera_alt, color: AppColors.getTextColor(context), size: 16))),
           ],
         ),
       ),
@@ -388,7 +388,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildPremiumRoleSelector() {
     final isStudent = _selectedRole == 'student';
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: EdgeInsets.all(4),
       decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: [
@@ -404,11 +404,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(gradient: active ? AppColors.primaryGradient : null, borderRadius: BorderRadius.circular(12)),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(icon, color: active ? Colors.white : Colors.white60, size: 18),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(label, style: TextStyle(color: active ? Colors.white : Colors.white60, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
           ]),
         ),
@@ -422,25 +422,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         _buildHeader(_t('educational_info')),
         Container(
-          padding: const EdgeInsets.all(4),
+          padding: EdgeInsets.all(4),
           decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(12)),
           child: Row(children: [
             _buildTypeBtn(_t('school'), 'school'),
             _buildTypeBtn(_t('university'), 'university'),
           ]),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         if (_educationLevel == 'school')
           _buildGlassDropdown(label: _t('grade_level_label'), icon: Icons.school_outlined, value: _selectedGrade, items: _schoolGrades, onChanged: (v) => setState(() => _selectedGrade = v))
         else ...[
           _buildGlassField(controller: _studentSpecializationController, label: _t('specialization'), icon: Icons.workspace_premium_outlined, validator: (v) => v!.isEmpty ? _t('required_field') : null),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildGlassDropdown(label: _t('academic_year_label'), icon: Icons.calendar_month_outlined, value: _selectedUniversityYear, items: _universityYears, onChanged: (v) => setState(() => _selectedUniversityYear = v)),
         ],
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Row(children: [
           Checkbox(value: _termsAccepted, onChanged: (v) => setState(() => _termsAccepted = v!), activeColor: AppColors.primaryPurple),
-          Text(_t('terms_accept_label'), style: const TextStyle(color: Colors.white70, fontSize: 13, fontFamily: 'Cairo')),
+          Text(_t('terms_accept_label'), style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 13, fontFamily: 'Cairo')),
         ]),
       ],
     );
@@ -452,26 +452,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         _buildHeader(_t('professional_info')),
         _buildGlassField(controller: _teacherPhoneController, label: _t('phone_number_label'), icon: Icons.phone_android_rounded, keyboardType: TextInputType.phone, validator: (v) => v!.isEmpty ? _t('required_field') : null),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         _buildGlassField(controller: _teacherSpecializationController, label: _t('specialization'), icon: Icons.workspace_premium_outlined, helperText: 'اختصار المسمى الوظيفي (مثال: مصور، مصمم، مبرمج...)', maxLength: 30, validator: (v) => v!.isEmpty ? _t('required_field') : null),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         _buildGlassField(controller: _teacherCountryController, label: _t('country_label'), icon: Icons.public_rounded),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         _buildHeader(_t('participation_plans')),
         _buildSubscriptionOption(_t('give_full_courses_label'), _giveFullCourses, (v) => setState(() => _giveFullCourses = v!)),
         _buildSubscriptionOption(_t('teach_private_hours_label'), _teachPrivateHours, (v) => setState(() => _teachPrivateHours = v!)),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         _buildFilePickerSection(_t('cv_label'), _cvFile, () => _pickFile(true)),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _buildFilePickerSection(_t('certificates_label'), _certificateFile, () => _pickFile(false)),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         _buildGlassField(controller: _teacherBioController, label: _t('short_bio_hint'), icon: Icons.description_outlined, maxLines: 3),
       ],
     );
   }
 
   Widget _buildHeader(String title) {
-    return Padding(padding: const EdgeInsets.only(top: 16, bottom: 12), child: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Cairo')));
+    return Padding(padding: EdgeInsets.only(top: 16, bottom: 12), child: Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context), fontFamily: 'Cairo')));
   }
 
   Widget _buildTypeBtn(String label, String value) {
@@ -479,26 +479,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() { _educationLevel = value; _selectedGrade = null; _selectedUniversityYear = null; }),
-        child: Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: active ? AppColors.primaryPurple : Colors.transparent, borderRadius: BorderRadius.circular(10)), child: Center(child: Text(label, style: TextStyle(color: active ? Colors.white : Colors.white70, fontWeight: active ? FontWeight.bold : FontWeight.normal)))),
+        child: Container(padding: EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: active ? AppColors.primaryPurple : Colors.transparent, borderRadius: BorderRadius.circular(10)), child: Center(child: Text(label, style: TextStyle(color: active ? Colors.white : Colors.white70, fontWeight: active ? FontWeight.bold : FontWeight.normal)))),
       ),
     );
   }
 
   Widget _buildSubscriptionOption(String title, bool value, Function(bool?) onChanged) {
-    return CheckboxListTile(title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Cairo')), value: value, onChanged: onChanged, activeColor: AppColors.primaryPurple, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading);
+    return CheckboxListTile(title: Text(title, style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Cairo')), value: value, onChanged: onChanged, activeColor: AppColors.primaryPurple, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading);
   }
 
   Widget _buildFilePickerSection(String title, File? file, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.all(12),
         decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.1))),
         child: Row(children: [
           Icon(file != null ? Icons.check_circle_rounded : Icons.upload_file_rounded, color: file != null ? Colors.greenAccent : Colors.white70, size: 20),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)), Text(file != null ? file.path.split('/').last : _t('no_file_selected'), style: TextStyle(color: Colors.white60, fontSize: 11), overflow: TextOverflow.ellipsis)])),
-          Text(file != null ? _t('change') : _t('choose'), style: const TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12)),
+          SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold, fontSize: 13)), Text(file != null ? file.path.split('/').last : _t('no_file_selected'), style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60), fontSize: 11), overflow: TextOverflow.ellipsis)])),
+          Text(file != null ? _t('change') : _t('choose'), style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12)),
         ]),
       ),
     );
@@ -519,7 +519,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.08),
+          color: AppColors.getMutedTextColor(context),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Colors.white.withOpacity(0.1))),
       child: TextFormField(
@@ -534,14 +534,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
             color: enabled ? Colors.white : Colors.white38, fontSize: 15),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Colors.white70, fontSize: 14),
+          labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 14),
           helperText: helperText,
-          helperStyle: TextStyle(color: Colors.white38, fontSize: 10),
-          prefixIcon: Icon(icon, color: Colors.white60, size: 20),
+          helperStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.38), fontSize: 10),
+          prefixIcon: Icon(icon, color: AppColors.getTextColor(context).withOpacity(0.60), size: 20),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
-          counterStyle: const TextStyle(color: Colors.white38, fontSize: 10),
+          contentPadding: EdgeInsets.all(16),
+          counterStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.38), fontSize: 10),
         ),
         validator: validator,
       ),
@@ -550,11 +550,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildGlassDropdown({required String label, required IconData icon, required String? value, required List<String> items, required void Function(String?) onChanged}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.1))),
       child: DropdownButtonFormField<String>(
-        value: value, dropdownColor: AppColors.darkBackground, icon: const Icon(Icons.arrow_drop_down, color: Colors.white60),
-        style: const TextStyle(color: Colors.white, fontSize: 15),
+        value: value, dropdownColor: AppColors.darkBackground, icon: Icon(Icons.arrow_drop_down, color: AppColors.getTextColor(context).withOpacity(0.60)),
+        style: TextStyle(color: AppColors.getTextColor(context), fontSize: 15),
         decoration: InputDecoration(labelText: label, labelStyle: TextStyle(color: Colors.white70, fontSize: 14), prefixIcon: Icon(icon, color: Colors.white60, size: 20), border: InputBorder.none),
         items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
         onChanged: onChanged, validator: (v) => v == null ? _t('required_field') : null,
@@ -565,11 +565,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildRegisterButton(bool isAlreadyAuth) {
     return Container(
       width: double.infinity,
-      decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: AppColors.primaryPurple.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))]),
+      decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: AppColors.primaryPurple.withOpacity(0.3), blurRadius: 12, offset: Offset(0, 6))]),
       child: ElevatedButton(
         onPressed: _isLoading ? null : _register,
-        style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, padding: const EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-        child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : Text(isAlreadyAuth ? 'إكمال التسجيل' : _t('register_action'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Cairo')),
+        style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, padding: EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+        child: _isLoading ? CircularProgressIndicator(color: AppColors.getTextColor(context)) : Text(isAlreadyAuth ? 'إكمال التسجيل' : _t('register_action'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
       ),
     );
   }

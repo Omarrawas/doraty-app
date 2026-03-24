@@ -97,7 +97,7 @@ class AppUpdateService {
           }
         } else if (showNoUpdateDialog && context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
                 content: Text('أنت تستخدم أحدث إصدار من التطبيق'),
                 backgroundColor: Colors.green),
           );
@@ -138,28 +138,28 @@ class AppUpdateService {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: AlertDialog(
-            backgroundColor: const Color(0xFF1A1A2E).withOpacity(0.9),
+            backgroundColor: Color(0xFF1A1A2E).withOpacity(0.9),
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             title: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: AppColors.primaryPurple.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.system_update_rounded,
                     color: AppColors.primaryPurple,
                     size: 40,
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                SizedBox(height: 16),
+                Text(
                   'تحديث جديد متاح',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                     fontFamily: 'Cairo',
                     fontWeight: FontWeight.bold,
                   ),
@@ -173,24 +173,24 @@ class AppUpdateService {
                   'يتوفر إصدار جديد من التطبيق ($latestVersion). يرجى التحديث للحصول على آخر المميزات والتحسينات.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: AppColors.getTextColor(context, secondary: true),
                     fontFamily: 'Cairo',
                     fontSize: 14,
                   ),
                 ),
                 if (updateNotes != null && updateNotes.isNotEmpty) ...[
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: AppColors.getMutedTextColor(context),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'ما الجديد:',
                           style: TextStyle(
                             color: AppColors.primaryPurple,
@@ -199,11 +199,11 @@ class AppUpdateService {
                             fontSize: 12,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           updateNotes,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
+                            color: AppColors.getTextColor(context, secondary: true),
                             fontFamily: 'Cairo',
                             fontSize: 12,
                           ),
@@ -222,7 +222,7 @@ class AppUpdateService {
                   child: Text(
                     'لاحقاً',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: AppColors.getTextColor(context, secondary: true),
                       fontFamily: 'Cairo',
                     ),
                   ),
@@ -238,11 +238,11 @@ class AppUpdateService {
                   backgroundColor: AppColors.primaryPurple,
                   foregroundColor: Colors.white,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      EdgeInsets.symmetric(horizontal: 32, vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text(
+                child: Text(
                   'تحديث الآن',
                   style: TextStyle(
                     fontFamily: 'Cairo',

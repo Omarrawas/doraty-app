@@ -69,7 +69,7 @@ class AppTheme {
     );
 
     final scaffoldBackground =
-        admin ? palette.scaffoldBackground : Colors.transparent;
+        admin ? palette.scaffoldBackground : palette.scaffoldBackground;
     final appBarBackground =
         admin ? palette.appBarBackground : Colors.transparent;
 
@@ -200,7 +200,7 @@ class AppTheme {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         labelStyle: GoogleFonts.cairo(color: palette.textPrimary, fontSize: 12),
         secondaryLabelStyle:
-            GoogleFonts.cairo(color: Colors.white, fontSize: 12),
+            GoogleFonts.cairo(color: palette.textPrimary, fontSize: 12),
         brightness: palette.brightness,
         side: BorderSide(color: palette.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

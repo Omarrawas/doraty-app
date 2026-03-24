@@ -7,7 +7,7 @@ import 'exam_taking_screen.dart';
 import 'exam_result_screen.dart';
 
 class ExamsListScreen extends StatefulWidget {
-  const ExamsListScreen({super.key});
+  ExamsListScreen({super.key});
 
   @override
   State<ExamsListScreen> createState() => _ExamsListScreenState();
@@ -57,7 +57,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -66,7 +66,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
               // Header
               _buildHeader(),
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Content
               Expanded(
@@ -85,7 +85,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -94,39 +94,39 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'الاختبارات',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    return Center(
       child: CircularProgressIndicator(
         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
       ),
@@ -136,33 +136,33 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
   Widget _buildErrorState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
               size: 64,
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(
               _errorMessage ?? 'حدث خطأ غير متوقع',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.getTextColor(context),
                 fontSize: 16,
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _loadExams,
-              icon: const Icon(Icons.refresh),
-              label: const Text('إعادة المحاولة'),
+              icon: Icon(Icons.refresh),
+              label: Text('إعادة المحاولة'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white.withOpacity(0.2),
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 12,
                 ),
@@ -177,49 +177,49 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
   Widget _buildExamsList() {
     return RefreshIndicator(
       onRefresh: _loadExams,
-      color: Colors.white,
+      color: AppColors.getTextColor(context),
       backgroundColor: AppColors.primaryPurple,
       child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        physics: AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Upcoming Exams
-            const Text(
+            Text(
               'الاختبارات القادمة',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             if (_upcomingExams.isEmpty)
               _buildEmptyState('لا توجد اختبارات قادمة')
             else
               ..._upcomingExams.map((exam) {
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.only(bottom: 12),
                   child: _buildExamCard(exam, isUpcoming: true),
                 );
               }),
 
-            const SizedBox(height: 30),
+            SizedBox(height: 30),
 
             // Completed Exams
-            const Text(
+            Text(
               'الاختبارات المكتملة',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             if (_completedExams.isEmpty)
               _buildEmptyState('لا توجد اختبارات مكتملة')
@@ -227,12 +227,12 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
               ..._completedExams.map((attempt) {
                 final exam = attempt['exams'];
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.only(bottom: 12),
                   child: _buildCompletedExamCard(attempt, exam),
                 );
               }),
 
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
           ],
         ),
       ),
@@ -260,7 +260,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -270,21 +270,21 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
               borderRadius: BorderRadius.circular(20),
               onTap: () => _handleExamTap(exam['id']),
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Title
                     Text(
                       exam['title'] ?? 'اختبار',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
 
                     // Course Name
                     if (course != null)
@@ -292,11 +292,11 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                         course['title'] ?? '',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.8),
+                          color: AppColors.getTextColor(context, secondary: true),
                         ),
                       ),
 
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
 
                     // Description
                     if (exam['description'] != null)
@@ -304,11 +304,11 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                         exam['description'],
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.7),
+                          color: AppColors.getTextColor(context, secondary: true),
                         ),
                       ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Info Row
                     Row(
@@ -317,7 +317,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                           icon: Icons.access_time,
                           label: _formatDuration(duration),
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         _buildInfoChip(
                           icon: Icons.assignment,
                           label: '$totalPoints نقطة',
@@ -325,21 +325,21 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Start Button
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: 12),
                       decoration: BoxDecoration(
                         gradient: AppColors.primaryGradient,
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text(
+                      child: Text(
                         'ابدأ الاختبار',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -380,7 +380,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -390,21 +390,21 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
               borderRadius: BorderRadius.circular(20),
               onTap: () => _viewExamResult(attempt['id']),
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Title
                     Text(
                       exam['title'] ?? 'اختبار',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                       ),
                     ),
 
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
 
                     // Course Name
                     if (exam['courses'] != null)
@@ -412,11 +412,11 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                         exam['courses']['title'] ?? '',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.8),
+                          color: AppColors.getTextColor(context, secondary: true),
                         ),
                       ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Score Info
                     Row(
@@ -425,7 +425,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                           icon: Icons.grade,
                           label: '$score/$totalPoints',
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         if (percentage != null)
                           _buildScoreChip(
                             percentage.toDouble(),
@@ -445,20 +445,20 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
 
   Widget _buildInfoChip({required IconData icon, required String label}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: AppColors.getMutedTextColor(context),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 16),
-          const SizedBox(width: 6),
+          Icon(icon, color: AppColors.getTextColor(context), size: 16),
+          SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.getTextColor(context),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -472,7 +472,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
     final color = isPassed ? Colors.green : Colors.red;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.3),
         borderRadius: BorderRadius.circular(20),
@@ -486,7 +486,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
             color: color,
             size: 16,
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: 6),
           Text(
             '${percentage.toStringAsFixed(0)}%',
             style: TextStyle(
@@ -506,12 +506,12 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(30),
+          padding: EdgeInsets.all(30),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1,
             ),
           ),
@@ -520,7 +520,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
               message,
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.white.withOpacity(0.8),
+                color: AppColors.getTextColor(context, secondary: true),
               ),
             ),
           ),
@@ -550,7 +550,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
       if (!canTake) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('لقد تجاوزت الحد الأقصى لعدد المحاولات'),
               backgroundColor: Colors.red,
             ),

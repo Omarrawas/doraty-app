@@ -8,7 +8,7 @@ class ProfessionalEmptyState extends StatelessWidget {
   final VoidCallback? onRetry;
   final String? retryText;
 
-  const ProfessionalEmptyState({
+  ProfessionalEmptyState({
     super.key,
     required this.title,
     required this.message,
@@ -21,54 +21,54 @@ class ProfessionalEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: EdgeInsets.all(40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: AppColors.getMutedTextColor(context),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
+                  color: AppColors.getMutedTextColor(context),
                   width: 2,
                 ),
               ),
               child: Icon(
                 icon,
                 size: 64,
-                color: Colors.white.withOpacity(0.4),
+                color: AppColors.getMutedTextColor(context),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.6),
+                color: AppColors.getTextColor(context, secondary: true),
                 height: 1.5,
               ),
             ),
             if (onRetry != null) ...[
-              const SizedBox(height: 32),
+              SizedBox(height: 32),
               ElevatedButton(
                 onPressed: onRetry,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryPurple,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
+                  padding: EdgeInsets.symmetric(
                     horizontal: 32,
                     vertical: 16,
                   ),
@@ -79,7 +79,7 @@ class ProfessionalEmptyState extends StatelessWidget {
                 ),
                 child: Text(
                   retryText ?? 'إعادة المحاولة',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),

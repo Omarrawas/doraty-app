@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 import '../../models/tip.dart';
 import '../../widgets/vertical_tip_player.dart';
@@ -8,7 +9,7 @@ class AllTipsScreen extends StatefulWidget {
   final bool showAppBar;
   final bool isVisible;
   final bool showCloseButton;
-  const AllTipsScreen({
+  AllTipsScreen({
     super.key, 
     this.showAppBar = false,
     this.isVisible = true,
@@ -90,9 +91,9 @@ class _AllTipsScreenState extends State<AllTipsScreen> with AutomaticKeepAliveCl
   Widget build(BuildContext context) {
     super.build(context); // Required by AutomaticKeepAliveClientMixin
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator(color: Colors.white)),
+        body: Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context))),
       );
     }
 
@@ -103,19 +104,19 @@ class _AllTipsScreenState extends State<AllTipsScreen> with AutomaticKeepAliveCl
           backgroundColor: Colors.transparent,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+            icon: Icon(Icons.arrow_back_ios, color: AppColors.getTextColor(context)),
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: const Center(
+        body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.lightbulb_outline, color: Colors.white24, size: 80),
+              Icon(Icons.lightbulb_outline, color: AppColors.getTextColor(context).withOpacity(0.24), size: 80),
               SizedBox(height: 16),
               Text(
                 'لا توجد نصائح متوفرة حالياً',
-                style: TextStyle(color: Colors.white54, fontSize: 18),
+                style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54), fontSize: 18),
               ),
             ],
           ),

@@ -11,7 +11,7 @@ import '../../core/utils/error_utils.dart';
 import 'create_bundle_screen.dart';
 
 class BundlesManagementScreen extends StatefulWidget {
-  const BundlesManagementScreen({super.key});
+  BundlesManagementScreen({super.key});
 
   @override
   State<BundlesManagementScreen> createState() => _BundlesManagementScreenState();
@@ -65,8 +65,8 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
                 _buildHeader(context),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white))
+                      ? Center(
+                          child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                       : _bundles.isEmpty
                           ? Center(
                               child: Text(
@@ -75,7 +75,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
                               ),
                             )
                           : ListView.builder(
-                              padding: const EdgeInsets.all(20),
+                              padding: EdgeInsets.all(20),
                               itemCount: _bundles.length,
                               itemBuilder: (context, index) {
                                 final bundle = _bundles[index];
@@ -91,12 +91,12 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
           onPressed: () async {
             final result = await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const CreateBundleScreen()),
+              MaterialPageRoute(builder: (context) => CreateBundleScreen()),
             );
             if (result == true) _loadBundles();
           },
-          icon: const Icon(Icons.add),
-          label: const Text('إضافة باقة جديدة'),
+          icon: Icon(Icons.add),
+          label: Text('إضافة باقة جديدة'),
           backgroundColor: AppColors.primaryPurple,
           foregroundColor: Colors.white,
         ),
@@ -106,14 +106,14 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
             onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               'إدارة الباقات',
@@ -124,7 +124,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: AppColors.getTextColor(context)),
             onPressed: _loadBundles,
           ),
         ],
@@ -134,7 +134,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
 
   Widget _buildBundleCard(Bundle bundle) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
@@ -149,7 +149,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
               ),
             ),
             child: ListTile(
-              contentPadding: const EdgeInsets.all(16),
+              contentPadding: EdgeInsets.all(16),
               leading: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: Image.network(
@@ -161,7 +161,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
                     width: 60,
                     height: 60,
                     color: AppColors.primaryPurple.withOpacity(0.2),
-                    child: const Icon(Icons.collections_bookmark, color: Colors.white),
+                    child: Icon(Icons.collections_bookmark, color: AppColors.getTextColor(context)),
                   ),
                 ),
               ),
@@ -176,7 +176,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     '${bundle.courses.length} دورات | ${bundle.price} ل.س',
                     style: TextStyle(
@@ -190,7 +190,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent),
+                    icon: Icon(Icons.edit_rounded, color: Colors.blueAccent),
                     onPressed: () async {
                       final result = await Navigator.push(
                         context,
@@ -202,7 +202,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
                     },
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                    icon: Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
                     onPressed: () => _deleteBundle(bundle.id),
                   ),
                 ],
@@ -218,13 +218,13 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تأكيد الحذف'),
-        content: const Text('هل أنت متأكد من حذف هذه الباقة؟'),
+        title: Text('تأكيد الحذف'),
+        content: Text('هل أنت متأكد من حذف هذه الباقة؟'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('لا')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('لا')),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('نعم', style: TextStyle(color: Colors.red)),
+            child: Text('نعم', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

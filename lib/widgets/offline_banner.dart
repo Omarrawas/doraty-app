@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
 import '../core/services/sync_service.dart';
 
 /// A banner that appears when the device is offline OR a sync is in progress.
@@ -7,12 +8,12 @@ import '../core/services/sync_service.dart';
 /// Usage:
 /// ```dart
 /// Column(children: [
-///   const OfflineBanner(),
+///   OfflineBanner(),
 ///   Expanded(child: myContent),
 /// ])
 /// ```
 class OfflineBanner extends StatefulWidget {
-  const OfflineBanner({super.key});
+  OfflineBanner({super.key});
 
   @override
   State<OfflineBanner> createState() => _OfflineBannerState();
@@ -37,36 +38,36 @@ class _OfflineBannerState extends State<OfflineBanner> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_sync.isOffline && !_sync.isSyncing) return const SizedBox.shrink();
+    if (!_sync.isOffline && !_sync.isSyncing) return SizedBox.shrink();
 
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
+      duration: Duration(milliseconds: 300),
       curve: Curves.easeInOut,
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 16),
+      padding: EdgeInsets.symmetric(vertical: 6, horizontal: 16),
       color: _sync.isOffline ? Colors.red.shade700 : Colors.orange.shade700,
       child: Row(
         children: [
           Icon(
             _sync.isOffline ? Icons.wifi_off_rounded : Icons.sync_rounded,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
             size: 16,
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Text(
             _sync.isOffline
                 ? 'أنت غير متصل — يعمل بالبيانات المخزنة'
                 : 'جاري مزامنة البيانات...',
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.getTextColor(context),
               fontSize: 12,
               fontWeight: FontWeight.w600,
               fontFamily: 'Cairo',
             ),
           ),
           if (_sync.isSyncing) ...[
-            const Spacer(),
-            const SizedBox(
+            Spacer(),
+            SizedBox(
               width: 14,
               height: 14,
               child: CircularProgressIndicator(

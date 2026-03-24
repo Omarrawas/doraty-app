@@ -5,7 +5,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'dart:ui';
 
 class AnalyticsScreen extends StatefulWidget {
-  const AnalyticsScreen({super.key});
+  AnalyticsScreen({super.key});
 
   @override
   State<AnalyticsScreen> createState() => _AnalyticsScreenState();
@@ -42,7 +42,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               _buildHeader(),
               Expanded(
                 child: _isLoading 
-                  ? const Center(child: CircularProgressIndicator())
+                  ? Center(child: CircularProgressIndicator())
                   : _buildContent(),
               ),
             ],
@@ -54,17 +54,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+            icon: Icon(Icons.arrow_back_ios_new, color: AppColors.getTextColor(context), size: 20),
             onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 10),
-          const Text(
+          SizedBox(width: 10),
+          Text(
             'تحليلات التعلم',
-            style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+            style: TextStyle(color: AppColors.getTextColor(context), fontSize: 22, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -73,15 +73,15 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
 
   Widget _buildContent() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Column(
         children: [
           _buildSummaryCards(),
-          const SizedBox(height: 30),
+          SizedBox(height: 30),
           _buildHeatmapPlaceholder(),
-          const SizedBox(height: 30),
+          SizedBox(height: 30),
           _buildProgressEstimator(),
-          const SizedBox(height: 30),
+          SizedBox(height: 30),
         ],
       ),
     );
@@ -98,7 +98,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
             color: Colors.blueAccent,
           ),
         ),
-        const SizedBox(width: 15),
+        SizedBox(width: 15),
         Expanded(
           child: _buildGlassCard(
             icon: Icons.trending_up,
@@ -117,18 +117,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
           child: Column(
             children: [
               Icon(icon, color: color, size: 30),
-              const SizedBox(height: 10),
-              Text(value, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-              Text(label, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              SizedBox(height: 10),
+              Text(value, style: TextStyle(color: AppColors.getTextColor(context), fontSize: 24, fontWeight: FontWeight.bold)),
+              Text(label, style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 12)),
             ],
           ),
         ),
@@ -141,12 +141,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
       title: 'نشاطك اليومي',
       child: Column(
         children: [
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           // Here we would use flutter_heatmap_calendar, using a placeholder for now
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(7, (i) => Container(
-              margin: const EdgeInsets.all(4),
+              margin: EdgeInsets.all(4),
               width: 30,
               height: 30,
               decoration: BoxDecoration(
@@ -155,8 +155,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
               ),
             )),
           ),
-          const SizedBox(height: 10),
-          const Text('آخر 7 أيام من النشاط التعليمي', style: TextStyle(color: Colors.white38, fontSize: 12)),
+          SizedBox(height: 10),
+          Text('آخر 7 أيام من النشاط التعليمي', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.38), fontSize: 12)),
         ],
       ),
     );
@@ -165,12 +165,12 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildProgressEstimator() {
     return _buildSectionContainer(
       title: 'توقعات الإكمال',
-      child: const Column(
+      child: Column(
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('بناءً على سرعتك الحالية:', style: TextStyle(color: Colors.white70)),
+              Text('بناءً على سرعتك الحالية:', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70))),
               Text('3 كورسات قادمة', style: TextStyle(color: AppColors.primaryPurple, fontWeight: FontWeight.bold)),
             ],
           ),
@@ -184,7 +184,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           Text(
             'من المتوقع إنهاء الكورسات المسجل بها خلال 12 يوماً إذا استمررت بمعدل ساعة يومياً.',
             textAlign: TextAlign.right,
-            style: TextStyle(color: Colors.white54, fontSize: 13),
+            style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54), fontSize: 13),
           ),
         ],
       ),
@@ -194,17 +194,17 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget _buildSectionContainer({required String title, required Widget child}) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppColors.getMutedTextColor(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 20),
+          Text(title, style: TextStyle(color: AppColors.getTextColor(context), fontSize: 18, fontWeight: FontWeight.bold)),
+          SizedBox(height: 20),
           child,
         ],
       ),

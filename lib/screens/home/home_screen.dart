@@ -42,7 +42,7 @@ import 'package:url_launcher/url_launcher.dart'; // Added
 import 'package:lottie/lottie.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -143,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _startBannerAutoPlay() {
-    Future.delayed(const Duration(seconds: 4), () {
+    Future.delayed(Duration(seconds: 4), () {
       if (!mounted) return;
 
       final bannerCount = _banners.isNotEmpty
@@ -157,7 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _bannerController
               .animateToPage(
             nextPage,
-            duration: const Duration(milliseconds: 800),
+            duration: Duration(milliseconds: 800),
             curve: Curves.fastOutSlowIn,
           )
               .then((_) {
@@ -172,7 +172,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _bottomBannerController
               .animateToPage(
             nextBottomPage,
-            duration: const Duration(milliseconds: 800),
+            duration: Duration(milliseconds: 800),
             curve: Curves.fastOutSlowIn,
           )
               .then((_) {
@@ -367,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: DynamicGradientBackground(
           child: SafeArea(
             child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
+              physics: AlwaysScrollableScrollPhysics(),
               slivers: [
                 // Premium Sticky Header
                 SliverPersistentHeader(
@@ -382,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     onNotificationTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const NotificationsScreen())),
+                            builder: (context) => NotificationsScreen())),
                   ),
                 ),
 
@@ -431,13 +431,13 @@ class _HomeScreenState extends State<HomeScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    const TeachersListScreen(),
+                                    TeachersListScreen(),
                               ),
                             );
                           }),
                           isWideScreen
                               ? Padding(
-                                  padding: const EdgeInsets.symmetric(
+                                  padding: EdgeInsets.symmetric(
                                       horizontal: 20),
                                   child: Wrap(
                                     spacing: 20,
@@ -451,7 +451,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               : SizedBox(
                                   height: 220,
                                   child: ListView.builder(
-                                    padding: const EdgeInsets.symmetric(
+                                    padding: EdgeInsets.symmetric(
                                         horizontal: 20),
                                     scrollDirection: Axis.horizontal,
                                     itemCount: _filteredTeachers.length,
@@ -472,7 +472,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildRecordedCoursesSection(isWideScreen),
                 ],
                 // Add padding at bottom
-                const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+                SliverPadding(padding: EdgeInsets.only(bottom: 100)),
               ],
             ),
           ),
@@ -483,7 +483,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSectionHeaderBox(String title, VoidCallback onSeeAll) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -559,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     BoxShadow(
                       color: Colors.black.withOpacity(0.1),
                       blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      offset: Offset(0, 4),
                     ),
                   ],
                 ),
@@ -572,21 +572,21 @@ class _HomeScreenState extends State<HomeScreen> {
                               ShimmerLoader.circular(height: 85, width: 85),
                           errorWidget: (context, url, e) => Container(
                             color: Colors.grey.shade900,
-                            child: const Icon(Icons.person,
-                                color: Colors.white24, size: 40),
+                            child: Icon(Icons.person,
+                                color: AppColors.getTextColor(context).withOpacity(0.24), size: 40),
                           ),
                         )
                       : Container(
                           color: Colors.grey.shade900,
-                          child: const Icon(Icons.person,
-                              color: Colors.white24, size: 40),
+                          child: Icon(Icons.person,
+                              color: AppColors.getTextColor(context).withOpacity(0.24), size: 40),
                         ),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               // Name
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+                padding: EdgeInsets.symmetric(horizontal: 10),
                 child: Text(
                   name,
                   textAlign: TextAlign.center,
@@ -600,10 +600,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               // Specialization
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+                padding: EdgeInsets.symmetric(horizontal: 10),
                 child: Text(
                   specialization,
                   textAlign: TextAlign.center,
@@ -616,11 +616,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               // Label "مدرب"
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                    EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
@@ -649,13 +649,13 @@ class _HomeScreenState extends State<HomeScreen> {
     // Show only if there are enrolled courses
     final enrolledCourses =
         _allCourses.where((c) => _enrolledCourseIds.contains(c.id)).toList();
-    if (enrolledCourses.isEmpty) return const SizedBox.shrink();
+    if (enrolledCourses.isEmpty) return SizedBox.shrink();
 
     final lastCourse =
         enrolledCourses.first; // For now, just show the first enrolled
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -667,9 +667,9 @@ class _HomeScreenState extends State<HomeScreen> {
               color: AppColors.getTextColor(context),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -692,7 +692,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     fit: BoxFit.cover,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,7 +707,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontWeight: FontWeight.normal,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         '${_t('completed')} ${(_enrollmentProgress[lastCourse.id] ?? 0.0).toStringAsFixed(0)}%', // Replaced hardcoded string
                         style: TextStyle(
@@ -716,7 +716,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontSize: 12,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
                         child: LinearProgressIndicator(
@@ -732,7 +732,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 IconButton(
                   onPressed: () {
                     Navigator.push(
@@ -750,7 +750,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
         ],
       ),
     );
@@ -761,7 +761,7 @@ class _HomeScreenState extends State<HomeScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Banner Shimmer
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           child: ShimmerLoader.rectangular(
             height: 180,
@@ -770,21 +770,21 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         // Section Title Shimmer
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: ShimmerLoader.rectangular(height: 20, width: 150),
         ),
-        const SizedBox(height: 15),
+        SizedBox(height: 15),
         // Teacher Avatars Shimmer
         SizedBox(
           height: 100,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20),
             itemCount: 5,
-            itemBuilder: (context, index) => const Padding(
+            itemBuilder: (context, index) => Padding(
               padding: EdgeInsetsDirectional.only(start: 16),
               child: Column(
                 children: [
@@ -796,16 +796,16 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 30),
+        SizedBox(height: 30),
         // Courses Shimmer
-        const Padding(
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 20),
           child: ShimmerLoader.rectangular(height: 24, width: 120),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         ...List.generate(
             3,
-            (index) => const Padding(
+            (index) => Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20),
                   child: CourseCardShimmer(),
                 )),
@@ -816,7 +816,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildSearchBar() {
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Hero(
           tag: 'search_bar',
           child: Material(
@@ -829,7 +829,7 @@ class _HomeScreenState extends State<HomeScreen> {
               borderRadius: BorderRadius.circular(15),
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: AppColors.getGlassColor(context, opacity: 0.1),
                   borderRadius: BorderRadius.circular(15),
@@ -841,7 +841,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icon(Icons.search,
                         color:
                             AppColors.getTextColor(context, secondary: true)),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Text(
                       _t('search_hint'),
                       style: TextStyle(
@@ -869,16 +869,16 @@ class _HomeScreenState extends State<HomeScreen> {
               context,
               MaterialPageRoute(
                   builder: (context) =>
-                      const SubjectsScreen(showBackButton: true)),
+                      SubjectsScreen(showBackButton: true)),
             );
           }),
           SizedBox(
             height: 220, // Enough height for 2 rows of ~95px cards plus padding
             child: GridView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: 20),
               scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              physics: BouncingScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2, // 2 rows
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
@@ -937,12 +937,12 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(
             height: isWideScreen ? 340 : 280,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
+              padding: EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
               itemCount: newCourses.take(10).length,
               itemBuilder: (context, index) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  padding: EdgeInsets.symmetric(horizontal: 5),
                   child: SizedBox(
                     width: isWideScreen ? 280 : 220,
                     child: CourseCard(course: newCourses[index]),
@@ -976,12 +976,12 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(
             height: isWideScreen ? 340 : 280,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
+              padding: EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
               itemCount: mostWatched.take(10).length,
               itemBuilder: (context, index) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  padding: EdgeInsets.symmetric(horizontal: 5),
                   child: SizedBox(
                     width: isWideScreen ? 280 : 220,
                     child: CourseCard(course: mostWatched[index]),
@@ -1000,7 +1000,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Shuffle to differentiate from New Courses
     recordedCourses.shuffle();
     if (recordedCourses.isEmpty) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
+      return SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
     return SliverToBoxAdapter(
@@ -1018,12 +1018,12 @@ class _HomeScreenState extends State<HomeScreen> {
           SizedBox(
             height: isWideScreen ? 340 : 280,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
+              padding: EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
               itemCount: recordedCourses.take(10).length,
               itemBuilder: (context, index) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
+                  padding: EdgeInsets.symmetric(horizontal: 5),
                   child: SizedBox(
                     width: isWideScreen ? 280 : 220,
                     child: CourseCard(course: recordedCourses[index]),
@@ -1045,12 +1045,12 @@ class _HomeScreenState extends State<HomeScreen> {
     // Only show for guests (no profile) or students
     if (userProfile != null &&
         (role == 'teacher' || role == 'admin' || role == 'super_admin')) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
+      return SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: Stack(
@@ -1058,9 +1058,9 @@ class _HomeScreenState extends State<HomeScreen> {
               // Background Gradient & Pattern
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                  gradient: LinearGradient(
                     colors: [
                       AppColors.deepPurple, // Deep Purple
                       AppColors.professionalBlue, // Professional Blue
@@ -1079,7 +1079,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   width: 120,
                   height: 120,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: AppColors.getMutedTextColor(context),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -1087,49 +1087,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Content
               Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    const Icon(Icons.school_outlined,
-                        color: Colors.white, size: 45),
-                    const SizedBox(height: 16),
-                    const Text(
+                    Icon(Icons.school_outlined,
+                        color: AppColors.getTextColor(context), size: 45),
+                    SizedBox(height: 16),
+                    Text(
                       'كن مدرباً وانضم إلينا في رحلة نمو دوراتي',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Cairo',
                         height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
+                    SizedBox(height: 12),
+                    Text(
                       'شارك خبرتك وساعد آلاف الطلاب على تحقيق أهدافهم وكن جزءاً من منصتنا التعليمية الكبرى',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white70,
+                        color: AppColors.getTextColor(context).withOpacity(0.70),
                         fontSize: 13,
                         fontFamily: 'Cairo',
                         height: 1.6,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const RegisterScreen(initialRole: 'teacher'),
+                                RegisterScreen(initialRole: 'teacher'),
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: AppColors.deepPurple,
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 32, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1137,7 +1137,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         elevation: 5,
                         shadowColor: Colors.black.withOpacity(0.3),
                       ),
-                      child: const Text(
+                      child: Text(
                         'سجل الآن',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
@@ -1158,7 +1158,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildTipsSection() {
     if (_tips.isEmpty) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
+      return SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
     return SliverToBoxAdapter(
@@ -1167,12 +1167,12 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _buildSectionHeaderBox(_t('learning_tips_title'), () {
             Navigator.push(context,
-                MaterialPageRoute(builder: (context) => const AllTipsScreen()));
+                MaterialPageRoute(builder: (context) => AllTipsScreen()));
           }),
           SizedBox(
             height: 200,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
+              padding: EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
               itemCount: _tips.length,
               itemBuilder: (context, index) {
@@ -1192,7 +1192,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
         ],
       ),
     );
@@ -1200,7 +1200,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildPackagesSection(bool isWideScreen) {
     if (_bundles.isEmpty) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
+      return SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
     final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
@@ -1214,7 +1214,7 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const AllPackagesScreen()));
+                    builder: (context) => AllPackagesScreen()));
           }),
 
           // Cards List
@@ -1222,7 +1222,7 @@ class _HomeScreenState extends State<HomeScreen> {
             height:
                 290, // Adjusted height to accommodate image, text, divider, price and subscribe button
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 15),
+              padding: EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
               itemCount: _bundles.length,
               itemBuilder: (context, index) {
@@ -1232,7 +1232,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final bool hasBundleAccess = bundleCourseIds.isNotEmpty &&
                     bundleCourseIds.every(_accessibleCourseIds.contains);
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  padding: EdgeInsets.symmetric(horizontal: 6),
                   child: InkWell(
                     onTap: () {
                       Navigator.push(
@@ -1260,7 +1260,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 BoxShadow(
                                   color: Colors.black.withOpacity(0.04),
                                   blurRadius: 8,
-                                  offset: const Offset(0, 4),
+                                  offset: Offset(0, 4),
                                 )
                               ],
                       ),
@@ -1283,12 +1283,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                       errorWidget: (context, url, err) =>
                                           Container(
                                               color: Colors.black12,
-                                              child: const Icon(
+                                              child: Icon(
                                                   Icons.broken_image)),
                                     )
                                   : Container(
                                       color: Colors.black12,
-                                      child: const Icon(Icons.image)),
+                                      child: Icon(Icons.image)),
                             ),
                           ),
 
@@ -1296,7 +1296,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Expanded(
                             child: Padding(
                               padding:
-                                  const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                                  EdgeInsets.fromLTRB(10, 10, 10, 10),
                               child: Column(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
@@ -1318,7 +1318,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                               'Cairo', // Standard smooth font
                                         ),
                                       ),
-                                      const SizedBox(height: 4),
+                                      SizedBox(height: 4),
                                       Text(
                                         '${bundle.courses.length} ${AppStrings.get('courses_count_bundle', locale) == 'courses_count_bundle' ? 'دورات' : AppStrings.get('courses_count_bundle', locale)}',
                                         style: TextStyle(
@@ -1358,7 +1358,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   .withOpacity(0.6),
                                             ),
                                           ),
-                                          const SizedBox(width: 4),
+                                          SizedBox(width: 4),
                                         ],
                                         Text(
                                           bundle.getFormattedPrice(locale),
@@ -1384,7 +1384,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                         shape: RoundedRectangleBorder(
                                             borderRadius:
                                                 BorderRadius.circular(8)),
-                                        padding: const EdgeInsets.symmetric(
+                                        padding: EdgeInsets.symmetric(
                                             vertical: 6),
                                         minimumSize: Size.zero,
                                       ),
@@ -1437,7 +1437,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // "See More" full-width button
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             child: SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -1445,14 +1445,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const AllPackagesScreen()));
+                          builder: (context) => AllPackagesScreen()));
                 },
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
                       color: AppColors.primaryPurple.withOpacity(0.5)),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: Text(
                   AppStrings.get('view_plans_button', locale) ==
@@ -1469,7 +1469,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
         ],
       ),
     );
@@ -1494,7 +1494,7 @@ class _HomeScreenState extends State<HomeScreen> {
             .toList();
 
     if (bannerItems.isEmpty) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
+      return SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
     return SliverToBoxAdapter(
@@ -1514,7 +1514,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           // Page Indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1523,7 +1523,7 @@ class _HomeScreenState extends State<HomeScreen> {
               (index) => Container(
                 width: 8,
                 height: 8,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
+                margin: EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: _currentBannerPage == index
@@ -1533,7 +1533,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
         ],
       ),
     );
@@ -1544,7 +1544,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final bottomBanners =
         _banners.where((b) => b.location == 'bottom').toList();
     if (bottomBanners.isEmpty) {
-      return const SliverToBoxAdapter(child: SizedBox.shrink());
+      return SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
     return SliverToBoxAdapter(
@@ -1606,7 +1606,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 backgroundColor: AppColors.primaryPurple,
                                 foregroundColor: Colors.white,
                                 elevation: 8,
-                                padding: const EdgeInsets.symmetric(
+                                padding: EdgeInsets.symmetric(
                                     horizontal: 24, vertical: 12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
@@ -1615,7 +1615,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               onPressed: () => _handleBannerTap(item),
                               child: Text(
                                 buttonText,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                   fontFamily: 'Cairo',
@@ -1630,7 +1630,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           // Page Indicators
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1639,7 +1639,7 @@ class _HomeScreenState extends State<HomeScreen> {
               (index) => Container(
                 width: 6,
                 height: 6,
-                margin: const EdgeInsets.symmetric(horizontal: 4),
+                margin: EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: _currentBottomBannerPage == index
@@ -1649,7 +1649,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
         ],
       ),
     );
@@ -1659,14 +1659,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return InkWell(
       onTap: () => _handleBannerTap(item),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 10.0),
+        margin: EdgeInsets.symmetric(horizontal: 10.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.3),
               blurRadius: 10,
-              offset: const Offset(0, 5),
+              offset: Offset(0, 5),
             ),
           ],
         ),
@@ -1679,7 +1679,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: double.infinity,
                 height: double.infinity,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(color: Colors.white10),
+                placeholder: (context, url) => Container(color: AppColors.getTextColor(context).withOpacity(0.10)),
                 errorWidget: (context, url, e) =>
                     Container(color: Colors.grey.shade900),
               ),
@@ -1700,13 +1700,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 left: 0,
                 right: 0,
                 child: Container(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (item.subtitle != null && item.subtitle!.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                               horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppColors.primaryPurple.withOpacity(0.8),
@@ -1715,21 +1715,21 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           child: Text(
                             item.subtitle!,
-                            style: const TextStyle(
-                                color: Colors.white,
+                            style: TextStyle(
+                                color: AppColors.getTextColor(context),
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold),
                           ),
                         ),
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
                             child: Text(
                               item.title,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: AppColors.getTextColor(context),
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 shadows: [
@@ -1745,14 +1745,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               (item.subtitle != null &&
                                   item.subtitle!.isNotEmpty))
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.white24,
+                                color: AppColors.getTextColor(context).withOpacity(0.24),
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white24),
                               ),
-                              child: const Icon(Icons.arrow_forward_rounded,
-                                  color: Colors.white, size: 20),
+                              child: Icon(Icons.arrow_forward_rounded,
+                                  color: AppColors.getTextColor(context), size: 20),
                             ),
                         ],
                       ),
@@ -1847,7 +1847,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                 BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 10,
-                    offset: const Offset(0, 5))
+                    offset: Offset(0, 5))
               ]
             : [],
       ),
@@ -1861,7 +1861,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
             GestureDetector(
               onTap: onMenuTap,
               child: Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: AppColors.getGlassColor(context, opacity: 0.1),
                   borderRadius: BorderRadius.circular(12),
@@ -1886,7 +1886,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                           blurRadius: 10)
                     ],
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     t('app_name') == 'app_name'
                         ? 'دوراتي'
@@ -1920,21 +1920,21 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                           .toggleTheme();
                     },
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    constraints: BoxConstraints(),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   TextButton(
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const LoginScreen()),
+                            builder: (context) => LoginScreen()),
                       );
                     },
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: AppColors.primaryPurple.withOpacity(0.3),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      padding: EdgeInsets.symmetric(horizontal: 16),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
@@ -1947,11 +1947,11 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const CartScreen()),
+                            builder: (context) => CartScreen()),
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: AppColors.getGlassColor(context, opacity: 0.1),
                         shape: BoxShape.circle,
@@ -1960,7 +1960,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                           color: AppColors.getTextColor(context), size: 22),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   // Theme Toggle
                   GestureDetector(
                     onTap: () {
@@ -1968,7 +1968,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                           .toggleTheme();
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: AppColors.getGlassColor(context, opacity: 0.1),
                         shape: BoxShape.circle,
@@ -1981,12 +1981,12 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                           size: 22),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   // Notifications
                   GestureDetector(
                     onTap: onNotificationTap,
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: AppColors.getGlassColor(context, opacity: 0.1),
                         shape: BoxShape.circle,

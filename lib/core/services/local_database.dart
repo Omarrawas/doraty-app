@@ -202,6 +202,9 @@ class LocalDatabase {
       await box.delete(key);
       final metaBox = _getBox(boxMetadata);
       await metaBox.delete('${key}_timestamp');
+      
+      final cacheKey = '${boxName ?? boxGeneral}_$key';
+      _memoryCache.remove(cacheKey);
     } catch (e) {
       debugPrint('❌ LocalDatabase Error deleting $key: $e');
     }
@@ -213,6 +216,7 @@ class LocalDatabase {
       await init();
       await _getBox(boxGeneral).clear();
       await _getBox(boxMetadata).clear();
+      _memoryCache.clear();
       debugPrint('🧹 LocalDatabase: All boxes cleared');
     } catch (e) {
       debugPrint('❌ LocalDatabase Error clearing all boxes: $e');
@@ -227,6 +231,9 @@ class LocalDatabase {
         await box.delete(key);
         final metaBox = _getBox(boxMetadata);
         await metaBox.delete('${key}_timestamp');
+        
+        final cacheKey = '${boxName ?? boxGeneral}_$key';
+        _memoryCache.remove(cacheKey);
       } else {
         // If no key is provided, clear all boxes
         await LocalDatabase().clearAll();

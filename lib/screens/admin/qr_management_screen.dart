@@ -15,7 +15,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/error_utils.dart';
 
 class QrManagementScreen extends StatefulWidget {
-  const QrManagementScreen({super.key});
+  QrManagementScreen({super.key});
 
   @override
   State<QrManagementScreen> createState() => _QrManagementScreenState();
@@ -148,7 +148,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
   void _showCreateQrDialog() {
     showDialog(
       context: context,
-      builder: (context) => const CreateQrBulkDialog(),
+      builder: (context) => CreateQrBulkDialog(),
     ).then((added) {
       if (added == true) {
         _loadAllCodes();
@@ -196,7 +196,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text(
+            child: Text(
               'إلغاء',
               style: TextStyle(color: AppColors.textSecondary),
             ),
@@ -207,7 +207,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
-            child: const Text('حذف'),
+            child: Text('حذف'),
           ),
         ],
       ),
@@ -218,7 +218,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         await _db.supabaseClient.from('qr_codes').delete().eq('id', codeId);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حذف الكود')),
+          SnackBar(content: Text('تم حذف الكود')),
         );
         _loadAllCodes();
       } catch (e) {
@@ -246,7 +246,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text(
+            child: Text(
               'إلغاء',
               style: TextStyle(color: AppColors.textSecondary),
             ),
@@ -257,7 +257,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
-            child: const Text('حذف المجموعة'),
+            child: Text('حذف المجموعة'),
           ),
         ],
       ),
@@ -268,7 +268,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         await _db.deleteQrBatch(batchId);
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حذف المجموعة')),
+          SnackBar(content: Text('تم حذف المجموعة')),
         );
         _loadAllCodes();
       } catch (e) {
@@ -389,7 +389,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -401,7 +401,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                   color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 code['batch_name'] ?? 'كود QR',
                 style: TextStyle(
@@ -410,11 +410,11 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: QrImageView(
@@ -424,16 +424,16 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                   backgroundColor: Colors.white,
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppColors.background,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   code['code'],
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontFamily: 'Courier',
                     fontWeight: FontWeight.bold,
                     letterSpacing: 1,
@@ -441,15 +441,15 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () => Navigator.pop(context),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryPurple,
                   foregroundColor: Colors.white,
                 ),
-                icon: const Icon(Icons.close),
-                label: const Text('إغلاق'),
+                icon: Icon(Icons.close),
+                label: Text('إغلاق'),
               ),
             ],
           ),
@@ -460,7 +460,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
@@ -468,13 +468,13 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
           child: TextField(
             controller: _searchController,
             onChanged: _onSearchChanged,
-            style: const TextStyle(color: Colors.white),
+            style: TextStyle(color: AppColors.getTextColor(context)),
             decoration: InputDecoration(
               hintText: 'البحث بالكود أو اسم المجموعة...',
-              prefixIcon: const Icon(Icons.search_rounded, color: Colors.white70),
+              prefixIcon: Icon(Icons.search_rounded, color: AppColors.getTextColor(context).withOpacity(0.70)),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
-                      icon: const Icon(Icons.clear_rounded, color: Colors.white70),
+                      icon: Icon(Icons.clear_rounded, color: AppColors.getTextColor(context).withOpacity(0.70)),
                       onPressed: () {
                         _searchController.clear();
                         _onSearchChanged('');
@@ -484,8 +484,8 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
               border: InputBorder.none,
               filled: true,
               fillColor: Colors.white.withOpacity(0.1),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.4)),
+              contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              hintStyle: TextStyle(color: AppColors.getMutedTextColor(context)),
             ),
           ),
         ),
@@ -496,15 +496,15 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
   Widget _buildFilterChips() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         children: [
           _buildFilterChip('الكل', 'all', Icons.qr_code_rounded),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           _buildFilterChip('متاح', 'active', Icons.check_circle_rounded),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           _buildFilterChip('مستخدم', 'used', Icons.done_all_rounded),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           _buildFilterChip('منتهي', 'expired', Icons.timer_off_rounded),
         ],
       ),
@@ -521,7 +521,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryPurple : Colors.white.withOpacity(0.05),
           borderRadius: BorderRadius.circular(12),
@@ -534,7 +534,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(icon, size: 16, color: isSelected ? Colors.white : Colors.white70),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
@@ -597,14 +597,14 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                 
                 Expanded(
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                      ? Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                       : _groupedCodes.isEmpty
                           ? _buildEmptyState()
                           : RefreshIndicator(
                               onRefresh: _loadAllCodes,
                               color: AppColors.primaryPurple,
                               child: ListView.builder(
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                                 itemCount: _groupedCodes.length,
                                 itemBuilder: (context, index) {
                                   final batchName = _groupedCodes.keys.elementAt(index);
@@ -619,7 +619,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                 
                 if (_hasMore && _filteredCodes.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.all(20.0),
+                    padding: EdgeInsets.all(20.0),
                     child: SizedBox(
                       width: double.infinity,
                       child: Container(
@@ -630,7 +630,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                             BoxShadow(
                               color: AppColors.primaryPurple.withOpacity(0.3),
                               blurRadius: 12,
-                              offset: const Offset(0, 4),
+                              offset: Offset(0, 4),
                             )
                           ],
                         ),
@@ -640,10 +640,10 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                             onTap: _isLoadingMore ? null : _loadMoreCodes,
                             borderRadius: BorderRadius.circular(16),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              padding: EdgeInsets.symmetric(vertical: 16),
                               child: Center(
                                 child: _isLoadingMore
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         height: 20,
                                         width: 20,
                                         child: CircularProgressIndicator(
@@ -651,10 +651,10 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                                           valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                         ),
                                       )
-                                    : const Text(
+                                    : Text(
                                         'تحميل المزيد',
                                         style: TextStyle(
-                                          color: Colors.white,
+                                          color: AppColors.getTextColor(context),
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
                                         ),
@@ -674,8 +674,8 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
           onPressed: _showCreateQrDialog,
           backgroundColor: AppColors.primaryPurple,
           elevation: 8,
-          icon: const Icon(Icons.add_rounded, color: Colors.white),
-          label: const Text('إنشاء مجموعة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          icon: Icon(Icons.add_rounded, color: AppColors.getTextColor(context)),
+          label: Text('إنشاء مجموعة', style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
         ),
       ),
     );
@@ -683,30 +683,30 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppColors.getMutedTextColor(context),
         border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
       ),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+            icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.getTextColor(context)),
             onPressed: () => Navigator.pop(context),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'إدارة أكواد QR',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
               textAlign: TextAlign.center,
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            icon: Icon(Icons.refresh_rounded, color: AppColors.getTextColor(context)),
             onPressed: _loadAllCodes,
           ),
         ],
@@ -722,21 +722,21 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
           Icon(
             Icons.qr_code_scanner_rounded,
             size: 100,
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getMutedTextColor(context),
           ),
-          const SizedBox(height: 24),
-          const Text(
+          SizedBox(height: 24),
+          Text(
             'لا توجد أكواد QR حالياً',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'قم بإنشاء مجموعة جديدة للبدء',
-            style: TextStyle(color: Colors.white.withOpacity(0.5)),
+            style: TextStyle(color: AppColors.getTextColor(context, secondary: true)),
           ),
         ],
       ),
@@ -745,44 +745,44 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
 
   Widget _buildBatchCard(String name, List<Map<String, dynamic>> codes, String? batchId) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppColors.getMutedTextColor(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          padding: const EdgeInsets.all(10),
+          padding: EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: AppColors.primaryPurple.withOpacity(0.2),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.auto_awesome_motion_rounded, color: AppColors.primaryPurple, size: 24),
+          child: Icon(Icons.auto_awesome_motion_rounded, color: AppColors.primaryPurple, size: 24),
         ),
         title: Text(
           name,
-          style: const TextStyle(
+          style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
             fontSize: 16,
           ),
         ),
         subtitle: Text(
           'عدد الأكواد: ${codes.length}',
-          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+          style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 13),
         ),
         trailing: batchId != null
             ? Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.print_rounded, color: AppColors.primaryBlue),
+                    icon: Icon(Icons.print_rounded, color: AppColors.primaryBlue),
                     onPressed: () => _printBatch(batchId),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.error),
+                    icon: Icon(Icons.delete_sweep_rounded, color: AppColors.error),
                     onPressed: () => _deleteBatch(batchId, name),
                   ),
                 ],
@@ -806,25 +806,25 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
         border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
       ),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
         title: Text(
           code['code'],
-          style: const TextStyle(
+          style: TextStyle(
             fontFamily: 'Courier',
             fontSize: 15,
             fontWeight: FontWeight.bold,
             letterSpacing: 1.5,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
           ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 6),
+            SizedBox(height: 6),
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: statusColor.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -834,19 +834,19 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                     style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
-                const SizedBox(width: 12),
-                Icon(Icons.timer_outlined, size: 12, color: Colors.white.withOpacity(0.4)),
-                const SizedBox(width: 4),
+                SizedBox(width: 12),
+                Icon(Icons.timer_outlined, size: 12, color: AppColors.getMutedTextColor(context)),
+                SizedBox(width: 4),
                 Text(
                   expiresAt,
-                  style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.4)),
+                  style: TextStyle(fontSize: 11, color: AppColors.getMutedTextColor(context)),
                 ),
               ],
             ),
           ],
         ),
         trailing: PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert_rounded, color: Colors.white.withOpacity(0.6)),
+          icon: Icon(Icons.more_vert_rounded, color: AppColors.getTextColor(context, secondary: true)),
           onSelected: (value) {
             if (value == 'preview') {
               _showQrPreview(code);
@@ -857,7 +857,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'preview',
               child: ListTile(
                 leading: Icon(Icons.qr_code_2_rounded),
@@ -873,7 +873,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                 dense: true,
               ),
             ),
-            const PopupMenuItem(
+            PopupMenuItem(
               value: 'delete',
               child: ListTile(
                 leading: Icon(Icons.delete_outline_rounded, color: AppColors.error),
@@ -890,7 +890,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
 
 // Dialog for creating bulk QR codes (unchanged from previous version)
 class CreateQrBulkDialog extends StatefulWidget {
-  const CreateQrBulkDialog({super.key});
+  CreateQrBulkDialog({super.key});
 
   @override
   State<CreateQrBulkDialog> createState() => _CreateQrBulkDialogState();
@@ -908,7 +908,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
   List<Map<String, dynamic>> _courses = [];
   List<Map<String, dynamic>> _filteredCourses = [];
   final List<String> _selectedCourseIds = [];
-  DateTime _expiryDate = DateTime.now().add(const Duration(days: 30));
+  DateTime _expiryDate = DateTime.now().add(Duration(days: 30));
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -985,7 +985,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
       context: context,
       initialDate: _expiryDate,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().add(Duration(days: 365)),
     );
     
     if (picked != null) {
@@ -996,7 +996,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
   Future<void> _createBulkQrCodes() async {
     if (!_formKey.currentState!.validate() || _selectedCourseIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى ملء جميع الحقول واختيار مادة واحدة على الأقل')),
+        SnackBar(content: Text('يرجى ملء جميع الحقول واختيار مادة واحدة على الأقل')),
       );
       return;
     }
@@ -1039,7 +1039,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
       data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
       child: Dialog(
         backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        insetPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 24),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
@@ -1051,12 +1051,12 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                 BoxShadow(
                   color: Colors.black.withOpacity(0.3),
                   blurRadius: 20,
-                  offset: const Offset(0, 10),
+                  offset: Offset(0, 10),
                 )
               ],
             ),
             child: _isLoading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple))
+                ? Center(child: CircularProgressIndicator(color: AppColors.primaryPurple))
                 : Form(
                     key: _formKey,
                     child: Column(
@@ -1064,7 +1064,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                       children: [
                         // Header
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 20, 16, 12),
+                          padding: EdgeInsets.fromLTRB(16, 20, 16, 12),
                           child: Text(
                             'إنشاء مجموعة أكواد QR',
                             style: TextStyle(
@@ -1078,7 +1078,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                         
                         Flexible(
                           child: SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            padding: EdgeInsets.symmetric(horizontal: 20),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
@@ -1089,7 +1089,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                   hint: 'مثال: دفعة يناير 2026',
                                   validator: (v) => v?.isEmpty == true ? 'مطلوب' : null,
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 
                                 Row(
                                   children: [
@@ -1107,7 +1107,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                         },
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    SizedBox(width: 12),
                                     Expanded(
                                       child: _buildGlassInput(
                                         controller: _discountController,
@@ -1119,28 +1119,28 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 
                                 // Date Picker
                                 InkWell(
                                   onTap: _selectDate,
                                   borderRadius: BorderRadius.circular(16),
                                   child: Container(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.05),
+                                      color: AppColors.getMutedTextColor(context),
                                       borderRadius: BorderRadius.circular(16),
                                       border: Border.all(color: Colors.white.withOpacity(0.1)),
                                     ),
                                     child: Row(
                                       children: [
-                                        const Icon(Icons.calendar_today_rounded, size: 20, color: AppColors.primaryPurple),
-                                        const SizedBox(width: 12),
+                                        Icon(Icons.calendar_today_rounded, size: 20, color: AppColors.primaryPurple),
+                                        SizedBox(width: 12),
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text('تاريخ الانتهاء', style: TextStyle(fontSize: 11, color: AppColors.getTextColor(context).withOpacity(0.5))),
-                                            Text(intl.DateFormat('yyyy/MM/dd').format(_expiryDate), style: const TextStyle(fontWeight: FontWeight.w600)),
+                                            Text(intl.DateFormat('yyyy/MM/dd').format(_expiryDate), style: TextStyle(fontWeight: FontWeight.w600)),
                                           ],
                                         ),
                                       ],
@@ -1148,12 +1148,12 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                   ),
                                 ),
                                 
-                                const SizedBox(height: 20),
+                                SizedBox(height: 20),
                                 
                                 // Price Summary
                                 if (_totalPrice > 0)
                                   Container(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
                                         colors: [AppColors.success.withOpacity(0.2), AppColors.success.withOpacity(0.05)],
@@ -1164,16 +1164,16 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        const Text('سعر الكود الواحد:', style: TextStyle(fontWeight: FontWeight.w600)),
-                                        Text('$_totalPrice S.P', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.success)),
+                                        Text('سعر الكود الواحد:', style: TextStyle(fontWeight: FontWeight.w600)),
+                                        Text('$_totalPrice S.P', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.success)),
                                       ],
                                     ),
                                   ),
                                 
-                                const SizedBox(height: 20),
+                                SizedBox(height: 20),
                                 
                                 Text('اختيار المواد', style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.getTextColor(context))),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12),
                                 
                                 // Course Search
                                 _buildGlassInput(
@@ -1183,11 +1183,11 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                   isDense: true,
                                 ),
                                 
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12),
                                 
                                 // Courses List
                                 Container(
-                                  constraints: const BoxConstraints(maxHeight: 250),
+                                  constraints: BoxConstraints(maxHeight: 250),
                                   child: ListView.builder(
                                     shrinkWrap: true,
                                     itemCount: _filteredCourses.length,
@@ -1208,8 +1208,8 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                             _calculatePrice();
                                           });
                                         },
-                                        title: Text(course['title'] ?? '', style: const TextStyle(fontSize: 14)),
-                                        subtitle: Text('${course['price'] ?? 0} S.P', style: const TextStyle(color: AppColors.primaryPurple, fontSize: 11)),
+                                        title: Text(course['title'] ?? '', style: TextStyle(fontSize: 14)),
+                                        subtitle: Text('${course['price'] ?? 0} S.P', style: TextStyle(color: AppColors.primaryPurple, fontSize: 11)),
                                         activeColor: AppColors.primaryPurple,
                                         contentPadding: EdgeInsets.zero,
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -1224,7 +1224,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                         
                         // Actions
                         Padding(
-                          padding: const EdgeInsets.all(20),
+                          padding: EdgeInsets.all(20),
                           child: Row(
                             children: [
                               Expanded(
@@ -1233,7 +1233,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                   child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.6))),
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              SizedBox(width: 16),
                               Expanded(
                                 flex: 2,
                                 child: Container(
@@ -1246,11 +1246,11 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.transparent,
                                       shadowColor: Colors.transparent,
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      padding: EdgeInsets.symmetric(vertical: 14),
                                     ),
                                     child: _isSaving
-                                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                        : const Text('إنشاء الأكواد', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                        ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.getTextColor(context)))
+                                        : Text('إنشاء الأكواد', style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
                                   ),
                                 ),
                               ),
@@ -1281,7 +1281,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
       keyboardType: keyboardType,
       validator: validator,
       onChanged: onChanged,
-      style: const TextStyle(fontSize: 14),
+      style: TextStyle(fontSize: 14),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
@@ -1298,7 +1298,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.primaryPurple, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primaryPurple, width: 1.5),
         ),
         isDense: isDense,
         labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.6)),

@@ -11,7 +11,7 @@ import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -61,7 +61,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   void _onSearchChanged() {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    _debounce = Timer(const Duration(milliseconds: 500), () {
+    _debounce = Timer(Duration(milliseconds: 500), () {
       if (_searchController.text.isNotEmpty) {
         _performSearch();
       }
@@ -112,7 +112,7 @@ class _SearchScreenState extends State<SearchScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -121,40 +121,40 @@ class _SearchScreenState extends State<SearchScreen> {
               // Header
               _buildHeader(),
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Search Bar
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: _buildSearchBar(),
               ),
 
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
 
               // Filter Toggle Button
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: 20),
                 child: _buildFilterToggle(),
               ),
 
               // Filters Panel
               if (_showFilters) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: EdgeInsets.symmetric(horizontal: 20),
                   child: _buildFiltersPanel(),
                 ),
               ],
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Search Results
               Expanded(
                 child: _isLoading
                     ? ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(horizontal: 20),
                         itemCount: 5,
-                        itemBuilder: (context, index) => const Padding(
+                        itemBuilder: (context, index) => Padding(
                           padding: EdgeInsets.only(bottom: 16),
                           child: CourseCardShimmer(),
                         ),
@@ -162,11 +162,11 @@ class _SearchScreenState extends State<SearchScreen> {
                     : _searchResults.isEmpty
                         ? _buildEmptyState()
                         : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            padding: EdgeInsets.symmetric(horizontal: 20),
                             itemCount: _searchResults.length,
                             itemBuilder: (context, index) {
                               return Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
+                                padding: EdgeInsets.only(bottom: 16),
                                 child:
                                     CourseCard(course: _searchResults[index]),
                               );
@@ -182,7 +182,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -191,32 +191,32 @@ class _SearchScreenState extends State<SearchScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'البحث عن الدورات',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
@@ -233,26 +233,26 @@ class _SearchScreenState extends State<SearchScreen> {
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: AppColors.getMutedTextColor(context),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: AppColors.getMutedTextColor(context),
                   width: 1,
                 ),
             ),
             child: TextField(
               controller: _searchController,
               textAlign: TextAlign.right,
-              style: const TextStyle(color: Colors.black87),
+              style: TextStyle(color: Colors.black87),
               onSubmitted: (_) => _performSearch(),
               decoration: InputDecoration(
                 hintText: 'ابحث عن الدورات والمواد',
-                hintStyle: const TextStyle(
+                hintStyle: TextStyle(
                   color: Colors.black54,
                   fontSize: 15,
                 ),
                 prefixIcon: IconButton(
-                  icon: const Icon(
+                  icon: Icon(
                     Icons.search,
                     color: Colors.black54,
                   ),
@@ -260,7 +260,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.clear,
                           color: Colors.black54,
                         ),
@@ -273,7 +273,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(
+                contentPadding: EdgeInsets.symmetric(
                   horizontal: 20,
                   vertical: 16,
                 ),
@@ -293,10 +293,10 @@ class _SearchScreenState extends State<SearchScreen> {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1,
             ),
           ),
@@ -310,7 +310,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 });
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
@@ -321,21 +321,21 @@ class _SearchScreenState extends State<SearchScreen> {
                       _showFilters
                           ? Icons.keyboard_arrow_up
                           : Icons.keyboard_arrow_down,
-                      color: Colors.white,
+                      color: AppColors.getTextColor(context),
                     ),
-                    const SizedBox(width: 8),
-                    const Text(
+                    SizedBox(width: 8),
+                    Text(
                       'الفلاتر المتقدمة',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(
+                    SizedBox(width: 8),
+                    Icon(
                       Icons.filter_list,
-                      color: Colors.white,
+                      color: AppColors.getTextColor(context),
                     ),
                   ],
                 ),
@@ -353,7 +353,7 @@ class _SearchScreenState extends State<SearchScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -365,7 +365,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -375,15 +375,15 @@ class _SearchScreenState extends State<SearchScreen> {
 
 
               // Subject Filter
-              const Text(
+              Text(
                 'المادة',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -412,18 +412,18 @@ class _SearchScreenState extends State<SearchScreen> {
                 ],
               ),
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Price Range
-              const Text(
+              Text(
                 'نطاق السعر',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               RangeSlider(
                 values: RangeValues(_minPrice, _maxPrice),
                 min: 0,
@@ -443,23 +443,23 @@ class _SearchScreenState extends State<SearchScreen> {
                 },
               ),
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Rating Filter
-              const Text(
+              Text(
                 'التقييم الأدنى',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Row(
                 children: List.generate(5, (index) {
                   final rating = index + 1;
                   return Padding(
-                    padding: const EdgeInsets.only(left: 8),
+                    padding: EdgeInsets.only(left: 8),
                     child: GestureDetector(
                       onTap: () {
                         setState(() {
@@ -476,7 +476,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 }),
               ),
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Apply Button
               SizedBox(
@@ -491,13 +491,13 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
                       onTap: _performSearch,
-                      child: const Padding(
+                      child: Padding(
                         padding: EdgeInsets.symmetric(vertical: 14),
                         child: Text(
                           'تطبيق الفلاتر',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -526,7 +526,7 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Container(
           decoration: BoxDecoration(
             gradient: isSelected
-                ? const LinearGradient(
+                ? LinearGradient(
                     colors: [
                       AppColors.lightPurple,
                       AppColors.indigoBlue,
@@ -536,7 +536,7 @@ class _SearchScreenState extends State<SearchScreen> {
             color: isSelected ? null : Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1,
             ),
           ),
@@ -546,14 +546,14 @@ class _SearchScreenState extends State<SearchScreen> {
               borderRadius: BorderRadius.circular(20),
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
                 ),
                 child: Text(
                   label,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context),
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
@@ -570,29 +570,29 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_searchController.text.isEmpty) {
       return SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
+          padding: EdgeInsets.symmetric(horizontal: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 10),
-              const Text(
+              SizedBox(height: 10),
+              Text(
                 'تصفح حسب التصنيف',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               _categories.isEmpty 
-                ? const Center(child: Padding(
+                ? Center(child: Padding(
                     padding: EdgeInsets.all(40.0),
-                    child: CircularProgressIndicator(color: Colors.white70),
+                    child: CircularProgressIndicator(color: AppColors.getTextColor(context).withOpacity(0.70)),
                   ))
                 : GridView.builder(
                 shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                physics: NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
                   crossAxisSpacing: 15,
                   mainAxisSpacing: 15,
@@ -604,7 +604,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   return _buildCategoryItem(category);
                 },
               ),
-              const SizedBox(height: 30),
+              SizedBox(height: 30),
             ],
           ),
         ),
@@ -639,14 +639,14 @@ class _SearchScreenState extends State<SearchScreen> {
             end: Alignment.bottomRight,
           ),
           border: Border.all(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getMutedTextColor(context),
             width: 1,
           ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
               blurRadius: 10,
-              offset: const Offset(0, 4),
+              offset: Offset(0, 4),
             ),
           ],
         ),
@@ -655,7 +655,7 @@ class _SearchScreenState extends State<SearchScreen> {
           children: [
             if (category.iconUrl != null && category.iconUrl!.isNotEmpty)
               Container(
-                 padding: const EdgeInsets.all(8),
+                 padding: EdgeInsets.all(8),
                  decoration: BoxDecoration(
                    color: AppColors.primaryPurple.withOpacity(0.2),
                    shape: BoxShape.circle,
@@ -664,18 +664,18 @@ class _SearchScreenState extends State<SearchScreen> {
               )
             else
               Container(
-                 padding: const EdgeInsets.all(8),
+                 padding: EdgeInsets.all(8),
                  decoration: BoxDecoration(
                    color: AppColors.primaryPurple.withOpacity(0.2),
                    shape: BoxShape.circle,
                  ),
-                 child: const Icon(Icons.category, color: Colors.white, size: 24),
+                 child: Icon(Icons.category, color: AppColors.getTextColor(context), size: 24),
               ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               category.name,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.getTextColor(context),
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),

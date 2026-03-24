@@ -5,7 +5,7 @@ import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class LeaderboardScreen extends StatefulWidget {
-  const LeaderboardScreen({super.key});
+  LeaderboardScreen({super.key});
 
   @override
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
@@ -34,23 +34,23 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   future: _leaderboardFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
+                      return Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
                       return Center(
                           child: Text(
                               ErrorUtils.getFriendlyErrorMessage(
                                   snapshot.error!),
-                              style: const TextStyle(
-                                  color: Colors.white, fontFamily: 'Cairo')));
+                              style: TextStyle(
+                                  color: AppColors.getTextColor(context), fontFamily: 'Cairo')));
                     }
 
                     final data = snapshot.data ?? [];
                     if (data.isEmpty) {
-                      return const Center(
+                      return Center(
                           child: Text('لا يوجد بيانات بعد',
                               style: TextStyle(
-                                  color: Colors.white, fontFamily: 'Cairo')));
+                                  color: AppColors.getTextColor(context), fontFamily: 'Cairo')));
                     }
 
                     return _buildLeaderboardContent(data);
@@ -66,27 +66,27 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   Widget _buildAppBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new,
-                color: Colors.white, size: 20),
+            icon: Icon(Icons.arrow_back_ios_new,
+                color: AppColors.getTextColor(context), size: 20),
             onPressed: () => Navigator.pop(context),
           ),
-          const Spacer(),
-          const Text(
+          Spacer(),
+          Text(
             'لوحة المتصدرين',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
               fontSize: 20,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.2,
               fontFamily: 'Cairo',
             ),
           ),
-          const Spacer(),
-          const SizedBox(width: 40), // Balance the back button
+          Spacer(),
+          SizedBox(width: 40), // Balance the back button
         ],
       ),
     );
@@ -103,12 +103,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         });
       },
       child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
+        physics: AlwaysScrollableScrollPhysics(),
         child: Column(
           children: [
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             _buildTopThree(topThree),
-            const SizedBox(height: 30),
+            SizedBox(height: 30),
             _buildList(theRest),
           ],
         ),
@@ -117,20 +117,20 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Widget _buildTopThree(List<Map<String, dynamic>> topThree) {
-    if (topThree.isEmpty) return const SizedBox();
+    if (topThree.isEmpty) return SizedBox();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // 2nd Place
           if (topThree.length >= 2) _buildTopUser(topThree[1], 2, 100),
-          const SizedBox(width: 15),
+          SizedBox(width: 15),
           // 1st Place
           _buildTopUser(topThree[0], 1, 140),
-          const SizedBox(width: 15),
+          SizedBox(width: 15),
           // 3rd Place
           if (topThree.length >= 3) _buildTopUser(topThree[2], 3, 90),
         ],
@@ -142,13 +142,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     Color rankColor;
     double iconSize;
     if (rank == 1) {
-      rankColor = const Color(0xFFFFD700); // Gold
+      rankColor = Color(0xFFFFD700); // Gold
       iconSize = 30;
     } else if (rank == 2) {
-      rankColor = const Color(0xFFC0C0C0); // Silver
+      rankColor = Color(0xFFC0C0C0); // Silver
       iconSize = 25;
     } else {
-      rankColor = const Color(0xFFCD7F32); // Bronze
+      rankColor = Color(0xFFCD7F32); // Bronze
       iconSize = 20;
     }
 
@@ -158,7 +158,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           alignment: Alignment.topCenter,
           children: [
             Padding(
-              padding: const EdgeInsets.only(top: 15),
+              padding: EdgeInsets.only(top: 15),
               child: Container(
                 width: rank == 1 ? 90 : 75,
                 height: rank == 1 ? 90 : 75,
@@ -177,9 +177,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   child: user['avatar_url'] != null
                       ? Image.network(user['avatar_url'], fit: BoxFit.cover)
                       : Container(
-                          color: Colors.white.withOpacity(0.1),
-                          child: const Icon(Icons.person,
-                              color: Colors.white30, size: 40),
+                          color: AppColors.getMutedTextColor(context),
+                          child: Icon(Icons.person,
+                              color: AppColors.getTextColor(context).withOpacity(0.30), size: 40),
                         ),
                 ),
               ),
@@ -187,11 +187,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             Icon(Icons.emoji_events, color: rankColor, size: iconSize),
           ],
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10),
         Text(
           user['full_name'] ?? 'طالب',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: AppColors.getTextColor(context),
             fontWeight: FontWeight.bold,
             fontSize: 14,
             fontFamily: 'Cairo',
@@ -206,9 +206,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             fontFamily: 'Cairo',
           ),
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: 5),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
             color: rankColor.withOpacity(0.2),
             borderRadius: BorderRadius.circular(10),
@@ -225,15 +225,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
 
   Widget _buildList(List<Map<String, dynamic>> users) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         children: List.generate(users.length, (index) {
           final user = users[index];
           final rank = index + 4;
           return Container(
-            margin: const EdgeInsets.only(bottom: 12),
+            margin: EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: AppColors.getMutedTextColor(context),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white.withOpacity(0.1)),
             ),
@@ -244,41 +244,41 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                   Text(
                     '#$rank',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.5),
+                      color: AppColors.getTextColor(context, secondary: true),
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Cairo',
                     ),
                   ),
-                  const SizedBox(width: 15),
+                  SizedBox(width: 15),
                   CircleAvatar(
                     backgroundImage: user['avatar_url'] != null
                         ? NetworkImage(user['avatar_url'])
                         : null,
                     backgroundColor: Colors.white10,
                     child: user['avatar_url'] == null
-                        ? const Icon(Icons.person,
-                            size: 20, color: Colors.white38)
+                        ? Icon(Icons.person,
+                            size: 20, color: AppColors.getTextColor(context).withOpacity(0.38))
                         : null,
                   ),
                 ],
               ),
               title: Text(
                 user['full_name'] ?? 'طالب',
-                style: const TextStyle(
-                    color: Colors.white,
+                style: TextStyle(
+                    color: AppColors.getTextColor(context),
                     fontWeight: FontWeight.w500,
                     fontFamily: 'Cairo'),
               ),
               subtitle: Text(
                 user['rank_title'],
                 style: TextStyle(
-                    color: Colors.white.withOpacity(0.4),
+                    color: AppColors.getMutedTextColor(context),
                     fontSize: 12,
                     fontFamily: 'Cairo'),
               ),
               trailing: Text(
                 '${user['points']} نقطة',
-                style: const TextStyle(
+                style: TextStyle(
                   color: AppColors.primaryPurple,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Cairo',

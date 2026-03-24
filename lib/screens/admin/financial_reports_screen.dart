@@ -8,7 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 
 class FinancialReportsScreen extends StatefulWidget {
-  const FinancialReportsScreen({super.key});
+  FinancialReportsScreen({super.key});
 
   @override
   State<FinancialReportsScreen> createState() => _FinancialReportsScreenState();
@@ -187,7 +187,7 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => Scaffold(
-          appBar: AppBar(title: const Text('معاينة التقرير')),
+          appBar: AppBar(title: Text('معاينة التقرير')),
           body: PdfPreview(
             build: (format) => _generatePdf(format),
             canDebug: false,
@@ -201,35 +201,35 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('التقارير المالية'),
+        title: Text('التقارير المالية'),
         backgroundColor: AppColors.primaryPurple,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Column(
           children: [
             Card(
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: EdgeInsets.all(16.0),
                 child: Column(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.date_range),
+                      leading: Icon(Icons.date_range),
                       title: Text(_dateRange == null
                           ? 'اختر الفترة الزمنية'
                           : '${intl.DateFormat('yyyy/MM/dd').format(_dateRange!.start)} - ${intl.DateFormat('yyyy/MM/dd').format(_dateRange!.end)}'),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                      trailing: Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: _pickDateRange,
                     ),
-                    const Divider(),
+                    Divider(),
                     DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'تصفية حسب الدورة (اختياري)',
                         prefixIcon: Icon(Icons.book),
                         border: InputBorder.none,
                       ),
                       items: [
-                        const DropdownMenuItem(value: null, child: Text('الكل')),
+                        DropdownMenuItem(value: null, child: Text('الكل')),
                         ..._courses.map((c) => DropdownMenuItem(
                               value: c['id'] as String,
                               child: Text(
@@ -247,7 +247,7 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
                 ),
               ),
             ),
-            const Spacer(),
+            Spacer(),
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -259,10 +259,10 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
-                label: const Text(
+                icon: Icon(Icons.picture_as_pdf, color: AppColors.getTextColor(context)),
+                label: Text(
                   'استخراج التقرير',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                  style: TextStyle(color: AppColors.getTextColor(context), fontSize: 16),
                 ),
               ),
             ),

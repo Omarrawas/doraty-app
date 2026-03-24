@@ -20,7 +20,7 @@ import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -173,8 +173,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void _showImageSourceDialog() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF1A1A2E),
-      shape: const RoundedRectangleBorder(
+      backgroundColor: Color(0xFF1A1A2E),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (context) => SafeArea(
@@ -182,16 +182,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: Colors.white),
-              title: const Text('الكاميرا', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.camera_alt, color: AppColors.getTextColor(context)),
+              title: Text('الكاميرا', style: TextStyle(color: AppColors.getTextColor(context))),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.camera);
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Colors.white),
-              title: const Text('المعرض', style: TextStyle(color: Colors.white)),
+              leading: Icon(Icons.photo_library, color: AppColors.getTextColor(context)),
+              title: Text('المعرض', style: TextStyle(color: AppColors.getTextColor(context))),
               onTap: () {
                 Navigator.pop(context);
                 _pickImage(ImageSource.gallery);
@@ -255,23 +255,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   onRefresh: _fetchUserData,
                   color: AppColors.primaryPurple,
                   child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    physics: AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       children: [
-                        const SizedBox(height: 10),
+                        SizedBox(height: 10),
                         _buildProfilePicture(),
-                        const SizedBox(height: 15),
+                        SizedBox(height: 15),
                         Text(
                           StringUtils.cleanTeacherName(
                               _userProfile?['full_name'] ?? _t('user')),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                         OutlinedButton.icon(
                           onPressed: () {
                             setState(() {
@@ -291,10 +291,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                         ),
                       ),
-                      const SizedBox(height: 25),
+                      SizedBox(height: 25),
                       
                       // Stats Row
                       Row(
@@ -306,7 +306,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               value: _stats['courses_count']?.toString() ?? '0',
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          SizedBox(width: 16),
                           Expanded(
                             child: _buildCounterCard(
                               label: 'الشهادات',
@@ -316,7 +316,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                       
-                      const SizedBox(height: 10),
+                      SizedBox(height: 10),
                       
                       if (_isEditing) ...[
                         // Profile Sections
@@ -377,20 +377,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
 
 
-                        const SizedBox(height: 30),
+                        SizedBox(height: 30),
                         
                         // Tab Switcher for Course Progress
                         _buildSectionTitle('نشاطي التعليمي'),
                         _buildTabSwitcher(),
                         
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         
                         // Courses List
                         _isCoursesLoading 
-                          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                          ? Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                           : _buildCoursesList(),
                         
-                        const SizedBox(height: 40),
+                        SizedBox(height: 40),
                       ],
                     ),
                   ),
@@ -405,14 +405,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(10),
+      padding: EdgeInsets.all(10),
       child: Center(
         child: Text(
           _t('profile'),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w500,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
           ),
         ),
       ),
@@ -428,7 +428,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getMutedTextColor(context),
             width: 3,
           ),
           boxShadow: [
@@ -449,20 +449,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           _currentAvatarUrl!,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) => 
-                              const Icon(Icons.person, size: 50, color: Colors.white),
+                              Icon(Icons.person, size: 50, color: AppColors.getTextColor(context)),
                         )
-                      : const Icon(Icons.person, size: 50, color: Colors.white),
+                      : Icon(Icons.person, size: 50, color: AppColors.getTextColor(context)),
             ),
             Positioned(
               bottom: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: const BoxDecoration(
+                padding: EdgeInsets.all(4),
+                decoration: BoxDecoration(
                   color: AppColors.primaryPurple,
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.camera_alt, size: 14, color: Colors.white),
+                child: Icon(Icons.camera_alt, size: 14, color: AppColors.getTextColor(context)),
               ),
             ),
           ],
@@ -482,49 +482,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: BackdropFilter(
             filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: AppColors.getMutedTextColor(context),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: Colors.white.withOpacity(0.2)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
+                  Text(
                     'تعديل الاسم',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.getTextColor(context),
                       fontFamily: 'Cairo',
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   TextField(
                     controller: nameController,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.05),
                       hintText: 'أدخل الاسم الكامل',
-                      hintStyle: TextStyle(color: Colors.white38),
+                      hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.38)),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.getTextColor(context)),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Row(
                     children: [
                       Expanded(
                         child: TextButton(
                           onPressed: () => Navigator.pop(context),
-                          child: const Text('إلغاء', style: TextStyle(color: Colors.white70)),
+                          child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70))),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () async {
@@ -539,7 +539,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             backgroundColor: AppColors.primaryPurple,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          child: const Text('حفظ'),
+                          child: Text('حفظ'),
                         ),
                       ),
                     ],
@@ -554,13 +554,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: EdgeInsets.symmetric(vertical: 12),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: Colors.white,
+          color: AppColors.getTextColor(context),
           fontFamily: 'Cairo',
         ),
       ),
@@ -575,17 +575,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
     VoidCallback? onTap,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: AppColors.getMutedTextColor(context),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withOpacity(0.1),
+                color: AppColors.getMutedTextColor(context),
                 width: 1,
               ),
             ),
@@ -595,43 +595,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(16),
                 onTap: onTap,
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   child: Row(
                     children: [
                       Container(
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: AppColors.getMutedTextColor(context),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
                           icon,
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                           size: 22,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: AppColors.getTextColor(context),
                                 fontFamily: 'Cairo',
                               ),
                             ),
                             if (subtitle != null) ...[
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Text(
                                 subtitle,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: AppColors.getTextColor(context, secondary: true),
                                   fontFamily: 'Cairo',
                                 ),
                               ),
@@ -654,9 +654,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildCounterCard({required String label, required String value}) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.08),
+        color: AppColors.getMutedTextColor(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
@@ -664,18 +664,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withOpacity(0.6),
+              color: AppColors.getTextColor(context, secondary: true),
             ),
           ),
         ],
@@ -689,13 +689,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Container(
           height: 50,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(25),
           ),
           child: Stack(
             children: [
               AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
+                duration: Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 left: _selectedTabIndex == 1 ? 0 : constraints.maxWidth / 2,
                 right: _selectedTabIndex == 0 ? 0 : constraints.maxWidth / 2,
@@ -716,7 +716,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Text(
                           _t('current'), // "متابعة"
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -731,7 +731,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Text(
                           _t('completed_status'), // "المكتملة"
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                           ),
@@ -828,20 +828,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: AppColors.getMutedTextColor(context),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(color: Colors.white.withOpacity(0.2)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Cairo')),
-                const SizedBox(height: 20),
+                Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
+                SizedBox(height: 20),
                 ...options.entries.map((e) => ListTile(
-                  title: Text(e.value, style: const TextStyle(color: Colors.white)),
-                  trailing: currentValue == e.key ? const Icon(Icons.check_circle, color: AppColors.primaryPurple) : null,
+                  title: Text(e.value, style: TextStyle(color: AppColors.getTextColor(context))),
+                  trailing: currentValue == e.key ? Icon(Icons.check_circle, color: AppColors.primaryPurple) : null,
                   onTap: () {
                     onSelect(e.key);
                     Navigator.pop(context);
@@ -873,17 +873,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: BackdropFilter(
             filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: AppColors.getMutedTextColor(context),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: Colors.white.withOpacity(0.2)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'Cairo')),
-                  const SizedBox(height: 20),
+                  Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
+                  SizedBox(height: 20),
                   TextField(
                     controller: controller,
                     keyboardType: keyboardType,
@@ -892,16 +892,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.05),
                       hintText: hint,
-                      hintStyle: const TextStyle(color: Colors.white38),
+                      hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.38)),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.getTextColor(context)),
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Row(
                     children: [
-                      Expanded(child: TextButton(onPressed: () => Navigator.pop(context), child: const Text('إلغاء', style: TextStyle(color: Colors.white70)))),
-                      const SizedBox(width: 12),
+                      Expanded(child: TextButton(onPressed: () => Navigator.pop(context), child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70))))),
+                      SizedBox(width: 12),
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
@@ -909,7 +909,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             Navigator.pop(context);
                           },
                           style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPurple, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                          child: const Text('حفظ'),
+                          child: Text('حفظ'),
                         ),
                       ),
                     ],
@@ -932,15 +932,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (filteredData.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.only(top: 60),
+        padding: EdgeInsets.only(top: 60),
         child: Column(
           children: [
             Icon(_selectedTabIndex == 0 ? Icons.play_circle_outline : Icons.check_circle_outline, 
-                 size: 64, color: Colors.white.withOpacity(0.1)),
-            const SizedBox(height: 16),
+                 size: 64, color: AppColors.getMutedTextColor(context)),
+            SizedBox(height: 16),
             Text(
               _selectedTabIndex == 0 ? 'لا توجد دورات حالية' : 'لا توجد دورات مكتملة',
-              style: const TextStyle(color: Colors.white70, fontSize: 16),
+              style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 16),
             ),
           ],
         ),
@@ -949,13 +949,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return ListView.separated(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       itemCount: filteredData.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
+      separatorBuilder: (context, index) => SizedBox(height: 12),
       itemBuilder: (context, index) {
         final enrollment = filteredData[index];
         final courseJson = enrollment['courses'];
-        if (courseJson == null) return const SizedBox.shrink();
+        if (courseJson == null) return SizedBox.shrink();
         
         final course = Course.fromJson(courseJson);
         final progress = (enrollment['progress_percentage'] as num? ?? 0).toDouble() / 100;
@@ -971,9 +971,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           },
           borderRadius: BorderRadius.circular(16),
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: AppColors.getMutedTextColor(context),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white.withOpacity(0.05)),
             ),
@@ -989,8 +989,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     placeholder: (context, url) => Container(
                       width: 90,
                       height: 60,
-                      color: Colors.white10,
-                      child: const Center(
+                      color: AppColors.getTextColor(context).withOpacity(0.10),
+                      child: Center(
                         child: SizedBox(
                           width: 20,
                           height: 20,
@@ -1004,38 +1004,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     errorWidget: (context, url, error) => Container(
                       width: 90,
                       height: 60,
-                      color: Colors.white10,
-                      child: const Icon(Icons.image_not_supported, color: Colors.white24),
+                      color: AppColors.getTextColor(context).withOpacity(0.10),
+                      child: Icon(Icons.image_not_supported, color: AppColors.getTextColor(context).withOpacity(0.24)),
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         course.title,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.getTextColor(context),
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         course.instructorName,
-                        style: const TextStyle(
-                          color: Colors.white60,
+                        style: TextStyle(
+                          color: AppColors.getTextColor(context).withOpacity(0.60),
                           fontSize: 12,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (_selectedTabIndex == 0) ...[
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Row(
                           children: [
                             Expanded(
@@ -1049,11 +1049,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Text(
                               '${(progress * 100).toInt()}%',
-                              style: const TextStyle(
-                                color: Colors.white70,
+                              style: TextStyle(
+                                color: AppColors.getTextColor(context).withOpacity(0.70),
                                 fontSize: 10,
                               ),
                             ),
@@ -1063,10 +1063,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Icon(
+                SizedBox(width: 8),
+                Icon(
                   Icons.arrow_forward_ios,
-                  color: Colors.white24,
+                  color: AppColors.getTextColor(context).withOpacity(0.24),
                   size: 14,
                 ),
               ],
@@ -1079,60 +1079,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildCompleteProfilePrompt() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(30),
+        padding: EdgeInsets.all(30),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: AppColors.getMutedTextColor(context),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.assignment_ind_outlined, size: 80, color: Colors.amberAccent),
+              child: Icon(Icons.assignment_ind_outlined, size: 80, color: Colors.amberAccent),
             ),
-            const SizedBox(height: 24),
-            const Text(
+            SizedBox(height: 24),
+            Text(
               'أكمل إعداد حسابك',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               'يرجى اختيار دورك (طالب أو مدرس) وإكمال بياناتك للوصول لكامل ميزات المنصة',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.7),
+                color: AppColors.getTextColor(context, secondary: true),
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const RegisterScreen()),
+                  MaterialPageRoute(builder: (_) => RegisterScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 elevation: 8,
               ),
-              child: const Text(
+              child: Text(
                 'إكمال الملف الشخصي',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             TextButton(
               onPressed: () => AuthService().signOut(),
-              child: const Text('تسجيل الخروج', style: TextStyle(color: Colors.white54)),
+              child: Text('تسجيل الخروج', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54))),
             ),
           ],
         ),
@@ -1143,56 +1143,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildLoginRequiredView() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(30),
+        padding: EdgeInsets.all(30),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: AppColors.getMutedTextColor(context),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.person_outline, size: 80, color: Colors.white54),
+              child: Icon(Icons.person_outline, size: 80, color: AppColors.getTextColor(context).withOpacity(0.54)),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Text(
               _t('login_required_title'),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               _t('login_required_desc'),
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.white.withOpacity(0.7),
+                color: AppColors.getTextColor(context, secondary: true),
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 32),
+            SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => LoginScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 elevation: 8,
                 shadowColor: AppColors.primaryPurple.withOpacity(0.5),
               ),
               child: Text(
                 _t('login_title'),
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
           ],

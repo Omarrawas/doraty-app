@@ -20,7 +20,7 @@ class CreateCourseScreen extends StatefulWidget {
 
   final String? preselectedInstructorId;
 
-  const CreateCourseScreen({
+  CreateCourseScreen({
     super.key,
     this.courseId,
     this.courseData,
@@ -287,7 +287,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم الرفع إلى يوتيوب بنجاح!')),
+            SnackBar(content: Text('تم الرفع إلى يوتيوب بنجاح!')),
           );
         }
       } else {
@@ -319,7 +319,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                 _buildHeader(context, isEditing),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                         horizontal: 20, vertical: 10),
                     child: Form(
                       key: _formKey,
@@ -345,7 +345,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 TextFormField(
                                   controller: _descriptionController,
                                   decoration: _inputDecoration(
@@ -365,7 +365,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                           _buildGlassContainer(
                             title: 'التصنيفات والبيانات الضمنية',
                             child: Column(
@@ -374,13 +374,13 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                 Text(
                                   'اختر التصنيفات المناسبة (يمكن اختيار أكثر من واحد):',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.7),
+                                    color: AppColors.getTextColor(context, secondary: true),
                                     fontSize: 14,
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12),
                                 _isLoadingCategories
-                                    ? const Center(
+                                    ? Center(
                                         child: CircularProgressIndicator())
                                     : Wrap(
                                         spacing: 8,
@@ -428,7 +428,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           );
                                         }).toList(),
                                       ),
-                                const SizedBox(height: 20),
+                                SizedBox(height: 20),
                                 Row(
                                   children: [
                                     Expanded(
@@ -448,7 +448,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                         },
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    SizedBox(width: 12),
                                     Expanded(
                                       child: DropdownButtonFormField<String>(
                                         value: _levelController.text.isNotEmpty
@@ -458,7 +458,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           label: _t('level_label'),
                                           icon: Icons.signal_cellular_alt,
                                         ),
-                                        dropdownColor: const Color(0xFF1A1A2E),
+                                        dropdownColor: Color(0xFF1A1A2E),
                                         style: TextStyle(color: AppColors.getTextColor(context)),
                                         items: _availableLevels.map((item) {
                                           return DropdownMenuItem(
@@ -483,17 +483,17 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 20),
+                                SizedBox(height: 20),
                                 Text(
                                   _t('tags_optional_label'),
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.7),
+                                    color: AppColors.getTextColor(context, secondary: true),
                                     fontSize: 14,
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                SizedBox(height: 12),
                                 _isLoadingTags
-                                    ? const Center(
+                                    ? Center(
                                         child: CircularProgressIndicator())
                                     : Wrap(
                                         spacing: 8,
@@ -541,7 +541,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                           _buildGlassContainer(
                             title: 'الصور والهوية البصرية',
                             child: Row(
@@ -558,7 +558,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                         ),
                                         style: TextStyle(color: AppColors.getTextColor(context)),
                                       ),
-                                      const SizedBox(height: 16),
+                                      SizedBox(height: 16),
                                       TextFormField(
                                         controller: _videoUrlController,
                                         decoration: _inputDecoration(
@@ -566,9 +566,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           hint: _t('video_url_hint'),
                                           icon: Icons.video_collection_rounded,
                                           suffix: _isUploadingToYoutube 
-                                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                            ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                                             : IconButton(
-                                                icon: const Icon(Icons.cloud_upload, color: Colors.redAccent),
+                                                icon: Icon(Icons.cloud_upload, color: Colors.redAccent),
                                                 onPressed: _pickAndUploadToYoutube,
                                                 tooltip: 'رفع إلى يوتيوب (غير مدرج)',
                                               ),
@@ -578,14 +578,14 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                     ],
                                   ),
                                 ),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
                                   child: Container(
                                     height: 56,
                                     width: 56,
                                     decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
+                                      gradient: LinearGradient(
                                         colors: [
                                           AppColors.primaryPurple,
                                           Colors.blueAccent
@@ -597,12 +597,12 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                       onPressed:
                                           _isUploading ? null : _uploadImage,
                                       icon: _isUploading
-                                          ? const SizedBox(
+                                          ? SizedBox(
                                               width: 24,
                                               height: 24,
                                               child: CircularProgressIndicator(
                                                 strokeWidth: 2,
-                                                color: Colors.white,
+                                                color: AppColors.getTextColor(context),
                                               ),
                                             )
                                           : Icon(
@@ -614,7 +614,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                           _buildGlassContainer(
                             title: _t('pricing_time_data'),
                             child: Column(
@@ -634,7 +634,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                   icon: Icons.money_off,
                                   activeColor: Colors.blueAccent,
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 Row(
                                   children: [
                                     Expanded(
@@ -657,7 +657,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                         keyboardType: TextInputType.number,
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
+                                    SizedBox(width: 6),
                                     Expanded(
                                       flex: 2,
                                       child: DropdownButtonFormField<String>(
@@ -667,9 +667,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           label: _t('currency'),
                                           icon: Icons.payments_outlined,
                                         ),
-                                        dropdownColor: const Color(0xFF1A1A2E),
+                                        dropdownColor: Color(0xFF1A1A2E),
                                         style: TextStyle(color: AppColors.getTextColor(context)),
-                                        items: const [
+                                        items: [
                                           DropdownMenuItem(
                                               value: 'ل.س', child: Text('ل.س')),
                                           DropdownMenuItem(
@@ -682,7 +682,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                         },
                                       ),
                                     ),
-                                    const SizedBox(width: 6),
+                                    SizedBox(width: 6),
                                     Expanded(
                                       flex: 3,
                                       child: TextFormField(
@@ -701,7 +701,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 TextFormField(
                                   controller: _discountController,
                                   enabled: !_isFree,
@@ -729,13 +729,13 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                           _buildGlassContainer(
                             title: _t('instructor_and_visibility'),
                             child: Column(
                               children: [
                                 _isLoadingTeachers
-                                    ? const Center(
+                                    ? Center(
                                         child: CircularProgressIndicator())
                                     : TextFormField(
                                         key: ValueKey(_selectedTeacherId),
@@ -751,13 +751,13 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           icon: Icons.person,
                                           hint: 'اختر مدرساً أو اتركه غير محدد',
                                         ).copyWith(
-                                          suffixIcon: const Icon(
+                                          suffixIcon: Icon(
                                               Icons.arrow_drop_down,
-                                              color: Colors.white70),
+                                              color: AppColors.getTextColor(context).withOpacity(0.70)),
                                         ),
                                         style: TextStyle(color: AppColors.getTextColor(context)),
                                       ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 _buildSwitchTile(
                                   title: 'نشر الدورة',
                                   subtitle:
@@ -771,9 +771,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 32),
+                          SizedBox(height: 32),
                           _buildSubmitButton(isEditing),
-                          const SizedBox(height: 40),
+                          SizedBox(height: 40),
                         ],
                       ),
                     ),
@@ -789,7 +789,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   Widget _buildHeader(BuildContext context, bool isEditing) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -811,7 +811,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               isEditing ? _t('edit_course') : _t('create_new_course'),
@@ -845,7 +845,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               width: 1.5,
             ),
           ),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -857,7 +857,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                   color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               child,
             ],
           ),
@@ -893,7 +893,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             ),
             child: Column(
               children: [
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Container(
                   width: 40,
                   height: 4,
@@ -902,9 +902,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: EdgeInsets.symmetric(horizontal: 20),
                   child: Text(
                     _t('select_teacher'),
                     style: TextStyle(
@@ -913,9 +913,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                         fontWeight: FontWeight.normal),
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: EdgeInsets.symmetric(horizontal: 20),
                   child: TextFormField(
                     decoration: _inputDecoration(
                       label: _t('search_teacher'),
@@ -929,10 +929,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Expanded(
                   child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    padding: EdgeInsets.symmetric(horizontal: 10),
                     itemCount:
                         (searchQuery.isEmpty ? 1 : 0) + filteredTeachers.length,
                     itemBuilder: (context, index) {
@@ -941,10 +941,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundColor: Colors.grey.withOpacity(0.1),
-                            child: const Icon(Icons.person_off,
+                            child: Icon(Icons.person_off,
                                 color: Colors.grey),
                           ),
-                          title: const Text('غير محدد',
+                          title: Text('غير محدد',
                               style: TextStyle(color: Colors.grey)),
                           onTap: () {
                             setState(() {
@@ -982,7 +982,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                               ? NetworkImage(avatarUrl)
                               : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
-                              ? const Icon(Icons.person, color: AppColors.primaryPurple)
+                              ? Icon(Icons.person, color: AppColors.primaryPurple)
                               : null,
                         ),
                         title: Text(name,
@@ -990,7 +990,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                         subtitle: Text(roleName, 
                             style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 12)),
                         trailing: isSelected
-                            ? const Icon(Icons.check_circle,
+                            ? Icon(Icons.check_circle,
                                 color: Colors.greenAccent)
                             : null,
                         onTap: () {
@@ -1038,7 +1038,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+        borderSide: BorderSide(color: Colors.blueAccent, width: 2),
       ),
     );
   }
@@ -1052,7 +1052,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     required Color activeColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.getGlassColor(context, opacity: 0.05),
         borderRadius: BorderRadius.circular(12),
@@ -1079,14 +1079,14 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       height: 56,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [AppColors.primaryPurple, Colors.blueAccent],
         ),
         boxShadow: [
           BoxShadow(
             color: AppColors.primaryPurple.withOpacity(0.3),
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -1099,23 +1099,23 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         child: _isSaving
-            ? const SizedBox(
+            ? SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 3,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(isEditing ? Icons.save : Icons.add, color: Colors.white),
-                  const SizedBox(width: 8),
+                  Icon(isEditing ? Icons.save : Icons.add, color: AppColors.getTextColor(context)),
+                  SizedBox(width: 8),
                   Text(
                     isEditing ? _t('save_changes') : _t('create_new_course'),
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.getTextColor(context),
                       fontSize: 18,
                       fontWeight: FontWeight.normal,
                     ),
@@ -1273,7 +1273,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             _isUploading = false;
           });
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('تم رفع الصورة بنجاح'),
               backgroundColor: Colors.green,
             ),

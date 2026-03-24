@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -10,7 +11,7 @@ class VideoPreviewWidget extends StatefulWidget {
   final bool showHeader;
   final String? thumbnailUrl; // ← تمت الإضافة
 
-  const VideoPreviewWidget({
+  VideoPreviewWidget({
     super.key,
     required this.videoUrl,
     this.showHeader = true,
@@ -43,7 +44,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     // إعداد نبضة زر التشغيل
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.12).animate(
@@ -53,7 +54,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     if (_videoId != null) {
       _controller = YoutubePlayerController(
         initialVideoId: _videoId!,
-        flags: const YoutubePlayerFlags(
+        flags: YoutubePlayerFlags(
           autoPlay: false,
           mute: false,
           forceHD: false,
@@ -177,7 +178,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: AppColors.getMutedTextColor(context),
                 borderRadius: BorderRadius.circular(16),
                 border:
                     Border.all(color: Colors.white.withOpacity(0.3), width: 1),
@@ -188,33 +189,33 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                   // ── Header ──
                   if (widget.showHeader)
                     Padding(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12),
                       child: Row(
                         children: [
                           Icon(Icons.play_circle,
-                              color: Colors.white.withOpacity(0.7)),
-                          const SizedBox(width: 8),
-                          const Text(
+                              color: AppColors.getTextColor(context, secondary: true)),
+                          SizedBox(width: 8),
+                          Text(
                             'معاينة الفيديو',
                             style: TextStyle(
-                              color: Colors.white,
+                              color: AppColors.getTextColor(context),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const Spacer(),
+                          Spacer(),
                           // زر التكبير - يظهر فقط بعد بدء التشغيل
                           if (_hasStarted)
                             GestureDetector(
                               onTap: _enterFullScreen,
                               child: Container(
-                                padding: const EdgeInsets.all(4),
+                                padding: EdgeInsets.all(4),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.15),
+                                  color: AppColors.getMutedTextColor(context),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Icon(
                                   Icons.fullscreen_rounded,
-                                  color: Colors.white.withOpacity(0.9),
+                                  color: AppColors.getTextColor(context, secondary: true),
                                   size: 20,
                                 ),
                               ),
@@ -265,8 +266,8 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                                     errorWidget: (context, url, error) =>
                                         Container(
                                       color: Colors.black87,
-                                      child: const Icon(Icons.image_not_supported,
-                                          color: Colors.white38, size: 48),
+                                      child: Icon(Icons.image_not_supported,
+                                          color: AppColors.getTextColor(context).withOpacity(0.38), size: 48),
                                     ),
                                   ),
 
@@ -299,7 +300,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                                         height: 64,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: Colors.white.withOpacity(0.95),
+                                          color: AppColors.getTextColor(context, secondary: true),
                                           boxShadow: [
                                             BoxShadow(
                                               color: Colors.black.withOpacity(0.3),
@@ -308,7 +309,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                                             ),
                                           ],
                                         ),
-                                        child: const Icon(
+                                        child: Icon(
                                           Icons.play_arrow_rounded,
                                           color: Color(0xFF7B2CBF),
                                           size: 40,
@@ -324,16 +325,16 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                                     right: 0,
                                     child: Center(
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(
+                                        padding: EdgeInsets.symmetric(
                                             horizontal: 12, vertical: 5),
                                         decoration: BoxDecoration(
                                           color: Colors.black.withOpacity(0.5),
                                           borderRadius: BorderRadius.circular(20),
                                         ),
-                                        child: const Text(
+                                        child: Text(
                                           'اضغط للمشاهدة',
                                           style: TextStyle(
-                                            color: Colors.white,
+                                            color: AppColors.getTextColor(context),
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
                                           ),
@@ -360,13 +361,13 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
 
   Widget _buildErrorWidget() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.red.withOpacity(0.2),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.red.withOpacity(0.5), width: 1),
       ),
-      child: const Row(
+      child: Row(
         children: [
           Icon(Icons.error, color: Colors.red),
           SizedBox(width: 12),

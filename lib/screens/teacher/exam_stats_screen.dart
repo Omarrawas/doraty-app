@@ -11,7 +11,7 @@ class ExamStatsScreen extends StatefulWidget {
   final String examId;
   final String examTitle;
 
-  const ExamStatsScreen({
+  ExamStatsScreen({
     super.key,
     required this.examId,
     required this.examTitle,
@@ -65,8 +65,8 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                 _buildHeader(context),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white))
+                      ? Center(
+                          child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                       : _stats == null || (_stats!['attempts'] as List).isEmpty
                           ? Center(
                               child: Text(
@@ -79,13 +79,13 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                               ),
                             )
                           : SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                   horizontal: 20, vertical: 10),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _buildSummaryCards(),
-                                  const SizedBox(height: 24),
+                                  SizedBox(height: 24),
                                   Text(
                                     'أداء الأسئلة',
                                     style: TextStyle(
@@ -94,9 +94,9 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(height: 16),
+                                  SizedBox(height: 16),
                                   _buildQuestionsList(),
-                                  const SizedBox(height: 32),
+                                  SizedBox(height: 32),
                                 ],
                               ),
                             ),
@@ -111,7 +111,7 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -127,13 +127,13 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -175,7 +175,7 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
             Colors.blueAccent,
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
             'متوسط الدرجات',
@@ -194,7 +194,7 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: AppColors.getGlassColor(context, opacity: 0.15),
             borderRadius: BorderRadius.circular(20),
@@ -204,14 +204,14 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 28),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 value,
                 style: TextStyle(
@@ -220,7 +220,7 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 title,
                 textAlign: TextAlign.center,
@@ -241,9 +241,9 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
     
     return ListView.separated(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       itemCount: questions.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      separatorBuilder: (_, __) => SizedBox(height: 16),
       itemBuilder: (context, index) {
         final q = questions[index];
         final total = q['totalCount'] as int;
@@ -256,7 +256,7 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.getGlassColor(context, opacity: 0.1),
                 borderRadius: BorderRadius.circular(16),
@@ -270,7 +270,7 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.primaryPurple.withOpacity(0.2),
@@ -278,14 +278,14 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                         ),
                         child: Text(
                           'س ${index + 1}',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppColors.getTextColor(context),
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           q['questionText'],
@@ -298,13 +298,13 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20),
                   Stack(
                     children: [
                       Container(
                         height: 8,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
+                          color: AppColors.getMutedTextColor(context),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -313,7 +313,7 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                         child: Container(
                           height: 8,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
+                            gradient: LinearGradient(
                               colors: [Colors.greenAccent, Colors.tealAccent],
                             ),
                             borderRadius: BorderRadius.circular(4),
@@ -329,7 +329,7 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -338,12 +338,12 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: Colors.greenAccent,
                               shape: BoxShape.circle,
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6),
                           Text(
                             'إجابات صحيحة: $correct (${(correctPercentage * 100).toStringAsFixed(0)}%)',
                             style: TextStyle(
@@ -357,12 +357,12 @@ class _ExamStatsScreenState extends State<ExamStatsScreen> {
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: Colors.redAccent,
                               shape: BoxShape.circle,
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6),
                           Text(
                             'خاطئة: $wrong',
                             style: TextStyle(

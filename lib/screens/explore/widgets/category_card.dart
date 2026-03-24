@@ -9,7 +9,7 @@ class CategoryCard extends StatelessWidget {
   final bool isSelected;
   final EdgeInsetsGeometry? margin;
 
-  const CategoryCard({
+  CategoryCard({
     super.key,
     required this.category,
     required this.onTap,
@@ -19,12 +19,12 @@ class CategoryCard extends StatelessWidget {
 
   Color get _color {
     final colors = [
-      const Color(0xFFE55A7E), // Pink
-      const Color(0xFF5A8DEE), // Blue
-      const Color(0xFFF18671), // Orange-Red
-      const Color(0xFF14B3C5), // Cyan
-      const Color(0xFF4CAF50), // Green
-      const Color(0xFFF09A36), // Yellow
+      Color(0xFFE55A7E), // Pink
+      Color(0xFF5A8DEE), // Blue
+      Color(0xFFF18671), // Orange-Red
+      Color(0xFF14B3C5), // Cyan
+      Color(0xFF4CAF50), // Green
+      Color(0xFFF09A36), // Yellow
     ];
     int hash = category.id.hashCode.abs();
     return colors[hash % colors.length];
@@ -57,7 +57,7 @@ class CategoryCard extends StatelessWidget {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.03),
                     blurRadius: 6,
-                    offset: const Offset(0, 2),
+                    offset: Offset(0, 2),
                   ),
                 ],
         ),
@@ -82,7 +82,7 @@ class CategoryCard extends StatelessWidget {
             else
               Icon(Icons.category_rounded, color: itemColor, size: 36),
 
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
 
             // Text
             Padding(

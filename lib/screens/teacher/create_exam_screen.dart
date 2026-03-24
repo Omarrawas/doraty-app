@@ -15,7 +15,7 @@ class CreateExamScreen extends StatefulWidget {
   final String? lessonId; // Added lessonId
   final bool loadAllCourses;
 
-  const CreateExamScreen({
+  CreateExamScreen({
     super.key,
     this.examId,
     this.examData,
@@ -138,7 +138,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                 _buildHeader(context),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -164,7 +164,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 TextFormField(
                                   controller: _descriptionController,
                                   style: TextStyle(
@@ -176,14 +176,14 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                                   ),
                                   maxLines: 3,
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 _buildCourseDropdown(),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 _buildLessonDropdown(),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
 
                           _buildGlassContainer(
                             title: 'إعدادات الاختبار',
@@ -214,7 +214,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                                         },
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    SizedBox(width: 12),
                                     Expanded(
                                       child: TextFormField(
                                         controller: _totalPointsController,
@@ -240,7 +240,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 Row(
                                   children: [
                                     Expanded(
@@ -269,7 +269,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                                         },
                                       ),
                                     ),
-                                    const SizedBox(width: 12),
+                                    SizedBox(width: 12),
                                     Expanded(
                                       child: TextFormField(
                                         controller: _maxAttemptsController,
@@ -289,7 +289,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
 
                           _buildGlassContainer(
                             title: 'خيارات متقدمة',
@@ -304,7 +304,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                                     setState(() => _shuffleQuestions = value);
                                   },
                                 ),
-                                const Divider(color: Colors.white10),
+                                Divider(color: AppColors.getTextColor(context).withOpacity(0.10)),
                                 _buildSwitchTile(
                                   title: 'خلط الخيارات',
                                   subtitle: 'عرض خيارات الإجابة بترتيب عشوائي',
@@ -317,10 +317,10 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 32),
+                          SizedBox(height: 32),
 
                           _buildActionButtons(context),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                         ],
                       ),
                     ),
@@ -336,7 +336,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -352,13 +352,13 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               _isEditing ? 'تعديل الاختبار' : 'إنشاء اختبار جديد',
@@ -392,7 +392,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
               width: 1.5,
             ),
           ),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -404,7 +404,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
                   color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               child,
             ],
           ),
@@ -421,9 +421,9 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      prefixIcon: Icon(icon, color: Colors.white70),
-      labelStyle: const TextStyle(color: Colors.white70),
-      hintStyle: const TextStyle(color: Colors.white38),
+      prefixIcon: Icon(icon, color: AppColors.getTextColor(context).withOpacity(0.70)),
+      labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
+      hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.38)),
       filled: true,
       fillColor: Colors.white.withOpacity(0.05),
       border: OutlineInputBorder(
@@ -436,7 +436,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+        borderSide: BorderSide(color: Colors.blueAccent, width: 2),
       ),
     );
   }
@@ -510,7 +510,7 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
   }
 
   Widget _buildLessonDropdown() {
-    if (_selectedCourseId == null) return const SizedBox.shrink();
+    if (_selectedCourseId == null) return SizedBox.shrink();
 
     return DropdownButtonFormField<String>(
       dropdownColor: AppColors.primaryPurple,
@@ -523,8 +523,8 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
             ? Container(
                 width: 20,
                 height: 20,
-                padding: const EdgeInsets.all(12),
-                child: const CircularProgressIndicator(
+                padding: EdgeInsets.all(12),
+                child: CircularProgressIndicator(
                     strokeWidth: 2, color: Colors.blueAccent),
               )
             : null,
@@ -562,51 +562,51 @@ class _CreateExamScreenState extends State<CreateExamScreen> {
             ),
             child: TextButton.icon(
               onPressed: () => _saveExam(publish: false),
-              icon: const Icon(Icons.save, color: Colors.orangeAccent),
-              label: const Text('حفظ كمسودة',
+              icon: Icon(Icons.save, color: Colors.orangeAccent),
+              label: Text('حفظ كمسودة',
                   style: TextStyle(color: Colors.orangeAccent)),
               style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: EdgeInsets.symmetric(vertical: 14),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 colors: [Colors.green, Colors.teal],
               ),
               boxShadow: [
                 BoxShadow(
                   color: Colors.green.withOpacity(0.3),
                   blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  offset: Offset(0, 4),
                 ),
               ],
             ),
             child: ElevatedButton.icon(
               onPressed: _isLoading ? null : () => _saveExam(publish: true),
               icon: _isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                       ),
                     )
                   : Icon(_isEditing ? Icons.check : Icons.publish,
-                      color: Colors.white),
+                      color: AppColors.getTextColor(context)),
               label: Text(_isEditing ? 'حفظ التغييرات' : 'حفظ ونشر',
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.normal)),
+                  style: TextStyle(
+                      color: AppColors.getTextColor(context), fontWeight: FontWeight.normal)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),

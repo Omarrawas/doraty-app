@@ -12,7 +12,7 @@ class CustomTextField extends StatelessWidget {
   final String? Function(String?)? validator;
   final int? maxLines;
 
-  const CustomTextField({
+  CustomTextField({
     super.key,
     required this.label,
     this.hint,
@@ -32,13 +32,13 @@ class CustomTextField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         TextFormField(
           controller: controller,
           obscureText: obscureText,

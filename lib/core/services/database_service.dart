@@ -1205,7 +1205,13 @@ class DatabaseService {
           .from('enrollments')
           .update({'progress': progress})
           .eq('user_id', userId)
+          .eq('user_id', userId)
           .eq('course_id', courseId);
+
+      // Invalidate relevant caches
+      await LocalDatabase().remove('user_${userId}_accessible_course_ids');
+      await LocalDatabase().remove(CacheKeys.userEnrolledIds(userId));
+      await LocalDatabase().remove(CacheKeys.userEnrollments(userId));
     } catch (e) {
       debugPrint('Error updating course progress: $e');
     }
@@ -2087,7 +2093,7 @@ class DatabaseService {
               .from('orders')
               .select('id')
               .eq('user_id', userId)
-              .eq('payment_status', 'paid');
+              .inFilter('status', ['paid', 'completed', 'approved']);
 
           final orderIds = (paidOrders as List)
               .map((e) => e['id']?.toString())
@@ -2181,6 +2187,11 @@ class DatabaseService {
 
       // Update students count
       await _updateCourseEnrollmentCount(courseId);
+
+      // Invalidate course access cache so UI reflects new subscription immediately
+      await LocalDatabase().remove('user_${userId}_accessible_course_ids');
+      await LocalDatabase().remove(CacheKeys.userEnrolledIds(userId));
+      await LocalDatabase().remove(CacheKeys.userEnrollments(userId));
     } catch (e) {
       rethrow;
     }
@@ -2200,6 +2211,11 @@ class DatabaseService {
 
       // Update students count
       await _updateCourseEnrollmentCount(courseId);
+
+      // Invalidate course access cache
+      await LocalDatabase().remove('user_${userId}_accessible_course_ids');
+      await LocalDatabase().remove(CacheKeys.userEnrolledIds(userId));
+      await LocalDatabase().remove(CacheKeys.userEnrollments(userId));
     } catch (e) {
       rethrow;
     }

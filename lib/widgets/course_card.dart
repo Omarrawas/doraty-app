@@ -17,7 +17,7 @@ class CourseCard extends StatefulWidget {
   final String? heroTag;
   final double? progress;
 
-  const CourseCard({
+  CourseCard({
     super.key,
     required this.course,
     this.heroTag,
@@ -41,7 +41,7 @@ class _CourseCardState extends State<CourseCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 150),
+      duration: Duration(milliseconds: 150),
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
@@ -54,8 +54,10 @@ class _CourseCardState extends State<CourseCard>
   Future<void> _checkCourseAccess() async {
     if (_hasCourseAccess) return;
     try {
-      final hasAccess =
-          await _databaseService.hasCourseAccess(widget.course.id);
+      final hasAccess = await _databaseService.hasCourseAccess(
+        widget.course.id,
+        forceRefresh: true,
+      );
       if (mounted) setState(() => _hasCourseAccess = hasAccess);
     } catch (e) {
       debugPrint('Error checking course access: $e');
@@ -91,7 +93,7 @@ class _CourseCardState extends State<CourseCard>
                     'removed_from_favorites',
                     Provider.of<LocaleProvider>(context, listen: false)
                         .locale)),
-            duration: const Duration(seconds: 1),
+            duration: Duration(seconds: 1),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -126,7 +128,7 @@ class _CourseCardState extends State<CourseCard>
             BoxShadow(
               color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
               blurRadius: 10,
-              offset: const Offset(0, 4),
+              offset: Offset(0, 4),
             )
           ],
         ),
@@ -169,7 +171,7 @@ class _CourseCardState extends State<CourseCard>
                                   fit: BoxFit.cover,
                                   placeholder: (context, url) => Container(
                                     color: Colors.grey.withOpacity(0.1),
-                                    child: const Center(
+                                    child: Center(
                                       child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           color: AppColors.primaryPurple),
@@ -178,13 +180,13 @@ class _CourseCardState extends State<CourseCard>
                                   errorWidget: (context, url, error) =>
                                       Container(
                                     color: Colors.grey.withOpacity(0.1),
-                                    child: const Icon(Icons.broken_image,
+                                    child: Icon(Icons.broken_image,
                                         color: Colors.grey, size: 30),
                                   ),
                                 )
                               : Container(
                                   color: Colors.grey.withOpacity(0.1),
-                                  child: const Icon(Icons.image_not_supported,
+                                  child: Icon(Icons.image_not_supported,
                                       color: Colors.grey),
                                 ),
                         ),
@@ -202,7 +204,7 @@ class _CourseCardState extends State<CourseCard>
                               : Icons.favorite_border_rounded,
                           color: _isFavorite ? Colors.redAccent : Colors.white,
                           size: 26,
-                          shadows: const [
+                          shadows: [
                             Shadow(color: Colors.black45, blurRadius: 6)
                           ],
                         ),
@@ -214,7 +216,7 @@ class _CourseCardState extends State<CourseCard>
                         top: 12,
                         left: 12,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.redAccent,
@@ -224,8 +226,8 @@ class _CourseCardState extends State<CourseCard>
                             AppStrings.get('new_badge', locale) == 'new_badge'
                                 ? 'جديد'
                                 : AppStrings.get('new_badge', locale),
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppColors.getTextColor(context),
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
@@ -239,7 +241,7 @@ class _CourseCardState extends State<CourseCard>
                         bottom: 8,
                         right: 8,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.black.withOpacity(0.7),
@@ -253,8 +255,8 @@ class _CourseCardState extends State<CourseCard>
                                 widget.course.durationHours!
                                     .replaceAll('ساعات', 'س')
                                     .replaceAll('دقائق', 'د'),
-                                style: const TextStyle(
-                                  color: Colors.white,
+                                style: TextStyle(
+                                  color: AppColors.getTextColor(context),
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -270,7 +272,7 @@ class _CourseCardState extends State<CourseCard>
                 // --- 2. Content ---
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                    padding: EdgeInsets.fromLTRB(12, 12, 12, 12),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -292,7 +294,7 @@ class _CourseCardState extends State<CourseCard>
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Text(
                               'تقديم ${StringUtils.cleanTeacherName(widget.course.getLocalizedInstructorName(locale))}',
                               textAlign: TextAlign.center,
@@ -334,7 +336,7 @@ class _CourseCardState extends State<CourseCard>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 6),
+                              SizedBox(height: 6),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(4),
                                 child: LinearProgressIndicator(
@@ -348,7 +350,7 @@ class _CourseCardState extends State<CourseCard>
                                   minHeight: 4,
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              SizedBox(height: 12),
                             ] else if (widget.course.price > 0) ...[
                               // Pricing
                               Row(
@@ -365,7 +367,7 @@ class _CourseCardState extends State<CourseCard>
                                         decoration: TextDecoration.lineThrough,
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                   ],
                                   Text(
                                     widget.course.getLocalizedPrice(locale),
@@ -377,7 +379,7 @@ class _CourseCardState extends State<CourseCard>
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
+                              SizedBox(height: 12),
                             ],
 
                             // Independent Subscribe Button
@@ -385,11 +387,11 @@ class _CourseCardState extends State<CourseCard>
                               width: double.infinity,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(
+                                  backgroundColor: Color(
                                       0xFF434775), // Exact purple-blue color from the image
                                   foregroundColor: Colors.white,
                                   padding:
-                                      const EdgeInsets.symmetric(vertical: 10),
+                                      EdgeInsets.symmetric(vertical: 10),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -408,7 +410,7 @@ class _CourseCardState extends State<CourseCard>
                                 },
                                 child: Text(
                                   _hasCourseAccess ? 'أكمل مشاهدة' : 'اشترك',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.bold,
                                     fontFamily: 'Cairo',
@@ -435,30 +437,30 @@ class _CourseCardState extends State<CourseCard>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E2C),
+        backgroundColor: Color(0xFF1E1E2C),
         title: Text(
           AppStrings.get('login_required_title', locale),
-          style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+          style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
           textAlign: TextAlign.right,
         ),
         content: Text(
           AppStrings.get('login_required_desc', locale),
           style: TextStyle(
-              color: Colors.white.withOpacity(0.7), fontFamily: 'Cairo'),
+              color: AppColors.getTextColor(context, secondary: true), fontFamily: 'Cairo'),
           textAlign: TextAlign.right,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(AppStrings.get('cancel', locale),
-                style: const TextStyle(fontFamily: 'Cairo')),
+                style: TextStyle(fontFamily: 'Cairo')),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                MaterialPageRoute(builder: (_) => LoginScreen()),
               );
             },
             style: ElevatedButton.styleFrom(
@@ -466,7 +468,7 @@ class _CourseCardState extends State<CourseCard>
               foregroundColor: Colors.white,
             ),
             child: Text(AppStrings.get('login_title', locale),
-                style: const TextStyle(fontFamily: 'Cairo')),
+                style: TextStyle(fontFamily: 'Cairo')),
           ),
         ],
       ),

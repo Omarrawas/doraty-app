@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:universal_html/html.dart' as html;
@@ -10,7 +11,7 @@ class YoutubePlayerWebWindows extends StatefulWidget {
   final String videoId;
   final double? height;
 
-  const YoutubePlayerWebWindows({
+  YoutubePlayerWebWindows({
     super.key,
     required this.videoId,
     this.height,
@@ -119,40 +120,40 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.play_circle_outline,
-              color: Colors.white70, size: 64),
-          const SizedBox(height: 16),
-          const Text(
+          Icon(Icons.play_circle_outline,
+              color: AppColors.getTextColor(context).withOpacity(0.70), size: 64),
+          SizedBox(height: 16),
+          Text(
             'تعذّر تشغيل الفيديو داخل التطبيق',
-            style: TextStyle(color: Colors.white, fontSize: 16),
+            style: TextStyle(color: AppColors.getTextColor(context), fontSize: 16),
           ),
           if (_errorMessage.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
+              padding: EdgeInsets.symmetric(horizontal: 24),
               child: Text(
                 _errorMessage,
-                style: const TextStyle(color: Colors.white38, fontSize: 12),
+                style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.38), fontSize: 12),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ),
           ],
-          const SizedBox(height: 8),
-          const Text(
+          SizedBox(height: 8),
+          Text(
             'قد يحتاج جهازك إلى تثبيت Microsoft Edge WebView2',
-            style: TextStyle(color: Colors.white54, fontSize: 13),
+            style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54), fontSize: 13),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton.icon(
                 onPressed: () => _openInBrowser(youtubeUrl),
-                icon: const Icon(Icons.open_in_browser),
-                label: const Text('فتح في المتصفح'),
+                icon: Icon(Icons.open_in_browser),
+                label: Text('فتح في المتصفح'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
@@ -161,16 +162,16 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               OutlinedButton.icon(
                 onPressed: () => _openInBrowser(
                     'https://aka.ms/microsoft-edge-webview2-runtime'),
-                icon: const Icon(Icons.download, size: 16),
-                label: const Text('تثبيت WebView2',
+                icon: Icon(Icons.download, size: 16),
+                label: Text('تثبيت WebView2',
                     style: TextStyle(fontSize: 12)),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white70,
-                  side: const BorderSide(color: Colors.white30),
+                  side: BorderSide(color: Colors.white30),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),

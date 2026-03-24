@@ -17,7 +17,7 @@ class CourseEnrollmentsScreen extends StatefulWidget {
   final String courseId;
   final String courseTitle;
 
-  const CourseEnrollmentsScreen({
+  CourseEnrollmentsScreen({
     super.key,
     required this.courseId,
     required this.courseTitle,
@@ -82,7 +82,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                 _buildSearchSection(),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
+                      ? Center(
                           child: CircularProgressIndicator(
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
@@ -93,7 +93,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                           child: _enrollments.isEmpty
                               ? _buildEmptyState()
                               : ListView.builder(
-                                  padding: const EdgeInsets.all(20),
+                                  padding: EdgeInsets.all(20),
                                   itemCount: _enrollments.length,
                                   itemBuilder: (context, index) {
                                     return _buildEnrollmentCard(_enrollments[index]);
@@ -111,7 +111,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -127,13 +127,13 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,7 +171,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.print, color: Colors.white),
+                  icon: Icon(Icons.print, color: AppColors.getTextColor(context)),
                   onPressed:
                       _enrollments.isEmpty ? null : _generateAndPrintReport,
                   tooltip: 'طباعة التقرير',
@@ -179,7 +179,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: BackdropFilter(
@@ -193,7 +193,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  icon: Icon(Icons.refresh, color: AppColors.getTextColor(context)),
                   onPressed: _loadData,
                   tooltip: 'تحديث البيانات',
                 ),
@@ -207,7 +207,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
 
   Widget _buildSearchSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
@@ -233,7 +233,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                 prefixIcon: Icon(Icons.search,
                     color: AppColors.getTextColor(context).withOpacity(0.6)),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(16),
+                contentPadding: EdgeInsets.all(16),
               ),
             ),
           ),
@@ -251,7 +251,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
     final String status = enrollment['status'] ?? 'active';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
@@ -265,7 +265,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                   width: 1.5),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               child: Column(
                 children: [
                   Row(
@@ -279,11 +279,11 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                         child: userData?['avatar_url'] == null
                             ? Text(
                                 (userData?['full_name']?[0] ?? 'U').toUpperCase(),
-                                style: const TextStyle(color: Colors.white),
+                                style: TextStyle(color: AppColors.getTextColor(context)),
                               )
                             : null,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,7 +311,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                       _buildStatusBadge(status),
                     ],
                   ),
-                  const Divider(height: 24, color: Colors.white12),
+                  Divider(height: 24, color: AppColors.getTextColor(context).withOpacity(0.12)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -351,7 +351,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                           ),
                           Text(
                             _currencyFormat.format(courseData?['price'] ?? 0),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.greenAccent,
                               fontSize: 15,
                               fontWeight: FontWeight.normal,
@@ -362,18 +362,18 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                     ],
                   ),
                   if (status == 'active') ...[
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: () => _confirmChangeStatus(enrollment['id'], 'cancelled'),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                          side: BorderSide(color: Colors.redAccent, width: 1.5),
                           foregroundColor: Colors.redAccent,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text('إلغاء الاشتراك',
+                        child: Text('إلغاء الاشتراك',
                             style: TextStyle(fontWeight: FontWeight.normal)),
                       ),
                     ),
@@ -410,7 +410,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
@@ -432,21 +432,21 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
           backgroundColor: AppColors.getGlassColor(context, opacity: 0.9),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: Colors.white24)),
-          title: const Text('تأكيد الإجراء',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.normal)),
-          content: const Text(
+              side: BorderSide(color: Colors.white24)),
+          title: Text('تأكيد الإجراء',
+              style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.normal)),
+          content: Text(
             'هل أنت متأكد من تغيير حالة الاشتراك لهذا الطالب؟ سيؤدي هذا لإلغاء وصوله للمحتوى.',
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+              child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60))),
             ),
             Container(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [Colors.redAccent, Colors.red]),
+                gradient: LinearGradient(colors: [Colors.redAccent, Colors.red]),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: TextButton(
@@ -457,7 +457,7 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                     await _db.updateEnrollmentStatus(enrollmentId, newStatus);
                     _loadData();
                     messenger.showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text('تم تحديث حالة الاشتراك بنجاح'),
                         backgroundColor: Colors.green,
                       ),
@@ -470,8 +470,8 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
                     );
                   }
                 },
-                child: const Text('تأكيد الإلغاء',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.normal)),
+                child: Text('تأكيد الإلغاء',
+                    style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.normal)),
               ),
             ),
           ],
@@ -486,8 +486,8 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(color: Colors.white),
+        builder: (context) => Center(
+          child: CircularProgressIndicator(color: AppColors.getTextColor(context)),
         ),
       );
 
@@ -677,8 +677,8 @@ class _CourseEnrollmentsScreenState extends State<CourseEnrollmentsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 80, color: Colors.white.withOpacity(0.2)),
-          const SizedBox(height: 16),
+          Icon(Icons.people_outline, size: 80, color: AppColors.getMutedTextColor(context)),
+          SizedBox(height: 16),
           Text(
             'لا يوجد طلاب مشتركين بعد',
             style: TextStyle(

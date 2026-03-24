@@ -10,7 +10,7 @@ import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class UsersManagementScreen extends StatefulWidget {
-  const UsersManagementScreen({super.key});
+  UsersManagementScreen({super.key});
 
   @override
   State<UsersManagementScreen> createState() => _UsersManagementScreenState();
@@ -82,7 +82,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                 _buildSearchBar(context),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
+                      ? Center(
                           child: CircularProgressIndicator(
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(Colors.white),
@@ -93,11 +93,11 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                           : RefreshIndicator(
                               onRefresh: _loadData,
                               child: ListView.builder(
-                                padding: const EdgeInsets.all(20),
+                                padding: EdgeInsets.all(20),
                                 itemCount: _filteredUsers.length,
                                 itemBuilder: (context, index) {
                                   return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
+                                    padding: EdgeInsets.only(bottom: 12),
                                     child: _buildUserCard(
                                         context, _filteredUsers[index]),
                                   );
@@ -115,7 +115,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -131,13 +131,13 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               'إدارة المستخدمين',
@@ -149,7 +149,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: AppColors.getGlassColor(context, opacity: 0.2),
               borderRadius: BorderRadius.circular(12),
@@ -169,7 +169,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
 
   Widget _buildSearchBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
@@ -192,7 +192,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                 prefixIcon: Icon(Icons.search,
                     color: AppColors.getTextColor(context).withOpacity(0.7)),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(16),
+                contentPadding: EdgeInsets.all(16),
               ),
             ),
           ),
@@ -220,7 +220,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                 width: 1.5),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -231,14 +231,14 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       radius: 24,
                       child: Text(
                         (user['full_name']?.toString()[0] ?? 'U').toUpperCase(),
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.getTextColor(context),
                           fontSize: 20,
                           fontWeight: FontWeight.normal,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -264,7 +264,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding: EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: _getRoleColor(roleName).withOpacity(0.3),
@@ -283,7 +283,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Row(
                   children: [
                     if (_canManageRole(user)) // Added condition
@@ -370,13 +370,13 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               borderRadius: BorderRadius.circular(12),
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: EdgeInsets.symmetric(vertical: 10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(icon,
                         color: AppColors.getTextColor(context), size: 18),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(
                       label,
                       style: TextStyle(
@@ -398,13 +398,13 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              padding: const EdgeInsets.all(30),
+              padding: EdgeInsets.all(30),
               decoration: BoxDecoration(
                 color: AppColors.getGlassColor(context, opacity: 0.15),
                 borderRadius: BorderRadius.circular(16),
@@ -417,7 +417,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                 children: [
                   Icon(Icons.people,
                       color: AppColors.getTextColor(context), size: 64),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
                   Text(
                     'لا توجد نتائج',
                     style: TextStyle(
@@ -440,7 +440,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.primaryPurple,
-        title: const Text('تعيين دور', style: TextStyle(color: Colors.white)),
+        title: Text('تعيين دور', style: TextStyle(color: AppColors.getTextColor(context))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: _roles.where((r) {
@@ -453,7 +453,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             return ListTile(
               title: Text(
                 role['display_name'] ?? '',
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.getTextColor(context)),
               ),
               onTap: () async {
                 final navigator = Navigator.of(context);
@@ -463,7 +463,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                   if (mounted) {
                     navigator.pop();
                     messenger.showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text('تم تعيين الدور'),
                         backgroundColor: Colors.green,
                       ),
@@ -488,7 +488,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white)),
+            child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context))),
           ),
         ],
       ),

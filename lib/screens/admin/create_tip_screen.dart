@@ -11,7 +11,7 @@ import 'dart:io';
 
 class CreateTipScreen extends StatefulWidget {
   final Tip? tip;
-  const CreateTipScreen({super.key, this.tip});
+  CreateTipScreen({super.key, this.tip});
 
   @override
   State<CreateTipScreen> createState() => _CreateTipScreenState();
@@ -107,7 +107,7 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم الرفع والحصول على الرابط بنجاح!')),
+            SnackBar(content: Text('تم الرفع والحصول على الرابط بنجاح!')),
           );
         }
       } else {
@@ -143,7 +143,7 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم رفع الصورة بنجاح')),
+          SnackBar(content: Text('تم رفع الصورة بنجاح')),
         );
       }
     } catch (e) {
@@ -175,7 +175,7 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
       ),
       body: DynamicGradientBackground(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 120, 20, 40),
+          padding: EdgeInsets.fromLTRB(20, 120, 20, 40),
           child: Form(
             key: _formKey,
             child: Column(
@@ -187,7 +187,7 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
                   icon: Icons.title,
                   validator: (v) => v!.isEmpty ? 'يرجى إدخال العنوان' : null,
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 _buildTextField(
                   controller: _videoUrlController,
                   label: 'رابط الفيديو (Direct URL or Youtube)',
@@ -195,19 +195,19 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
                   validator: (v) => v!.isEmpty ? 'يرجى إدخال رابط الفيديو' : null,
                   hint: 'https://example.com/video.mp4',
                   suffix: _isUploading 
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                     : IconButton(
-                        icon: const Icon(Icons.cloud_upload, color: AppColors.secondaryGold),
+                        icon: Icon(Icons.cloud_upload, color: AppColors.secondaryGold),
                         onPressed: _pickAndUploadVideo,
                         tooltip: 'رفع إلى التلغرام تلقائياً',
                       ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 if (_thumbnailUrlController.text.isNotEmpty)
                   Container(
                     height: 150,
                     width: double.infinity,
-                    margin: const EdgeInsets.only(bottom: 16),
+                    margin: EdgeInsets.only(bottom: 16),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: Colors.white10),
@@ -219,7 +219,7 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
                     child: Align(
                       alignment: Alignment.topRight,
                       child: IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
+                        icon: Icon(Icons.close, color: AppColors.getTextColor(context)),
                         onPressed: () => setState(() => _thumbnailUrlController.clear()),
                         style: IconButton.styleFrom(backgroundColor: Colors.black45),
                       ),
@@ -231,20 +231,20 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
                   icon: Icons.image_outlined,
                   hint: 'اختياري',
                   suffix: _isUploadingThumbnail 
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                     : IconButton(
-                        icon: const Icon(Icons.image_search_rounded, color: AppColors.secondaryGold),
+                        icon: Icon(Icons.image_search_rounded, color: AppColors.secondaryGold),
                         onPressed: _pickAndUploadThumbnail,
                         tooltip: 'رفع صورة مصغرة محلياً',
                       ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 
                 // Course Picker
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.08),
+                    color: AppColors.getMutedTextColor(context),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.white10),
                   ),
@@ -252,13 +252,13 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
                     child: DropdownButtonFormField<String>(
                       dropdownColor: Colors.deepPurple.shade900,
                       value: _selectedCourseId,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'اربط بدورة معينة (CTA)',
-                        labelStyle: TextStyle(color: Colors.white54),
+                        labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54)),
                         border: InputBorder.none,
                         prefixIcon: Icon(Icons.link, color: AppColors.secondaryGold),
                       ),
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.getTextColor(context)),
                       items: [
                         const DropdownMenuItem<String>(
                           value: null,
@@ -274,18 +274,18 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
                   ),
                 ),
                 
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
                 
                 ElevatedButton(
                   onPressed: _isSaving ? null : _save,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryPurple,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: _isSaving 
-                      ? const CircularProgressIndicator(color: Colors.white)
+                      ? CircularProgressIndicator(color: AppColors.getTextColor(context))
                       : Text(widget.tip == null ? 'إضافة' : 'حفظ التغييرات'),
                 ),
               ],
@@ -307,23 +307,23 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
     return TextFormField(
       controller: controller,
       validator: validator,
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: AppColors.getTextColor(context)),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white24, fontSize: 13),
-        labelStyle: const TextStyle(color: Colors.white54),
-        prefixIcon: Icon(icon, color: Colors.white70),
+        hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.24), fontSize: 13),
+        labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54)),
+        prefixIcon: Icon(icon, color: AppColors.getTextColor(context).withOpacity(0.70)),
         suffixIcon: suffix,
         filled: true,
         fillColor: Colors.white.withOpacity(0.08),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.white10),
+          borderSide: BorderSide(color: Colors.white10),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.white10),
+          borderSide: BorderSide(color: Colors.white10),
         ),
       ),
     );

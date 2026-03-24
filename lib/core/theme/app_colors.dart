@@ -38,6 +38,7 @@ class AppColorPalette {
 
   const AppColorPalette({
     required this.brightness,
+
     required this.primary,
     required this.secondary,
     required this.background,
@@ -85,7 +86,7 @@ class AppColors {
   static const Color primaryDark = Color(0xFF2D1B69);
 
   // Legacy base colors kept as const because many screens still use them in
-  // const widgets such as const BoxDecoration(...).
+  // const widgets such as BoxDecoration(...).
   static const Color background = Color(0xFFF4F7FF);
   static const Color darkBackground = Color(0xFF111320);
   static const Color darkNavy = Color(0xFF18233A);
@@ -163,9 +164,9 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFFF5F8FF),
-      Color(0xFFEEF4FF),
-      Color(0xFFF8F4FF),
+      Color(0xFF6B4CE6), // primaryPurple
+      Color(0xFF4E9FF5), // primaryBlue
+      Color(0xFF5A3FC0), // deeper purple
     ],
   );
 
@@ -191,40 +192,44 @@ class AppColors {
     colors: [lightPurple, indigoBlue],
   );
 
+
+
   static const AppColorPalette light = AppColorPalette(
     brightness: Brightness.light,
     primary: primaryPurple,
     secondary: primaryBlue,
-    background: background,
-    scaffoldBackground: background,
-    surface: lightSurface,
-    surfaceElevated: Color(0xFFFDFEFF),
-    card: cardBackground,
-    dialog: cardBackground,
-    drawerBackground: cardBackground,
-    inputFill: lightInputFill,
-    inputFillAlt: Color(0xFFF1F4FF),
-    appBarBackground: Color(0xFFFDFEFF),
-    appBarForeground: textPrimary,
-    textPrimary: textPrimary,
-    textSecondary: textSecondary,
-    textMuted: textLight,
-    iconPrimary: textPrimary,
-    iconSecondary: Color(0xFF6B7280),
-    border: Color(0xFFD8DEEB),
-    borderStrong: Color(0xFFBEC8DD),
-    glass: Color(0xF0FFFFFF),
-    glassStrong: Color(0xFFFFFFFF),
-    navBackground: Color(0xFFFFFFFF),
-    shimmerBase: Color(0xFFE8ECF5),
-    shimmerHighlight: Color(0xFFF6F8FD),
+    background: Color(0xFF5A3FC0),
+    scaffoldBackground: Color(0xFF6B4CE6),
+    surface: Color(0xFF7B5DD4),
+    surfaceElevated: Color(0xFF7B5DD4),
+    card: Color(0xFF7B5DD4),
+    dialog: Color(0xFF6651C8),
+    drawerBackground: Color(0xFF5A3FC0),
+    inputFill: Color(0x33FFFFFF),
+    inputFillAlt: Color(0x22FFFFFF),
+    appBarBackground: Colors.transparent,
+    appBarForeground: Colors.white,
+    textPrimary: Colors.white,
+    textSecondary: Color(0xFFDED6FF),
+    textMuted: Color(0xFFBBB3E8),
+    iconPrimary: Colors.white,
+    iconSecondary: Color(0xFFDED6FF),
+    border: Color(0x33FFFFFF),
+    borderStrong: Color(0x55FFFFFF),
+    glass: Color(0x33FFFFFF),
+    glassStrong: Color(0x55FFFFFF),
+    navBackground: Color(0xFF5A3FC0),
+    shimmerBase: Color(0xFF7B5DD4),
+    shimmerHighlight: Color(0xFF9B7DF0),
     backgroundGradient: backgroundGradient,
     overlayStyle: SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
     ),
   );
+
+
 
   static const AppColorPalette dark = AppColorPalette(
     brightness: Brightness.dark,
@@ -261,6 +266,8 @@ class AppColors {
     ),
   );
 
+
+
   static AppColorPalette of(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return isDark ? dark : light;
@@ -275,7 +282,7 @@ class AppColors {
         BoxShadow(
           color: alpha(primaryPurple, 0.10),
           blurRadius: 20,
-          offset: const Offset(0, 10),
+          offset: Offset(0, 10),
         ),
       ];
 
@@ -283,7 +290,7 @@ class AppColors {
         BoxShadow(
           color: alpha(primaryPurple, 0.30),
           blurRadius: 15,
-          offset: const Offset(0, 5),
+          offset: Offset(0, 5),
         ),
       ];
 
@@ -291,7 +298,7 @@ class AppColors {
         BoxShadow(
           color: alpha(lightPurple, 0.40),
           blurRadius: 20,
-          offset: const Offset(0, 10),
+          offset: Offset(0, 10),
         ),
       ];
 
@@ -336,7 +343,7 @@ class AppColors {
       of(context).isDark ? editorAccentDark : editorAccentLight;
 
   static Color getEditorSurface(BuildContext context) =>
-      of(context).isDark ? const Color(0xFF161922) : light.inputFill;
+      of(context).isDark ? Color(0xFF161922) : light.inputFill;
 
   static Color getEditorBorder(BuildContext context) =>
       of(context).isDark ? alpha(Colors.white, 0.12) : editorBorderLight;

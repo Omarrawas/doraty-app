@@ -43,21 +43,25 @@ void main() {
     
     // 2. Parallelize critical initializations
     try {
-      await Future.wait([
-        dotenv.load(fileName: ".env"),
-        Hive.initFlutter(),
-      ]);
-      
-      // Initialize LocalDatabase (depends on Hive)
-      await LocalDatabase().init();
-      
-      // Initialize Settings (depends on shared_preferences)
-      await SettingsService().init();
+      // 1. Critical Base Services
+      await Hive.initFlutter().timeout(Duration(seconds: 7));
+      await LocalDatabase().init().timeout(Duration(seconds: 7));
+      await SettingsService().init().timeout(Duration(seconds: 5));
+      debugPrint('✅ Storage/Settings initialized');
     } catch (e) {
-      debugPrint('🚨 [InitError] Critical initialization failed: $e');
+      debugPrint('🚨 [StorageError] Storage/Settings initialization failed: $e');
+    }
+
+    try {
+      // 2. Optional/Env Loading
+      await dotenv.load(fileName: ".env").timeout(Duration(seconds: 3));
+      debugPrint('✅ Environment loaded');
+    } catch (e) {
+      debugPrint('⚠️ [EnvError] Environment loading failed (expected if .env missing): $e');
     }
 
     // 3. Initialize Supabase with a timeout safeguard
+
     const String ciUrl = String.fromEnvironment('SUPABASE_URL');
     const String ciAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
     final String url = (ciUrl.isNotEmpty ? ciUrl : Env.supabaseUrl).trim();
@@ -67,7 +71,7 @@ void main() {
       await SupabaseService.initialize(
         supabaseUrl: url,
         supabaseAnonKey: anonKey,
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(Duration(seconds: 10));
       debugPrint('✅ Supabase initialized');
     } catch (e) {
       debugPrint('⚠️ Supabase Init failed or timed out: $e');
@@ -96,7 +100,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => NavigationProvider()),
           ChangeNotifierProvider(create: (_) => CartProvider()),
         ],
-        child: const MyApp(),
+        child: MyApp(),
       ),
     );
   }, (error, stack) {
@@ -106,6 +110,7 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
 
   @override
   Widget build(BuildContext context) {
@@ -117,11 +122,11 @@ class MyApp extends StatelessWidget {
 
           // Localization Support
           locale: localeProvider.flutterLocale,
-          supportedLocales: const [
+          supportedLocales: [
             Locale('ar', 'SY'),
             Locale('en', 'US'),
           ],
-          localizationsDelegates: const [
+          localizationsDelegates: [
             GlobalMaterialLocalizations.delegate,
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
@@ -133,7 +138,7 @@ class MyApp extends StatelessWidget {
           themeMode: themeProvider.materialThemeMode,
 
           // Home
-          home: const SplashScreen(),
+          home: SplashScreen(),
         );
       },
     );
@@ -141,7 +146,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  MainScreen({super.key});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -183,11 +188,11 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
 
     // Build common screens
     final List<Widget> screens = [
-      const HomeScreen(),
-      const ExploreScreen(),
+      HomeScreen(),
+      ExploreScreen(),
       AllTipsScreen(showAppBar: false, isVisible: currentIndex == 2, showCloseButton: false),
-      const SubjectsScreen(showBackButton: false),
-      const ProfileScreen(),
+      SubjectsScreen(showBackButton: false),
+      ProfileScreen(),
     ];
 
     return Scaffold(
@@ -197,19 +202,19 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
           // Offline Indicator (Condition: syncService.isOffline)
           Consumer<SyncService>(
             builder: (context, sync, _) {
-              if (!sync.isOffline) return const SizedBox.shrink();
+              if (!sync.isOffline) return SizedBox.shrink();
               return Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: EdgeInsets.symmetric(vertical: 4),
                 color: Colors.orange.shade800,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.wifi_off, size: 14, color: Colors.white),
-                    const SizedBox(width: 8),
+                    Icon(Icons.wifi_off, size: 14, color: AppColors.getTextColor(context)),
+                    SizedBox(width: 8),
                     Text(
                       AppStrings.get('offline_mode', context.read<LocaleProvider>().locale),
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                      style: TextStyle(color: AppColors.getTextColor(context), fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
@@ -224,7 +229,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     decoration: BoxDecoration(
                       border: Border(
                         left: BorderSide(
-                          color: Colors.white.withOpacity(0.05),
+                          color: AppColors.getMutedTextColor(context),
                           width: 1,
                         ),
                       ),
@@ -241,38 +246,38 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       useIndicator: true,
                       minWidth: 80,
                       destinations: [
-                        const NavigationRailDestination(
+                        NavigationRailDestination(
                           icon: Icon(Icons.home_outlined),
                           selectedIcon:
                               Icon(Icons.home, color: AppColors.primaryPurple),
                           label: Text('الرئيسية', style: TextStyle(fontSize: 12)),
                         ),
                         NavigationRailDestination(
-                          icon: const Icon(Icons.manage_search_outlined),
+                          icon: Icon(Icons.manage_search_outlined),
                           selectedIcon:
-                              const Icon(Icons.search, color: AppColors.primaryPurple),
+                              Icon(Icons.search, color: AppColors.primaryPurple),
                           label: Consumer<LocaleProvider>(
                             builder: (context, localeProvider, _) => Text(
                               AppStrings.get('search', localeProvider.locale),
-                              style: const TextStyle(fontSize: 12),
+                              style: TextStyle(fontSize: 12),
                             ),
                           ),
                         ),
-                        const NavigationRailDestination(
+                        NavigationRailDestination(
                           icon: Icon(Icons.lightbulb_outline),
                           selectedIcon:
                               Icon(Icons.lightbulb, color: AppColors.primaryPurple),
                           label: Text('نصائح', style: TextStyle(fontSize: 12)),
                         ),
                         NavigationRailDestination(
-                          icon: const Icon(Icons.category_outlined),
+                          icon: Icon(Icons.category_outlined),
                           selectedIcon:
-                              const Icon(Icons.category, color: AppColors.primaryPurple),
+                              Icon(Icons.category, color: AppColors.primaryPurple),
                           label: Consumer<LocaleProvider>(
                               builder: (context, localeProvider, _) => Text(
                                     AppStrings.get(
                                         'categories_title', localeProvider.locale),
-                                    style: const TextStyle(fontSize: 12),
+                                    style: TextStyle(fontSize: 12),
                                   )),
                         ),
                         NavigationRailDestination(
@@ -284,16 +289,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                                 width: 30,
                                 height: 30,
                                 decoration:
-                                    const BoxDecoration(shape: BoxShape.circle),
+                                    BoxDecoration(shape: BoxShape.circle),
                                 child: ClipOval(
                                   child: (auth.isAuthenticated && photoUrl != null)
                                       ? Image.network(photoUrl, fit: BoxFit.cover)
-                                      : const Icon(Icons.person_outline),
+                                      : Icon(Icons.person_outline),
                                 ),
                               );
                             },
                           ),
-                          label: const Text('حسابي', style: TextStyle(fontSize: 12)),
+                          label: Text('حسابي', style: TextStyle(fontSize: 12)),
                         ),
                       ],
                     ),
@@ -301,7 +306,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                 Expanded(
                   child: Center(
                     child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1200),
+                      constraints: BoxConstraints(maxWidth: 1200),
                       child: DynamicGradientBackground(
                         child: _buildCurrentScreen(currentIndex),
                       ),
@@ -319,13 +324,13 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
               builder: (context, localeProvider, child) {
                 return SafeArea(
                   child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                     decoration: BoxDecoration(
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.2),
                           blurRadius: 10,
-                          offset: const Offset(0, 5),
+                          offset: Offset(0, 5),
                         ),
                       ],
                       borderRadius: BorderRadius.circular(30),
@@ -347,7 +352,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         buttonBackgroundColor: AppColors.primaryPurple,
                         backgroundColor: Colors.transparent,
                         animationCurve: Curves.easeInOut,
-                        animationDuration: const Duration(milliseconds: 300),
+                        animationDuration: Duration(milliseconds: 300),
                         onTap: (index) {
                           navProvider.setIndex(index);
                         },
@@ -363,17 +368,17 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   Widget _buildCurrentScreen(int currentIndex) {
     switch (currentIndex) {
       case 0:
-        return const HomeScreen();
+        return HomeScreen();
       case 1:
-        return const ExploreScreen();
+        return ExploreScreen();
       case 2:
-        return const AllTipsScreen(showAppBar: false, isVisible: true, showCloseButton: false);
+        return AllTipsScreen(showAppBar: false, isVisible: true, showCloseButton: false);
       case 3:
-        return const SubjectsScreen(showBackButton: false);
+        return SubjectsScreen(showBackButton: false);
       case 4:
-        return const ProfileScreen();
+        return ProfileScreen();
       default:
-        return const HomeScreen();
+        return HomeScreen();
     }
   }
 

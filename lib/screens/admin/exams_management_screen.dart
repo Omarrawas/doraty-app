@@ -14,7 +14,7 @@ class AdminExamsManagementScreen extends StatefulWidget {
   final String courseId;
   final String courseTitle;
 
-  const AdminExamsManagementScreen({
+  AdminExamsManagementScreen({
     super.key,
     required this.courseId,
     required this.courseTitle,
@@ -83,20 +83,20 @@ class _AdminExamsManagementScreenState
                 _buildFilterTabs(),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
+                      ? Center(
+                          child: CircularProgressIndicator(color: AppColors.getTextColor(context)),
                         )
                       : RefreshIndicator(
                           onRefresh: _loadExams,
                           child: _filteredExams.isEmpty
                               ? _buildEmptyState()
                               : ListView.builder(
-                                  padding: const EdgeInsets.all(20),
+                                  padding: EdgeInsets.all(20),
                                   itemCount: _filteredExams.length,
                                   itemBuilder: (context, index) {
                                     return Padding(
                                       padding:
-                                          const EdgeInsets.only(bottom: 16),
+                                          EdgeInsets.only(bottom: 16),
                                       child:
                                           _buildExamCard(_filteredExams[index]),
                                     );
@@ -121,9 +121,9 @@ class _AdminExamsManagementScreenState
             if (result == true) _loadExams();
           },
           backgroundColor: AppColors.primaryPurple,
-          icon: const Icon(Icons.add, color: Colors.white),
+          icon: Icon(Icons.add, color: AppColors.getTextColor(context)),
           label:
-              const Text('إنشاء اختبار', style: TextStyle(color: Colors.white)),
+              Text('إنشاء اختبار', style: TextStyle(color: AppColors.getTextColor(context))),
         ),
       ),
     );
@@ -131,7 +131,7 @@ class _AdminExamsManagementScreenState
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -147,13 +147,13 @@ class _AdminExamsManagementScreenState
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -183,13 +183,13 @@ class _AdminExamsManagementScreenState
 
   Widget _buildFilterTabs() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         children: [
           _buildFilterTab('الكل', 'all'),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           _buildFilterTab('منشور', 'published'),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           _buildFilterTab('مسودة', 'draft'),
         ],
       ),
@@ -207,7 +207,7 @@ class _AdminExamsManagementScreenState
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primaryPurple.withOpacity(0.8)
@@ -252,7 +252,7 @@ class _AdminExamsManagementScreenState
               width: 1.5,
             ),
           ),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -270,7 +270,7 @@ class _AdminExamsManagementScreenState
                   ),
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: (isPublished ? Colors.green : Colors.orange)
                           .withOpacity(0.2),
@@ -296,18 +296,18 @@ class _AdminExamsManagementScreenState
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Row(
                 children: [
                   _buildInfoChip(
                       Icons.access_time, '${exam['duration']} دقيقة'),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   _buildInfoChip(
                       Icons.assignment_outlined,
                       '${exam['total_points']} نقطة'),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
@@ -326,8 +326,8 @@ class _AdminExamsManagementScreenState
                         );
                         if (result == true) _loadExams();
                       },
-                      icon: const Icon(Icons.edit, size: 18),
-                      label: const Text('تعديل'),
+                      icon: Icon(Icons.edit, size: 18),
+                      label: Text('تعديل'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: BorderSide(color: Colors.white.withOpacity(0.3)),
@@ -336,7 +336,7 @@ class _AdminExamsManagementScreenState
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
@@ -360,10 +360,10 @@ class _AdminExamsManagementScreenState
                       label: Text(isPublished ? 'إلغاء النشر' : 'نشر'),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   IconButton(
                     onPressed: () => _deleteExam(exam),
-                    icon: const Icon(Icons.delete_outline,
+                    icon: Icon(Icons.delete_outline,
                         color: Colors.redAccent),
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.red.withOpacity(0.1),
@@ -373,7 +373,7 @@ class _AdminExamsManagementScreenState
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               // Go to questions buttom
               SizedBox(
                 width: double.infinity,
@@ -400,13 +400,13 @@ class _AdminExamsManagementScreenState
                       );
                       if (result == true) _loadExams();
                     },
-                    icon: const Icon(Icons.list_alt, color: Colors.white),
-                    label: const Text('إدارة الأسئلة',
-                        style: TextStyle(color: Colors.white)),
+                    icon: Icon(Icons.list_alt, color: AppColors.getTextColor(context)),
+                    label: Text('إدارة الأسئلة',
+                        style: TextStyle(color: AppColors.getTextColor(context))),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
                       shadowColor: Colors.transparent,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12)),
                     ),
@@ -422,21 +422,21 @@ class _AdminExamsManagementScreenState
 
   Widget _buildInfoChip(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppColors.getMutedTextColor(context),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white70, size: 14),
-          const SizedBox(width: 6),
+          Icon(icon, color: AppColors.getTextColor(context).withOpacity(0.70), size: 14),
+          SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white70,
+            style: TextStyle(
+              color: AppColors.getTextColor(context).withOpacity(0.70),
               fontSize: 12,
               fontWeight: FontWeight.normal,
             ),
@@ -453,7 +453,7 @@ class _AdminExamsManagementScreenState
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.all(40),
+            padding: EdgeInsets.all(40),
             decoration: BoxDecoration(
               color: AppColors.getGlassColor(context, opacity: 0.1),
               borderRadius: BorderRadius.circular(20),
@@ -464,8 +464,8 @@ class _AdminExamsManagementScreenState
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.assignment_outlined,
-                    color: Colors.white.withOpacity(0.3), size: 64),
-                const SizedBox(height: 24),
+                    color: AppColors.getMutedTextColor(context), size: 64),
+                SizedBox(height: 24),
                 Text(
                   'لا توجد اختبارات',
                   style: TextStyle(
@@ -474,7 +474,7 @@ class _AdminExamsManagementScreenState
                     fontWeight: FontWeight.normal,
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   'ابدأ بإنشاء اختبار جديد لهذه الدورة',
                   style: TextStyle(
@@ -520,16 +520,16 @@ class _AdminExamsManagementScreenState
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('حذف الاختبار'),
-        content: const Text('هل أنت متأكد من حذف هذا الاختبار؟'),
+        title: Text('حذف الاختبار'),
+        content: Text('هل أنت متأكد من حذف هذا الاختبار؟'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child: Text('إلغاء'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text('حذف', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -542,7 +542,7 @@ class _AdminExamsManagementScreenState
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('تم حذف الاختبار'),
             backgroundColor: Colors.green,
           ),

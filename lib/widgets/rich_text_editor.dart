@@ -13,7 +13,7 @@ class RichTextEditor extends StatefulWidget {
   final bool isCompact;
   final Color? textColor;
 
-  const RichTextEditor({
+  RichTextEditor({
     super.key,
     this.initialHtml,
     required this.onContentChanged,
@@ -120,7 +120,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              color: isDark ? Color(0xFF1E1E1E) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _isFocused
@@ -133,7 +133,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
                   BoxShadow(
                     color: AppColors.primaryPurple.withValues(alpha: 0.1),
                     blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    offset: Offset(0, 2),
                   ),
               ],
             ),
@@ -196,7 +196,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
                               ),
                             ),
                           ),
-                          const Divider(height: 1, color: Colors.black12),
+                          Divider(height: 1, color: Colors.black12),
                           MathSymbolToolbar(
                             onSymbolSelected: (symbol) {
                               final index = _controller.selection.extentOffset;
@@ -234,7 +234,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
                               });
                             },
                           ),
-                          const Divider(height: 1, color: Colors.black12),
+                          Divider(height: 1, color: Colors.black12),
                         ],
                       ),
                     ),

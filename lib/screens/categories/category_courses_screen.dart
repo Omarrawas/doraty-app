@@ -12,7 +12,7 @@ import '../../widgets/course_card.dart';
 class CategoryCoursesScreen extends StatefulWidget {
   final CategoryModel category;
 
-  const CategoryCoursesScreen({super.key, required this.category});
+  CategoryCoursesScreen({super.key, required this.category});
 
   @override
   State<CategoryCoursesScreen> createState() => _CategoryCoursesScreenState();
@@ -104,8 +104,8 @@ class _CategoryCoursesScreenState extends State<CategoryCoursesScreen> {
             flexibleSpace: FlexibleSpaceBar(
               title: Text(
                 widget.category.getLocalizedName(_locale),
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppColors.getTextColor(context),
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
                 ),
@@ -120,13 +120,13 @@ class _CategoryCoursesScreenState extends State<CategoryCoursesScreen> {
                     child: Icon(
                       Icons.category_outlined,
                       size: 150,
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.getMutedTextColor(context),
                     ),
                   ),
                 ),
               ),
             ),
-            iconTheme: const IconThemeData(color: Colors.white),
+            iconTheme: IconThemeData(color: AppColors.getTextColor(context)),
           ),
 
           // Sub-category Filter Bar
@@ -134,10 +134,10 @@ class _CategoryCoursesScreenState extends State<CategoryCoursesScreen> {
             SliverToBoxAdapter(
               child: Container(
                 height: 60,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: EdgeInsets.symmetric(vertical: 12),
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: EdgeInsets.symmetric(horizontal: 16),
                   itemCount: _subCategories.length + 1,
                   itemBuilder: (context, index) {
                     final bool isAll = index == 0;
@@ -149,7 +149,7 @@ class _CategoryCoursesScreenState extends State<CategoryCoursesScreen> {
                     final bool isSelected = _selectedSubCategoryId == id;
 
                     return Padding(
-                      padding: const EdgeInsets.only(left: 8),
+                      padding: EdgeInsets.only(left: 8),
                       child: ChoiceChip(
                         label: Text(label),
                         selected: isSelected,
@@ -177,7 +177,7 @@ class _CategoryCoursesScreenState extends State<CategoryCoursesScreen> {
 
           // Courses Grid
           SliverPadding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             sliver: _isLoading
                 ? SliverGrid(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -198,7 +198,7 @@ class _CategoryCoursesScreenState extends State<CategoryCoursesScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(Icons.school_outlined, size: 64, color: Colors.grey.withOpacity(0.5)),
-                              const SizedBox(height: 16),
+                              SizedBox(height: 16),
                               Text(
                                 AppStrings.get('no_courses_found', _locale),
                                 style: TextStyle(color: Colors.grey.shade500, fontSize: 16),
@@ -222,7 +222,7 @@ class _CategoryCoursesScreenState extends State<CategoryCoursesScreen> {
           ),
           
           // Bottom padding
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
       ),
     );
@@ -234,7 +234,7 @@ class _CategoryCoursesScreenState extends State<CategoryCoursesScreen> {
       highlightColor: Colors.grey[100]!,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.getTextColor(context),
           borderRadius: BorderRadius.circular(24),
         ),
       ),

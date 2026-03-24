@@ -11,7 +11,7 @@ import 'package:doraty/core/constants/app_strings.dart';
 
 class SubjectsScreen extends StatefulWidget {
   final bool showBackButton;
-  const SubjectsScreen({super.key, this.showBackButton = true});
+  SubjectsScreen({super.key, this.showBackButton = true});
 
   @override
   State<SubjectsScreen> createState() => _SubjectsScreenState();
@@ -88,14 +88,14 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
   Color _getColorForIndex(int index) {
     final colors = [
-      const Color(0xFF7B2CBF),
-      const Color(0xFF5A67D8),
-      const Color(0xFFE91E63),
-      const Color(0xFFFF6B9D),
-      const Color(0xFF00BCD4),
-      const Color(0xFF4CAF50),
-      const Color(0xFFFF9800),
-      const Color(0xFF9C27B0),
+      Color(0xFF7B2CBF),
+      Color(0xFF5A67D8),
+      Color(0xFFE91E63),
+      Color(0xFFFF6B9D),
+      Color(0xFF00BCD4),
+      Color(0xFF4CAF50),
+      Color(0xFFFF9800),
+      Color(0xFF9C27B0),
     ];
     return colors[index % colors.length];
   }
@@ -106,7 +106,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -115,26 +115,26 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               _buildHeader(),
               Expanded(
                 child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white))
+                    ? Center(
+                        child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                     : SingleChildScrollView(
-                        padding: const EdgeInsets.all(20),
+                        padding: EdgeInsets.all(20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             Consumer<LocaleProvider>(
                               builder: (context, localeProvider, _) => Text(
                                 AppStrings.get(
                                     'categories_title', localeProvider.locale),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: AppColors.getTextColor(context),
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                             _buildGrid(),
                           ],
                         ),
@@ -149,7 +149,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -158,10 +158,10 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
@@ -173,12 +173,12 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                                   'ar'
                               ? Icons.arrow_forward_ios_rounded
                               : Icons.arrow_back_ios_new_rounded,
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                           size: 20,
                         ),
                         onPressed: () => Navigator.pop(context),
                       )
-                    : const SizedBox(width: 48, height: 48),
+                    : SizedBox(width: 48, height: 48),
               ),
             ),
           ),
@@ -187,15 +187,15 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               builder: (context, localeProvider, _) => Text(
                 AppStrings.get('categories_title', localeProvider.locale),
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
@@ -206,8 +206,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
       // Show fallback if no real categories found
       return GridView.builder(
         shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        physics: NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
           maxCrossAxisExtent: _categoryCardMaxWidth,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
@@ -221,8 +221,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
     return GridView.builder(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: _categoryCardMaxWidth,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
@@ -249,14 +249,14 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           _IconBox(category: category, color: color),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             category.getLocalizedName(locale),
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
               letterSpacing: 0.5,
             ),
             maxLines: 2,
@@ -277,24 +277,24 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: color.withOpacity(0.2),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Text(
               category.icon,
-              style: const TextStyle(fontSize: 32),
+              style: TextStyle(fontSize: 32),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             category.name,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -317,13 +317,13 @@ class _CardWrapper extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1E1E2C), // Dark surface like in image 2
+        color: Color(0xFF1E1E2C), // Dark surface like in image 2
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -333,7 +333,7 @@ class _CardWrapper extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
             child: child,
           ),
         ),

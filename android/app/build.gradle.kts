@@ -19,8 +19,8 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.doraty.app"
-    compileSdk = 36
-    ndkVersion = "28.2.13676358"
+    compileSdk = 35
+    ndkVersion = "26.1.10909125"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -36,8 +36,8 @@ android {
     defaultConfig {
         applicationId = "com.doraty.app"
         // Ensure minSdk is set from Flutter config and enable multidex for desugaring
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        minSdk = 24
+        targetSdk = 35
         multiDexEnabled = true
         versionCode = flutter.versionCode
         versionName = flutter.versionName

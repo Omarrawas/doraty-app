@@ -4,7 +4,7 @@ import '../../core/theme/app_colors.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
-  const SecuritySettingsScreen({super.key});
+  SecuritySettingsScreen({super.key});
 
   @override
   State<SecuritySettingsScreen> createState() => _SecuritySettingsScreenState();
@@ -77,7 +77,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(fontFamily: 'Cairo')),
+        content: Text(message, style: TextStyle(fontFamily: 'Cairo')),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
       ),
@@ -87,7 +87,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, style: const TextStyle(fontFamily: 'Cairo')),
+        content: Text(message, style: TextStyle(fontFamily: 'Cairo')),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
       ),
@@ -98,21 +98,21 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إعدادات الأمان', style: TextStyle(fontFamily: 'Cairo')),
+        title: Text('إعدادات الأمان', style: TextStyle(fontFamily: 'Cairo')),
         backgroundColor: AppColors.primaryPurple,
         elevation: 0,
       ),
       body: DynamicGradientBackground(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            ? Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
             : SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header Card
                     _buildHeaderCard(),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Screenshot Protection Setting
                     _buildSettingCard(
@@ -128,12 +128,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       },
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Info Card
                     _buildInfoCard(),
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
 
                     // Save Button
                     _buildSaveButton(),
@@ -146,7 +146,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
   Widget _buildHeaderCard() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -159,33 +159,33 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           BoxShadow(
             color: AppColors.primaryPurple.withOpacity(0.3),
             blurRadius: 15,
-            offset: const Offset(0, 5),
+            offset: Offset(0, 5),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppColors.getMutedTextColor(context),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.security,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
               size: 32,
             ),
           ),
-          const SizedBox(width: 16),
-          const Expanded(
+          SizedBox(width: 16),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'إعدادات الأمان والخصوصية',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Cairo',
@@ -195,7 +195,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 Text(
                   'تحكم في سياسات الأمان للتطبيق',
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: AppColors.getTextColor(context).withOpacity(0.70),
                     fontSize: 14,
                     fontFamily: 'Cairo',
                   ),
@@ -216,12 +216,12 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     required ValueChanged<bool> onChanged,
   }) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: AppColors.getMutedTextColor(context),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withOpacity(0.2),
+          color: AppColors.getMutedTextColor(context),
           width: 1,
         ),
       ),
@@ -230,13 +230,13 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
         children: [
           Row(
             children: [
-              Icon(icon, color: Colors.white, size: 28),
-              const SizedBox(width: 12),
+              Icon(icon, color: AppColors.getTextColor(context), size: 28),
+              SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context),
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Cairo',
@@ -251,19 +251,19 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Text(
             description,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.8),
+              color: AppColors.getTextColor(context, secondary: true),
               fontSize: 14,
               fontFamily: 'Cairo',
               height: 1.5,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: value
                   ? Colors.green.withOpacity(0.2)
@@ -282,7 +282,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   color: value ? Colors.green : Colors.orange,
                   size: 20,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     value
@@ -305,7 +305,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
   Widget _buildInfoCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.blue.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -321,7 +321,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             color: Colors.blue.shade300,
             size: 24,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -335,7 +335,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                     fontFamily: 'Cairo',
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(
                   '• المستخدمون الأدمن يمكنهم دائماً أخذ لقطات شاشة بغض النظر عن هذا الإعداد\n'
                   '• هذه الميزة تعمل فقط على أجهزة Android\n'
@@ -371,15 +371,15 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           elevation: 5,
         ),
         child: _isSaving
-            ? const SizedBox(
+            ? SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                   strokeWidth: 2.5,
                 ),
               )
-            : const Row(
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.save, size: 24),

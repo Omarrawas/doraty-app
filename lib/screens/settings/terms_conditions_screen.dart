@@ -4,24 +4,24 @@ import '../../core/theme/app_colors.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class TermsConditionsScreen extends StatelessWidget {
-  const TermsConditionsScreen({super.key});
+  TermsConditionsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('الشروط والأحكام', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text('الشروط والأحكام', style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: AppColors.getTextColor(context)),
         systemOverlayStyle: SystemUiOverlayStyle.light,
       ),
       body: DynamicGradientBackground(
         child: SafeArea(
           child: Container(
-            margin: const EdgeInsets.all(16),
+            margin: EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.getGlassColor(context),
               borderRadius: BorderRadius.circular(20),
@@ -30,54 +30,62 @@ class TermsConditionsScreen extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _buildSectionTitle('1. قبول الشروط'),
-                    _buildSectionContent(
+                    _buildSectionContent(context,
                       'باستخدامك لتطبيق "دوراتي"، فإنك توافق على الالتزام بهذه الشروط والأحكام. إذا كنت لا توافق على أي جزء من هذه الشروط، يرجى عدم استخدام التطبيق.',
+
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _buildSectionTitle('2. الحسابات والتسجيل'),
-                    _buildSectionContent(
+                    _buildSectionContent(context,
                       'يجب عليك تقديم معلومات دقيقة وكاملة عند إنشاء حساب. أنت مسؤول عن الحفاظ على سرية كلمة المرور الخاصة بك وعن جميع الأنشطة التي تحدث تحت حسابك.',
+
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _buildSectionTitle('3. الملكية الفكرية'),
-                    _buildSectionContent(
+                    _buildSectionContent(context,
                       'جميع المحتويات الموجودة في التطبيق، بما في ذلك النصوص، الرسومات، الشعارات، الصور، ومقاطع الفيديو، هي ملك لـ "دوراتي" أو المرخصين لها ومحمية بقوانين حقوق النشر والعلامات التجارية.',
+
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _buildSectionTitle('4. الاستخدام المقبول'),
-                    _buildSectionContent(
+                    _buildSectionContent(context,
                       'تتعهد بعدم استخدام التطبيق لأي غرض غير قانوني أو محظور. يمنع نسخ أو توزيع أو تعديل أي جزء من المحتوى التعليمي دون إذن خظي مسبق.',
+
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _buildSectionTitle('5. الاشتراكات والدفع'),
-                    _buildSectionContent(
+                    _buildSectionContent(context,
                       'بعض الدورات قد تكون مدفوعة. عند الشراء، أنت توافق على دفع جميع الرسوم والضرائب المطبقة. جميع عمليات الشراء نهائية وغير قابلة للاسترداد إلا وفقاً لتقديرنا الخاص.',
+
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _buildSectionTitle('6. تحديد المسؤولية'),
-                    _buildSectionContent(
+                    _buildSectionContent(context,
                       'نسعى جاهدين لضمان دقة المعلومات المقدمة، ولكننا لا نضمن خلو التطبيق من الأخطاء. لن نكون مسؤولين عن أي أضرار مباشرة أو غير مباشرة تنشأ عن استخدامك للتطبيق.',
+
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     _buildSectionTitle('7. إنهاء الخدمة'),
-                    _buildSectionContent(
+                    _buildSectionContent(context,
                       'نحتفظ بالحق في إنهاء أو تعليق وصولك إلى التطبيق فوراً، دون إشعار مسبق، لأي سبب كان، بما في ذلك انتهاك هذه الشروط.',
+
                     ),
-                   const SizedBox(height: 20),
+                   SizedBox(height: 20),
                     _buildSectionTitle('8. القانون الواجب التطبيق'),
-                    _buildSectionContent(
+                    _buildSectionContent(context,
                       'تخضع هذه الشروط وتفسر وفقاً لقوانين الجمهورية العربية السورية.',
+
                     ),
-                    const SizedBox(height: 40),
+                    SizedBox(height: 40),
                     Center(
                       child: Text(
                         'آخر تحديث: 01/01/2026',
-                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                        style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 12),
                       ),
                     ),
                   ],
@@ -92,10 +100,10 @@ class TermsConditionsScreen extends StatelessWidget {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: EdgeInsets.only(bottom: 8),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
           color: AppColors.secondaryGold,
@@ -104,12 +112,13 @@ class TermsConditionsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionContent(String content) {
+  Widget _buildSectionContent(BuildContext context, String content) {
+
     return Text(
       content,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 14,
-        color: Colors.white,
+        color: AppColors.getTextColor(context),
         height: 1.6,
       ),
       textAlign: TextAlign.justify,

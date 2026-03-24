@@ -15,7 +15,7 @@ import 'dart:ui' as ui;
 
 
 class SettingsScreen extends StatefulWidget {
-  const SettingsScreen({super.key});
+  SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -79,11 +79,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // Content
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   children: [
                     // Notifications Section
                     _buildSectionTitle(_t('notifications')),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _buildSettingCard(
                       icon: Icons.notifications,
                       title: _t('enable_notifications'),
@@ -100,11 +100,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // About Section
                     _buildSectionTitle(_t('about')),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _buildSettingCard(
                       icon: Icons.info_outline,
                       title: _t('version'),
@@ -118,12 +118,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         selectedLanguage == 'ar'
                             ? Icons.chevron_left
                             : Icons.chevron_right,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                       ),
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const PrivacyPolicyScreen()),
+                          MaterialPageRoute(builder: (context) => PrivacyPolicyScreen()),
                         );
                       },
                     ),
@@ -135,21 +135,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         selectedLanguage == 'ar'
                             ? Icons.chevron_left
                             : Icons.chevron_right,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                       ),
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const TermsConditionsScreen()),
+                          MaterialPageRoute(builder: (context) => TermsConditionsScreen()),
                         );
                       },
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Support & Safety Section
                     _buildSectionTitle(_t('contact_support')),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _buildSettingCard(
                       icon: Icons.headset_mic_outlined,
                       title: _t('contact_support'),
@@ -158,11 +158,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         selectedLanguage == 'ar'
                             ? Icons.chevron_left
                             : Icons.chevron_right,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                       ),
                       onTap: _showSupportDialog,
                     ),
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     _buildSettingCard(
                       icon: Icons.person_remove_outlined,
                       title: _t('delete_account'),
@@ -171,20 +171,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         selectedLanguage == 'ar'
                             ? Icons.chevron_left
                             : Icons.chevron_right,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                       ),
                       onTap: _showDeleteAccountDialog,
                     ),
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
 
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Logout Button
                     _buildLogoutButton(),
 
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -197,7 +197,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -214,7 +214,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -224,15 +224,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Text(
               _t('settings'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
                 fontFamily: 'Cairo',
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
@@ -242,10 +242,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
-        color: Colors.white,
+        color: AppColors.getTextColor(context),
         fontFamily: 'Cairo',
       ),
     );
@@ -260,7 +260,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     VoidCallback? onTap,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.only(bottom: 12),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
@@ -280,7 +280,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 borderRadius: BorderRadius.circular(16),
                 onTap: onTap,
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   child: Row(
                     children: [
                       Container(
@@ -292,31 +292,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         child: Icon(
                           icon,
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                           size: 22,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                                color: AppColors.getTextColor(context),
                                 fontFamily: 'Cairo',
                               ),
                             ),
                             if (subtitle != null) ...[
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Text(
                                 subtitle,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.white.withOpacity(0.7),
+                                  color: AppColors.getTextColor(context, secondary: true),
                                   fontFamily: 'Cairo',
                                 ),
                               ),
@@ -367,7 +367,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       textAlign: _selectedLanguage == 'ar'
                           ? TextAlign.right
                           : TextAlign.left,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontFamily: 'Cairo',
                         fontWeight: FontWeight.bold,
                       ),
@@ -377,14 +377,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       textAlign: _selectedLanguage == 'ar'
                           ? TextAlign.right
                           : TextAlign.left,
-                      style: const TextStyle(fontFamily: 'Cairo'),
+                      style: TextStyle(fontFamily: 'Cairo'),
                     ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.of(context).pop(false),
                         child: Text(
                           _t('cancel'),
-                          style: const TextStyle(fontFamily: 'Cairo'),
+                          style: TextStyle(fontFamily: 'Cairo'),
                         ),
                       ),
                       ElevatedButton(
@@ -394,9 +394,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                         child: Text(
                           _t('logout'),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontFamily: 'Cairo',
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                           ),
                         ),
                       ),
@@ -410,7 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (mounted) {
                       Navigator.of(context).pushAndRemoveUntil(
                         MaterialPageRoute(
-                          builder: (context) => const LoginScreen(),
+                          builder: (context) => LoginScreen(),
                         ),
                         (route) => false,
                       );
@@ -428,15 +428,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 }
               },
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: 16),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.logout, color: Colors.red),
-                    const SizedBox(width: 8),
+                    Icon(Icons.logout, color: Colors.red),
+                    SizedBox(width: 8),
                     Text(
                       _t('logout'),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.red,
@@ -463,7 +463,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: BackdropFilter(
             filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
             child: Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -475,7 +475,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: AppColors.getMutedTextColor(context),
                   width: 1.5,
                 ),
               ),
@@ -484,21 +484,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text(
                     _t('support_dialog_title'),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.getTextColor(context),
                       fontFamily: 'Cairo',
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Text(
                     _t('support_dialog_desc'),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                        color: Colors.white70, fontFamily: 'Cairo'),
+                    style: TextStyle(
+                        color: AppColors.getTextColor(context).withOpacity(0.70), fontFamily: 'Cairo'),
                   ),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                   _buildSupportOption(
                     icon: Icons.email_outlined,
                     label: _t('email_us'),
@@ -514,7 +514,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       }
                     },
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   _buildSupportOption(
                     icon: Icons.chat_outlined,
                     label: _t('whatsapp_us'),
@@ -547,24 +547,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
             ),
           ),
           child: Row(
             children: [
-              Icon(icon, color: Colors.white, size: 24),
-              const SizedBox(width: 12),
+              Icon(icon, color: AppColors.getTextColor(context), size: 24),
+              SizedBox(width: 12),
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                     fontFamily: 'Cairo',
                   ),
                 ),
@@ -584,7 +584,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         title: Text(
           _t('delete_confirm_title'),
           style:
-              const TextStyle(
+              TextStyle(
               color: Colors.red,
               fontWeight: FontWeight.bold,
               fontFamily: 'Cairo'),
@@ -603,7 +603,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: Text(
               _t('delete'),
-              style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+              style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
             ),
           ),
         ],
@@ -616,7 +616,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       await AuthService().deleteAccount();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          MaterialPageRoute(builder: (context) => LoginScreen()),
           (route) => false,
         );
       }

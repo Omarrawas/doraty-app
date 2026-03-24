@@ -9,7 +9,7 @@ class AddReviewScreen extends StatefulWidget {
   final String courseId;
   final String courseName;
 
-  const AddReviewScreen({
+  AddReviewScreen({
     super.key,
     required this.courseId,
     required this.courseName,
@@ -33,7 +33,7 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
   Future<void> _submitReview() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('الرجاء اختيار تقييم'),
           backgroundColor: Colors.red,
         ),
@@ -43,7 +43,7 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
 
     if (_commentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('الرجاء كتابة تعليق'),
           backgroundColor: Colors.red,
         ),
@@ -65,7 +65,7 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('تم إضافة التقييم بنجاح'),
             backgroundColor: Colors.green,
           ),
@@ -92,7 +92,7 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -104,31 +104,31 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
               // Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Course Name
                       Text(
                         widget.courseName,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
 
                       // Rating Section
                       _buildRatingSection(),
 
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
 
                       // Comment Section
                       _buildCommentSection(),
 
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
 
                       // Submit Button
                       _buildSubmitButton(),
@@ -145,7 +145,7 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -154,32 +154,32 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'إضافة تقييم',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
@@ -191,7 +191,7 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -203,21 +203,21 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
           child: Column(
             children: [
-              const Text(
+              Text(
                 'ما تقييمك للدورة؟',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               RatingBar.builder(
                 initialRating: _rating,
                 minRating: 1,
@@ -225,8 +225,8 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
                 allowHalfRating: true,
                 itemCount: 5,
                 itemSize: 50,
-                itemPadding: const EdgeInsets.symmetric(horizontal: 4),
-                itemBuilder: (context, _) => const Icon(
+                itemPadding: EdgeInsets.symmetric(horizontal: 4),
+                itemBuilder: (context, _) => Icon(
                   Icons.star,
                   color: Colors.amber,
                 ),
@@ -237,12 +237,12 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
                 },
               ),
               if (_rating > 0) ...[
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Text(
                   _getRatingText(_rating),
                   style: TextStyle(
                     fontSize: 16,
-                    color: Colors.white.withOpacity(0.9),
+                    color: AppColors.getTextColor(context, secondary: true),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -260,7 +260,7 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -272,50 +272,50 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'شارك رأيك',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               TextField(
                 controller: _commentController,
                 maxLines: 6,
                 textAlign: TextAlign.right,
-                style: const TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.getTextColor(context)),
                 decoration: InputDecoration(
                   hintText: 'اكتب تعليقك هنا...',
                   hintStyle: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
+                    color: AppColors.getTextColor(context, secondary: true),
                   ),
                   filled: true,
                   fillColor: Colors.white.withOpacity(0.1),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
+                      color: AppColors.getMutedTextColor(context),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide(
-                      color: Colors.white.withOpacity(0.3),
+                      color: AppColors.getMutedTextColor(context),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(
-                      color: Colors.white,
+                    borderSide: BorderSide(
+                      color: AppColors.getTextColor(context),
                       width: 2,
                     ),
                   ),
@@ -346,23 +346,23 @@ class _AddReviewScreenState extends State<AddReviewScreen> {
                 borderRadius: BorderRadius.circular(12),
                 onTap: _isSubmitting ? null : _submitReview,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: EdgeInsets.symmetric(vertical: 16),
                   child: _isSubmitting
-                      ? const Center(
+                      ? Center(
                           child: SizedBox(
                             width: 24,
                             height: 24,
                             child: CircularProgressIndicator(
-                              color: Colors.white,
+                              color: AppColors.getTextColor(context),
                               strokeWidth: 2,
                             ),
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'إرسال التقييم',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),

@@ -10,7 +10,7 @@ class BookmarksWidget extends StatefulWidget {
   final String lessonId;
   final YoutubePlayerController? youtubeController;
 
-  const BookmarksWidget({
+  BookmarksWidget({
     super.key,
     required this.lessonId,
     this.youtubeController,
@@ -65,56 +65,56 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1E2E),
+        backgroundColor: Color(0xFF1E1E2E),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
-        title: const Text(
+        title: Text(
           'إضافة علامة مرجعية',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.getTextColor(context)),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: _titleController,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.getTextColor(context)),
               decoration: InputDecoration(
                 labelText: 'العنوان',
-                labelStyle: const TextStyle(color: Colors.white),
+                labelStyle: TextStyle(color: AppColors.getTextColor(context)),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primaryPurple),
+                  borderSide: BorderSide(color: AppColors.primaryPurple),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             TextField(
               controller: _noteController,
-              style: const TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.getTextColor(context)),
               maxLines: 3,
               decoration: InputDecoration(
                 labelText: 'ملاحظة (اختياري)',
-                labelStyle: const TextStyle(color: Colors.white),
+                labelStyle: TextStyle(color: AppColors.getTextColor(context)),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primaryPurple),
+                  borderSide: BorderSide(color: AppColors.primaryPurple),
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               'الموضع: ${_formatTimestamp(timestamp)}',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.getTextColor(context),
                 fontSize: 14,
               ),
             ),
@@ -123,9 +123,9 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'إلغاء',
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
             ),
           ),
           ElevatedButton(
@@ -152,7 +152,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
 
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('تمت إضافة العلامة المرجعية')),
+                    SnackBar(content: Text('تمت إضافة العلامة المرجعية')),
                   );
                 }
               } catch (e) {
@@ -167,9 +167,9 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple,
             ),
-            child: const Text(
+            child: Text(
               'إضافة',
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(color: AppColors.getTextColor(context)),
             ),
           ),
         ],
@@ -183,7 +183,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
       await _loadBookmarks();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم حذف العلامة المرجعية')),
+          SnackBar(content: Text('تم حذف العلامة المرجعية')),
         );
       }
     } catch (e) {
@@ -214,7 +214,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -226,7 +226,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -235,25 +235,25 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
             children: [
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.bookmark_outline,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                     size: 24,
                   ),
-                  const SizedBox(width: 12),
-                  const Expanded(
+                  SizedBox(width: 12),
+                  Expanded(
                     child: Text(
                       'العلامات المرجعية',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                       ),
                     ),
                   ),
                   Container(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         colors: [
                           AppColors.primaryPurple,
                           AppColors.primaryBlue,
@@ -262,34 +262,34 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
+                      icon: Icon(Icons.add, color: AppColors.getTextColor(context)),
                       onPressed: _addBookmark,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               if (_isLoading)
-                const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
+                Center(
+                  child: CircularProgressIndicator(color: AppColors.getTextColor(context)),
                 )
               else if (_bookmarks.isEmpty)
                 Center(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20),
                     child: Column(
                       children: [
                         Icon(
                           Icons.bookmark_border,
-                          color: Colors.white.withOpacity(0.3),
+                          color: AppColors.getMutedTextColor(context),
                           size: 48,
                         ),
-                        const SizedBox(height: 12),
-                        const Text(
+                        SizedBox(height: 12),
+                        Text(
                           'لا توجد علامات مرجعية بعد',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                           ),
                         ),
                       ],
@@ -299,9 +299,9 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
               else
                 ..._bookmarks.map((bookmark) {
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
+                    margin: EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: AppColors.getMutedTextColor(context),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Material(
@@ -310,11 +310,11 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
                         borderRadius: BorderRadius.circular(12),
                         onTap: () => _jumpToBookmark(bookmark.timestamp),
                         child: Padding(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(12),
                           child: Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(
+                                padding: EdgeInsets.symmetric(
                                   horizontal: 12,
                                   vertical: 6,
                                 ),
@@ -325,33 +325,33 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
                                 ),
                                 child: Text(
                                   bookmark.formattedTimestamp,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: AppColors.getTextColor(context),
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       bookmark.title,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                        color: AppColors.getTextColor(context),
                                       ),
                                     ),
                                     if (bookmark.note != null) ...[
-                                      const SizedBox(height: 4),
+                                      SizedBox(height: 4),
                                       Text(
                                         bookmark.note!,
-                                        style: const TextStyle(
+                                        style: TextStyle(
                                           fontSize: 13,
-                                          color: Colors.white,
+                                          color: AppColors.getTextColor(context),
                                         ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
@@ -361,7 +361,7 @@ class _BookmarksWidgetState extends State<BookmarksWidget> {
                                 ),
                               ),
                               IconButton(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.delete_outline,
                                   color: Colors.redAccent,
                                   size: 20,

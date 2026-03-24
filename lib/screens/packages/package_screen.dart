@@ -17,7 +17,7 @@ class PackageScreen extends StatefulWidget {
   final List<Course> courses;
   final Bundle? bundle;
 
-  const PackageScreen({
+  PackageScreen({
     super.key,
     required this.packageTitle,
     required this.courses,
@@ -86,7 +86,7 @@ class _PackageScreenState extends State<PackageScreen> {
     );
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const CartScreen()),
+      MaterialPageRoute(builder: (context) => CartScreen()),
     );
   }
 
@@ -109,12 +109,12 @@ class _PackageScreenState extends State<PackageScreen> {
             Expanded(
               child: CustomScrollView(
                 slivers: [
-                  const SliverPadding(padding: EdgeInsets.only(top: 100)),
+                  SliverPadding(padding: EdgeInsets.only(top: 100)),
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                      padding: EdgeInsets.symmetric(horizontal: 20.0),
                       child: Container(
-                        padding: const EdgeInsets.all(24),
+                        padding: EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           color:
                               AppColors.getGlassColor(context, opacity: 0.15),
@@ -124,7 +124,7 @@ class _PackageScreenState extends State<PackageScreen> {
                             BoxShadow(
                               color: Colors.black.withOpacity(0.2),
                               blurRadius: 20,
-                              offset: const Offset(0, 10),
+                              offset: Offset(0, 10),
                             ),
                           ],
                         ),
@@ -135,14 +135,14 @@ class _PackageScreenState extends State<PackageScreen> {
                                 ? Container(
                                     width: double.infinity,
                                     height: 180,
-                                    margin: const EdgeInsets.only(bottom: 20),
+                                    margin: EdgeInsets.only(bottom: 20),
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
                                         BoxShadow(
                                           color: Colors.black26,
                                           blurRadius: 10,
-                                          offset: const Offset(0, 5),
+                                          offset: Offset(0, 5),
                                         ),
                                       ],
                                     ),
@@ -156,7 +156,7 @@ class _PackageScreenState extends State<PackageScreen> {
                                                 Container(
                                           color: AppColors.secondaryGold
                                               .withOpacity(0.2),
-                                          child: const Icon(
+                                          child: Icon(
                                             Icons.collections_bookmark,
                                             color: AppColors.secondaryGold,
                                             size: 40,
@@ -166,64 +166,64 @@ class _PackageScreenState extends State<PackageScreen> {
                                     ),
                                   )
                                 : Container(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       color: AppColors.secondaryGold
                                           .withOpacity(0.2),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.collections_bookmark,
                                       color: AppColors.secondaryGold,
                                       size: 40,
                                     ),
                                   ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20),
                             Text(
                               widget.packageTitle,
                               textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: AppColors.getTextColor(context),
                                 fontSize: 26,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.auto_stories,
-                                    color: Colors.white.withOpacity(0.6),
+                                    color: AppColors.getTextColor(context, secondary: true),
                                     size: 18),
-                                const SizedBox(width: 8),
+                                SizedBox(width: 8),
                                 Text(
                                   '${widget.courses.length} ${t('courses_count_bundle')}',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.6),
+                                    color: AppColors.getTextColor(context, secondary: true),
                                     fontSize: 16,
                                   ),
                                 ),
                               ],
                             ),
                             if (_displayBundle.description != null) ...[
-                              const SizedBox(height: 20),
+                              SizedBox(height: 20),
                               Text(
                                 _displayBundle.description!,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: AppColors.getTextColor(context, secondary: true),
                                   fontSize: 15,
                                   height: 1.5,
                                 ),
                               ),
                             ],
-                            const SizedBox(height: 24),
+                            SizedBox(height: 24),
                             ElevatedButton(
                               onPressed: _handlePrimaryAction,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryPurple,
                                 foregroundColor: Colors.white,
-                                minimumSize: const Size(double.infinity, 50),
+                                minimumSize: Size(double.infinity, 50),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),
@@ -233,7 +233,7 @@ class _PackageScreenState extends State<PackageScreen> {
                                 _hasBundleAccess
                                     ? 'أكمل'
                                     : '${t('subscribe_now_prefix')}${_displayBundle.getFormattedPrice(locale)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Cairo',
@@ -247,7 +247,7 @@ class _PackageScreenState extends State<PackageScreen> {
                   ),
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
+                      padding: EdgeInsets.fromLTRB(20, 40, 20, 20),
                       child: Row(
                         children: [
                           Container(
@@ -258,11 +258,11 @@ class _PackageScreenState extends State<PackageScreen> {
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Text(
                             t('included_courses'),
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: AppColors.getTextColor(context),
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                             ),
@@ -272,7 +272,7 @@ class _PackageScreenState extends State<PackageScreen> {
                     ),
                   ),
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(horizontal: 20),
                     sliver: SliverGrid(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => CourseCard(
@@ -282,7 +282,7 @@ class _PackageScreenState extends State<PackageScreen> {
                         childCount: widget.courses.length,
                       ),
                       gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
+                          SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
                         childAspectRatio: 0.62,
                         crossAxisSpacing: 16,
@@ -290,7 +290,7 @@ class _PackageScreenState extends State<PackageScreen> {
                       ),
                     ),
                   ),
-                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
+                  SliverToBoxAdapter(child: SizedBox(height: 30)),
                 ],
               ),
             ),

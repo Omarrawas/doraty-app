@@ -127,6 +127,7 @@ dev_dependencies:
   envied_generator: ^1.1.1
   flutter_launcher_icons: ^0.14.4
   msix: ^3.16.7
+  flutter_native_splash: ^2.4.3
 
 
 
@@ -134,7 +135,9 @@ flutter:
   uses-material-design: true
   
   assets:
+    - .env
     - assets/images/
+
     - assets/icons/
     - assets/sounds/
     - assets/fonts/
@@ -170,3 +173,10 @@ msix_config:
     - doraty
   capabilities:
     - internetClient
+
+flutter_native_splash:
+  color: "#6B4CE6"
+  image: "assets/icons/logo.png"
+  android_12:
+    color: "#6B4CE6"
+    image: "assets/icons/logo.png"

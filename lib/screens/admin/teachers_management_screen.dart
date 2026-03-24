@@ -12,7 +12,7 @@ import '../../core/constants/app_strings.dart';
 import 'courses_management_screen.dart';
 
 class TeachersManagementScreen extends StatefulWidget {
-  const TeachersManagementScreen({super.key});
+  TeachersManagementScreen({super.key});
 
   @override
   State<TeachersManagementScreen> createState() =>
@@ -132,14 +132,14 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           _buildGlassIconButton(
             icon: Icons.arrow_back,
             onTap: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,7 +169,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
 
   Widget _buildTabBar(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       height: 50,
       decoration: BoxDecoration(
         color: AppColors.getGlassColor(context, opacity: 0.1),
@@ -185,7 +185,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
         ),
         labelColor: Colors.white,
         unselectedLabelColor: AppColors.getTextColor(context).withOpacity(0.6),
-        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
         tabs: [
           Tab(text: _t('current_teachers')),
           Tab(
@@ -194,14 +194,14 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
               children: [
                 Text(_t('pending_requests')),
                 if (_requests.isNotEmpty) ...[
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
                         color: Colors.redAccent, shape: BoxShape.circle),
                     child: Text(
                       _requests.length.toString(),
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
+                      style: TextStyle(color: AppColors.getTextColor(context), fontSize: 10),
                     ),
                   ),
                 ],
@@ -214,7 +214,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
   }
 
   Widget _buildTeachersList(BuildContext context) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return Center(child: CircularProgressIndicator());
     if (_filteredTeachers.isEmpty) {
       return _buildEmptyState(context, 'لا يوجد مدربين حالياً');
     }
@@ -226,7 +226,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
           child: RefreshIndicator(
             onRefresh: _loadData,
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               itemCount: _filteredTeachers.length,
               itemBuilder: (context, index) =>
                   _buildTeacherCard(context, _filteredTeachers[index]),
@@ -238,7 +238,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
   }
 
   Widget _buildRequestsList(BuildContext context) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) return Center(child: CircularProgressIndicator());
     if (_requests.isEmpty) {
       return _buildEmptyState(context, 'لا توجد طلبات انضمام معلقة');
     }
@@ -246,7 +246,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         itemCount: _requests.length,
         itemBuilder: (context, index) =>
             _buildRequestCard(context, _requests[index]),
@@ -258,7 +258,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
     final courses = teacher['teacher_courses'] as List<dynamic>? ?? [];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       decoration: _glassDecoration(context),
       child: ExpansionTile(
         leading: CircleAvatar(
@@ -267,26 +267,26 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
               ? NetworkImage(teacher['avatar_url'])
               : null,
           child: teacher['avatar_url'] == null
-              ? const Icon(Icons.person, color: AppColors.primaryPurple)
+              ? Icon(Icons.person, color: AppColors.primaryPurple)
               : null,
         ),
         title: Text(teacher['full_name'] ?? teacher['name'] ?? 'مدرب',
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+            style: TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(teacher['specialization'] ?? 'تخصص غير محدد',
-            style: const TextStyle(fontSize: 12)),
+            style: TextStyle(fontSize: 12)),
         children: [
-          const Divider(height: 1),
+          Divider(height: 1),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInfoRow(
                     Icons.email_outlined, teacher['email'] ?? 'بدون بريد'),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 _buildInfoRow(
                     Icons.school_outlined, 'عدد الكورسات: ${courses.length}'),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
@@ -314,9 +314,9 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
 
   Widget _buildRequestCard(BuildContext context, Map<String, dynamic> request) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       decoration: _glassDecoration(context),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -325,15 +325,15 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
               CircleAvatar(
                 backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
                 child:
-                    const Icon(Icons.person_add, color: AppColors.primaryBlue),
+                    Icon(Icons.person_add, color: AppColors.primaryBlue),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(request['full_name'] ?? 'طلب جديد',
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                     Text(request['email'] ?? '',
                         style: TextStyle(
                             fontSize: 12,
@@ -344,13 +344,13 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           if (request['bio'] != null)
             Text(request['bio'],
-                style: const TextStyle(fontSize: 13),
+                style: TextStyle(fontSize: 13),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -361,7 +361,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
                   onTap: () => _handleStatusUpdate(request['id'], 'approved'),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Expanded(
                 child: _buildActionBtn(
                   label: 'رفض',
@@ -408,7 +408,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
   Widget _buildInfoRow(IconData icon, String text) => Row(
         children: [
           Icon(icon, size: 16, color: AppColors.primaryPurple),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Text(text,
               style: TextStyle(
                   fontSize: 13,
@@ -425,7 +425,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
               color: color.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
@@ -434,7 +434,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 16, color: color),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(label,
                   style: TextStyle(
                       color: color, fontSize: 13, fontWeight: FontWeight.bold)),
@@ -463,17 +463,17 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
       );
 
   Widget _buildSearchBar(BuildContext context) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: Container(
           decoration: _glassDecoration(context),
           child: TextField(
             onChanged: (value) => setState(() => _searchQuery = value),
             decoration: InputDecoration(
               hintText: _t('search_hint'),
-              prefixIcon: const Icon(Icons.search, size: 20),
+              prefixIcon: Icon(Icons.search, size: 20),
               border: InputBorder.none,
               contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                  EdgeInsets.symmetric(horizontal: 20, vertical: 15),
             ),
           ),
         ),
@@ -486,7 +486,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
             Icon(Icons.people_outline,
                 size: 64,
                 color: AppColors.getTextColor(context).withOpacity(0.2)),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Text(message,
                 style: TextStyle(
                     color: AppColors.getTextColor(context).withOpacity(0.5))),

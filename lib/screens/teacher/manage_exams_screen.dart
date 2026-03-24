@@ -7,7 +7,7 @@ import 'create_exam_screen.dart';
 import 'manage_questions_screen.dart';
 
 class ManageExamsScreen extends StatefulWidget {
-  const ManageExamsScreen({super.key});
+  ManageExamsScreen({super.key});
 
   @override
   State<ManageExamsScreen> createState() => _ManageExamsScreenState();
@@ -62,7 +62,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(gradient: AppColors.backgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
@@ -70,7 +70,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
               _buildFilterTabs(),
               Expanded(
                 child: _isLoading
-                    ? const Center(
+                    ? Center(
                         child: CircularProgressIndicator(
                           valueColor:
                               AlwaysStoppedAnimation<Color>(Colors.white),
@@ -81,11 +81,11 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                         child: _filteredExams.isEmpty
                             ? _buildEmptyState()
                             : ListView.builder(
-                                padding: const EdgeInsets.all(20),
+                                padding: EdgeInsets.all(20),
                                 itemCount: _filteredExams.length,
                                 itemBuilder: (context, index) {
                                   return Padding(
-                                    padding: const EdgeInsets.only(bottom: 12),
+                                    padding: EdgeInsets.only(bottom: 12),
                                     child:
                                         _buildExamCard(_filteredExams[index]),
                                   );
@@ -102,21 +102,21 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
           final result = await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const CreateExamScreen(),
+              builder: (context) => CreateExamScreen(),
             ),
           );
           if (result == true) _loadExams();
         },
         backgroundColor: AppColors.primaryPurple,
-        icon: const Icon(Icons.add),
-        label: const Text('إنشاء اختبار'),
+        icon: Icon(Icons.add),
+        label: Text('إنشاء اختبار'),
       ),
     );
   }
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -125,28 +125,28 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          const Expanded(
+          SizedBox(width: 16),
+          Expanded(
             child: Text(
               'إدارة الاختبارات',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
@@ -157,13 +157,13 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
 
   Widget _buildFilterTabs() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           _buildFilterTab('الكل', 'all'),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           _buildFilterTab('منشور', 'published'),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           _buildFilterTab('مسودة', 'draft'),
         ],
       ),
@@ -184,7 +184,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
               color: isSelected ? null : Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: AppColors.getMutedTextColor(context),
                 width: 1,
               ),
             ),
@@ -194,12 +194,12 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                 borderRadius: BorderRadius.circular(12),
                 onTap: () => setState(() => _filter = value),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: 12),
                   child: Text(
                     label,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.getTextColor(context),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -232,7 +232,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -253,7 +253,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                 if (result == true) _loadExams();
               },
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -265,25 +265,25 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                             children: [
                               Text(
                                 exam['title'] ?? 'اختبار',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.white,
+                                  color: AppColors.getTextColor(context),
                                 ),
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Text(
                                 courseName,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: AppColors.getTextColor(context, secondary: true),
                                 ),
                               ),
                             ],
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
@@ -307,21 +307,21 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Row(
                       children: [
                         _buildInfoChip(
                           Icons.access_time,
                           '${exam['duration']} دقيقة',
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         _buildInfoChip(
                           Icons.assignment,
                           '${exam['total_points']} نقطة',
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
@@ -342,7 +342,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Expanded(
                           child: _buildActionButton(
                             icon: isPublished
@@ -353,7 +353,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                             onTap: () => _togglePublish(exam),
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         _buildActionButton(
                           icon: Icons.delete,
                           label: '',
@@ -374,20 +374,20 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
 
   Widget _buildInfoChip(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: AppColors.getMutedTextColor(context),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 16),
-          const SizedBox(width: 6),
+          Icon(icon, color: AppColors.getTextColor(context), size: 16),
+          SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.getTextColor(context),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -423,13 +423,13 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
               onTap: onTap,
               child: Padding(
                 padding:
-                    const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                    EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(icon, color: color ?? Colors.white, size: 18),
                     if (label.isNotEmpty) ...[
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
                         label,
                         style: TextStyle(
@@ -452,31 +452,31 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              padding: const EdgeInsets.all(30),
+              padding: EdgeInsets.all(30),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: AppColors.getMutedTextColor(context),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: AppColors.getMutedTextColor(context),
                   width: 1,
                 ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.assignment, color: Colors.white, size: 64),
-                  const SizedBox(height: 16),
+                  Icon(Icons.assignment, color: AppColors.getTextColor(context), size: 64),
+                  SizedBox(height: 16),
                   Text(
                     'لا توجد اختبارات',
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.white.withOpacity(0.8),
+                      color: AppColors.getTextColor(context, secondary: true),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -521,19 +521,19 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.primaryPurple,
         title:
-            const Text('حذف الاختبار', style: TextStyle(color: Colors.white)),
-        content: const Text(
+            Text('حذف الاختبار', style: TextStyle(color: AppColors.getTextColor(context))),
+        content: Text(
           'هل أنت متأكد من حذف هذا الاختبار؟',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.getTextColor(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white)),
+            child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text('حذف', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -546,7 +546,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('تم حذف الاختبار'),
             backgroundColor: Colors.green,
           ),

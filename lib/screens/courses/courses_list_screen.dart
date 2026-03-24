@@ -14,7 +14,7 @@ import '../../core/utils/error_utils.dart';
 class CoursesListScreen extends StatefulWidget {
   final bool showBackButton;
 
-  const CoursesListScreen({
+  CoursesListScreen({
     super.key,
     this.showBackButton = true,
   });
@@ -118,7 +118,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               _t('cancel'), // Replaced 'إلغاء'
-              style: const TextStyle(color: AppColors.primaryPurple),
+              style: TextStyle(color: AppColors.primaryPurple),
             ),
           ),
           TextButton(
@@ -166,10 +166,10 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                 // Tabs
                 SliverPadding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   sliver: SliverToBoxAdapter(
                     child: Container(
-                      padding: const EdgeInsets.all(4),
+                      padding: EdgeInsets.all(4),
                       decoration: BoxDecoration(
                         color: AppColors.getGlassColor(context, opacity: 0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -199,16 +199,16 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                   ),
                 ),
 
-                const SliverPadding(padding: EdgeInsets.only(bottom: 10)),
+                SliverPadding(padding: EdgeInsets.only(bottom: 10)),
 
                 // Courses Grid
                 _isLoading
                     ? SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: EdgeInsets.symmetric(horizontal: 20),
                         sliver: SliverToBoxAdapter(
                           child: Center(
                               child: CircularProgressIndicator(
-                                  color: Colors.white.withOpacity(0.5))),
+                                  color: AppColors.getTextColor(context, secondary: true))),
                         ),
                       )
                     : Builder(
@@ -232,7 +232,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                           }
 
                           return SliverPadding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            padding: EdgeInsets.symmetric(horizontal: 20),
                             sliver: SliverGrid(
                               delegate: SliverChildBuilderDelegate(
                                 (context, index) {
@@ -240,7 +240,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                   final courseData = enrollment['courses'];
 
                                   if (courseData == null) {
-                                    return const SizedBox();
+                                    return SizedBox();
                                   }
 
                                   final course = Course.fromJson(courseData);
@@ -254,13 +254,13 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                                     direction: DismissDirection.endToStart,
                                     background: Container(
                                       alignment: Alignment.centerLeft,
-                                      padding: const EdgeInsets.only(left: 20),
+                                      padding: EdgeInsets.only(left: 20),
                                       decoration: BoxDecoration(
                                         color: Colors.red.withOpacity(0.8),
                                         borderRadius: BorderRadius.circular(24),
                                       ),
-                                      child: const Icon(Icons.delete,
-                                          color: Colors.white, size: 32),
+                                      child: Icon(Icons.delete,
+                                          color: AppColors.getTextColor(context), size: 32),
                                     ),
                                     confirmDismiss: (direction) async =>
                                         await _showDeleteConfirmation(),
@@ -287,7 +287,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                         },
                       ),
 
-                const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
+                SliverPadding(padding: EdgeInsets.only(bottom: 100)),
               ],
             ),
           ),
@@ -298,7 +298,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           if (widget.showBackButton)
@@ -320,7 +320,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
                       Provider.of<LocaleProvider>(context, listen: false).locale == 'ar'
                           ? Icons.arrow_forward_ios_rounded
                           : Icons.arrow_back_ios_new_rounded,
-                      color: Colors.white,
+                      color: AppColors.getTextColor(context),
                       size: 20,
                     ),
                     onPressed: () => Navigator.pop(context),
@@ -329,19 +329,19 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
               ),
             )
           else
-            const SizedBox(width: 48),
+            SizedBox(width: 48),
           Expanded(
             child: Text(
               _t('my_courses'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.normal,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
@@ -355,22 +355,22 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
           Icon(
             Icons.school_outlined,
             size: 80,
-            color: Colors.white.withOpacity(0.5),
+            color: AppColors.getTextColor(context, secondary: true),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           Text(
             _selectedTab == 0
                 ? _t('no_active_courses') // Replaced 'لا توجد دورات حالية'
                 : _t('no_completed_courses'), // Replaced 'لم تكمل أي دورة بعد'
             style: TextStyle(
               fontSize: 18,
-              color: Colors.white.withOpacity(0.8),
+              color: AppColors.getTextColor(context, secondary: true),
               fontWeight: FontWeight.normal,
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
+            padding: EdgeInsets.symmetric(horizontal: 40),
             child: Text(
               _selectedTab == 0
                   ? _t(
@@ -380,7 +380,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.white.withOpacity(0.6),
+                color: AppColors.getTextColor(context, secondary: true),
               ),
             ),
           ),
@@ -399,7 +399,7 @@ class _CoursesListScreenState extends State<CoursesListScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        padding: EdgeInsets.symmetric(vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? AppColors.primaryPurple : Colors.transparent,
           borderRadius: BorderRadius.circular(10),

@@ -10,7 +10,7 @@ class AddNoteScreen extends StatefulWidget {
   final String? courseId;
   final int? videoTimestamp;
 
-  const AddNoteScreen({
+  AddNoteScreen({
     super.key,
     this.lessonId,
     this.courseId,
@@ -60,7 +60,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
   Future<void> _saveNote() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('الرجاء إدخال عنوان الملاحظة'),
           backgroundColor: Colors.red,
         ),
@@ -70,7 +70,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
 
     if (_contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('الرجاء إدخال محتوى الملاحظة'),
           backgroundColor: Colors.red,
         ),
@@ -81,7 +81,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
     // Ensure we have context for creating note
     if (widget.lessonId == null || widget.courseId == null) {
        ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('لا يمكن حفظ الملاحظة بدون درس أو مساق'),
           backgroundColor: Colors.red,
         ),
@@ -105,7 +105,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       if (mounted) {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('تم حفظ الملاحظة بنجاح'),
             backgroundColor: Colors.green,
           ),
@@ -135,7 +135,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -147,24 +147,24 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               // Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Title Input
                       _buildTitleInput(),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
 
                       // Content Input
                       _buildContentInput(),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
 
                       // Tags Section
                       _buildTagsSection(),
 
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
 
                       // Save Button
                       _buildSaveButton(),
@@ -181,7 +181,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -190,15 +190,15 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -207,19 +207,19 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
           Expanded(
             child: Column(
               children: [
-                const Text(
+                Text(
                   'ملاحظة جديدة',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
                 if (widget.videoTimestamp != null)
                   Text(
                     'توقيت الفيديو: ${_formatTime(widget.videoTimestamp!)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: AppColors.primaryPurple,
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
@@ -228,7 +228,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
@@ -240,7 +240,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -252,22 +252,22 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
           child: TextField(
             controller: _titleController,
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.getTextColor(context),
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'عنوان الملاحظة',
               hintStyle: TextStyle(
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
                 fontSize: 20,
               ),
               border: InputBorder.none,
@@ -284,7 +284,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -296,7 +296,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -305,14 +305,14 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             maxLines: null,
             minLines: 10,
             textAlign: TextAlign.right,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.getTextColor(context),
               fontSize: 16,
             ),
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               hintText: 'اكتب ملاحظتك هنا...',
               hintStyle: TextStyle(
-                color: Colors.white70,
+                color: AppColors.getTextColor(context).withOpacity(0.70),
                 fontSize: 16,
               ),
               border: InputBorder.none,
@@ -329,7 +329,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -341,22 +341,22 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'الوسوم',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Tag Input
               Row(
@@ -365,11 +365,11 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                     child: TextField(
                       controller: _tagController,
                       textAlign: TextAlign.right,
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.getTextColor(context)),
                       decoration: InputDecoration(
                         hintText: 'أضف وسماً',
-                        hintStyle: const TextStyle(
-                          color: Colors.white,
+                        hintStyle: TextStyle(
+                          color: AppColors.getTextColor(context),
                         ),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.1),
@@ -377,7 +377,7 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide.none,
                         ),
-                        contentPadding: const EdgeInsets.symmetric(
+                        contentPadding: EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
                         ),
@@ -385,14 +385,14 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                       onSubmitted: (_) => _addTag(),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Container(
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       gradient: AppColors.primaryGradient,
                       shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
+                      icon: Icon(Icons.add, color: AppColors.getTextColor(context)),
                       onPressed: _addTag,
                     ),
                   ),
@@ -401,18 +401,18 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
 
               // Tags List
               if (_tags.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
                   children: _tags.map((tag) {
                     return Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding: EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: AppColors.getMutedTextColor(context),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -420,17 +420,17 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                         children: [
                           Text(
                             '#$tag',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 14,
-                              color: Colors.white,
+                              color: AppColors.getTextColor(context),
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          SizedBox(width: 6),
                           GestureDetector(
                             onTap: () => _removeTag(tag),
                             child: Icon(
                               Icons.close,
-                              color: Colors.white.withOpacity(0.8),
+                              color: AppColors.getTextColor(context, secondary: true),
                               size: 16,
                             ),
                           ),
@@ -465,23 +465,23 @@ class _AddNoteScreenState extends State<AddNoteScreen> {
                 borderRadius: BorderRadius.circular(16),
                 onTap: _isSubmitting ? null : _saveNote,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  padding: EdgeInsets.symmetric(vertical: 18),
                   child: _isSubmitting
-                      ? const Center(
+                      ? Center(
                           child: SizedBox(
                             width: 24,
                             height: 24,
                             child: CircularProgressIndicator(
-                              color: Colors.white,
+                              color: AppColors.getTextColor(context),
                               strokeWidth: 2,
                             ),
                           ),
                         )
-                      : const Text(
+                      : Text(
                           'حفظ الملاحظة',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),

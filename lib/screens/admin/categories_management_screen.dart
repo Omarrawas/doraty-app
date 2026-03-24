@@ -10,7 +10,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/error_utils.dart';
 
 class CategoriesManagementScreen extends StatefulWidget {
-  const CategoriesManagementScreen({super.key});
+  CategoriesManagementScreen({super.key});
 
   @override
   State<CategoriesManagementScreen> createState() => _CategoriesManagementScreenState();
@@ -64,8 +64,8 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                 _buildHeader(context),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white))
+                      ? Center(
+                          child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                       : Builder(
                           builder: (context) {
                             final parents = _categories.where((c) => c.parentId == null || c.parentId!.isEmpty).toList();
@@ -74,7 +74,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                                parents.addAll(_categories);
                             }
                             return ListView.builder(
-                              padding: const EdgeInsets.all(20),
+                              padding: EdgeInsets.all(20),
                               itemCount: parents.length,
                               itemBuilder: (context, index) {
                                 final parent = parents[index];
@@ -91,8 +91,8 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _showAddEditDialog(),
-          icon: const Icon(Icons.add),
-          label: const Text('إضافة تصنيف'),
+          icon: Icon(Icons.add),
+          label: Text('إضافة تصنيف'),
           backgroundColor: AppColors.primaryPurple,
           foregroundColor: Colors.white,
         ),
@@ -102,7 +102,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -118,13 +118,13 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               'إدارة التصنيفات',
@@ -142,7 +142,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
 
   Widget _buildCategoryGroup(CategoryModel parent, List<CategoryModel> children) {
     return Card(
-      margin: const EdgeInsets.only(bottom: 24),
+      margin: EdgeInsets.only(bottom: 24),
       elevation: 0,
       color: Colors.transparent,
       child: ClipRRect(
@@ -163,7 +163,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
               children: [
                 // Parent Header
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: AppColors.primaryPurple.withOpacity(0.15),
                     border: Border(
@@ -175,7 +175,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: AppColors.primaryPurple.withOpacity(0.3),
                           borderRadius: BorderRadius.circular(10),
@@ -185,10 +185,10 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                                 width: 24,
                                 height: 24,
                                 errorBuilder: (_, __, ___) =>
-                                    const Icon(Icons.category, color: Colors.white))
-                            : const Icon(Icons.category, color: Colors.white),
+                                    Icon(Icons.category, color: AppColors.getTextColor(context)))
+                            : Icon(Icons.category, color: AppColors.getTextColor(context)),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,11 +212,11 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.edit_rounded, color: Colors.blueAccent),
+                        icon: Icon(Icons.edit_rounded, color: Colors.blueAccent),
                         onPressed: () => _showAddEditDialog(category: parent),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                        icon: Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
                         onPressed: () => _deleteCategory(parent.id),
                       ),
                     ],
@@ -226,7 +226,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                 // Children Categories Grid
                 if (children.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -238,7 +238,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                             fontSize: 14,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        SizedBox(height: 12),
                         Wrap(
                           spacing: 12,
                           runSpacing: 12,
@@ -249,7 +249,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                   )
                 else
                   Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(16.0),
                     child: Text(
                       'لا توجد تصنيفات فرعية',
                       style: TextStyle(
@@ -276,20 +276,20 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
           color: AppColors.getGlassColor(context, opacity: 0.2),
         ),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: AppColors.primaryPurple.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: child.iconUrl != null && child.iconUrl!.isNotEmpty
-                ? Image.network(child.iconUrl!, width: 16, height: 16, errorBuilder: (_, __, ___) => const Icon(Icons.subdirectory_arrow_right, size: 16, color: Colors.white))
-                : const Icon(Icons.subdirectory_arrow_right, size: 16, color: Colors.white),
+                ? Image.network(child.iconUrl!, width: 16, height: 16, errorBuilder: (_, __, ___) => Icon(Icons.subdirectory_arrow_right, size: 16, color: AppColors.getTextColor(context)))
+                : Icon(Icons.subdirectory_arrow_right, size: 16, color: AppColors.getTextColor(context)),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -316,15 +316,15 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
             children: [
               IconButton(
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: const Icon(Icons.edit, size: 18, color: Colors.blueAccent),
+                constraints: BoxConstraints(),
+                icon: Icon(Icons.edit, size: 18, color: Colors.blueAccent),
                 onPressed: () => _showAddEditDialog(category: child),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               IconButton(
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-                icon: const Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                constraints: BoxConstraints(),
+                icon: Icon(Icons.delete, size: 18, color: Colors.redAccent),
                 onPressed: () => _deleteCategory(child.id),
               ),
             ],
@@ -354,21 +354,21 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'اسم التصنيف'),
+                decoration: InputDecoration(labelText: 'اسم التصنيف'),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               TextField(
                 controller: slugController,
-                decoration: const InputDecoration(labelText: 'المعرف (Slug)'),
+                decoration: InputDecoration(labelText: 'المعرف (Slug)'),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               TextField(
                 controller: iconController,
-                decoration: const InputDecoration(labelText: 'رابط الأيقونة (اختياري)'),
+                decoration: InputDecoration(labelText: 'رابط الأيقونة (اختياري)'),
               ),
               DropdownButtonFormField<String?>(
                 value: selectedParentId,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'التصنيف الأب (اختياري)',
                   hintText: 'تصنيف رئيسي',
                 ),
@@ -391,13 +391,13 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text('إلغاء'),
           ),
           ElevatedButton(
             onPressed: () async {
               if (nameController.text.isEmpty || slugController.text.isEmpty) {
                  ScaffoldMessenger.of(context).showSnackBar(
-                   const SnackBar(content: Text('الرجاء ملء الحقول المطلوبة')),
+                   SnackBar(content: Text('الرجاء ملء الحقول المطلوبة')),
                  );
                  return;
               }
@@ -445,11 +445,11 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تأكيد الحذف'),
-        content: const Text('هل أنت متأكد من حذف هذا التصنيف؟'),
+        title: Text('تأكيد الحذف'),
+        content: Text('هل أنت متأكد من حذف هذا التصنيف؟'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('لا')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('نعم', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('لا')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('نعم', style: TextStyle(color: Colors.red))),
         ],
       ),
     );

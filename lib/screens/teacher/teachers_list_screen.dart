@@ -10,7 +10,7 @@ import 'teacher_profile_screen.dart';
 import '../../core/theme/app_colors.dart';
 
 class TeachersListScreen extends StatefulWidget {
-  const TeachersListScreen({super.key});
+  TeachersListScreen({super.key});
 
   @override
   State<TeachersListScreen> createState() => _TeachersListScreenState();
@@ -130,7 +130,7 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
                 _buildSubjectChips(),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
+                      ? Center(
                           child: CircularProgressIndicator(
                               color: AppColors.primaryPurple))
                       : _filteredTeachers.isEmpty
@@ -145,12 +145,12 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
                                     children: [
                                       Icon(Icons.person_off_outlined,
                                           size: 64,
-                                          color: Colors.white.withOpacity(0.5)),
-                                      const SizedBox(height: 16),
+                                          color: AppColors.getTextColor(context, secondary: true)),
+                                      SizedBox(height: 16),
                                       Text(
                                         _t('no_teachers_found'),
-                                        style: const TextStyle(
-                                            color: Colors.white, fontSize: 16),
+                                        style: TextStyle(
+                                            color: AppColors.getTextColor(context), fontSize: 16),
                                       ),
                                     ],
                                   ),
@@ -158,7 +158,7 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
                               ],
                             )
                           : GridView.builder(
-                              padding: const EdgeInsets.all(16),
+                              padding: EdgeInsets.all(16),
                               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: crossAxisCount,
                                 childAspectRatio: childAspectRatio,
@@ -180,7 +180,7 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
           Container(
@@ -189,17 +189,17 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
               onPressed: () => Navigator.pop(context),
             ),
           ),
-          const SizedBox(width: 16),
-          const Text(
+          SizedBox(width: 16),
+          Text(
             'المعلمون المتاحون',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
           ),
         ],
@@ -209,7 +209,7 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
 
   Widget _buildSearchSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.getGlassColor(context, opacity: 0.1),
@@ -218,18 +218,18 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
         ),
         child: TextField(
           textAlign: TextAlign.right,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.getTextColor(context)),
           onChanged: (value) {
             _searchQuery = value;
             _filterTeachers();
           },
           decoration: InputDecoration(
             hintText: 'ابحث عن معلم...',
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-            prefixIcon: const Icon(Icons.search, color: Colors.white),
+            hintStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true)),
+            prefixIcon: Icon(Icons.search, color: AppColors.getTextColor(context)),
             border: InputBorder.none,
             contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           ),
         ),
       ),
@@ -237,14 +237,14 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
   }
 
   Widget _buildSubjectChips() {
-    if (_allSubjects.isEmpty) return const SizedBox.shrink();
+    if (_allSubjects.isEmpty) return SizedBox.shrink();
 
     return Container(
       height: 50,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: EdgeInsets.symmetric(vertical: 8),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16),
         itemCount: _allSubjects.length + 1,
         itemBuilder: (context, index) {
           final isAll = index == 0;
@@ -253,7 +253,7 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
           final isSelected = _selectedSubject == subject;
 
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: EdgeInsets.only(right: 8),
             child: ChoiceChip(
               label: Text(label),
               selected: isSelected,
@@ -301,12 +301,12 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
         );
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: AppColors.getGlassColor(context, opacity: 0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Colors.white.withOpacity(0.1),
+            color: AppColors.getMutedTextColor(context),
             width: 1,
           ),
         ),
@@ -343,26 +343,26 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
                       ),
               ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: EdgeInsets.symmetric(horizontal: 8),
               child: Text(
                 name,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppColors.getTextColor(context),
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             // Subjects
             if (subjects.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   subjects.join('، '),
                   textAlign: TextAlign.center,
@@ -375,17 +375,17 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
                   ),
                 ),
               ),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             if (bio != null && bio.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Text(
                   bio,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.6),
+                    color: AppColors.getTextColor(context, secondary: true),
                     fontSize: 11,
                   ),
                 ),

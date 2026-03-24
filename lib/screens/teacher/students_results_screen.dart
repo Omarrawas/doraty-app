@@ -7,7 +7,7 @@ import 'exam_stats_screen.dart';
 class StudentsResultsScreen extends StatefulWidget {
   final String? examId;
 
-  const StudentsResultsScreen({super.key, this.examId});
+  StudentsResultsScreen({super.key, this.examId});
 
   @override
   State<StudentsResultsScreen> createState() => _StudentsResultsScreenState();
@@ -52,19 +52,19 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(gradient: AppColors.backgroundGradient),
         child: SafeArea(
           child: Column(
             children: [
               _buildHeader(),
               if (_exams.isNotEmpty) ...[
                 _buildExamFilter(),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 _buildAnalyticsButton(),
               ],
               Expanded(
                 child: _isLoading
-                    ? const Center(
+                    ? Center(
                         child: CircularProgressIndicator(
                           valueColor:
                               AlwaysStoppedAnimation<Color>(Colors.white),
@@ -75,11 +75,11 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
                         : RefreshIndicator(
                             onRefresh: _loadData,
                             child: ListView.builder(
-                              padding: const EdgeInsets.all(20),
+                              padding: EdgeInsets.all(20),
                               itemCount: _attempts.length,
                               itemBuilder: (context, index) {
                                 return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
+                                  padding: EdgeInsets.only(bottom: 12),
                                   child: _buildAttemptCard(_attempts[index]),
                                 );
                               },
@@ -95,7 +95,7 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -104,26 +104,26 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: Colors.white.withOpacity(0.3), width: 1),
+                      color: AppColors.getMutedTextColor(context), width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          const Expanded(
+          SizedBox(width: 16),
+          Expanded(
             child: Text(
               'نتائج الطلاب',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
@@ -134,15 +134,15 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
 
   Widget _buildExamFilter() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
+              color: AppColors.getMutedTextColor(context),
               borderRadius: BorderRadius.circular(16),
               border:
                   Border.all(color: Colors.white.withOpacity(0.3), width: 1),
@@ -150,24 +150,24 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
             child: DropdownButtonFormField<String>(
               value: _selectedExamId,
               dropdownColor: AppColors.primaryPurple,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
+              style: TextStyle(color: AppColors.getTextColor(context)),
+              decoration: InputDecoration(
                 labelText: 'اختر الاختبار',
-                labelStyle: TextStyle(color: Colors.white),
+                labelStyle: TextStyle(color: AppColors.getTextColor(context)),
                 border: InputBorder.none,
               ),
               items: [
-                const DropdownMenuItem<String>(
+                DropdownMenuItem<String>(
                   value: null,
                   child: Text('جميع الاختبارات',
-                      style: TextStyle(color: Colors.white)),
+                      style: TextStyle(color: AppColors.getTextColor(context))),
                 ),
                 ..._exams.map((exam) {
                   return DropdownMenuItem<String>(
                     value: exam['id'],
                     child: Text(
                       exam['title'] ?? 'اختبار',
-                      style: const TextStyle(color: Colors.white),
+                      style: TextStyle(color: AppColors.getTextColor(context)),
                     ),
                   );
                 }),
@@ -208,7 +208,7 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
                 Border.all(color: Colors.white.withOpacity(0.3), width: 1.5),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -222,31 +222,31 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
                         color: isPassed ? Colors.green : Colors.red,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             studentName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: AppColors.getTextColor(context),
                             ),
                           ),
                           Text(
                             examTitle,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.white.withOpacity(0.7),
+                              color: AppColors.getTextColor(context, secondary: true),
                             ),
                           ),
                         ],
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding: EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: (isPassed ? Colors.green : Colors.red)
@@ -264,14 +264,14 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 Row(
                   children: [
                     _buildInfoChip(
                       Icons.assignment,
                       '${attempt['score']}/${attempt['total_points']}',
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     _buildInfoChip(
                       Icons.access_time,
                       '${attempt['time_taken'] ?? 0} دقيقة',
@@ -288,20 +288,20 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
 
   Widget _buildInfoChip(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: AppColors.getMutedTextColor(context),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 16),
-          const SizedBox(width: 6),
+          Icon(icon, color: AppColors.getTextColor(context), size: 16),
+          SizedBox(width: 6),
           Text(
             label,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.getTextColor(context),
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
@@ -312,10 +312,10 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
   }
 
   Widget _buildAnalyticsButton() {
-    if (_selectedExamId == null) return const SizedBox.shrink();
+    if (_selectedExamId == null) return SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(
@@ -331,12 +331,12 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
               ),
             );
           },
-          icon: const Icon(Icons.analytics_outlined),
-          label: const Text('عرض التحليلات والإحصائيات'),
+          icon: Icon(Icons.analytics_outlined),
+          label: Text('عرض التحليلات والإحصائيات'),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white.withOpacity(0.2),
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
               side: BorderSide(color: Colors.white.withOpacity(0.3)),
@@ -351,15 +351,15 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(16),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              padding: const EdgeInsets.all(30),
+              padding: EdgeInsets.all(30),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
+                color: AppColors.getMutedTextColor(context),
                 borderRadius: BorderRadius.circular(16),
                 border:
                     Border.all(color: Colors.white.withOpacity(0.3), width: 1),
@@ -367,13 +367,13 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.people, color: Colors.white, size: 64),
-                  const SizedBox(height: 16),
+                  Icon(Icons.people, color: AppColors.getTextColor(context), size: 64),
+                  SizedBox(height: 16),
                   Text(
                     'لا توجد محاولات',
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.white.withOpacity(0.8),
+                      color: AppColors.getTextColor(context, secondary: true),
                       fontWeight: FontWeight.bold,
                     ),
                   ),

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
 import 'package:flutter_tex/flutter_tex.dart';
 
 class MathSymbolToolbar extends StatelessWidget {
   final Function(String) onSymbolSelected;
   final ScrollController? scrollController;
 
-  const MathSymbolToolbar({
+  MathSymbolToolbar({
     super.key,
     required this.onSymbolSelected,
     this.scrollController,
@@ -16,8 +17,8 @@ class MathSymbolToolbar extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final background =
-        isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F3F3);
-    final border = isDark ? Colors.white12 : const Color(0xFFD0D0D0);
+        isDark ? Color(0xFF1E1E1E) : Color(0xFFF3F3F3);
+    final border = isDark ? Colors.white12 : Color(0xFFD0D0D0);
     return Container(
       height: 60,
       decoration: BoxDecoration(
@@ -38,14 +39,14 @@ class MathSymbolToolbar extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
             blurRadius: 12,
-            offset: const Offset(0, -2),
+            offset: Offset(0, -2),
           ),
         ],
       ),
       child: ListView(
         scrollDirection: Axis.horizontal,
         controller: scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         children: [
           // ── Quick Equation Insert (Word-like) ──
           _buildEquationButton(context),
@@ -281,10 +282,10 @@ class MathSymbolToolbar extends StatelessWidget {
   Widget _buildEquationButton(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final accent = isDark ? const Color(0xFF8AB4F8) : const Color(0xFF0F6CBD);
+    final accent = isDark ? Color(0xFF8AB4F8) : Color(0xFF0F6CBD);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
+      padding: EdgeInsets.symmetric(horizontal: 6),
       child: InkWell(
         onTap: () => _showEquationDialog(context),
         borderRadius: BorderRadius.circular(10),
@@ -307,7 +308,7 @@ class MathSymbolToolbar extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.functions, color: accent, size: 24),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(
                     'معادلة',
                     textAlign: TextAlign.center,
@@ -337,12 +338,12 @@ class MathSymbolToolbar extends StatelessWidget {
         builder: (ctx, setDialogState) {
           return Dialog(
             backgroundColor: Colors.transparent,
-            insetPadding: const EdgeInsets.all(16),
+            insetPadding: EdgeInsets.all(16),
             child: Container(
-              constraints: const BoxConstraints(maxWidth: 520, maxHeight: 600),
+              constraints: BoxConstraints(maxWidth: 520, maxHeight: 600),
               decoration: BoxDecoration(
                 color: Theme.of(context).brightness == Brightness.dark
-                    ? const Color(0xFF1E1E1E)
+                    ? Color(0xFF1E1E1E)
                     : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
@@ -358,18 +359,18 @@ class MathSymbolToolbar extends StatelessWidget {
                 children: [
                   // ── Header ──
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF0F6CBD).withValues(alpha: 0.1),
+                      color: Color(0xFF0F6CBD).withValues(alpha: 0.1),
                       borderRadius:
                           const BorderRadius.vertical(top: Radius.circular(16)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.functions,
+                        Icon(Icons.functions,
                             color: Color(0xFF0F6CBD), size: 24),
-                        const SizedBox(width: 8),
-                        const Expanded(
+                        SizedBox(width: 8),
+                        Expanded(
                           child: Text(
                             'إدراج معادلة رياضية',
                             style: TextStyle(
@@ -379,7 +380,7 @@ class MathSymbolToolbar extends StatelessWidget {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: Icon(Icons.close),
                           onPressed: () => Navigator.pop(ctx),
                         ),
                       ],
@@ -388,15 +389,15 @@ class MathSymbolToolbar extends StatelessWidget {
 
                   Flexible(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // ── Quick Templates ──
-                          const Text('قوالب سريعة:',
+                          Text('قوالب سريعة:',
                               style: TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 14)),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -408,7 +409,7 @@ class MathSymbolToolbar extends StatelessWidget {
                                 },
                                 borderRadius: BorderRadius.circular(8),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
+                                  padding: EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 8),
                                   decoration: BoxDecoration(
                                     color: Colors.grey.withValues(alpha: 0.1),
@@ -418,26 +419,26 @@ class MathSymbolToolbar extends StatelessWidget {
                                   ),
                                   child: Text(
                                     t.label,
-                                    style: const TextStyle(fontSize: 13),
+                                    style: TextStyle(fontSize: 13),
                                   ),
                                 ),
                               );
                             }).toList(),
                           ),
 
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
 
                           // ── LaTeX Input ──
-                          const Text('اكتب المعادلة بصيغة LaTeX:',
+                          Text('اكتب المعادلة بصيغة LaTeX:',
                               style: TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 14)),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Directionality(
                             textDirection: TextDirection.ltr,
                             child: TextField(
                               controller: controller,
                               maxLines: 3,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontFamily: 'monospace',
                                 fontSize: 14,
                               ),
@@ -459,24 +460,24 @@ class MathSymbolToolbar extends StatelessWidget {
                             ),
                           ),
 
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
 
                           // ── Live Preview ──
-                          const Text('المعاينة:',
+                          Text('المعاينة:',
                               style: TextStyle(
                                   fontWeight: FontWeight.bold, fontSize: 14)),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Container(
-                            constraints: const BoxConstraints(minHeight: 80),
+                            constraints: BoxConstraints(minHeight: 80),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: AppColors.getTextColor(context),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                   color:
-                                      const Color(0xFF0F6CBD).withValues(alpha: 0.3)),
+                                      Color(0xFF0F6CBD).withValues(alpha: 0.3)),
                             ),
                             child: previewLatex.isEmpty
-                                ? const Center(
+                                ? Center(
                                     child: Padding(
                                       padding: EdgeInsets.all(20),
                                       child: Text(
@@ -497,11 +498,11 @@ class MathSymbolToolbar extends StatelessWidget {
                                         padding: const TeXViewPadding.all(16),
                                       ),
                                     ),
-                                    style: const TeXViewStyle(
+                                    style: TeXViewStyle(
                                       backgroundColor: Colors.white,
                                     ),
                                     loadingWidgetBuilder: (context) =>
-                                        const Center(
+                                        Center(
                                       child: Padding(
                                         padding: EdgeInsets.all(16),
                                         child: SizedBox(
@@ -521,7 +522,7 @@ class MathSymbolToolbar extends StatelessWidget {
 
                   // ── Actions ──
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       border: Border(
                           top: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
@@ -531,9 +532,9 @@ class MathSymbolToolbar extends StatelessWidget {
                       children: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx),
-                          child: const Text('إلغاء'),
+                          child: Text('إلغاء'),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         ElevatedButton.icon(
                           onPressed: previewLatex.isEmpty
                               ? null
@@ -542,10 +543,10 @@ class MathSymbolToolbar extends StatelessWidget {
                                   Navigator.pop(ctx);
                                   onSymbolSelected(result);
                                 },
-                          icon: const Icon(Icons.add, size: 18),
-                          label: const Text('إدراج المعادلة'),
+                          icon: Icon(Icons.add, size: 18),
+                          label: Text('إدراج المعادلة'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF0F6CBD),
+                            backgroundColor: Color(0xFF0F6CBD),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -572,20 +573,20 @@ class MathSymbolToolbar extends StatelessWidget {
   ) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final surface = isDark ? const Color(0xFF2A2A2A) : Colors.white;
-    final border = isDark ? Colors.white12 : const Color(0xFFD0D0D0);
-    final textPrimary = isDark ? Colors.white : const Color(0xFF1B1B1B);
-    final textSecondary = isDark ? Colors.white70 : const Color(0xFF5C5C5C);
-    final accent = isDark ? const Color(0xFF8AB4F8) : const Color(0xFF0F6CBD);
+    final surface = isDark ? Color(0xFF2A2A2A) : Colors.white;
+    final border = isDark ? Colors.white12 : Color(0xFFD0D0D0);
+    final textPrimary = isDark ? Colors.white : Color(0xFF1B1B1B);
+    final textSecondary = isDark ? Colors.white70 : Color(0xFF5C5C5C);
+    final accent = isDark ? Color(0xFF8AB4F8) : Color(0xFF0F6CBD);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
+      padding: EdgeInsets.symmetric(horizontal: 6),
       child: PopupMenuButton<String>(
         onSelected: onSymbolSelected,
-        offset: const Offset(0, -8),
+        offset: Offset(0, -8),
         elevation: 10,
         color: surface,
-        constraints: const BoxConstraints(maxHeight: 420, minWidth: 280),
+        constraints: BoxConstraints(maxHeight: 420, minWidth: 280),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(color: border),
@@ -616,7 +617,7 @@ class MathSymbolToolbar extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 1),
+                  SizedBox(height: 1),
                   Text(
                     label,
                     textAlign: TextAlign.center,
@@ -639,7 +640,7 @@ class MathSymbolToolbar extends StatelessWidget {
                 Container(
                   width: 48,
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(6),
@@ -658,7 +659,7 @@ class MathSymbolToolbar extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     item.label,

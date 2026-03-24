@@ -14,7 +14,7 @@ class VideoPlayerControls extends StatefulWidget {
   final Lesson? lesson;
   final String courseTitle;
 
-  const VideoPlayerControls({
+  VideoPlayerControls({
     super.key,
     this.youtubeController,
     this.videoController,
@@ -48,7 +48,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
   void _startHideTimer() {
     _hideTimer?.cancel();
-    _hideTimer = Timer(const Duration(seconds: 3), () {
+    _hideTimer = Timer(Duration(seconds: 3), () {
       if (mounted && _isVisible) {
         setState(() => _isVisible = false);
       }
@@ -137,7 +137,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
             // Black fading overlay
             AnimatedOpacity(
               opacity: _isVisible ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 300),
+              duration: Duration(milliseconds: 300),
               child: Container(color: Colors.black45),
             ),
 
@@ -151,8 +151,8 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                       left: 0,
                       right: 0,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: const BoxDecoration(
+                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
@@ -163,7 +163,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                           children: [
                             IconButton(
                               icon: Icon(_isLocked ? Icons.lock : Icons.lock_open,
-                                  color: Colors.white),
+                                  color: AppColors.getTextColor(context)),
                               onPressed: () {
                                 setState(() {
                                   _isLocked = !_isLocked;
@@ -172,7 +172,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                               },
                             ),
                             if (!_isLocked) ...[
-                              const Spacer(),
+                              Spacer(),
                               _buildSpeedButton(),
                             ],
 
@@ -189,9 +189,9 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                           children: [
                             _buildControlButton(
                                 Icons.replay_10, () => _seekRelative(-10)),
-                            const SizedBox(width: 40),
+                            SizedBox(width: 40),
                             _buildPlayPauseButton(),
-                            const SizedBox(width: 40),
+                            SizedBox(width: 40),
                             _buildControlButton(
                                 Icons.forward_10, () => _seekRelative(10)),
                           ],
@@ -204,8 +204,8 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                       left: 0,
                       right: 0,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: const BoxDecoration(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
@@ -226,7 +226,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
   Widget _buildControlBar(bool isFullScreen) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: [
           Expanded(
@@ -234,25 +234,25 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                 ? (widget.youtubeController != null
                     ? ProgressBar(
                         controller: widget.youtubeController!,
-                        colors: const ProgressBarColors(
+                        colors: ProgressBarColors(
                           playedColor: AppColors.primaryPurple,
                           handleColor: AppColors.primaryPurple,
                         ),
                       )
-                    : const SizedBox.shrink())
+                    : SizedBox.shrink())
                 : (widget.videoController != null
                     ? VideoProgressIndicator(widget.videoController!,
                         allowScrubbing: true,
-                        colors: const VideoProgressColors(
+                        colors: VideoProgressColors(
                           playedColor: AppColors.primaryPurple,
                         ))
-                    : const SizedBox.shrink()),
+                    : SizedBox.shrink()),
           ),
           if (widget.onToggleFullScreen != null)
             IconButton(
               icon: Icon(
                 isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
               onPressed: () {
                 widget.onToggleFullScreen!();
@@ -266,7 +266,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
   Widget _buildControlButton(IconData icon, VoidCallback onTap) {
     return IconButton(
-      icon: Icon(icon, color: Colors.white, size: 36),
+      icon: Icon(icon, color: AppColors.getTextColor(context), size: 36),
       onPressed: onTap,
     );
   }
@@ -278,13 +278,13 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: AppColors.getMutedTextColor(context),
         shape: BoxShape.circle,
       ),
       child: IconButton(
         icon: Icon(
           isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          color: Colors.white,
+          color: AppColors.getTextColor(context),
           size: 48,
         ),
         onPressed: _togglePlayPause,
@@ -298,14 +298,14 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
     return TextButton(
       onPressed: () => _showSpeedMenu(),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white24,
+          color: AppColors.getTextColor(context).withOpacity(0.24),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           '${_playbackSpeed}x',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -316,28 +316,28 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.primaryDark,
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Padding(
+            Padding(
               padding: EdgeInsets.all(16.0),
               child: Text(
                 'سرعة التشغيل',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AppColors.getTextColor(context), fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             ...[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((speed) => ListTile(
-              title: Text('${speed}x', style: const TextStyle(color: Colors.white)),
+              title: Text('${speed}x', style: TextStyle(color: AppColors.getTextColor(context))),
               trailing: _playbackSpeed == speed 
-                ? const Icon(Icons.check, color: AppColors.primaryBlue) 
+                ? Icon(Icons.check, color: AppColors.primaryBlue) 
                 : null,
               onTap: () => _changeSpeed(speed),
             )),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
           ],
         ),
       ),

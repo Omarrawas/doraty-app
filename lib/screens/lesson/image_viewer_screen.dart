@@ -5,7 +5,7 @@ class ImageViewerScreen extends StatefulWidget {
   final String url;
   final String title;
 
-  const ImageViewerScreen({
+  ImageViewerScreen({
     super.key,
     required this.url,
     required this.title,
@@ -23,10 +23,10 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
       appBar: AppBar(
         title: Text(
           widget.title,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primaryPurple,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: AppColors.getTextColor(context)),
       ),
       body: Center(
         child: InteractiveViewer(
@@ -37,10 +37,10 @@ class _ImageViewerScreenState extends State<ImageViewerScreen> {
             fit: BoxFit.contain,
             loadingBuilder: (context, child, loadingProgress) {
               if (loadingProgress == null) return child;
-              return const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple));
+              return Center(child: CircularProgressIndicator(color: AppColors.primaryPurple));
             },
             errorBuilder: (context, error, stackTrace) =>
-                const Text('خطأ في تحميل الصورة', style: TextStyle(color: Colors.white70)),
+                Text('خطأ في تحميل الصورة', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70))),
           ),
         ),
       ),

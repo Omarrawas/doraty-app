@@ -5,7 +5,7 @@ import '../../core/utils/error_utils.dart';
 import '../../core/services/database_service.dart';
 
 class QrScannerScreen extends StatefulWidget {
-  const QrScannerScreen({super.key});
+  QrScannerScreen({super.key});
 
   @override
   State<QrScannerScreen> createState() => _QrScannerScreenState();
@@ -36,7 +36,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Center(child: CircularProgressIndicator()),
+      builder: (ctx) => Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -54,22 +54,22 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             context: context,
             barrierDismissible: false, // Force user to acknowledge
             builder: (ctx) => AlertDialog(
-              title: const Text('تم بنجاح!', textAlign: TextAlign.center),
+              title: Text('تم بنجاح!', textAlign: TextAlign.center),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.check_circle, color: Colors.green, size: 64),
-                  const SizedBox(height: 16),
+                  Icon(Icons.check_circle, color: Colors.green, size: 64),
+                  SizedBox(height: 16),
                   Text(
                     result['message'] ?? 'تم تفعيل الكود بنجاح',
                     textAlign: TextAlign.center,
                   ),
                   if (result['courses_enrolled'] != null)
                     Padding(
-                      padding: const EdgeInsets.only(top: 8),
+                      padding: EdgeInsets.only(top: 8),
                       child: Text(
                         'تم تفعيل ${result['courses_enrolled']} مادة/مواد',
-                        style: const TextStyle(color: Colors.grey),
+                        style: TextStyle(color: Colors.grey),
                       ),
                     ),
                 ],
@@ -80,7 +80,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                     Navigator.pop(ctx); // Close dialog
                     Navigator.pop(context, true); // Return success to previous screen
                   },
-                  child: const Text('موافق'),
+                  child: Text('موافق'),
                 ),
               ],
             ),
@@ -103,7 +103,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('خطأ'),
+        title: Text('خطأ'),
         content: Text(message),
         actions: [
           TextButton(
@@ -112,7 +112,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               setState(() => _isProcessing = false);
               cameraController.start(); // Resume scanning
             },
-            child: const Text('حاول مرة أخرى'),
+            child: Text('حاول مرة أخرى'),
           ),
         ],
       ),
@@ -123,20 +123,20 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('مسح كود QR'),
+        title: Text('مسح كود QR'),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
           IconButton(
-            color: Colors.white,
-            icon: const Icon(Icons.flash_on, color: Colors.yellow),
+            color: AppColors.getTextColor(context),
+            icon: Icon(Icons.flash_on, color: Colors.yellow),
             iconSize: 32.0,
             onPressed: () => cameraController.toggleTorch(),
           ),
           IconButton(
-            color: Colors.white,
-            icon: const Icon(Icons.cameraswitch),
+            color: AppColors.getTextColor(context),
+            icon: Icon(Icons.cameraswitch),
             iconSize: 32.0,
             onPressed: () => cameraController.switchCamera(),
           ),
@@ -150,7 +150,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             onDetect: _onDetect,
           ),
           Container(
-            decoration: const ShapeDecoration(
+            decoration: ShapeDecoration(
               shape: QrScannerOverlayShape(
                 borderColor: AppColors.primaryPurple,
                 borderRadius: 10,
@@ -168,7 +168,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               'وجه الكاميرا نحو الكود للمسح',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
+                color: AppColors.getTextColor(context, secondary: true),
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -189,7 +189,7 @@ class QrScannerOverlayShape extends ShapeBorder {
   final double borderLength;
   final double cutOutSize;
 
-  const QrScannerOverlayShape({
+  QrScannerOverlayShape({
     this.borderColor = Colors.red,
     this.borderWidth = 10.0,
     this.overlayColor = const Color.fromRGBO(0, 0, 0, 80),

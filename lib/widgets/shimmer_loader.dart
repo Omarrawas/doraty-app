@@ -14,6 +14,7 @@ class ShimmerLoader extends StatelessWidget {
     this.shapeBorder = const RoundedRectangleBorder(
       borderRadius: BorderRadius.all(Radius.circular(8)),
     ),
+
   });
 
   const ShimmerLoader.circular({
@@ -21,6 +22,7 @@ class ShimmerLoader extends StatelessWidget {
     required this.width,
     required this.height,
     this.shapeBorder = const CircleBorder(),
+
   });
 
   @override
@@ -33,7 +35,7 @@ class ShimmerLoader extends StatelessWidget {
       highlightColor: isDark
           ? Colors.white.withOpacity(0.35)
           : AppColors.primaryBlue.withOpacity(0.18),
-      period: const Duration(seconds: 2),
+      period: Duration(seconds: 2),
       child: Container(
         width: width,
         height: height,
@@ -49,7 +51,7 @@ class ShimmerLoader extends StatelessWidget {
 }
 
 class CourseCardShimmer extends StatelessWidget {
-  const CourseCardShimmer({super.key});
+  CourseCardShimmer({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -78,8 +80,8 @@ class CourseCardShimmer extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            const SizedBox(width: 16),
-            const Expanded(
+            SizedBox(width: 16),
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -103,7 +105,7 @@ class _RowShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         ShimmerLoader.rectangular(height: 16, width: 60),
@@ -118,7 +120,7 @@ class _InnerRowShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    return Row(
       children: [
         ShimmerLoader.rectangular(height: 12, width: 40),
         SizedBox(width: 4),

@@ -9,7 +9,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../widgets/empty_state.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
-  const OrderHistoryScreen({super.key});
+  OrderHistoryScreen({super.key});
 
   @override
   State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
@@ -59,13 +59,13 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
               _buildHeader(),
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                    ? Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                     : RefreshIndicator(
                         onRefresh: _fetchOrders,
                         color: AppColors.primaryPurple,
                         child: _orders.isEmpty
                             ? SingleChildScrollView(
-                                physics: const AlwaysScrollableScrollPhysics(),
+                                physics: AlwaysScrollableScrollPhysics(),
                                 child: ProfessionalEmptyState(
                                   title: _t('no_orders_yet'),
                                   message: _t('no_orders_desc'),
@@ -73,7 +73,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                                 ),
                               )
                             : ListView.builder(
-                                padding: const EdgeInsets.all(20),
+                                padding: EdgeInsets.all(20),
                                 itemCount: _orders.length,
                                 itemBuilder: (context, index) {
                                   return _buildOrderCard(_orders[index]);
@@ -90,7 +90,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -107,7 +107,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -117,15 +117,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             child: Text(
               _t('orders'),
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
                 fontFamily: 'Cairo',
               ),
             ),
           ),
-          const SizedBox(width: 48), // To balance the back button
+          SizedBox(width: 48), // To balance the back button
         ],
       ),
     );
@@ -179,17 +179,17 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
       builder: (context) => BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
         child: AlertDialog(
-          backgroundColor: const Color(0xFF1A1A2E),
+          backgroundColor: Color(0xFF1A1A2E),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Row(
             children: [
-              const Icon(Icons.receipt_long, color: Colors.white),
-              const SizedBox(width: 10),
+              Icon(Icons.receipt_long, color: AppColors.getTextColor(context)),
+              SizedBox(width: 10),
               Text(
                 _t('order_report'),
                 style:
-                    const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+                    TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
               ),
             ],
           ),
@@ -214,7 +214,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
             TextButton(
               onPressed: () => Navigator.pop(context),
               child: Text(_t('cancel'),
-                  style: const TextStyle(color: Colors.white70)),
+                  style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70))),
             ),
           ],
         ),
@@ -224,18 +224,18 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
 
   Widget _buildDetailRow(String label, String value, {Color? valueColor}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
             style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
+                color: AppColors.getTextColor(context, secondary: true),
                 fontSize: 13,
                 fontFamily: 'Cairo'),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
@@ -286,7 +286,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.getGlassColor(context, opacity: 0.1),
         borderRadius: BorderRadius.circular(16),
@@ -300,7 +300,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
           borderRadius: BorderRadius.circular(16),
           onTap: () => _showOrderDetails(order),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -310,8 +310,8 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     children: [
                       Text(
                         courseTitle,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.getTextColor(context),
                           fontWeight: FontWeight.bold,
                           fontSize: 15,
                           fontFamily: 'Cairo',
@@ -319,11 +319,11 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         '$orderNumber • $dateStr',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.6),
+                          color: AppColors.getTextColor(context, secondary: true),
                           fontSize: 12,
                           fontFamily: 'Cairo',
                         ),
@@ -331,7 +331,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -340,36 +340,36 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                       children: [
                         Text(
                           '$amount ل.س',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: AppColors.getTextColor(context),
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
                             fontFamily: 'Cairo',
                           ),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Icon(
                           Icons.receipt_long_outlined,
-                          color: Colors.white.withOpacity(0.7),
+                          color: AppColors.getTextColor(context, secondary: true),
                           size: 18,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
                           _t('order_report'),
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
+                            color: AppColors.getTextColor(context, secondary: true),
                             fontSize: 10,
                             fontFamily: 'Cairo',
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(
+                          padding: EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: statusColor.withOpacity(0.2),

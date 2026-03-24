@@ -8,7 +8,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 class UpdatesManagementScreen extends StatefulWidget {
-  const UpdatesManagementScreen({super.key});
+  UpdatesManagementScreen({super.key});
 
   @override
   State<UpdatesManagementScreen> createState() => _UpdatesManagementScreenState();
@@ -80,14 +80,14 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
               _buildHeader(),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   child: Form(
                     key: _formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildSectionTitle(_t('add_update')),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         _buildTextField(
                           controller: _versionController,
                           label: _t('version_name'),
@@ -95,7 +95,7 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
                           icon: Icons.numbers,
                           validator: (v) => v!.isEmpty ? 'مطلوب' : null,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         _buildTextField(
                           controller: _urlController,
                           label: _t('download_url'),
@@ -103,7 +103,7 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
                           icon: Icons.link,
                           validator: (v) => v!.isEmpty ? 'مطلوب' : null,
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         _buildTextField(
                           controller: _notesController,
                           label: _t('release_notes'),
@@ -111,9 +111,9 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
                           icon: Icons.note_add,
                           maxLines: 4,
                         ),
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
                         _buildMandatorySwitch(),
-                        const SizedBox(height: 30),
+                        SizedBox(height: 30),
                         _buildSubmitButton(),
                       ],
                     ),
@@ -129,20 +129,20 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
             onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           Text(
             _t('app_updates'),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
               fontFamily: 'Cairo',
             ),
           ),
@@ -154,8 +154,8 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(
-        color: Colors.white,
+      style: TextStyle(
+        color: AppColors.getTextColor(context),
         fontSize: 18,
         fontWeight: FontWeight.bold,
         fontFamily: 'Cairo',
@@ -176,12 +176,12 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(color: Colors.white, fontSize: 13, fontFamily: 'Cairo'),
+          style: TextStyle(color: AppColors.getTextColor(context), fontSize: 13, fontFamily: 'Cairo'),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.05),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
@@ -189,13 +189,13 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
             controller: controller,
             maxLines: maxLines,
             validator: validator,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
+            style: TextStyle(color: AppColors.getTextColor(context), fontSize: 14),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: const TextStyle(color: Colors.white),
-              prefixIcon: Icon(icon, color: Colors.white, size: 20),
+              hintStyle: TextStyle(color: AppColors.getTextColor(context)),
+              prefixIcon: Icon(icon, color: AppColors.getTextColor(context), size: 20),
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.all(16),
+              contentPadding: EdgeInsets.all(16),
             ),
           ),
         ),
@@ -205,7 +205,7 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
 
   Widget _buildMandatorySwitch() {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: _isMandatory ? AppColors.primaryPurple.withOpacity(0.1) : Colors.white.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
@@ -219,18 +219,18 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
             _isMandatory ? Icons.warning_rounded : Icons.info_outline,
             color: _isMandatory ? Colors.orange : Colors.white,
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   _t('is_mandatory_label'),
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                  style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
                 ),
                 Text(
                   _isMandatory ? 'سيُجبر المستخدم على التحديث' : 'تحديث اختياري يظهر كتنبيه فقط',
-                  style: const TextStyle(color: Colors.white, fontSize: 11, fontFamily: 'Cairo'),
+                  style: TextStyle(color: AppColors.getTextColor(context), fontSize: 11, fontFamily: 'Cairo'),
                 ),
               ],
             ),
@@ -258,14 +258,14 @@ class _UpdatesManagementScreenState extends State<UpdatesManagementScreen> {
           elevation: 0,
         ),
         child: _isSubmitting
-            ? const SizedBox(
+            ? SizedBox(
                 height: 20,
                 width: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                child: CircularProgressIndicator(color: AppColors.getTextColor(context), strokeWidth: 2),
               )
             : Text(
                 _t('add_update'),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
               ),
       ),
     );

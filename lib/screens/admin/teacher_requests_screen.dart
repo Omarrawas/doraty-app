@@ -9,7 +9,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class TeacherRequestsScreen extends StatefulWidget {
-  const TeacherRequestsScreen({super.key});
+  TeacherRequestsScreen({super.key});
 
   @override
   State<TeacherRequestsScreen> createState() => _TeacherRequestsScreenState();
@@ -85,16 +85,16 @@ class _TeacherRequestsScreenState extends State<TeacherRequestsScreen> {
                 _buildHeader(context),
                 Expanded(
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                      ? Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                       : _requests.isEmpty
-                          ? const Center(
+                          ? Center(
                               child: Text(
                                 'لا توجد طلبات انضمام حالياً',
-                                style: TextStyle(color: Colors.white70, fontSize: 16),
+                                style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 16),
                               ),
                             )
                           : ListView.builder(
-                              padding: const EdgeInsets.all(20),
+                              padding: EdgeInsets.all(20),
                               itemCount: _requests.length,
                               itemBuilder: (context, index) {
                                 final request = _requests[index];
@@ -112,22 +112,22 @@ class _TeacherRequestsScreenState extends State<TeacherRequestsScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
             onPressed: () => Navigator.pop(context),
           ),
-          const SizedBox(width: 16),
-          const Expanded(
+          SizedBox(width: 16),
+          Expanded(
             child: Text(
               'طلبات انضمام المدرسين',
-              style: TextStyle(fontSize: 22, color: Colors.white),
+              style: TextStyle(fontSize: 22, color: AppColors.getTextColor(context)),
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: Icon(Icons.refresh, color: AppColors.getTextColor(context)),
             onPressed: _loadRequests,
           ),
         ],
@@ -144,14 +144,14 @@ class _TeacherRequestsScreenState extends State<TeacherRequestsScreen> {
     final String? cvUrl = request['cv_url'];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: AppColors.getMutedTextColor(context),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.white.withOpacity(0.2)),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -159,57 +159,57 @@ class _TeacherRequestsScreenState extends State<TeacherRequestsScreen> {
               children: [
                 CircleAvatar(
                   backgroundColor: AppColors.primaryPurple,
-                  child: Text(fullName.isNotEmpty ? fullName[0] : 'U', style: const TextStyle(color: Colors.white)),
+                  child: Text(fullName.isNotEmpty ? fullName[0] : 'U', style: TextStyle(color: AppColors.getTextColor(context))),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(fullName, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                      Text(email, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                      Text(fullName, style: TextStyle(color: AppColors.getTextColor(context), fontSize: 18, fontWeight: FontWeight.bold)),
+                      Text(email, style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 14)),
                     ],
                   ),
                 ),
               ],
             ),
-            const Divider(height: 30, color: Colors.white10),
+            Divider(height: 30, color: AppColors.getTextColor(context).withOpacity(0.10)),
             _buildInfoRow(Icons.workspace_premium_outlined, 'التخصص:', specialization),
             _buildInfoRow(Icons.public_rounded, 'البلد:', country),
             if (bio.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              const Text('نبذة:', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-              Text(bio, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+              SizedBox(height: 10),
+              Text('نبذة:', style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
+              Text(bio, style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 14)),
             ],
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             Row(
               children: [
                 if (cvUrl != null && cvUrl.isNotEmpty)
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => launchUrl(Uri.parse(cvUrl)),
-                      icon: const Icon(Icons.description, size: 18),
-                      label: const Text('عرض الـ CV'),
+                      icon: Icon(Icons.description, size: 18),
+                      label: Text('عرض الـ CV'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.blueAccent,
-                        side: const BorderSide(color: Colors.blueAccent),
+                        side: BorderSide(color: Colors.blueAccent),
                       ),
                     ),
                   ),
-                if (cvUrl != null && cvUrl.isNotEmpty) const SizedBox(width: 12),
+                if (cvUrl != null && cvUrl.isNotEmpty) SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => _handleStatusUpdate(request['id'], 'approved'),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                    child: const Text('قبول'),
+                    child: Text('قبول'),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => _handleStatusUpdate(request['id'], 'rejected'),
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
-                    child: const Text('رفض'),
+                    child: Text('رفض'),
                   ),
                 ),
               ],
@@ -222,14 +222,14 @@ class _TeacherRequestsScreenState extends State<TeacherRequestsScreen> {
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: EdgeInsets.only(bottom: 4),
       child: Row(
         children: [
           Icon(icon, color: AppColors.primaryPurple, size: 16),
-          const SizedBox(width: 8),
-          Text(label, style: const TextStyle(color: Colors.white70, fontSize: 13)),
-          const SizedBox(width: 4),
-          Expanded(child: Text(value, style: const TextStyle(color: Colors.white, fontSize: 13))),
+          SizedBox(width: 8),
+          Text(label, style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 13)),
+          SizedBox(width: 4),
+          Expanded(child: Text(value, style: TextStyle(color: AppColors.getTextColor(context), fontSize: 13))),
         ],
       ),
     );

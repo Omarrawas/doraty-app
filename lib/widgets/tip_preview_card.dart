@@ -8,7 +8,7 @@ class TipPreviewCard extends StatefulWidget {
   final Tip tip;
   final VoidCallback onTap;
 
-  const TipPreviewCard({
+  TipPreviewCard({
     super.key,
     required this.tip,
     required this.onTap,
@@ -88,7 +88,7 @@ class _TipPreviewCardState extends State<TipPreviewCard> {
         onLongPressUp: _handleHoverExit,
         child: Container(
           width: 140,
-          margin: const EdgeInsets.symmetric(horizontal: 5),
+          margin: EdgeInsets.symmetric(horizontal: 5),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(15),
             color: Colors.black26,
@@ -110,8 +110,8 @@ class _TipPreviewCardState extends State<TipPreviewCard> {
                 CachedNetworkImage(
                   imageUrl: widget.tip.thumbnailUrl ?? '',
                   fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(color: Colors.white10),
-                  errorWidget: (context, url, err) => const Icon(Icons.play_circle_fill, color: Colors.white24),
+                  placeholder: (context, url) => Container(color: AppColors.getTextColor(context).withOpacity(0.10)),
+                  errorWidget: (context, url, err) => Icon(Icons.play_circle_fill, color: AppColors.getTextColor(context).withOpacity(0.24)),
                 ),
 
                 // 2. Video Preview (Only mp4 supported easily for list previews)
@@ -126,11 +126,11 @@ class _TipPreviewCardState extends State<TipPreviewCard> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.play_circle_filled, color: Colors.red, size: 40),
-                          const SizedBox(height: 4),
+                          Icon(Icons.play_circle_filled, color: Colors.red, size: 40),
+                          SizedBox(height: 4),
                           Text(
                             'YouTube',
-                            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
@@ -139,7 +139,7 @@ class _TipPreviewCardState extends State<TipPreviewCard> {
 
                 // 4. Corner Badge (Optional)
                 if (_isHovering && !_isYouTube && !_isInitialized)
-                  const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70)),
+                  Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.getTextColor(context).withOpacity(0.70))),
                 
                 // 5. Title Overlay
                 Positioned(
@@ -147,7 +147,7 @@ class _TipPreviewCardState extends State<TipPreviewCard> {
                   left: 0,
                   right: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.bottomCenter,
@@ -160,7 +160,7 @@ class _TipPreviewCardState extends State<TipPreviewCard> {
                     ),
                     child: Text(
                       widget.tip.title,
-                      style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                      style: TextStyle(color: AppColors.getTextColor(context), fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),

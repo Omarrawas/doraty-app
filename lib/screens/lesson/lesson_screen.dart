@@ -37,7 +37,7 @@ class LessonScreen extends StatefulWidget {
   final String courseTitle;
   final bool isEnrolled;
 
-  const LessonScreen({
+  LessonScreen({
     super.key,
     required this.lesson,
     this.allLessons = const [],
@@ -150,7 +150,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       _videoPlayerController!.seekTo(Duration(seconds: seconds));
     }
     _mainScrollController.animateTo(0,
-        duration: const Duration(milliseconds: 500), curve: Curves.easeOut);
+        duration: Duration(milliseconds: 500), curve: Curves.easeOut);
   }
 
 
@@ -225,7 +225,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           maxLines: null,
           minLines: 5,
           textAlign: TextAlign.right,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: OutlineInputBorder(),
             hintText: 'اكتب ملاحظتك هنا...',
           ),
@@ -244,7 +244,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple),
             child:
-                Text(_t('save'), style: const TextStyle(color: Colors.white)),
+                Text(_t('save'), style: TextStyle(color: AppColors.getTextColor(context))),
           ),
         ],
       ),
@@ -256,7 +256,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         _refreshFutures();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم تحديث الملاحظة بنجاح')),
+            SnackBar(content: Text('تم تحديث الملاحظة بنجاح')),
           );
         }
       } catch (e) {
@@ -297,11 +297,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             content: Text(
               _t('no_interactive_content'),
               textAlign: TextAlign.right,
-              style: const TextStyle(fontFamily: 'Cairo'),
+              style: TextStyle(fontFamily: 'Cairo'),
             ),
             behavior: SnackBarBehavior.floating,
             backgroundColor: Colors.orange.shade700,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -324,7 +324,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       if (videoId != null) {
         _youtubePlayerController = YoutubePlayerController(
           initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(
+          flags: YoutubePlayerFlags(
             autoPlay: false,
             mute: false,
             forceHD: true,
@@ -367,26 +367,26 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             deviceOrientationsOnEnterFullScreen: isVertical
                 ? [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]
                 : [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight],
-            deviceOrientationsAfterFullScreen: const [
+            deviceOrientationsAfterFullScreen: [
               DeviceOrientation.portraitUp,
               DeviceOrientation.portraitDown,
             ],
             placeholder: Container(
               color: Colors.black,
-              child: const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple)),
+              child: Center(child: CircularProgressIndicator(color: AppColors.primaryPurple)),
             ),
             errorBuilder: (context, errorMessage) {
               return Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 40),
-                      const SizedBox(height: 10),
-                      const Text(
+                      Icon(Icons.error_outline, color: Colors.red, size: 40),
+                      SizedBox(height: 10),
+                      Text(
                         'فشل تحميل البث المباشر. تأكد من صحة الرابط أو جودة الإنترنت.',
-                        style: TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+                        style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -453,7 +453,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   void _startWatchTimeTracking() {
     if (((widget.lesson.videoUrl as String?) ?? '').isEmpty) return;
 
-    _watchTimeTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _watchTimeTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       bool isPlaying = false;
       
       if (_isYoutube) {
@@ -642,7 +642,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                   backgroundColor: AppColors.primaryPurple,
                   elevation: 0,
                   leading: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                     onPressed: () => Navigator.pop(context),
                   ),
                   flexibleSpace: FlexibleSpaceBar(
@@ -655,11 +655,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               SliverToBoxAdapter(
                 child: Padding(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color: AppColors.primaryPurple.withOpacity(0.1),
@@ -669,19 +669,19 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                         ),
                         child: Text(
                           '${_t('lesson_prefix')} ${widget.lesson.orderIndex}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.primaryPurple,
                             fontWeight: FontWeight.bold,
                             fontSize: 12,
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           widget.lesson.getLocalizedTitle(
                               Provider.of<LocaleProvider>(context).locale),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.textPrimary,
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -705,19 +705,19 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 20, vertical: 10),
                         decoration: BoxDecoration(
                           color: AppColors.getSurfaceColor(context)
                               .withOpacity(0.8), // Darker background
                           border: Border(
                               bottom: BorderSide(
-                                  color: Colors.white.withOpacity(0.1))),
+                                  color: AppColors.getMutedTextColor(context))),
                         ),
                         child: Container(
-                          padding: const EdgeInsets.all(4),
+                          padding: EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.white
+                            color: AppColors.getTextColor(context)
                                 .withOpacity(0.05), // Subtle inner container
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -733,7 +733,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                 Theme.of(context).brightness == Brightness.dark
                                     ? Colors.white60
                                     : Colors.black54,
-                            labelStyle: const TextStyle(
+                            labelStyle: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                             ),
@@ -744,9 +744,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.description_outlined,
+                                    Icon(Icons.description_outlined,
                                         size: 18),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     Text(_t('description_tab')),
                                   ],
                                 ),
@@ -755,8 +755,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.attach_file, size: 18),
-                                    const SizedBox(width: 8),
+                                    Icon(Icons.attach_file, size: 18),
+                                    SizedBox(width: 8),
                                     Text(_t('attachments_tab')),
                                   ],
                                 ),
@@ -765,9 +765,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.science_outlined,
+                                    Icon(Icons.science_outlined,
                                         size: 18),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     Text(_t('interactive_tab')),
                                   ],
                                 ),
@@ -776,8 +776,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.quiz_outlined, size: 18),
-                                    const SizedBox(width: 8),
+                                    Icon(Icons.quiz_outlined, size: 18),
+                                    SizedBox(width: 8),
                                     Text(_t('exams_tab')),
                                   ],
                                 ),
@@ -786,9 +786,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.note_alt_outlined,
+                                    Icon(Icons.note_alt_outlined,
                                         size: 18),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     Text(_t('notes_tab')),
                                   ],
                                 ),
@@ -797,9 +797,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const Icon(Icons.question_answer_outlined,
+                                    Icon(Icons.question_answer_outlined,
                                         size: 18),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     Text(_t('questions_tab')),
                                   ],
                                 ),
@@ -836,16 +836,16 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return Builder(
       builder: (context) {
         return CustomScrollView(
-          physics: const BouncingScrollPhysics(),
+          physics: BouncingScrollPhysics(),
           slivers: [
             SliverOverlapInjector(
               handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
             ),
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: SizedBox(height: 24),
             ),
             SliverPadding(
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               sliver: SliverToBoxAdapter(child: child),
             ),
           ],
@@ -862,7 +862,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         color: Colors.black,
         child: Center(
           child: Text(_t('no_video_available'),
-              style: const TextStyle(color: Colors.white)),
+              style: TextStyle(color: AppColors.getTextColor(context))),
         ),
       );
     }
@@ -886,7 +886,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       return Container(
           height: 250,
           color: Colors.black,
-          child: const Center(child: CircularProgressIndicator()));
+          child: Center(child: CircularProgressIndicator()));
     } else {
       if (_chewieController != null &&
           _videoPlayerController != null &&
@@ -899,7 +899,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       return Container(
         height: 250,
         color: Colors.black,
-        child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+        child: Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context))),
       );
     }
   }
@@ -911,17 +911,17 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         TexViewWidget(
           widget.lesson.description,
           style:
-              const TextStyle(fontSize: 16, height: 1.8, color: Colors.white),
+              TextStyle(fontSize: 16, height: 1.8, color: AppColors.getTextColor(context)),
         ),
 
         if (widget.lesson.content != null &&
             widget.lesson.content != widget.lesson.description &&
             widget.lesson.content!.isNotEmpty) ...[
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           TexViewWidget(
             widget.lesson.content!,
             style:
-                const TextStyle(fontSize: 16, height: 1.8, color: Colors.white),
+                TextStyle(fontSize: 16, height: 1.8, color: AppColors.getTextColor(context)),
           ),
         ],
       ],
@@ -935,8 +935,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.folder_open, size: 64, color: Colors.grey[300]),
-            const SizedBox(height: 16),
-            const Text(
+            SizedBox(height: 16),
+            Text(
               'لا توجد مرفقات لهذا الدرس',
               style: TextStyle(color: AppColors.textSecondary),
             ),
@@ -951,18 +951,18 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         ...widget.lesson.resources.map((resource) {
           final fileName = resource['name'] ?? 'ملف غير معروف';
           return Container(
-            margin: const EdgeInsets.only(bottom: 12),
+            margin: EdgeInsets.only(bottom: 12),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: AppColors.getMutedTextColor(context),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.getMutedTextColor(context),
                       width: 1.5,
                     ),
                   ),
@@ -973,24 +973,24 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                         color: AppColors.primaryPurple,
                         size: 28,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           fileName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: 12),
                       GestureDetector(
                         onTap: () => _handleOpenResource(resource),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                           decoration: BoxDecoration(
                             gradient: AppColors.primaryGradient,
                             borderRadius: BorderRadius.circular(12),
@@ -998,23 +998,23 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                               BoxShadow(
                                 color: AppColors.primaryPurple.withOpacity(0.3),
                                 blurRadius: 8,
-                                offset: const Offset(0, 2),
+                                offset: Offset(0, 2),
                               ),
                             ],
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.remove_red_eye_outlined,
-                                color: Colors.white,
+                                color: AppColors.getTextColor(context),
                                 size: 18,
                               ),
                               SizedBox(width: 8),
                               Text(
                                 'عرض',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.getTextColor(context),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                 ),
@@ -1047,7 +1047,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             buttonLabel: 'بدء التجربة الآن',
             onTap: _openInteractiveApp,
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
         ],
 
 
@@ -1058,11 +1058,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.science_outlined,
-                    size: 64, color: Colors.white.withOpacity(0.2)),
-                const SizedBox(height: 16),
+                    size: 64, color: AppColors.getMutedTextColor(context)),
+                SizedBox(height: 16),
                 Text(
                   'لا يوجد محتوى تفاعلي حالياً',
-                  style: TextStyle(color: Colors.white.withOpacity(0.5)),
+                  style: TextStyle(color: AppColors.getTextColor(context, secondary: true)),
                 ),
               ],
             ),
@@ -1087,9 +1087,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: AppColors.getMutedTextColor(context),
               borderRadius: BorderRadius.circular(16),
               border:
                   Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
@@ -1100,7 +1100,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                   alignment: Alignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: AppColors.primaryPurple.withOpacity(0.1),
                         shape: BoxShape.circle,
@@ -1116,53 +1116,53 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                         right: 0,
                         top: 0,
                         child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
                             color: Colors.blue,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.auto_awesome,
-                              size: 12, color: Colors.white),
+                          child: Icon(Icons.auto_awesome,
+                              size: 12, color: AppColors.getTextColor(context)),
                         ),
                       ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   description,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
+                    color: AppColors.getTextColor(context, secondary: true),
                     height: 1.6,
                     fontSize: 15,
                   ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
                     onPressed: onTap,
                     icon: isLoading
-                        ? const SizedBox(
+                        ? SizedBox(
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.play_arrow_rounded),
+                                strokeWidth: 2, color: AppColors.getTextColor(context)))
+                        : Icon(Icons.play_arrow_rounded),
                     label: Text(buttonLabel),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryPurple,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -1204,17 +1204,17 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Widget _buildExamSection(BuildContext context) {
-    if (_examsFuture == null) return const SizedBox.shrink();
+    if (_examsFuture == null) return SizedBox.shrink();
     return FutureBuilder<List<Map<String, dynamic>>>(
       future: _examsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator());
         }
 
         final examsData = snapshot.data ?? [];
         if (examsData.isEmpty) {
-          return const SizedBox.shrink();
+          return SizedBox.shrink();
         }
 
         return Column(
@@ -1223,18 +1223,18 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             ...examsData.map((examData) {
               final exam = Exam.fromJson(examData);
               return Container(
-                margin: const EdgeInsets.only(bottom: 12),
+                margin: EdgeInsets.only(bottom: 12),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: AppColors.getMutedTextColor(context),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                          color: AppColors.getMutedTextColor(context),
                           width: 1.5,
                         ),
                       ),
@@ -1244,7 +1244,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.all(12),
+                                padding: EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color:
                                       AppColors.primaryPurple.withOpacity(0.1),
@@ -1258,17 +1258,17 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                   size: 24,
                                 ),
                               ),
-                              const SizedBox(width: 16),
+                              SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       exam.title,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                        color: AppColors.getTextColor(context),
                                       ),
                                     ),
                                     if (exam.description.isNotEmpty)
@@ -1276,7 +1276,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                         exam.description,
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.white.withOpacity(0.7),
+                                          color: AppColors.getTextColor(context, secondary: true),
                                         ),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -1286,7 +1286,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           // Attempts Info
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1306,7 +1306,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                               if (exam.attempts.isNotEmpty)
                                 Text(
                                   'أفضل نتيجة: ${((exam.bestAttempt?['score'] ?? 0) / (exam.calculatedTotalPoints > 0 ? exam.calculatedTotalPoints : 1) * 100).toStringAsFixed(1)}%',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.greenAccent,
                                     fontWeight: FontWeight.bold,
@@ -1316,22 +1316,22 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                           ),
 
                           if (exam.attempts.isNotEmpty) ...[
-                            const SizedBox(height: 16),
-                            const Text(
+                            SizedBox(height: 16),
+                            Text(
                               'سجل المحاولات:',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white70,
+                                color: AppColors.getTextColor(context).withOpacity(0.70),
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12),
                             ListView.separated(
                               shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
+                              physics: NeverScrollableScrollPhysics(),
                               itemCount: exam.attempts.length,
                               separatorBuilder: (_, __) =>
-                                  const SizedBox(height: 8),
+                                  SizedBox(height: 8),
                               itemBuilder: (context, index) {
                                 final attempt = exam.attempts[index];
                                 final percentage = ((attempt['score'] ?? 0) /
@@ -1367,10 +1367,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                     },
                                     borderRadius: BorderRadius.circular(12),
                                     child: Container(
-                                      padding: const EdgeInsets.symmetric(
+                                      padding: EdgeInsets.symmetric(
                                           horizontal: 16, vertical: 12),
                                       decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.05),
+                                        color: AppColors.getMutedTextColor(context),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                             color: isPassed
@@ -1380,7 +1380,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                       child: Row(
                                         children: [
                                           Container(
-                                            padding: const EdgeInsets.all(8),
+                                            padding: EdgeInsets.all(8),
                                             decoration: BoxDecoration(
                                               color: isPassed
                                                   ? Colors.green
@@ -1398,7 +1398,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                                   : Colors.red,
                                             ),
                                           ),
-                                          const SizedBox(width: 12),
+                                          SizedBox(width: 12),
                                           Expanded(
                                             child: Column(
                                               crossAxisAlignment:
@@ -1406,9 +1406,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                               children: [
                                                 Text(
                                                   'محاولة ${index + 1}',
-                                                  style: const TextStyle(
+                                                  style: TextStyle(
                                                     fontSize: 14,
-                                                    color: Colors.white,
+                                                    color: AppColors.getTextColor(context),
                                                     fontWeight: FontWeight.bold,
                                                   ),
                                                 ),
@@ -1417,7 +1417,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                                     dateStr,
                                                     style: TextStyle(
                                                       fontSize: 12,
-                                                      color: Colors.white
+                                                      color: AppColors.getTextColor(context)
                                                           .withOpacity(0.5),
                                                     ),
                                                   ),
@@ -1449,7 +1449,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                               ),
                                             ],
                                           ),
-                                          const SizedBox(width: 8),
+                                          SizedBox(width: 8),
                                           Icon(
                                             Icons.arrow_forward_ios,
                                             size: 12,
@@ -1465,7 +1465,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                             ),
                           ],
 
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                           Row(
                             children: [
                               Expanded(
@@ -1485,7 +1485,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: AppColors.primaryPurple,
                                     foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
+                                    padding: EdgeInsets.symmetric(
                                         vertical: 12),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
@@ -1498,13 +1498,13 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                     exam.canTakeAgain
                                         ? 'ابدأ الاختبار'
                                         : 'انتهت المحاولات',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                         fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ),
                               if (exam.attempts.isNotEmpty) ...[
-                                const SizedBox(width: 12),
+                                SizedBox(width: 12),
                                 // "Review Results" button removed as requested
                               ],
                             ],
@@ -1544,19 +1544,19 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     _refreshFutures();
                   }
                 },
-                icon: const Icon(Icons.add),
-                label: const Text('ملاحظة عادية'),
+                icon: Icon(Icons.add),
+                label: Text('ملاحظة عادية'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withOpacity(0.1),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                       side: BorderSide(color: Colors.white.withOpacity(0.2))),
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () async {
@@ -1575,12 +1575,12 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     _refreshFutures();
                   }
                 },
-                icon: const Icon(Icons.timer_outlined),
-                label: const Text('ملاحظة ذكية'),
+                icon: Icon(Icons.timer_outlined),
+                label: Text('ملاحظة ذكية'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryPurple,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  padding: EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
@@ -1588,16 +1588,16 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         
         if (_notesFuture == null)
-          const Center(child: CircularProgressIndicator())
+          Center(child: CircularProgressIndicator())
         else
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _notesFuture,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(child: CircularProgressIndicator());
             }
             if (snapshot.hasError) {
                 return Center(
@@ -1614,24 +1614,24 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                       child: Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: AppColors.getMutedTextColor(context),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.2), width: 1.5),
+                              color: AppColors.getMutedTextColor(context), width: 1.5),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.note_outlined,
-                                size: 60, color: Colors.white.withOpacity(0.3)),
-                            const SizedBox(height: 16),
+                                size: 60, color: AppColors.getMutedTextColor(context)),
+                            SizedBox(height: 16),
                             Text(
                               'لا توجد ملاحظات بعد',
                               style: TextStyle(
                                   fontSize: 16,
-                                  color: Colors.white.withOpacity(0.7)),
+                                  color: AppColors.getTextColor(context, secondary: true)),
                             ),
                           ],
                         ),
@@ -1643,9 +1643,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             
             return ListView.separated(
               shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
+              physics: NeverScrollableScrollPhysics(),
               itemCount: notesData.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              separatorBuilder: (context, index) => SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final note = Note.fromJson(notesData[index]);
                   return ClipRRect(
@@ -1653,12 +1653,12 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: AppColors.getMutedTextColor(context),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: Colors.white.withOpacity(0.2), width: 1.5),
+                              color: AppColors.getMutedTextColor(context), width: 1.5),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1676,20 +1676,20 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                         children: [
                                           Text(
                                             note.title,
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,
-                                              color: Colors.white,
+                                              color: AppColors.getTextColor(context),
                                             ),
                                           ),
                                           if (note.videoTimestamp != null) ...[
-                                            const SizedBox(width: 8),
+                                            SizedBox(width: 8),
                                             GestureDetector(
                                               onTap: () =>
                                                   _seekTo(note.videoTimestamp!),
                                               child: Container(
                                                 padding:
-                                                    const EdgeInsets.symmetric(
+                                                    EdgeInsets.symmetric(
                                                         horizontal: 8,
                                                         vertical: 2),
                                                 decoration: BoxDecoration(
@@ -1706,13 +1706,13 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                                   mainAxisSize:
                                                       MainAxisSize.min,
                                                   children: [
-                                                    const Icon(Icons.play_arrow,
+                                                    Icon(Icons.play_arrow,
                                                         size: 14,
                                                         color: AppColors
                                                             .primaryPurple),
                                                     Text(
                                                       note.formattedTimestamp,
-                                                      style: const TextStyle(
+                                                      style: TextStyle(
                                                         fontSize: 12,
                                                         fontWeight:
                                                             FontWeight.bold,
@@ -1731,7 +1731,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                         _formatDate(note.updatedAt),
                                         style: TextStyle(
                                           fontSize: 12,
-                                          color: Colors.white.withOpacity(0.5),
+                                          color: AppColors.getTextColor(context, secondary: true),
                                         ),
                                       ),
                                     ],
@@ -1744,13 +1744,13 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                       onPressed: () => _editNote(note),
                                       icon: Icon(
                                         Icons.edit_outlined,
-                                        color: Colors.white.withOpacity(0.7),
+                                        color: AppColors.getTextColor(context, secondary: true),
                                       ),
                                       iconSize: 20,
-                                      constraints: const BoxConstraints(),
+                                      constraints: BoxConstraints(),
                                       padding: EdgeInsets.zero,
                                     ),
-                                    const SizedBox(width: 8),
+                                    SizedBox(width: 8),
                                     IconButton(
                                       onPressed: () => _deleteNote(note.id),
                                       icon: Icon(
@@ -1758,19 +1758,19 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                         color: Colors.red.withOpacity(0.7),
                                       ),
                                       iconSize: 20,
-                                      constraints: const BoxConstraints(),
+                                      constraints: BoxConstraints(),
                                       padding: EdgeInsets.zero,
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8),
                             TexViewWidget(
                               note.content,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white.withOpacity(0.8),
+                                color: AppColors.getTextColor(context, secondary: true),
                                 height: 1.5,
                               ),
                             ),
@@ -1802,12 +1802,12 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
+                color: AppColors.getMutedTextColor(context),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                    color: Colors.white.withOpacity(0.2), width: 1.5),
+                    color: AppColors.getMutedTextColor(context), width: 1.5),
               ),
               child: Column(
                 children: [
@@ -1816,24 +1816,24 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     maxLines: null,
                     minLines: 3,
                     textAlign: TextAlign.right,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: 'اسأل سؤالاً عن هذا الدرس...',
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.all(12),
                     ),
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.getTextColor(context)),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerLeft,
                     child: ElevatedButton.icon(
                       onPressed: _sendQuestion,
-                      icon: const Icon(Icons.send_rounded, size: 18),
-                      label: const Text('إرسال السؤال'),
+                      icon: Icon(Icons.send_rounded, size: 18),
+                      label: Text('إرسال السؤال'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryPurple,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 16, vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1846,26 +1846,26 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             ),
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
 
         if (_questionsList == null)
-          const Center(child: CircularProgressIndicator())
+          Center(child: CircularProgressIndicator())
         else if (_questionsList!.isEmpty)
-          const Center(
+          Center(
             child: Padding(
               padding: EdgeInsets.all(20),
               child: Text(
                 'لا توجد أسئلة بعد. كن أول من يسأل!',
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: AppColors.getTextColor(context)),
               ),
             ),
           )
         else
           ListView.separated(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+            physics: NeverScrollableScrollPhysics(),
             itemCount: _questionsList!.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            separatorBuilder: (context, index) => SizedBox(height: 12),
             itemBuilder: (context, index) {
               return _buildQuestionItem(_questionsList![index]);
             },
@@ -1880,9 +1880,9 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(16),
             border:
                 Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
@@ -1905,39 +1905,39 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                 onPressed: () => _editQuestion(question),
                                 icon: Icon(Icons.edit_outlined,
                                     size: 18,
-                                    color: Colors.white.withOpacity(0.7)),
-                                constraints: const BoxConstraints(),
-                                padding: const EdgeInsets.only(left: 8),
+                                    color: AppColors.getTextColor(context, secondary: true)),
+                                constraints: BoxConstraints(),
+                                padding: EdgeInsets.only(left: 8),
                               ),
                               IconButton(
                                 onPressed: () => _deleteQuestion(question.id),
                                 icon: Icon(Icons.delete_outline_rounded,
                                     size: 18,
                                     color: Colors.red.withOpacity(0.7)),
-                                constraints: const BoxConstraints(),
-                                padding: const EdgeInsets.only(left: 8),
+                                constraints: BoxConstraints(),
+                                padding: EdgeInsets.only(left: 8),
                               ),
                             ],
                             Text(
                               question.userName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
-                                  color: Colors.white),
+                                  color: AppColors.getTextColor(context)),
                             ),
                           ],
                         ),
                         Text(
                           _formatDate(question.createdAt),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 10,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   CircleAvatar(
                     radius: 18,
                     backgroundColor: Colors.white.withOpacity(0.1),
@@ -1945,44 +1945,44 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                         ? NetworkImage(question.userPhoto!)
                         : null,
                     child: question.userPhoto == null
-                        ? const Icon(Icons.person,
-                            size: 20, color: Colors.white)
+                        ? Icon(Icons.person,
+                            size: 20, color: AppColors.getTextColor(context))
                         : null,
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               TexViewWidget(
                 question.content,
-                style: const TextStyle(
-                    fontSize: 14, height: 1.5, color: Colors.white),
+                style: TextStyle(
+                    fontSize: 14, height: 1.5, color: AppColors.getTextColor(context)),
               ),
               if (question.replies.isNotEmpty) ...[
-                const Padding(
+                Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Divider(color: Colors.white24, height: 1),
+                  child: Divider(color: AppColors.getTextColor(context).withOpacity(0.24), height: 1),
                 ),
                 ...question.replies
                     .map((reply) => _buildReplyItem(reply, question)),
               ],
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
                   onPressed: () => _showReplyDialog(question),
-                  icon: const Icon(Icons.reply_rounded,
-                      size: 18, color: Colors.white),
+                  icon: Icon(Icons.reply_rounded,
+                      size: 18, color: AppColors.getTextColor(context)),
                   label:
-                      const Text('رد', style: TextStyle(color: Colors.white)),
+                      Text('رد', style: TextStyle(color: AppColors.getTextColor(context))),
                   style: TextButton.styleFrom(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               _buildReactionsRow(
                 questionId: question.id,
                 reactionCounts: question.reactionCounts,
@@ -1997,8 +1997,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
   Widget _buildReplyItem(LessonQuestionReply reply, LessonQuestion question) {
     return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.all(12),
+      margin: EdgeInsets.only(top: 8),
+      padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: reply.isInstructorReply
             ? AppColors.primaryPurple.withOpacity(0.1)
@@ -2027,16 +2027,16 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                           IconButton(
                             onPressed: () => _editReply(reply),
                             icon: Icon(Icons.edit_outlined,
-                                size: 16, color: Colors.white.withOpacity(0.7)),
-                            constraints: const BoxConstraints(),
-                            padding: const EdgeInsets.only(left: 8),
+                                size: 16, color: AppColors.getTextColor(context, secondary: true)),
+                            constraints: BoxConstraints(),
+                            padding: EdgeInsets.only(left: 8),
                           ),
                           IconButton(
                             onPressed: () => _deleteReply(reply.id),
                             icon: Icon(Icons.delete_outline_rounded,
                                 size: 16, color: Colors.red.withOpacity(0.7)),
-                            constraints: const BoxConstraints(),
-                            padding: const EdgeInsets.only(left: 8),
+                            constraints: BoxConstraints(),
+                            padding: EdgeInsets.only(left: 8),
                           ),
                         ],
                         Text(
@@ -2053,15 +2053,15 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     ),
                     Text(
                       _formatDate(reply.createdAt),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               CircleAvatar(
                 radius: 12,
                 backgroundColor: Colors.white.withOpacity(0.1),
@@ -2069,17 +2069,17 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     ? NetworkImage(reply.userPhoto!)
                     : null,
                 child: reply.userPhoto == null
-                    ? const Icon(Icons.person, size: 14, color: Colors.white)
+                    ? Icon(Icons.person, size: 14, color: AppColors.getTextColor(context))
                     : null,
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           TexViewWidget(
             reply.content,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 13,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
           ),
           _buildReactionsRow(
@@ -2088,7 +2088,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             myReaction: reply.myReaction,
             isSmall: true,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton(
@@ -2099,11 +2099,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              child: const Text(
+              child: Text(
                 'رد',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -2157,11 +2157,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('إلغاء')),
+                  child: Text('إلغاء')),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
                 style: TextButton.styleFrom(foregroundColor: Colors.red),
-                child: const Text('حذف'),
+                child: Text('حذف'),
               ),
             ],
           ),
@@ -2205,7 +2205,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 type: myReaction ?? 'like'),
             borderRadius: BorderRadius.circular(12),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: hasReacted
                     ? AppColors.primaryPurple.withOpacity(0.15)
@@ -2218,7 +2218,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               child: Row(
                 children: [
                   Text(label, style: TextStyle(fontSize: isSmall ? 14 : 16)),
-                  const SizedBox(width: 6),
+                  SizedBox(width: 6),
                   Text(
                     hasReacted ? 'تم' : 'إعجاب',
                     style: TextStyle(
@@ -2234,11 +2234,11 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           ),
         ),
         if (totalCount > 0) ...[
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.white10,
+              color: AppColors.getTextColor(context).withOpacity(0.10),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
@@ -2247,14 +2247,14 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     .where((e) => e.value > 0)
                     .take(3)
                     .map((e) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 1),
+                          padding: EdgeInsets.symmetric(horizontal: 1),
                           child: Text(reactions[e.key]!,
-                              style: const TextStyle(fontSize: 10)),
+                              style: TextStyle(fontSize: 10)),
                         )),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   totalCount.toString(),
-                  style: const TextStyle(fontSize: 10, color: Colors.white70),
+                  style: TextStyle(fontSize: 10, color: AppColors.getTextColor(context).withOpacity(0.70)),
                 ),
               ],
             ),
@@ -2278,7 +2278,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         backgroundColor: AppColors.primaryDark.withOpacity(0.95),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         content: Row(
           mainAxisSize: MainAxisSize.min,
           children: reactions.entries.map((e) {
@@ -2289,8 +2289,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     questionId: questionId, replyId: replyId, type: e.key);
               },
               child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Text(e.value, style: const TextStyle(fontSize: 30)),
+                padding: EdgeInsets.all(10),
+                child: Text(e.value, style: TextStyle(fontSize: 30)),
               ),
             );
           }).toList(),
@@ -2381,7 +2381,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('إضافة رد', textAlign: TextAlign.right),
+        title: Text('إضافة رد', textAlign: TextAlign.right),
         content: SizedBox(
           width: MediaQuery.of(context).size.width * 0.8,
         child: TextField(
@@ -2389,7 +2389,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           maxLines: null,
           minLines: 5,
           textAlign: TextAlign.right,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: OutlineInputBorder(),
             hintText: 'اكتب ردك هنا...',
           ),
@@ -2401,7 +2401,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء'),
+            child: Text('إلغاء'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -2424,7 +2424,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             },
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple),
-            child: const Text('إرسال', style: TextStyle(color: Colors.white)),
+            child: Text('إرسال', style: TextStyle(color: AppColors.getTextColor(context))),
           ),
         ],
       ),
@@ -2440,7 +2440,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       _refreshFutures(); 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم إرسال سؤالك بنجاح')),
+          SnackBar(content: Text('تم إرسال سؤالك بنجاح')),
         );
       }
     } catch (e) {
@@ -2458,7 +2458,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     final hasPrev = currentIndex > 0;
     
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.primaryDark.withOpacity(0.95),
         border: Border(top: BorderSide(color: Colors.white.withOpacity(0.1))),
@@ -2490,7 +2490,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                   },
                 ),
               ),
-            if (hasPrev && hasNext) const SizedBox(width: 15),
+            if (hasPrev && hasNext) SizedBox(width: 15),
             if (hasNext)
               Expanded(
                 child: _buildNavButton(
@@ -2560,23 +2560,23 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.primaryDark,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text('تنبيه', textAlign: TextAlign.right, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text('تنبيه', textAlign: TextAlign.right, style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
             SizedBox(width: 8),
             Icon(Icons.info_outline, color: Colors.blueAccent),
           ],
         ),
-        content: const Text(
+        content: Text(
           'لا يوجد اختبار مرتبط بهذا الدرس حالياً. يمكنك الانتقال للدرس التالي مباشرة.',
           textAlign: TextAlign.right,
-          style: TextStyle(color: Colors.white70),
+          style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+            child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60))),
           ),
           ElevatedButton(
             onPressed: () {
@@ -2588,7 +2588,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('الانتقال للدرس التالي'),
+            child: Text('الانتقال للدرس التالي'),
           ),
         ],
       ),
@@ -2604,10 +2604,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.primaryDark,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
+        title: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Text('يوجد اختبار', textAlign: TextAlign.right, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            Text('يوجد اختبار', textAlign: TextAlign.right, style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
             SizedBox(width: 8),
             Icon(Icons.assignment_outlined, color: Colors.orangeAccent),
           ],
@@ -2615,7 +2615,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         content: Text(
           'هذا الدرس يحتوي على اختبار بعنوان "${exam.title}". هل تود خوض الاختبار الآن أم الانتقال للدرس التالي؟',
           textAlign: TextAlign.right,
-          style: const TextStyle(color: Colors.white70),
+          style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
         ),
         actions: [
           Column(
@@ -2642,10 +2642,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('بدء الاختبار الآن'),
+                  child: Text('بدء الاختبار الآن'),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               SizedBox(
                 width: double.infinity,
                 child: TextButton(
@@ -2656,12 +2656,12 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                   style: TextButton.styleFrom(
                     foregroundColor: Colors.white70,
                   ),
-                  child: const Text('تخطي والانتقال للدرس التالي'),
+                  child: Text('تخطي والانتقال للدرس التالي'),
                 ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+                child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60))),
               ),
             ],
           ),
@@ -2693,17 +2693,17 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (!isPrimary) Icon(icon, color: Colors.white, size: 16),
-                if (!isPrimary) const SizedBox(width: 8),
+                if (!isPrimary) Icon(icon, color: AppColors.getTextColor(context), size: 16),
+                if (!isPrimary) SizedBox(width: 8),
                 Text(
                   label,
-                  style: const TextStyle(
-                      color: Colors.white,
+                  style: TextStyle(
+                      color: AppColors.getTextColor(context),
                       fontWeight: FontWeight.bold,
                       fontSize: 15),
                 ),
-                if (isPrimary) const SizedBox(width: 8),
-                if (isPrimary) Icon(icon, color: Colors.white, size: 16),
+                if (isPrimary) SizedBox(width: 8),
+                if (isPrimary) Icon(icon, color: AppColors.getTextColor(context), size: 16),
               ],
             ),
           ),
@@ -2717,23 +2717,23 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تعديل السؤال', textAlign: TextAlign.right),
+        title: Text('تعديل السؤال', textAlign: TextAlign.right),
         content: TextField(
           controller: controller,
           textAlign: TextAlign.right,
           maxLines: 4,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
+          decoration: InputDecoration(border: OutlineInputBorder()),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء')),
+              child: Text('إلغاء')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, controller.text),
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple),
-            child: const Text('حفظ التعديل',
-                style: TextStyle(color: Colors.white)),
+            child: Text('حفظ التعديل',
+                style: TextStyle(color: AppColors.getTextColor(context))),
           ),
         ],
       ),
@@ -2759,23 +2759,23 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('تعديل الرد', textAlign: TextAlign.right),
+        title: Text('تعديل الرد', textAlign: TextAlign.right),
         content: TextField(
           controller: controller,
           textAlign: TextAlign.right,
           maxLines: 4,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
+          decoration: InputDecoration(border: OutlineInputBorder()),
         ),
         actions: [
           TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('إلغاء')),
+              child: Text('إلغاء')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, controller.text),
             style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple),
-            child: const Text('حفظ التعديل',
-                style: TextStyle(color: Colors.white)),
+            child: Text('حفظ التعديل',
+                style: TextStyle(color: AppColors.getTextColor(context))),
           ),
         ],
       ),
@@ -2797,7 +2797,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 }
 
 class LessonSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  const LessonSliverAppBarDelegate({required this.child});
+  LessonSliverAppBarDelegate({required this.child});
 
   final Widget child;
 

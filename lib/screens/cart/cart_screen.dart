@@ -9,7 +9,7 @@ import '../subscription/payment_screen.dart';
 import '../../models/bundle.dart';
 
 class CartScreen extends StatelessWidget {
-  const CartScreen({super.key});
+  CartScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -20,18 +20,18 @@ class CartScreen extends StatelessWidget {
     final currencyLabel = isRTL ? 'ل.س' : 'SYP';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1E1E2C), // Dark theme as per screenshot
+      backgroundColor: Color(0xFF1E1E2C), // Dark theme as per screenshot
       appBar: AppBar(
         title: Text(
           isRTL ? 'محتوى السلة' : 'Basket Content',
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        titleTextStyle: const TextStyle(
-          color: Colors.white,
+        iconTheme: IconThemeData(color: AppColors.getTextColor(context)),
+        titleTextStyle: TextStyle(
+          color: AppColors.getTextColor(context),
           fontSize: 18,
           fontWeight: FontWeight.bold,
           fontFamily: 'Cairo',
@@ -44,7 +44,7 @@ class CartScreen extends StatelessWidget {
                 Expanded(
                   child: ListView.builder(
                     itemCount: cart.items.length,
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                     itemBuilder: (context, index) {
                       final item = cart.items.values.toList()[index];
                       return _buildProfessionalCartItem(context, item, cart, locale, isRTL, currencyLabel);
@@ -61,7 +61,7 @@ class CartScreen extends StatelessWidget {
     final formatter = NumberFormat('#,###.##');
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 24),
+      margin: EdgeInsets.only(bottom: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -72,13 +72,13 @@ class CartScreen extends StatelessWidget {
               // Trash Icon on the far side
               IconButton(
                 onPressed: () => cart.removeItem(item.id),
-                icon: Icon(Icons.delete_rounded, color: Colors.white.withOpacity(0.3), size: 20),
+                icon: Icon(Icons.delete_rounded, color: AppColors.getMutedTextColor(context), size: 20),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white.withOpacity(0.1),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
-              const Spacer(),
+              Spacer(),
               // Title and Label
               Expanded(
                 flex: 4,
@@ -87,48 +87,48 @@ class CartScreen extends StatelessWidget {
                   children: [
                     Text(
                       item.isBundle ? (isRTL ? 'باقة' : 'Bundle') : (isRTL ? 'دورة' : 'Course'),
-                      style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+                      style: TextStyle(color: AppColors.getMutedTextColor(context), fontSize: 12),
                     ),
                     Text(
                       item.title,
                       textAlign: TextAlign.right,
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold, fontSize: 15),
                       maxLines: 2,
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               // Thumbnail
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: item.imageUrl != null
                     ? Image.network(item.imageUrl!, width: 60, height: 60, fit: BoxFit.cover)
-                    : Container(width: 60, height: 60, color: Colors.white10),
+                    : Container(width: 60, height: 60, color: AppColors.getTextColor(context).withOpacity(0.10)),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
 
           // Course list if it's a bundle
           if (item.isBundle && item.originalObject is Bundle)
             Padding(
-              padding: const EdgeInsets.only(right: 12, left: 12),
+              padding: EdgeInsets.only(right: 12, left: 12),
               child: Column(
                 children: (item.originalObject as Bundle).courses.map((course) {
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.only(bottom: 8),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           formatter.format(course.price),
-                          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.w500),
+                          style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 13, fontWeight: FontWeight.w500),
                         ),
                         Text(
                           course.title,
-                          style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+                          style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 13),
                         ),
                       ],
                     ),
@@ -137,27 +137,28 @@ class CartScreen extends StatelessWidget {
               ),
             ),
 
-          if (item.isBundle) const Divider(color: Colors.white10, height: 24),
+          if (item.isBundle) Divider(color: AppColors.getTextColor(context).withOpacity(0.10), height: 24),
 
           // Pricing Breakdown (as per screenshot)
-          _buildPriceRow(isRTL ? 'السعر' : 'Price', '$currencyLabel ${formatter.format(item.originalPrice)}', isWhite: true),
+          _buildPriceRow(context, isRTL ? 'السعر' : 'Price', '$currencyLabel ${formatter.format(item.originalPrice)}', isWhite: true),
           if (item.discountAmount > 0)
-            _buildPriceRow(isRTL ? 'خصم' : 'Discount', '$currencyLabel ${formatter.format(item.discountAmount)}-', isRed: true),
-          _buildPriceRow(isRTL ? 'المجموع' : 'Subtotal', '$currencyLabel ${formatter.format(item.price)}', isBold: true),
+            _buildPriceRow(context, isRTL ? 'خصم' : 'Discount', '$currencyLabel ${formatter.format(item.discountAmount)}-', isRed: true),
+          _buildPriceRow(context, isRTL ? 'المجموع' : 'Subtotal', '$currencyLabel ${formatter.format(item.price)}', isBold: true),
+
           
           if (cart.items.values.toList().indexOf(item) < cart.items.length - 1)
-             const Padding(
+             Padding(
                padding: EdgeInsets.only(top: 16),
-               child: Divider(color: Colors.white10, height: 1),
+               child: Divider(color: AppColors.getTextColor(context).withOpacity(0.10), height: 1),
              ),
         ],
       ),
     );
   }
 
-  Widget _buildPriceRow(String label, String value, {bool isRed = false, bool isBold = false, bool isWhite = false}) {
+  Widget _buildPriceRow(BuildContext context, String label, String value, {bool isRed = false, bool isBold = false, bool isWhite = false}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -172,7 +173,7 @@ class CartScreen extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.4),
+              color: AppColors.getMutedTextColor(context),
               fontSize: 14,
             ),
           ),
@@ -186,22 +187,22 @@ class CartScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.white.withOpacity(0.1)),
-          const SizedBox(height: 20),
+          Icon(Icons.shopping_cart_outlined, size: 80, color: AppColors.getMutedTextColor(context)),
+          SizedBox(height: 20),
           Text(
             t('empty_cart_msg'),
-            style: TextStyle(fontSize: 18, color: Colors.white.withOpacity(0.6), fontWeight: FontWeight.bold),
+            style: TextStyle(fontSize: 18, color: AppColors.getTextColor(context, secondary: true), fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 30),
+          SizedBox(height: 30),
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              padding: EdgeInsets.symmetric(horizontal: 40, vertical: 15),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text(t('browse_courses'), style: const TextStyle(fontWeight: FontWeight.bold)),
+            child: Text(t('browse_courses'), style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -228,17 +229,18 @@ class CartScreen extends StatelessWidget {
             children: [
               Text(
                 '$currencyLabel ${formatter.format(cart.totalAmount)}',
-                style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AppColors.getTextColor(context), fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Text(
                 isRTL ? 'المبلغ الإجمالي' : 'Total Amount',
-                style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(color: AppColors.getTextColor(context), fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          _buildSummaryRow(isRTL ? 'المجموع' : 'Subtotal', '$currencyLabel ${formatter.format(cart.totalAmount)}'),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
+          _buildSummaryRow(context, isRTL ? 'المجموع' : 'Subtotal', '$currencyLabel ${formatter.format(cart.totalAmount)}'),
+
+          SizedBox(height: 12),
           Align(
             alignment: isRTL ? Alignment.centerRight : Alignment.centerLeft,
             child: TextButton(
@@ -247,11 +249,11 @@ class CartScreen extends StatelessWidget {
               },
               child: Text(
                 isRTL ? 'إضافة رمز الخصم' : 'Add Discount Code',
-                style: const TextStyle(color: Color(0xFF6A6BB2), fontWeight: FontWeight.bold),
+                style: TextStyle(color: Color(0xFF6A6BB2), fontWeight: FontWeight.bold),
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           ElevatedButton(
             onPressed: () {
               if (cart.items.isNotEmpty) {
@@ -267,20 +269,20 @@ class CartScreen extends StatelessWidget {
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF434775), // Color from screenshot
+              backgroundColor: Color(0xFF434775), // Color from screenshot
               foregroundColor: Colors.white,
-              minimumSize: const Size(double.infinity, 60),
+              minimumSize: Size(double.infinity, 60),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               elevation: 0,
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.credit_card_rounded, size: 20),
-                const SizedBox(width: 12),
+                Icon(Icons.credit_card_rounded, size: 20),
+                SizedBox(width: 12),
                 Text(
                   isRTL ? 'إتمام عملية التسجيل' : 'Complete Registration',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
@@ -290,12 +292,13 @@ class CartScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSummaryRow(String label, String value) {
+  Widget _buildSummaryRow(BuildContext context, String label, String value) {
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(value, style: const TextStyle(color: Colors.white70, fontSize: 14)),
-        Text(label, style: const TextStyle(color: Colors.white30, fontSize: 14)),
+        Text(value, style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 14)),
+        Text(label, style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.30), fontSize: 14)),
       ],
     );
   }

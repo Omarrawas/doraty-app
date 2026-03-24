@@ -24,7 +24,7 @@ import 'banners_management_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
-  const AdminDashboardScreen({super.key});
+  AdminDashboardScreen({super.key});
 
   @override
   State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
@@ -135,23 +135,23 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               }
 
                               return SingleChildScrollView(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: const EdgeInsets.symmetric(
+                                physics: AlwaysScrollableScrollPhysics(),
+                                padding: EdgeInsets.symmetric(
                                     horizontal: 20, vertical: 10),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     _buildPerformanceSummary(width),
-                                    const SizedBox(height: 24),
+                                    SizedBox(height: 24),
                                     _buildStatsGrid(statsCrossAxisCount),
-                                    const SizedBox(height: 24),
+                                    SizedBox(height: 24),
                                     if (_userRole == 'teacher') ...[
                                       _buildRecentAttempts(),
-                                      const SizedBox(height: 24),
+                                      SizedBox(height: 24),
                                     ],
                                     _buildQuickActions(actionsCrossAxisCount,
                                         actionsAspectRatio),
-                                    const SizedBox(height: 24),
+                                    SizedBox(height: 24),
                                   ],
                                 ),
                               );
@@ -169,7 +169,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           // Back Button
@@ -194,7 +194,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,7 +254,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             'ملخص الأداء والنمو',
             style: TextStyle(
@@ -264,14 +264,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppColors.getGlassColor(context, opacity: 0.15),
                 borderRadius: BorderRadius.circular(24),
@@ -290,7 +290,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       _buildSummaryItem('محاولات ناجحة', '${_stats['total_attempts'] ?? 0}', Icons.check_circle_outline, Colors.orangeAccent),
                     ],
                   ),
-                  const SizedBox(height: 30),
+                  SizedBox(height: 30),
                   // Visual Indicator / Simple Chart
                   SizedBox(
                     height: 100,
@@ -303,7 +303,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       }),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12),
                   Text(
                     'معدل نمو المنصة خلال الأسبوع الأخير +12%',
                     style: TextStyle(
@@ -324,7 +324,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Column(
       children: [
         Icon(icon, color: color, size: 20),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Text(
           value,
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
@@ -358,7 +358,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return GridView.count(
       crossAxisCount: crossAxisCount,
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
       childAspectRatio: 1.5,
@@ -410,12 +410,12 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
               width: 1.5,
             ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.15),
                   shape: BoxShape.circle,
@@ -423,13 +423,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     BoxShadow(
                       color: color.withOpacity(0.1),
                       blurRadius: 6,
-                      offset: const Offset(0, 2),
+                      offset: Offset(0, 2),
                     )
                   ],
                 ),
                 child: Icon(icon, color: color, size: 20),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 value,
                 style: TextStyle(
@@ -439,7 +439,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 2),
+              SizedBox(height: 2),
               Text(
                 label,
                 style: TextStyle(
@@ -466,7 +466,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const UsersManagementScreen())),
+                  builder: (context) => UsersManagementScreen())),
         },
         {
           'icon': Icons.category_rounded,
@@ -476,7 +476,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const CategoriesManagementScreen())),
+                  builder: (context) => CategoriesManagementScreen())),
         },
         {
           'icon': Icons.school_rounded,
@@ -486,7 +486,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const TeachersManagementScreen())),
+                  builder: (context) => TeachersManagementScreen())),
         },
         {
           'icon': Icons.collections_bookmark_rounded,
@@ -496,7 +496,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const BundlesManagementScreen())),
+                  builder: (context) => BundlesManagementScreen())),
         },
         {
           'icon': Icons.lightbulb_rounded,
@@ -506,7 +506,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const TipsManagementScreen())),
+                  builder: (context) => TipsManagementScreen())),
         },
         {
           'icon': Icons.view_carousel_rounded,
@@ -516,7 +516,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const BannersManagementScreen())),
+                  builder: (context) => BannersManagementScreen())),
         },
       ],
       {
@@ -539,7 +539,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const SubscriptionsManagementScreen())),
+                  builder: (context) => SubscriptionsManagementScreen())),
         },
         {
           'icon': Icons.receipt_long_rounded,
@@ -549,7 +549,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const PaymentReceiptsScreen())),
+                  builder: (context) => PaymentReceiptsScreen())),
         },
         {
           'icon': Icons.account_balance_wallet_rounded,
@@ -559,7 +559,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const PaymentSettingsScreen())),
+                  builder: (context) => PaymentSettingsScreen())),
         },
         {
           'icon': Icons.notifications_active_rounded,
@@ -569,7 +569,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const NotificationsManagementScreen())),
+                  builder: (context) => NotificationsManagementScreen())),
         },
         {
           'icon': Icons.qr_code_2_rounded,
@@ -579,7 +579,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const QrManagementScreen())),
+                  builder: (context) => QrManagementScreen())),
         },
         if (_userRole == 'super_admin')
           {
@@ -590,7 +590,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             'onTap': () => Navigator.push(
                 context,
                 MaterialPageRoute(
-                    builder: (context) => const UpdatesManagementScreen())),
+                    builder: (context) => UpdatesManagementScreen())),
           },
         {
           'icon': Icons.security,
@@ -600,7 +600,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => Navigator.push(
               context,
               MaterialPageRoute(
-                  builder: (context) => const SecuritySettingsScreen())),
+                  builder: (context) => SecuritySettingsScreen())),
         },
       ],
     ];
@@ -609,7 +609,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             'الإجراءات السريعة',
             style: TextStyle(
@@ -619,10 +619,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         GridView.builder(
           shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
+          physics: NeverScrollableScrollPhysics(),
           itemCount: actions.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
@@ -667,19 +667,19 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           child: InkWell(
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(icon, color: color, size: 22),
                   ),
-                  const SizedBox(height: 10),
+                  SizedBox(height: 10),
                   Text(
                     title,
                     textAlign: TextAlign.center,
@@ -691,7 +691,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  const SizedBox(height: 2),
+                  SizedBox(height: 2),
                   Text(
                     subtitle,
                     textAlign: TextAlign.center,
@@ -716,7 +716,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -738,14 +738,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         if (_recentAttempts.isEmpty)
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
-                padding: const EdgeInsets.all(30),
+                padding: EdgeInsets.all(30),
                 decoration: BoxDecoration(
                   color: AppColors.getGlassColor(context, opacity: 0.1),
                   borderRadius: BorderRadius.circular(16),
@@ -767,9 +767,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         else
           ListView.separated(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
+            physics: NeverScrollableScrollPhysics(),
             itemCount: _recentAttempts.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
+            separatorBuilder: (context, index) => SizedBox(height: 12),
             itemBuilder: (context, index) {
               final attempt = _recentAttempts[index];
               final user = attempt['users'] as Map<String, dynamic>?;
@@ -792,7 +792,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                     ),
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
+                      contentPadding: EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       leading: CircleAvatar(
                         radius: 24,
@@ -802,8 +802,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         backgroundColor:
                             AppColors.primaryPurple.withOpacity(0.2),
                         child: user?['avatar_url'] == null
-                            ? const Icon(Icons.person,
-                                color: Colors.white, size: 24)
+                            ? Icon(Icons.person,
+                                color: AppColors.getTextColor(context), size: 24)
                             : null,
                       ),
                       title: Text(
@@ -816,7 +816,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Text(
                             exam?['title'] ?? 'اختبار غير معروف',
                             style: TextStyle(
@@ -825,7 +825,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   .withOpacity(0.6),
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          SizedBox(height: 2),
                           Text(
                             '${date.day}/${date.month} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}',
                             style: TextStyle(
@@ -837,7 +837,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ],
                       ),
                       trailing: Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color:

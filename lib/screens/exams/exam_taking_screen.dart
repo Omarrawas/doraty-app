@@ -14,7 +14,7 @@ class ExamTakingScreen extends StatefulWidget {
   final VoidCallback? onFinish;
   final VoidCallback? onNext;
 
-  const ExamTakingScreen({
+  ExamTakingScreen({
     super.key,
     required this.exam,
     VoidCallback? onFinish,
@@ -140,7 +140,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
 
   void _startTimer() {
     _timer?.cancel(); // Cancel any existing timer just in case
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
       if (mounted) {
         setState(() {
           if (_remainingSeconds > 0) {
@@ -205,7 +205,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (context) => Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -306,7 +306,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
+      return Scaffold(
         body: Center(child: CircularProgressIndicator()),
         backgroundColor: AppColors.primaryPurple,
       );
@@ -316,45 +316,45 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       return Scaffold(
         body: Container(
           width: double.infinity,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: AppColors.backgroundGradient,
           ),
           child: SafeArea(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.quiz_outlined, color: Colors.white, size: 80),
-                const SizedBox(height: 24),
-                const Text(
+                Icon(Icons.quiz_outlined, color: AppColors.getTextColor(context), size: 80),
+                SizedBox(height: 24),
+                Text(
                   'لا توجد أسئلة بهذا الاختبار',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                SizedBox(height: 16),
+                Text(
                   'يتم العمل على إضافة محتوى الاختبار، يرجى المحاولة لاحقاً.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: AppColors.getTextColor(context).withOpacity(0.70),
                     fontSize: 16,
                   ),
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryPurple,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                         horizontal: 32, vertical: 12),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('العودة للدرس'),
+                  child: Text('العودة للدرس'),
                 ),
               ],
             ),
@@ -375,7 +375,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         body: Container(
           width: double.infinity,
           height: double.infinity,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: AppColors.backgroundGradient,
           ),
           child: SafeArea(
@@ -387,7 +387,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                 // Question Content
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -396,22 +396,22 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                           'السؤال ${_currentQuestionIndex + 1} من ${_questions.length}',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.white.withOpacity(0.8),
+                            color: AppColors.getTextColor(context, secondary: true),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
 
-                        const SizedBox(height: 20),
+                        SizedBox(height: 20),
 
                         // Question Card
                         _buildQuestionCard(question),
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
 
                         // Options
                         ...List.generate(question.options.length, (index) {
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
+                            padding: EdgeInsets.only(bottom: 12),
                             child: _buildOptionCard(question, index),
                           );
                         }),
@@ -434,7 +434,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
     final isLowTime = _remainingSeconds < 300; // Less than 5 minutes
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Column(
         children: [
           Row(
@@ -445,7 +445,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 10,
                     ),
@@ -468,7 +468,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                           color: isLowTime ? Colors.red : Colors.white,
                           size: 20,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                         Text(
                           _formatTime(_remainingSeconds),
                           style: TextStyle(
@@ -483,7 +483,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                 ),
               ),
 
-              const Spacer(),
+              Spacer(),
 
               // Exam Title
               Expanded(
@@ -493,10 +493,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
               ),
@@ -508,10 +508,10 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.getMutedTextColor(context),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: AppColors.getMutedTextColor(context),
                         width: 1,
                       ),
                     ),
@@ -521,7 +521,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                         children: [
                           Icon(
                             _isMuted ? Icons.volume_mute : Icons.volume_up,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                             size: 20,
                           ),
                           if (_isMuted)
@@ -550,7 +550,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                 ),
               ),
 
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
 
               // Submit Button
               ClipRRect(
@@ -559,15 +559,15 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.getMutedTextColor(context),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: AppColors.getMutedTextColor(context),
                         width: 1,
                       ),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.check, color: Colors.white),
+                      icon: Icon(Icons.check, color: AppColors.getTextColor(context)),
                       onPressed: () => _showSubmitDialog(),
                     ),
                   ),
@@ -576,7 +576,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
             ],
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
 
           // Progress Bar
           ClipRRect(
@@ -599,7 +599,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -611,16 +611,16 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
           child: TexViewWidget(
             question.text,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
           ),
         ),
@@ -660,7 +660,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                 _playSound('select.mp3');
               },
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 child: Row(
                   children: [
                     Container(
@@ -672,25 +672,25 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
                             ? Colors.white
                             : Colors.transparent,
                         border: Border.all(
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                           width: 2,
                         ),
                       ),
                       child: isSelected
-                          ? const Icon(
+                          ? Icon(
                               Icons.check,
                               size: 16,
                               color: AppColors.primaryPurple,
                             )
                           : null,
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(
                       child: TexViewWidget(
                         question.options[optionIndex],
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                         ),
                       ),
                     ),
@@ -706,7 +706,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
 
   Widget _buildNavigationButtons() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           // Previous Button
@@ -723,7 +723,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
               ),
             ),
 
-          if (_currentQuestionIndex > 0) const SizedBox(width: 12),
+          if (_currentQuestionIndex > 0) SizedBox(width: 12),
 
           // Next/Submit Button
           Expanded(
@@ -767,7 +767,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
             color: isPrimary ? null : Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1,
             ),
           ),
@@ -777,25 +777,25 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
               borderRadius: BorderRadius.circular(12),
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: EdgeInsets.symmetric(vertical: 14),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (label == 'السابق') ...[
-                      Icon(icon, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
+                      Icon(icon, color: AppColors.getTextColor(context), size: 20),
+                      SizedBox(width: 8),
                     ],
                     Text(
                       label,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context),
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     if (label != 'السابق') ...[
-                      const SizedBox(width: 8),
-                      Icon(icon, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Icon(icon, color: AppColors.getTextColor(context), size: 20),
                     ],
                   ],
                 ),
@@ -814,24 +814,24 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.primaryPurple,
-        title: const Text(
+        title: Text(
           'إنهاء الاختبار',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.getTextColor(context)),
         ),
         content: Text(
           unanswered > 0
               ? 'لديك $unanswered سؤال لم تجب عليه. هل تريد إنهاء الاختبار؟'
               : 'هل تريد إنهاء الاختبار وإرسال إجاباتك؟',
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.getTextColor(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white)),
+            child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('إنهاء', style: TextStyle(color: Colors.white)),
+            child: Text('إنهاء', style: TextStyle(color: AppColors.getTextColor(context))),
           ),
         ],
       ),
@@ -847,22 +847,22 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.primaryPurple,
-        title: const Text(
+        title: Text(
           'الخروج من الاختبار',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.getTextColor(context)),
         ),
-        content: const Text(
+        content: Text(
           'هل تريد الخروج من الاختبار؟ سيتم فقدان إجاباتك.',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: AppColors.getTextColor(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white)),
+            child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('خروج', style: TextStyle(color: Colors.white)),
+            child: Text('خروج', style: TextStyle(color: AppColors.getTextColor(context))),
           ),
         ],
       ),

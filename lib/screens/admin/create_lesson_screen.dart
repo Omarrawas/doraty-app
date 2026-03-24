@@ -23,7 +23,7 @@ class CreateLessonScreen extends StatefulWidget {
   final String? lessonId;
   final Map<String, dynamic>? lessonData;
 
-  const CreateLessonScreen({
+  CreateLessonScreen({
     super.key,
     required this.courseId,
     this.lessonId,
@@ -109,10 +109,10 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('إضافة فصل جديد'),
+        title: Text('إضافة فصل جديد'),
         content: TextField(
           controller: titleController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'عنوان الفصل',
             hintText: 'مثال: المقدمة',
           ),
@@ -120,7 +120,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child: Text('إلغاء'),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -136,7 +136,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                 debugPrint('Error creating chapter: $e');
               }
             },
-            child: const Text('إضافة'),
+            child: Text('إضافة'),
           ),
         ],
       ),
@@ -175,7 +175,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم الرفع إلى يوتيوب بنجاح!')),
+            SnackBar(content: Text('تم الرفع إلى يوتيوب بنجاح!')),
           );
         }
       } else {
@@ -207,7 +207,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                 _buildHeader(context, isEditing),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -218,13 +218,13 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                             title: 'الفصل',
                             action: TextButton.icon(
                               onPressed: _createNewChapter,
-                              icon: const Icon(Icons.add,
+                              icon: Icon(Icons.add,
                                   size: 18, color: Colors.blueAccent),
-                              label: const Text('فصل جديد',
+                              label: Text('فصل جديد',
                                   style: TextStyle(color: Colors.blueAccent)),
                             ),
                             child: _isLoadingChapters
-                                ? const Center(child: LinearProgressIndicator())
+                                ? Center(child: LinearProgressIndicator())
                                 : DropdownButtonFormField<String>(
                                     dropdownColor: isDark
                                         ? AppColors.primaryPurple
@@ -255,7 +255,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                     },
                                   ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
 
                           _buildGlassContainer(
                             title: 'معلومات الدرس',
@@ -277,11 +277,11 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 Align(
                                   alignment: Alignment.centerRight,
                                   child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    padding: EdgeInsets.only(bottom: 8.0),
                                     child: Text('وصف الدرس',
                                         style: TextStyle(
                                             color: AppColors.getTextColor(
@@ -299,7 +299,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
 
                           _buildGlassContainer(
                             title: 'الفيديو والمحتوى',
@@ -314,9 +314,9 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                     hint: 'https://youtube.com/watch?v=...',
                                     icon: Icons.video_library_outlined,
                                     suffix: _isUploadingToYoutube 
-                                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                                      ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                                       : IconButton(
-                                          icon: const Icon(Icons.cloud_upload, color: Colors.redAccent),
+                                          icon: Icon(Icons.cloud_upload, color: Colors.redAccent),
                                           onPressed: _pickAndUploadToYoutube,
                                           tooltip: 'رفع إلى يوتيوب (غير مدرج)',
                                         ),
@@ -330,7 +330,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                   },
                                 ),
                                 if (_videoUrlController.text.isNotEmpty) ...[
-                                  const SizedBox(height: 16),
+                                  SizedBox(height: 16),
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(12),
                                     child: VideoPreviewWidget(
@@ -352,7 +352,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                     ),
                                   ),
                                 ],
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 TextFormField(
                                   controller: _durationController,
                                   style: TextStyle(
@@ -363,7 +363,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                     icon: Icons.access_time,
                                   ).copyWith(
                                     helperText: 'يمكن تعديلها يدوياً إذا لزم الأمر',
-                                    helperStyle: const TextStyle(color: Colors.blueAccent, fontSize: 10),
+                                    helperStyle: TextStyle(color: Colors.blueAccent, fontSize: 10),
                                   ),
                                   keyboardType: TextInputType.number,
                                   validator: (value) {
@@ -378,11 +378,11 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 Align(
                                   alignment: Alignment.centerRight,
                                   child: Padding(
-                                    padding: const EdgeInsets.only(bottom: 8.0),
+                                    padding: EdgeInsets.only(bottom: 8.0),
                                     child: Text('محتوى الدرس (اختياري)',
                                         style: TextStyle(
                                             color: AppColors.getTextColor(
@@ -400,20 +400,20 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
 
                           _buildAttachmentsSection(context),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
 
                           _buildFreeSwitchGlass(context),
-                          const SizedBox(height: 32),
+                          SizedBox(height: 32),
 
                           SizedBox(
                             width: double.infinity,
                             height: 55,
                             child: _buildSubmitButton(isEditing),
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                         ],
                       ),
                     ),
@@ -429,7 +429,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
 
   Widget _buildHeader(BuildContext context, bool isEditing) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -451,7 +451,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               isEditing ? 'تعديل الدرس' : 'إضافة درس جديد',
@@ -486,7 +486,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
               width: 1.5,
             ),
           ),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -504,7 +504,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                   if (action != null) action,
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               child,
             ],
           ),
@@ -538,7 +538,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+        borderSide: BorderSide(color: Colors.blueAccent, width: 2),
       ),
     );
   }
@@ -547,14 +547,14 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [AppColors.primaryPurple, Colors.blueAccent],
         ),
         boxShadow: [
           BoxShadow(
             color: AppColors.primaryPurple.withOpacity(0.3),
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -567,23 +567,23 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: _isSaving
-            ? const SizedBox(
+            ? SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 3,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(isEditing ? Icons.save : Icons.add, color: Colors.white),
-                  const SizedBox(width: 8),
+                  Icon(isEditing ? Icons.save : Icons.add, color: AppColors.getTextColor(context)),
+                  SizedBox(width: 8),
                   Text(
                     isEditing ? 'حفظ التعديلات' : 'إضافة الدرس',
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: AppColors.getTextColor(context),
                       fontSize: 18,
                       fontWeight: FontWeight.normal,
                     ),
@@ -600,7 +600,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: _isFree
                   ? Colors.green.withOpacity(0.2)
@@ -612,7 +612,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
               color: _isFree ? Colors.greenAccent : Colors.orangeAccent,
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -652,7 +652,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: AppColors.getGlassColor(context, opacity: 0.05),
               borderRadius: BorderRadius.circular(12),
@@ -662,8 +662,8 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.cloud_upload, color: Colors.blueAccent),
-                    const SizedBox(width: 8),
+                    Icon(Icons.cloud_upload, color: Colors.blueAccent),
+                    SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'رفع تلقائي إلى GitHub',
@@ -676,16 +676,16 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 if (!GitHubConfig.isConfigured)
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.orange.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.orange.withOpacity(0.2)),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
                         Icon(Icons.warning,
                             color: Colors.orangeAccent, size: 20),
@@ -706,15 +706,15 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                     child: ElevatedButton.icon(
                       onPressed: _isUploadingToGitHub ? null : _uploadToGitHub,
                       icon: _isUploadingToGitHub
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: AppColors.getTextColor(context),
                               ),
                             )
-                          : const Icon(Icons.upload_file),
+                          : Icon(Icons.upload_file),
                       label: Text(
                         _isUploadingToGitHub
                             ? 'جاري الرفع...'
@@ -732,9 +732,9 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
             ),
           ),
           if (_attachments.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             ..._attachments.map((attachment) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
+                  margin: EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
                     color: AppColors.getGlassColor(context, opacity: 0.03),
                     borderRadius: BorderRadius.circular(10),
@@ -753,7 +753,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                           TextStyle(fontSize: 11, color: AppColors.getTextColor(context, secondary: true)),
                     ),
                     trailing: IconButton(
-                      icon: const Icon(Icons.delete,
+                      icon: Icon(Icons.delete,
                           color: Colors.redAccent, size: 20),
                       onPressed: () {
                         setState(() {
@@ -852,7 +852,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+            SnackBar(
               content: Text('فشل رفع الملفات'),
               backgroundColor: Colors.red,
             ),

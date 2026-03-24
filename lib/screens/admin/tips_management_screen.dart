@@ -6,7 +6,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'create_tip_screen.dart';
 
 class TipsManagementScreen extends StatefulWidget {
-  const TipsManagementScreen({super.key});
+  TipsManagementScreen({super.key});
 
   @override
   State<TipsManagementScreen> createState() => _TipsManagementScreenState();
@@ -45,17 +45,17 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('حذف النصيحة'),
+        title: Text('حذف النصيحة'),
         content: Text('هل أنت متأكد من حذف "${tip.title}"؟'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child: Text('إلغاء'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('حذف'),
+            child: Text('حذف'),
           ),
         ],
       ),
@@ -67,7 +67,7 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
         _loadTips();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('تم حذف النصيحة بنجاح')),
+            SnackBar(content: Text('تم حذف النصيحة بنجاح')),
           );
         }
       } catch (e) {
@@ -85,53 +85,53 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('إدارة النصائح'),
+        title: Text('إدارة النصائح'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: Icon(Icons.refresh),
             onPressed: _loadTips,
           ),
         ],
       ),
       body: DynamicGradientBackground(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator())
             : _tips.isEmpty
                 ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.lightbulb_outline, size: 80, color: Colors.white24),
-                        const SizedBox(height: 16),
-                        const Text(
+                        Icon(Icons.lightbulb_outline, size: 80, color: AppColors.getTextColor(context).withOpacity(0.24)),
+                        SizedBox(height: 16),
+                        Text(
                           'لا توجد نصائح حالياً',
-                          style: TextStyle(color: Colors.white70, fontSize: 18),
+                          style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 18),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         ElevatedButton.icon(
                           onPressed: () => _navigateToCreate(),
-                          icon: const Icon(Icons.add),
-                          label: const Text('أضف أول نصيحة'),
+                          icon: Icon(Icons.add),
+                          label: Text('أضف أول نصيحة'),
                         ),
                       ],
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 120, 16, 100),
+                    padding: EdgeInsets.fromLTRB(16, 120, 16, 100),
                     itemCount: _tips.length,
                     itemBuilder: (context, index) {
                       final tip = _tips[index];
                       return Card(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        color: Colors.white.withOpacity(0.1),
+                        margin: EdgeInsets.only(bottom: 16),
+                        color: AppColors.getMutedTextColor(context),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                           side: BorderSide(color: Colors.white.withOpacity(0.1)),
                         ),
                         child: ListTile(
-                          contentPadding: const EdgeInsets.all(12),
+                          contentPadding: EdgeInsets.all(12),
                           leading: Container(
                             width: 60,
                             height: 80,
@@ -146,34 +146,34 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
                               color: Colors.black26,
                             ),
                             child: tip.thumbnailUrl == null
-                                ? const Icon(Icons.video_library, color: Colors.white24)
+                                ? Icon(Icons.video_library, color: AppColors.getTextColor(context).withOpacity(0.24))
                                 : null,
                           ),
                           title: Text(
                             tip.title,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold),
                           ),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(Icons.visibility, size: 14, color: Colors.white54),
-                                  const SizedBox(width: 4),
-                                  Text('${tip.viewsCount} مشاهدة', style: const TextStyle(color: Colors.white54, fontSize: 12)),
+                                  Icon(Icons.visibility, size: 14, color: AppColors.getTextColor(context).withOpacity(0.54)),
+                                  SizedBox(width: 4),
+                                  Text('${tip.viewsCount} مشاهدة', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54), fontSize: 12)),
                                 ],
                               ),
                               if (tip.linkedCourse != null) ...[
-                                const SizedBox(height: 4),
+                                SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    const Icon(Icons.link, size: 14, color: AppColors.secondaryGold),
-                                    const SizedBox(width: 4),
+                                    Icon(Icons.link, size: 14, color: AppColors.secondaryGold),
+                                    SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
                                         'مرتبط بدورة: ${tip.linkedCourse!.title}',
-                                        style: const TextStyle(color: AppColors.secondaryGold, fontSize: 12),
+                                        style: TextStyle(color: AppColors.secondaryGold, fontSize: 12),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -187,11 +187,11 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blueAccent),
+                                icon: Icon(Icons.edit, color: Colors.blueAccent),
                                 onPressed: () => _navigateToCreate(tip: tip),
                               ),
                               IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.redAccent),
+                                icon: Icon(Icons.delete, color: Colors.redAccent),
                                 onPressed: () => _deleteTip(tip),
                               ),
                             ],
@@ -204,8 +204,8 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _navigateToCreate(),
         backgroundColor: AppColors.primaryPurple,
-        icon: const Icon(Icons.add),
-        label: const Text('نصيحة جديدة'),
+        icon: Icon(Icons.add),
+        label: Text('نصيحة جديدة'),
       ),
     );
   }

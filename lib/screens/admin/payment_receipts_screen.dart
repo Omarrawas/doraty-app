@@ -10,7 +10,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import 'payment_receipt_detail_screen.dart';
 
 class PaymentReceiptsScreen extends StatefulWidget {
-  const PaymentReceiptsScreen({super.key});
+  PaymentReceiptsScreen({super.key});
 
   @override
   State<PaymentReceiptsScreen> createState() => _PaymentReceiptsScreenState();
@@ -73,8 +73,8 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                 _buildFilters(),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white))
+                      ? Center(
+                          child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                       : RefreshIndicator(
                           onRefresh: _loadData,
                           child: _buildReceiptsList(),
@@ -90,7 +90,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -106,13 +106,13 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               'إيصالات الدفع',
@@ -136,7 +136,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  icon: Icon(Icons.refresh, color: AppColors.getTextColor(context)),
                   onPressed: _loadData,
                 ),
               ),
@@ -150,7 +150,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
   Widget _buildStatsSection() {
     return Container(
       height: 100,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: EdgeInsets.symmetric(horizontal: 20),
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
@@ -169,13 +169,13 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
       String label, String value, Color color, IconData icon) {
     return Container(
       width: 160,
-      margin: const EdgeInsets.only(right: 12),
+      margin: EdgeInsets.only(right: 12),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.getGlassColor(context, opacity: 0.15),
               borderRadius: BorderRadius.circular(16),
@@ -188,7 +188,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(icon, color: color, size: 20),
-                const SizedBox(height: 8),
+                SizedBox(height: 8),
                 Text(label,
                     style: TextStyle(
                         color: AppColors.getTextColor(context),
@@ -216,7 +216,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
 
     return Container(
       height: 45,
-      margin: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+      margin: EdgeInsets.symmetric(vertical: 20, horizontal: 20),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: filters.length,
@@ -224,7 +224,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
           final filter = filters[index];
           final isSelected = _selectedStatus == filter['id'];
           return Padding(
-            padding: const EdgeInsets.only(left: 8),
+            padding: EdgeInsets.only(left: 8),
             child: ChoiceChip(
               label: Text(filter['label']!),
               selected: isSelected,
@@ -237,7 +237,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
               backgroundColor: Colors.white.withOpacity(0.2),
               selectedColor: AppColors.primaryPurple,
               labelStyle: TextStyle(
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
                 fontWeight: isSelected ? FontWeight.normal : FontWeight.normal,
               ),
               shape: RoundedRectangleBorder(
@@ -254,7 +254,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
   Widget _buildReceiptsList() {
     if (_receipts.isEmpty) return _buildEmptyState();
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       itemCount: _receipts.length,
       itemBuilder: (context, index) => _buildReceiptCard(_receipts[index]),
     );
@@ -266,7 +266,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
     final course = receipt['courses'] as Map<String, dynamic>?;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
@@ -293,7 +293,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                   if (result == true) _loadData();
                 },
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16),
                   child: Column(
                     children: [
                       Row(
@@ -324,18 +324,18 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                           _buildStatusBadge(status),
                         ],
                       ),
-                      const Divider(height: 24, color: Colors.white12),
+                      Divider(height: 24, color: AppColors.getTextColor(context).withOpacity(0.12)),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('المبلغ',
+                              Text('المبلغ',
                                   style: TextStyle(
-                                      color: Colors.white, fontSize: 11)),
+                                      color: AppColors.getTextColor(context), fontSize: 11)),
                               Text('${receipt['amount']} ل.س',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                       color: Colors.greenAccent,
                                       fontWeight: FontWeight.normal)),
                             ],
@@ -343,12 +343,12 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              const Text('التاريخ',
+                              Text('التاريخ',
                                   style: TextStyle(
-                                      color: Colors.white, fontSize: 11)),
+                                      color: AppColors.getTextColor(context), fontSize: 11)),
                               Text(_formatDate(receipt['created_at']),
-                                  style: const TextStyle(
-                                      color: Colors.white, fontSize: 12)),
+                                  style: TextStyle(
+                                      color: AppColors.getTextColor(context), fontSize: 12)),
                             ],
                           ),
                         ],
@@ -385,7 +385,7 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
         label = status;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
@@ -402,10 +402,10 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox, size: 64, color: Colors.white.withOpacity(0.2)),
-          const SizedBox(height: 16),
-          const Text('لا توجد إيصالات متاحة',
-              style: TextStyle(color: Colors.white)),
+          Icon(Icons.inbox, size: 64, color: AppColors.getMutedTextColor(context)),
+          SizedBox(height: 16),
+          Text('لا توجد إيصالات متاحة',
+              style: TextStyle(color: AppColors.getTextColor(context))),
         ],
       ),
     );

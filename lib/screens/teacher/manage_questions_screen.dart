@@ -15,7 +15,7 @@ class ManageQuestionsScreen extends StatefulWidget {
   final String examId;
   final String examTitle;
 
-  const ManageQuestionsScreen({
+  ManageQuestionsScreen({
     super.key,
     required this.examId,
     required this.examTitle,
@@ -71,22 +71,22 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                 _buildHeader(context),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white),
+                      ? Center(
+                          child: CircularProgressIndicator(color: AppColors.getTextColor(context)),
                         )
                       : RefreshIndicator(
                           onRefresh: _loadQuestions,
                           child: _questions.isEmpty
                               ? _buildEmptyState()
                               : ReorderableListView.builder(
-                                  padding: const EdgeInsets.all(20),
+                                  padding: EdgeInsets.all(20),
                                   itemCount: _questions.length,
                                   onReorder: _reorderQuestions,
                                   itemBuilder: (context, index) {
                                     return Padding(
                                       key: ValueKey(_questions[index]['id']),
                                       padding:
-                                          const EdgeInsets.only(bottom: 16),
+                                          EdgeInsets.only(bottom: 16),
                                       child: _buildQuestionCard(
                                           _questions[index], index),
                                     );
@@ -112,9 +112,9 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
             if (result == true) _loadQuestions();
           },
           backgroundColor: AppColors.primaryPurple,
-          icon: const Icon(Icons.add, color: Colors.white),
+          icon: Icon(Icons.add, color: AppColors.getTextColor(context)),
           label:
-              const Text('إضافة سؤال', style: TextStyle(color: Colors.white)),
+              Text('إضافة سؤال', style: TextStyle(color: AppColors.getTextColor(context))),
         ),
       ),
     );
@@ -122,7 +122,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -138,13 +138,13 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -168,7 +168,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: AppColors.primaryPurple.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
@@ -177,8 +177,8 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
             ),
             child: Text(
               '${_questions.length} سؤال',
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: AppColors.getTextColor(context),
                 fontSize: 12,
                 fontWeight: FontWeight.normal,
               ),
@@ -206,17 +206,17 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
               width: 1.5,
             ),
           ),
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                  const Icon(Icons.drag_handle, color: Colors.white54),
-                const SizedBox(width: 8),
+                  Icon(Icons.drag_handle, color: AppColors.getTextColor(context).withOpacity(0.54)),
+                SizedBox(width: 8),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                       color: AppColors.primaryPurple.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -225,16 +225,16 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                   ),
                   child: Text(
                     'سؤال ${index + 1}',
-                    style: const TextStyle(
-                        color: Colors.white,
+                    style: TextStyle(
+                        color: AppColors.getTextColor(context),
                         fontWeight: FontWeight.normal,
                     ),
                   ),
                 ),
-                const Spacer(),
+                Spacer(),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                       color: Colors.blueAccent.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -243,7 +243,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                   ),
                   child: Text(
                     '$points نقطة',
-                    style: const TextStyle(
+                    style: TextStyle(
                         color: Colors.blueAccent,
                         fontWeight: FontWeight.normal,
                       fontSize: 12,
@@ -252,7 +252,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
               HtmlWidget(
                 question['question_text'] ?? '',
                 textStyle: TextStyle(
@@ -261,14 +261,14 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                   fontWeight: FontWeight.normal,
                 ),
               ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             _buildQuestionTypeChip(questionType),
             if (question['explanation'] != null) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Row(
                 children: [
-                  const Icon(Icons.lightbulb, color: Colors.orange, size: 16),
-                  const SizedBox(width: 4),
+                  Icon(Icons.lightbulb, color: Colors.orange, size: 16),
+                  SizedBox(width: 4),
                   Text(
                     'يحتوي على شرح',
                     style: TextStyle(
@@ -279,7 +279,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                 ],
               ),
             ],
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -298,8 +298,8 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                       );
                       if (result == true) _loadQuestions();
                     },
-                    icon: const Icon(Icons.edit, size: 18),
-                    label: const Text('تعديل'),
+                    icon: Icon(Icons.edit, size: 18),
+                    label: Text('تعديل'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: BorderSide(color: Colors.white.withOpacity(0.3)),
@@ -308,10 +308,10 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
                       ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 IconButton(
                   onPressed: () => _deleteQuestion(question['id']),
-                  icon: const Icon(Icons.delete, color: Colors.red),
+                  icon: Icon(Icons.delete, color: Colors.red),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.red.withOpacity(0.1),
                       shape: RoundedRectangleBorder(
@@ -355,7 +355,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
@@ -365,7 +365,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: color, size: 16),
-          const SizedBox(width: 6),
+          SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
@@ -384,8 +384,8 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.quiz, color: Colors.white.withOpacity(0.3), size: 64),
-          const SizedBox(height: 16),
+          Icon(Icons.quiz, color: AppColors.getMutedTextColor(context), size: 64),
+          SizedBox(height: 16),
           Text(
             'لا توجد أسئلة',
             style: TextStyle(
@@ -394,7 +394,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
               fontWeight: FontWeight.normal,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'اضغط على الزر أدناه لإضافة سؤال',
             style: TextStyle(
@@ -424,16 +424,16 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('حذف السؤال'),
-        content: const Text('هل أنت متأكد من حذف هذا السؤال؟'),
+        title: Text('حذف السؤال'),
+        content: Text('هل أنت متأكد من حذف هذا السؤال؟'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child: Text('إلغاء'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text('حذف', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -445,7 +445,7 @@ class _ManageQuestionsScreenState extends State<ManageQuestionsScreen> {
       await _db.deleteQuestion(questionId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('تم حذف السؤال'),
             backgroundColor: Colors.green,
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:ui';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -14,7 +15,7 @@ class VerticalTipPlayer extends StatefulWidget {
   final bool isVisible;
   final bool showCloseButton;
 
-  const VerticalTipPlayer({
+  VerticalTipPlayer({
     super.key,
     required this.tips,
     this.initialIndex = 0,
@@ -86,14 +87,14 @@ class _VerticalTipPlayerState extends State<VerticalTipPlayer> {
                     if (!mounted) return;
                     if (_currentIndex < widget.tips.length - 1) {
                       _pageController.nextPage(
-                        duration: const Duration(milliseconds: 400),
+                        duration: Duration(milliseconds: 400),
                         curve: Curves.easeInOut,
                       );
                     } else {
                       // Loop back to the first video
                       _pageController.animateToPage(
                         0,
-                        duration: const Duration(milliseconds: 600),
+                        duration: Duration(milliseconds: 600),
                         curve: Curves.easeInOut,
                       );
                     }
@@ -109,12 +110,12 @@ class _VerticalTipPlayerState extends State<VerticalTipPlayer> {
                 left: 16,
                 child: IconButton(
                   icon: Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: Colors.black.withOpacity(0.3),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.close, color: Colors.white),
+                    child: Icon(Icons.close, color: AppColors.getTextColor(context)),
                   ),
                   onPressed: () {
                     if (Navigator.canPop(context)) {
@@ -136,7 +137,7 @@ class TipPlayerItem extends StatefulWidget {
   final bool isVisible;
   final VoidCallback onVideoEnded;
 
-  const TipPlayerItem({
+  TipPlayerItem({
     super.key,
     required this.tip,
     required this.isActive,
@@ -326,10 +327,10 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
                         ),
                   )
                 else if (!_hasLoadError)
-                  const Center(child: CircularProgressIndicator(color: Colors.white)),
+                  Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context))),
 
                 if (_hasLoadError)
-                  const Center(child: Text('Error loading video', style: TextStyle(color: Colors.white))),
+                  Center(child: Text('Error loading video', style: TextStyle(color: AppColors.getTextColor(context)))),
 
                 // Info Overlay
                 Positioned(
@@ -341,20 +342,20 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
                     children: [
                       Text(
                         widget.tip.category,
-                        style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12, fontFamily: 'Cairo'),
+                        style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 12, fontFamily: 'Cairo'),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         widget.tip.title,
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                        style: TextStyle(color: AppColors.getTextColor(context), fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
                       ),
                       if (widget.tip.description.isNotEmpty) ...[
-                        const SizedBox(height: 8),
+                        SizedBox(height: 8),
                         Text(
                           widget.tip.description,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: Colors.white70, fontSize: 14, fontFamily: 'Cairo'),
+                          style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 14, fontFamily: 'Cairo'),
                         ),
                       ],
                     ],
@@ -369,14 +370,14 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       _buildAction(Icons.reply, '', () {}), // Share
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       _buildAction(
                         _videoController?.value.volume == 0 ? Icons.volume_off : Icons.volume_up, 
                         '', 
                         _toggleMute
                       ),
                       if (widget.tip.linkedCourse != null) ...[
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         _buildAction(
                           Icons.computer,
                           '',
@@ -415,17 +416,17 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.black.withOpacity(0.3),
               shape: BoxShape.circle,
               border: Border.all(color: Colors.white, width: 1.5),
             ),
-            child: Icon(icon, color: Colors.white, size: 24),
+            child: Icon(icon, color: AppColors.getTextColor(context), size: 24),
           ),
           if (label.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(label, style: const TextStyle(color: Colors.white, fontSize: 10, fontFamily: 'Cairo')),
+            SizedBox(height: 4),
+            Text(label, style: TextStyle(color: AppColors.getTextColor(context), fontSize: 10, fontFamily: 'Cairo')),
           ],
         ],
       ),

@@ -10,7 +10,7 @@ class SettingsService {
   static const String _keyNotifications = 'notifications_enabled';
   static const String _keyGeminiApiKey = 'gemini_api_key';
 
-  late SharedPreferences _prefs;
+  SharedPreferences? _prefs;
   late FlutterSecureStorage _secureStorage;
 
   Future<void> init() async {
@@ -20,21 +20,32 @@ class SettingsService {
 
   // Language
   String getLanguage() {
-    return _prefs.getString(_keyLanguage) ?? 'ar';
+    final prefs = _prefs;
+    if (prefs == null) return 'ar';
+    return prefs.getString(_keyLanguage) ?? 'ar';
   }
 
   Future<void> setLanguage(String lang) async {
-    await _prefs.setString(_keyLanguage, lang);
+    final prefs = _prefs;
+    if (prefs == null) return;
+    await prefs.setString(_keyLanguage, lang);
   }
 
   // Notifications
   bool getNotificationsEnabled() {
-    return _prefs.getBool(_keyNotifications) ?? true;
+    final prefs = _prefs;
+    if (prefs == null) return true;
+    return prefs.getBool(_keyNotifications) ?? true;
   }
 
   Future<void> setNotificationsEnabled(bool enabled) async {
-    await _prefs.setBool(_keyNotifications, enabled);
+    final prefs = _prefs;
+    if (prefs == null) return;
+    await prefs.setBool(_keyNotifications, enabled);
   }
+
+
+
 
 
   

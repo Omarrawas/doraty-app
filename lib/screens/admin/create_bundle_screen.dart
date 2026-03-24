@@ -9,7 +9,7 @@ import '../../core/services/image_upload_service.dart';
 
 class CreateBundleScreen extends StatefulWidget {
   final Bundle? bundle;
-  const CreateBundleScreen({super.key, this.bundle});
+  CreateBundleScreen({super.key, this.bundle});
 
   @override
   State<CreateBundleScreen> createState() => _CreateBundleScreenState();
@@ -71,7 +71,7 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedCourseIds.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('الرجاء اختيار دورة واحدة على الأقل')),
+        SnackBar(content: Text('الرجاء اختيار دورة واحدة على الأقل')),
       );
       return;
     }
@@ -139,7 +139,7 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
 
       if (mounted && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم رفع الصورة بنجاح')),
+          SnackBar(content: Text('تم رفع الصورة بنجاح')),
         );
       }
     } catch (e) {
@@ -162,39 +162,39 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
         actions: [
           if (!_isLoading)
             IconButton(
-              icon: _isSaving ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2) : const Icon(Icons.check),
+              icon: _isSaving ? CircularProgressIndicator(color: AppColors.getTextColor(context), strokeWidth: 2) : Icon(Icons.check),
               onPressed: _isSaving ? null : _saveBundle,
             ),
         ],
       ),
       body: DynamicGradientBackground(
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildTextField(_titleController, 'عنوان الباقة', 'مثال: باقة الأمان المالي'),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       _buildTextField(_descriptionController, 'وصف الباقة', 'اكتب وصفاً مختصراً لمحتوى الباقة', maxLines: 3),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Row(
                         children: [
                           Expanded(child: _buildTextField(_priceController, 'السعر', '0.0', keyboardType: TextInputType.number)),
-                          const SizedBox(width: 16),
+                          SizedBox(width: 16),
                           Expanded(child: _buildTextField(_discountController, 'نسبة الخصم (%)', '0', keyboardType: TextInputType.number)),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       // Image Link and Upload Button together
                       if (_imageUrlController.text.isNotEmpty)
                         Container(
                           height: 150,
                           width: double.infinity,
-                          margin: const EdgeInsets.only(bottom: 16),
+                          margin: EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.white10),
@@ -206,7 +206,7 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
                           child: Align(
                             alignment: Alignment.topRight,
                             child: IconButton(
-                              icon: const Icon(Icons.close, color: Colors.white),
+                              icon: Icon(Icons.close, color: AppColors.getTextColor(context)),
                               onPressed: () => setState(() => _imageUrlController.clear()),
                               style: IconButton.styleFrom(backgroundColor: Colors.black45),
                             ),
@@ -217,23 +217,23 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
                         'رابط الصورة', 
                         'رابط الصورة المباشر للباقة',
                         suffix: _isUploadingImage 
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                           : IconButton(
-                              icon: const Icon(Icons.image_search_rounded, color: AppColors.primaryPurple),
+                              icon: Icon(Icons.image_search_rounded, color: AppColors.primaryPurple),
                               onPressed: _pickAndUploadBundleImage,
                               tooltip: 'رفع صورة من المعرض',
                             ),
                       ),
-                      const SizedBox(height: 32),
-                      const Text(
+                      SizedBox(height: 32),
+                      Text(
                         'اختر الدورات المشمولة:',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       Container(
                         height: 400,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
+                          color: AppColors.getMutedTextColor(context),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: Colors.white10),
                         ),
@@ -243,8 +243,8 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
                             final course = _allCourses[index];
                             final isSelected = _selectedCourseIds.contains(course.id);
                             return CheckboxListTile(
-                              title: Text(course.title, style: const TextStyle(color: Colors.white)),
-                              subtitle: Text(course.instructorName, style: TextStyle(color: Colors.white.withOpacity(0.6))),
+                              title: Text(course.title, style: TextStyle(color: AppColors.getTextColor(context))),
+                              subtitle: Text(course.instructorName, style: TextStyle(color: AppColors.getTextColor(context, secondary: true))),
                               value: isSelected,
                               activeColor: AppColors.primaryPurple,
                               onChanged: (val) {
@@ -260,7 +260,7 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -277,12 +277,12 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
       onChanged: (val) {
         if (label == 'رابط الصورة') setState(() {});
       },
-      style: const TextStyle(color: Colors.white),
+      style: TextStyle(color: AppColors.getTextColor(context)),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        labelStyle: const TextStyle(color: Colors.white70),
-        hintStyle: const TextStyle(color: Colors.white30),
+        labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
+        hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.30)),
         filled: true,
         fillColor: Colors.white10,
         suffixIcon: suffix,

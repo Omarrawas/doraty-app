@@ -4,7 +4,7 @@ import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
-  const NotificationSettingsScreen({super.key});
+  NotificationSettingsScreen({super.key});
 
   @override
   State<NotificationSettingsScreen> createState() =>
@@ -67,7 +67,7 @@ class _NotificationSettingsScreenState
           _preferences[key] = !value;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('فشل تحديث الإعدادات')),
+          SnackBar(content: Text('فشل تحديث الإعدادات')),
         );
       }
     }
@@ -78,21 +78,21 @@ class _NotificationSettingsScreenState
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'إعدادات الإشعارات',
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: Colors.black),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(20),
               children: [
                 _buildSectionHeader('إشعارات التطبيق'),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 _buildSwitchTile(
                   'تعليمي',
                   'تذكيرات بالدروس، الامتحانات، والواجبات',
@@ -111,9 +111,9 @@ class _NotificationSettingsScreenState
                   'push_marketing',
                   Icons.local_offer_outlined,
                 ),
-                const Divider(height: 40),
+                Divider(height: 40),
                 _buildSectionHeader('البريد الإلكتروني'),
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 _buildSwitchTile(
                   'نشرة بريدية',
                   'ملخص أسبوعي وعروض حصرية',
@@ -128,7 +128,7 @@ class _NotificationSettingsScreenState
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.bold,
         color: AppColors.primaryPurple,
@@ -156,10 +156,10 @@ class _NotificationSettingsScreenState
         title: Row(
           children: [
             Icon(icon, size: 20, color: Colors.grey.shade700),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 15,
               ),

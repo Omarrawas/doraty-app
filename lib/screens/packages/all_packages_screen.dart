@@ -9,7 +9,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/services/database_service.dart';
 
 class AllPackagesScreen extends StatefulWidget {
-  const AllPackagesScreen({super.key});
+  AllPackagesScreen({super.key});
 
   @override
   State<AllPackagesScreen> createState() => _AllPackagesScreenState();
@@ -63,36 +63,36 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
             children: [
               // Search & Filter Bar
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                padding: EdgeInsets.fromLTRB(20, 10, 20, 20),
                 child: Row(
                   children: [
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: EdgeInsets.symmetric(horizontal: 16),
                         decoration: BoxDecoration(
                           color: AppColors.getGlassColor(context, opacity: 0.1),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: Colors.white10),
                         ),
                         child: TextField(
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: AppColors.getTextColor(context)),
                           decoration: InputDecoration(
                             hintText: '${t('searching')}...',
-                            hintStyle: const TextStyle(color: Colors.white54, fontSize: 14),
+                            hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54), fontSize: 14),
                             border: InputBorder.none,
-                            icon: const Icon(Icons.search, color: Colors.white54),
+                            icon: Icon(Icons.search, color: AppColors.getTextColor(context).withOpacity(0.54)),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.primaryPurple,
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      child: const Icon(Icons.filter_list, color: Colors.white),
+                      child: Icon(Icons.filter_list, color: AppColors.getTextColor(context)),
                     ),
                   ],
                 ),
@@ -101,11 +101,11 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
               // Packages List
               Expanded(
                 child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? Center(child: CircularProgressIndicator())
                     : _bundles.isEmpty
-                        ? Center(child: Text(t('no_courses_found'), style: const TextStyle(color: Colors.white54)))
+                        ? Center(child: Text(t('no_courses_found'), style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54))))
                         : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             itemCount: _bundles.length,
                             itemBuilder: (context, index) {
                               return BundleCard(

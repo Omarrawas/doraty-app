@@ -8,7 +8,7 @@ import '../../core/utils/error_utils.dart';
 import '../courses/course_loader_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key});
+  NotificationsScreen({super.key});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -75,16 +75,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('مسح الكل'),
-        content: const Text('هل أنت متأكد من مسح جميع الإشعارات؟'),
+        title: Text('مسح الكل'),
+        content: Text('هل أنت متأكد من مسح جميع الإشعارات؟'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child: Text('إلغاء'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('مسح', style: TextStyle(color: Colors.red)),
+            child: Text('مسح', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -101,7 +101,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم مسح جميع الإشعارات')),
+          SnackBar(content: Text('تم مسح جميع الإشعارات')),
         );
       }
     } catch (e) {
@@ -122,7 +122,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -131,13 +131,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               // Header
               _buildHeader(unreadCount),
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Notifications List
               Expanded(
                 child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white))
+                    ? Center(
+                        child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                     : _notifications.isEmpty
                         ? _buildEmptyState()
                         : RefreshIndicator(
@@ -156,17 +156,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final grouped = _groupNotifications();
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       itemCount: grouped.length,
       itemBuilder: (context, index) {
         final item = grouped[index];
         if (item is String) {
           return Padding(
-            padding: const EdgeInsets.only(top: 16, bottom: 8),
+            padding: EdgeInsets.only(top: 16, bottom: 8),
             child: Text(
               item,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
+                color: AppColors.getTextColor(context, secondary: true),
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
               ),
@@ -174,11 +174,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           );
         } else if (item is NotificationModel) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(bottom: 12),
             child: _buildNotificationCard(item),
           );
         }
-        return const SizedBox.shrink();
+        return SizedBox.shrink();
       },
     );
   }
@@ -192,7 +192,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     for (var n in _notifications) {
       if (_isSameDay(n.time, now)) {
         today.add(n);
-      } else if (_isSameDay(n.time, now.subtract(const Duration(days: 1)))) {
+      } else if (_isSameDay(n.time, now.subtract(Duration(days: 1)))) {
         yesterday.add(n);
       } else {
         older.add(n);
@@ -223,7 +223,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildHeader(int unreadCount) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -232,31 +232,31 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'الإشعارات',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
                 if (unreadCount > 0)
@@ -264,7 +264,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     '$unreadCount غير مقروء',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.white.withOpacity(0.8),
+                      color: AppColors.getTextColor(context, secondary: true),
                     ),
                   ),
               ],
@@ -279,23 +279,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: AppColors.getMutedTextColor(context),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: AppColors.getMutedTextColor(context),
                           width: 1,
                         ),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.delete_sweep_outlined,
-                            color: Colors.white),
+                        icon: Icon(Icons.delete_sweep_outlined,
+                            color: AppColors.getTextColor(context)),
                         tooltip: 'مسح الكل',
                         onPressed: _clearAllNotifications,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
               ],
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -303,22 +303,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.getMutedTextColor(context),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.3),
+                        color: AppColors.getMutedTextColor(context),
                         width: 1,
                       ),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.settings_outlined,
-                          color: Colors.white),
+                      icon: Icon(Icons.settings_outlined,
+                          color: AppColors.getTextColor(context)),
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                const NotificationSettingsScreen(),
+                                NotificationSettingsScreen(),
                           ),
                         );
                       },
@@ -326,7 +326,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               if (unreadCount > 0)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
@@ -334,15 +334,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: AppColors.getMutedTextColor(context),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
+                          color: AppColors.getMutedTextColor(context),
                           width: 1,
                         ),
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.done_all, color: Colors.white),
+                        icon: Icon(Icons.done_all, color: AppColors.getTextColor(context)),
                         tooltip: 'قراءة الكل',
                         onPressed: _markAllAsRead,
                       ),
@@ -378,7 +378,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -391,7 +391,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 _handleNotificationTap(notification);
               },
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 child: Row(
                   children: [
                     // Icon
@@ -405,12 +405,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                       child: Icon(
                         _getNotificationIcon(notification.category),
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                         size: 24,
                       ),
                     ),
 
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
 
                     // Content
                     Expanded(
@@ -427,7 +427,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     fontWeight: notification.isRead
                                         ? FontWeight.w600
                                         : FontWeight.bold,
-                                    color: Colors.white,
+                                    color: AppColors.getTextColor(context),
                                   ),
                                 ),
                               ),
@@ -435,27 +435,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 Container(
                                   width: 8,
                                   height: 8,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: Colors.red,
                                     shape: BoxShape.circle,
                                   ),
                                 ),
                             ],
                           ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6),
                           Text(
                             notification.message,
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.white.withOpacity(0.8),
+                              color: AppColors.getTextColor(context, secondary: true),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          SizedBox(height: 8),
                           Text(
                             _formatTime(notification.time),
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withOpacity(0.6),
+                              color: AppColors.getTextColor(context, secondary: true),
                             ),
                           ),
                         ],
@@ -478,8 +478,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
-            margin: const EdgeInsets.all(20),
-            padding: const EdgeInsets.all(40),
+            margin: EdgeInsets.all(20),
+            padding: EdgeInsets.all(40),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -491,7 +491,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: AppColors.getMutedTextColor(context),
                 width: 1.5,
               ),
             ),
@@ -501,24 +501,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Icon(
                   Icons.notifications_off_outlined,
                   size: 80,
-                  color: Colors.white.withOpacity(0.7),
+                  color: AppColors.getTextColor(context, secondary: true),
                 ),
-                const SizedBox(height: 20),
-                const Text(
+                SizedBox(height: 20),
+                Text(
                   'لا توجد إشعارات',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Text(
                   'سيتم إعلامك بأي تحديثات جديدة هنا',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    color: Colors.white.withOpacity(0.8),
+                    color: AppColors.getTextColor(context, secondary: true),
                   ),
                 ),
               ],

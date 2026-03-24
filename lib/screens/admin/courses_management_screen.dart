@@ -16,7 +16,7 @@ import '../../core/localization/locale_provider.dart';
 class CoursesManagementScreen extends StatefulWidget {
   final String? instructorId; // Added
 
-  const CoursesManagementScreen({super.key, this.instructorId});
+  CoursesManagementScreen({super.key, this.instructorId});
 
   @override
   State<CoursesManagementScreen> createState() =>
@@ -127,12 +127,12 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                               displacement: 20,
                               color: AppColors.primaryPurple,
                               child: ListView.builder(
-                                padding: const EdgeInsets.symmetric(
+                                padding: EdgeInsets.symmetric(
                                     horizontal: 20, vertical: 10),
                                 itemCount: _filteredCourses.length,
                                 itemBuilder: (context, index) {
                                   return Padding(
-                                    padding: const EdgeInsets.only(bottom: 16),
+                                    padding: EdgeInsets.only(bottom: 16),
                                     child: _buildCourseCard(
                                         context, _filteredCourses[index]),
                                   );
@@ -159,9 +159,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
           backgroundColor: AppColors.primaryPurple,
           foregroundColor: Colors.white,
           elevation: 8,
-          icon: const Icon(Icons.add),
+          icon: Icon(Icons.add),
           label: Text(_t('create_new_course'),
-              style: const TextStyle(fontWeight: FontWeight.normal)),
+              style: TextStyle(fontWeight: FontWeight.normal)),
         ),
       ),
     );
@@ -169,7 +169,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -191,7 +191,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,7 +224,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
 
   Widget _buildSearchBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 0),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
@@ -259,13 +259,13 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
 
   Widget _buildFilterTabs(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Row(
         children: [
           _buildFilterTab(context, 'الكل', 'all'),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           _buildFilterTab(context, 'منشور', 'published'),
-          const SizedBox(width: 10),
+          SizedBox(width: 10),
           _buildFilterTab(context, 'مسودة', 'draft'),
         ],
       ),
@@ -284,7 +284,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primaryPurple.withOpacity(0.8)
@@ -300,7 +300,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                         BoxShadow(
                           color: AppColors.primaryPurple.withOpacity(0.3),
                           blurRadius: 8,
-                          offset: const Offset(0, 2),
+                          offset: Offset(0, 2),
                         )
                       ]
                     : null,
@@ -340,10 +340,10 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             ),
           ),
           child: ExpansionTile(
-            tilePadding: const EdgeInsets.all(16),
-            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            shape: const RoundedRectangleBorder(side: BorderSide.none),
-            collapsedShape: const RoundedRectangleBorder(side: BorderSide.none),
+            tilePadding: EdgeInsets.all(16),
+            childrenPadding: EdgeInsets.fromLTRB(16, 0, 16, 16),
+            shape: RoundedRectangleBorder(side: BorderSide.none),
+            collapsedShape: RoundedRectangleBorder(side: BorderSide.none),
             title: Row(
               children: [
                 Expanded(
@@ -358,12 +358,12 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                           color: AppColors.getTextColor(context),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      SizedBox(height: 6),
                       Row(
                         children: [
-                          const Icon(Icons.category,
+                          Icon(Icons.category,
                               size: 14, color: AppColors.primaryBlue),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4),
                           Text(
                             course['category'] ?? _t('general_specialization'),
                             style: TextStyle(
@@ -379,9 +379,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                 if (course['discount_percentage'] != null &&
                     (course['discount_percentage'] as num) > 0)
                   Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    margin: EdgeInsets.symmetric(horizontal: 8),
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.redAccent.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -391,7 +391,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                     ),
                     child: Text(
                       '-${course['discount_percentage']}%',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.redAccent,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -400,7 +400,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                   ),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color:
                         (isPublished ? Colors.greenAccent : Colors.orangeAccent)
@@ -427,7 +427,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
               ],
             ),
             subtitle: Padding(
-              padding: const EdgeInsets.only(top: 12),
+              padding: EdgeInsets.only(top: 12),
               child: Row(
                 children: [
                   CircleAvatar(
@@ -436,7 +436,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                     child:
                         Icon(Icons.person, size: 14, color: AppColors.primaryPurple),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       course['teacher'] != null
@@ -454,8 +454,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
               ),
             ),
             children: [
-              const Divider(color: Colors.white10),
-              const SizedBox(height: 12),
+              Divider(color: AppColors.getTextColor(context).withOpacity(0.10)),
+              SizedBox(height: 12),
               Text(
                 course['description'] ?? '',
                 maxLines: 3,
@@ -466,7 +466,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                   height: 1.4,
                 ),
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
@@ -488,7 +488,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       color: Colors.blueAccent,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Expanded(
                     child: _buildActionBtn(
                       icon: Icons.quiz_rounded,
@@ -510,7 +510,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
@@ -532,7 +532,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       color: Colors.orangeAccent,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.blue.withOpacity(0.25),
@@ -545,7 +545,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       onPressed: () => _showStatistics(course),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  SizedBox(width: 10),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.red.withOpacity(0.25),
@@ -577,7 +577,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        padding: EdgeInsets.symmetric(vertical: 10, horizontal: 12),
         decoration: BoxDecoration(
           color: color.withOpacity(0.25),
           borderRadius: BorderRadius.circular(12),
@@ -587,7 +587,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 18, color: color),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
@@ -605,14 +605,14 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: EdgeInsets.all(40),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(30),
+              padding: EdgeInsets.all(30),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: AppColors.getMutedTextColor(context),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -621,7 +621,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                 color: AppColors.getTextColor(context).withOpacity(0.2),
               ),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24),
             Text(
               _t('no_courses_current'),
               style: TextStyle(
@@ -630,7 +630,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                 fontWeight: FontWeight.normal,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12),
             Text(
               _t('start_adding_first_course'),
               textAlign: TextAlign.center,
@@ -660,7 +660,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               _t('delete'),
-              style: const TextStyle(color: Colors.red),
+              style: TextStyle(color: Colors.red),
             ),
           ),
         ],
@@ -697,7 +697,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
+      builder: (context) => Center(
         child: CircularProgressIndicator(),
       ),
     );
@@ -713,8 +713,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
           builder: (context) => AlertDialog(
             title: Row(
               children: [
-                const Icon(Icons.analytics),
-                const SizedBox(width: 8),
+                Icon(Icons.analytics),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text('${_t('statistics')}: ${course['title']}'),
                 ),
@@ -724,13 +724,13 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildStatRow(_t('subscribers'), '${stats['total_enrollments']}'),
-                const Divider(),
+                Divider(),
                 _buildStatRow(_t('completers'), '${stats['completed_enrollments']}'),
-                const Divider(),
+                Divider(),
                 _buildStatRow(_t('lessons'), '${stats['total_lessons']}'),
-                const Divider(),
+                Divider(),
                 _buildStatRow(_t('average_progress_label'), '${stats['average_progress']}%'),
-                const Divider(),
+                Divider(),
                 _buildStatRow(_t('completion_rate_label'), '${stats['completion_rate']}%'),
               ],
             ),
@@ -757,20 +757,20 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
 
   Widget _buildStatRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               color: AppColors.textSecondary,
             ),
           ),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.normal,
               color: AppColors.textPrimary,

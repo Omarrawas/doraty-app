@@ -7,7 +7,7 @@ class LessonExamScreen extends StatelessWidget {
   final InteractiveElement quizElement;
   final String lessonTitle;
 
-  const LessonExamScreen({
+  LessonExamScreen({
     super.key,
     required this.quizElement,
     required this.lessonTitle,
@@ -22,22 +22,22 @@ class LessonExamScreen extends StatelessWidget {
         elevation: 0,
         title: Text(
           'اختبار: $lessonTitle',
-          style: const TextStyle(color: Colors.white, fontSize: 18),
+          style: TextStyle(color: AppColors.getTextColor(context), fontSize: 18),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(20),
             child: Column(
               children: [
                 QuizWidget(

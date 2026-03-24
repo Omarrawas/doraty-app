@@ -15,7 +15,7 @@ import '../../core/providers/navigation_provider.dart';
 class ExploreScreen extends StatefulWidget {
   final String? initialFilter;
   final bool showBackButton;
-  const ExploreScreen(
+  ExploreScreen(
       {super.key, this.initialFilter, this.showBackButton = false});
 
   @override
@@ -296,11 +296,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
               radius: const Radius.circular(10),
               interactive: true,
               child: CustomScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
+                physics: AlwaysScrollableScrollPhysics(),
                 slivers: [
                   // Header
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                         horizontal: 20, vertical: 24),
                     sliver: SliverToBoxAdapter(
                       child: Row(
@@ -308,7 +308,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         children: [
                           if (widget.showBackButton)
                             Container(
-                              margin: const EdgeInsets.only(left: 8, right: 8),
+                              margin: EdgeInsets.only(left: 8, right: 8),
                               decoration: BoxDecoration(
                                 color: subtleSurfaceColor,
                                 borderRadius: BorderRadius.circular(12),
@@ -335,14 +335,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               color: primaryTextColor,
                             ),
                           ),
-                          const Spacer(),
+                          Spacer(),
                           Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: subtleSurfaceColor,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Icon(Icons.auto_awesome,
+                            child: Icon(Icons.auto_awesome,
                                 color: Colors.amber, size: 20),
                           ),
                         ],
@@ -352,7 +352,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
                   // Search Bar
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(horizontal: 20),
                     sliver: SliverToBoxAdapter(
                       child: Column(
                         children: [
@@ -379,13 +379,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                     color: AppColors.getTextColor(context,
                                         secondary: true)),
                                 border: InputBorder.none,
-                                contentPadding: const EdgeInsets.symmetric(
+                                contentPadding: EdgeInsets.symmetric(
                                     horizontal: 16, vertical: 14),
                               ),
                               onChanged: _onSearchChanged,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           Row(
                             children: [
                               Expanded(
@@ -401,7 +401,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               Expanded(
                                 child: _buildDropdown(
                                   _t('level_label'),
@@ -420,7 +420,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                   },
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              SizedBox(width: 8),
                               Expanded(
                                 child: _buildCategoryDropdown(),
                               ),
@@ -431,19 +431,19 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     ),
                   ),
 
-                  const SliverPadding(padding: EdgeInsets.only(bottom: 16)),
+                  SliverPadding(padding: EdgeInsets.only(bottom: 16)),
 
                   if (displayCats.isNotEmpty &&
                       _selectedCategoryId != null) ...[
-                    const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                    SliverToBoxAdapter(child: SizedBox(height: 8)),
                     SliverToBoxAdapter(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: EdgeInsets.symmetric(vertical: 8),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Padding(
-                              padding: const EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                   horizontal: 24, vertical: 8),
                               child: Text(
                                 _categories.any((c) =>
@@ -464,7 +464,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               height: 110,
                               child: ListView.builder(
                                 padding:
-                                    const EdgeInsets.symmetric(horizontal: 20),
+                                    EdgeInsets.symmetric(horizontal: 20),
                                 scrollDirection: Axis.horizontal,
                                 itemCount: _isLoading ? 5 : displayCats.length,
                                 itemBuilder: (context, index) {
@@ -486,11 +486,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                     ),
                   ],
 
-                  const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                  SliverToBoxAdapter(child: SizedBox(height: 24)),
 
                   // Courses Grid
                   SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(horizontal: 20),
                     sliver: _isLoading
                         ? SliverToBoxAdapter(
                             child: _buildShimmerGrid(
@@ -500,16 +500,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                 child: Center(
                                     child: Column(
                                 children: [
-                                  const SizedBox(height: 60),
+                                  SizedBox(height: 60),
                                   Icon(Icons.search_off,
                                       size: 64,
                                       color:
                                           secondaryTextColor.withOpacity(0.5)),
-                                  const SizedBox(height: 16),
+                                  SizedBox(height: 16),
                                   Text(_t('no_courses_in_category'),
                                       style:
                                           TextStyle(color: secondaryTextColor)),
-                                  const SizedBox(height: 16),
+                                  SizedBox(height: 16),
                                   TextButton.icon(
                                     onPressed: () {
                                       setState(() {
@@ -549,7 +549,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               ),
                   ),
 
-                  const SliverToBoxAdapter(
+                  SliverToBoxAdapter(
                       child: SizedBox(height: 100)), // Space for BottomNav
                 ],
               ),
@@ -567,7 +567,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final locale = Provider.of<LocaleProvider>(context).locale;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark
             ? AppColors.darkCardSurface.withOpacity(0.88)
@@ -644,22 +644,22 @@ class _ExploreScreenState extends State<ExploreScreen> {
       highlightColor: Colors.white24,
       child: Container(
         width: 75,
-        margin: const EdgeInsets.only(right: 16),
+        margin: EdgeInsets.only(right: 16),
         child: Column(
           children: [
             Container(
               width: 75,
               height: 75,
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: AppColors.getTextColor(context),
                 shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Container(
               width: 50,
               height: 10,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
           ],
         ),
@@ -670,7 +670,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Widget _buildShimmerGrid(int crossAxisCount, double aspectRatio) {
     return GridView.builder(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
         childAspectRatio: aspectRatio,
@@ -694,7 +694,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Widget _buildDropdown(String label, String value, List<String> options,
       ValueChanged<String?> onChanged) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: Theme.of(context).brightness == Brightness.dark
             ? AppColors.darkCardSurface.withOpacity(0.88)

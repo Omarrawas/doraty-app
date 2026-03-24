@@ -18,7 +18,7 @@ class AddQuestionScreen extends StatefulWidget {
   final Map<String, dynamic>? questionData;
   final int orderIndex;
 
-  const AddQuestionScreen({
+  AddQuestionScreen({
     super.key,
     required this.examId,
     this.questionId,
@@ -106,7 +106,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                 _buildHeader(context),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(
+                    padding: EdgeInsets.fromLTRB(
                         20, 20, 20, 80), // Extra padding for toolbar
                     child: Form(
                       key: _formKey,
@@ -118,10 +118,10 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                             child: Column(
                               children: [
                                 _buildQuestionTypeSelector(),
-                                const SizedBox(height: 16),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 Padding(
-                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  padding: EdgeInsets.only(bottom: 8.0),
                                   child: Text('نص السؤال',
                                       style: TextStyle(
                                           color:
@@ -136,17 +136,17 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                                   },
                                   placeholder: 'اكتب السؤال هنا...',
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: 16),
                           if (_questionType != 'essay') ...[
                             _buildGlassContainer(
                               title: 'الخيارات والإجابة',
                               child: _buildOptionsSection(),
                             ),
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
                           ],
                           _buildGlassContainer(
                             title: 'معلومات إضافية',
@@ -171,9 +171,9 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                                     return null;
                                   },
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: 16),
                                 Padding(
-                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  padding: EdgeInsets.only(bottom: 8.0),
                                   child: Align(
                                     alignment: Alignment.centerRight,
                                     child: Text('الشرح (اختياري)',
@@ -195,9 +195,9 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 12), // Reduced from 32
+                          SizedBox(height: 12), // Reduced from 32
                           _buildSubmitButton(),
-                          const SizedBox(height: 40),
+                          SizedBox(height: 40),
                         ],
                       ),
                     ),
@@ -213,7 +213,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -229,13 +229,13 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               _isEditing ? 'تعديل السؤال' : 'إضافة سؤال جديد',
@@ -269,7 +269,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
               width: 1.5,
             ),
           ),
-          padding: const EdgeInsets.symmetric(
+          padding: EdgeInsets.symmetric(
               horizontal: 16, vertical: 12), // Reduced padding
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -282,7 +282,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                   color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               child,
             ],
           ),
@@ -299,9 +299,9 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      prefixIcon: Icon(icon, color: Colors.white70),
-      labelStyle: const TextStyle(color: Colors.white70),
-      hintStyle: const TextStyle(color: Colors.white38),
+      prefixIcon: Icon(icon, color: AppColors.getTextColor(context).withOpacity(0.70)),
+      labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
+      hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.38)),
       filled: true,
       fillColor: Colors.white.withOpacity(0.05),
       border: OutlineInputBorder(
@@ -314,7 +314,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+        borderSide: BorderSide(color: Colors.blueAccent, width: 2),
       ),
     );
   }
@@ -325,14 +325,14 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
       height: 56,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [AppColors.primaryPurple, Colors.blueAccent],
         ),
         boxShadow: [
           BoxShadow(
             color: AppColors.primaryPurple.withOpacity(0.3),
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -345,19 +345,19 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         icon: _isLoading
-            ? const SizedBox(
+            ? SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 3,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               )
-            : const Icon(Icons.check, color: Colors.white),
+            : Icon(Icons.check, color: AppColors.getTextColor(context)),
         label: Text(
           _isEditing ? 'حفظ التعديلات' : 'إضافة السؤال',
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: AppColors.getTextColor(context),
             fontSize: 18,
             fontWeight: FontWeight.normal,
           ),
@@ -378,7 +378,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
             color: AppColors.getTextColor(context),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -388,7 +388,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                 Icons.radio_button_checked,
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
               child: _buildTypeButton(
                 'صح/خطأ',
@@ -396,7 +396,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                 Icons.check_circle,
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             Expanded(
               child: _buildTypeButton(
                 'مقالي',
@@ -425,7 +425,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8), // Reduced from 12
+        padding: EdgeInsets.symmetric(vertical: 8), // Reduced from 12
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryPurple
@@ -442,7 +442,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
             Icon(icon,
                 color: isSelected ? Colors.white : AppColors.textSecondary,
                 size: 24),
-            const SizedBox(height: 4),
+            SizedBox(height: 4),
             Text(
               label,
               textAlign: TextAlign.center,
@@ -481,17 +481,17 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                     _showOptionPreviews.add(false);
                   });
                 },
-                icon: const Icon(Icons.add),
-                label: const Text('إضافة خيار'),
+                icon: Icon(Icons.add),
+                label: Text('إضافة خيار'),
               ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         ..._optionHtmls.asMap().entries.map((entry) {
           final index = entry.key;
           final optionHtml = entry.value;
           return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
+            padding: EdgeInsets.only(bottom: 12),
             child: _buildOptionField(index, optionHtml),
           );
         }),
@@ -561,7 +561,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                 if (_questionType == 'multiple_choice' &&
                     _optionHtmls.length > 2)
                   IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
+                    icon: Icon(Icons.delete, color: Colors.red),
                     onPressed: () {
                       setState(() {
                         _optionHtmls.removeAt(index);
@@ -581,17 +581,17 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
         ),
         if (_showOptionPreviews[index] && optionHtml.isNotEmpty)
           Container(
-            margin: const EdgeInsets.only(top: 8),
-            padding: const EdgeInsets.all(12),
+            margin: EdgeInsets.only(top: 8),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
             ),
             width: double.infinity,
             child: TexViewWidget(
               optionHtml,
-              style: const TextStyle(color: Colors.black87, fontSize: 16),
+              style: TextStyle(color: Colors.black87, fontSize: 16),
             ),
           ),
       ],
@@ -605,7 +605,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
     if (_questionType != 'essay' && _optionHtmls.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('الرجاء إضافة خيارات للسؤال'),
             backgroundColor: Colors.red,
           ),

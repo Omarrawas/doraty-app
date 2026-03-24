@@ -11,7 +11,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/safe_parser.dart';
 
 class NotificationsManagementScreen extends StatefulWidget {
-  const NotificationsManagementScreen({super.key});
+  NotificationsManagementScreen({super.key});
 
   @override
   State<NotificationsManagementScreen> createState() =>
@@ -110,7 +110,7 @@ class _NotificationsManagementScreenState
 
     if (_targetType != 'all' && _selectedTargetId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار المستهدف (كورس أو مستخدم)')),
+        SnackBar(content: Text('يرجى اختيار المستهدف (كورس أو مستخدم)')),
       );
       return;
     }
@@ -186,12 +186,12 @@ class _NotificationsManagementScreenState
                 _buildHeader(context),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildComposeSection(),
-                        const SizedBox(height: 32),
+                        SizedBox(height: 32),
                         Text(
                           'سجل الإشعارات المرسلة',
                           style: TextStyle(
@@ -200,9 +200,9 @@ class _NotificationsManagementScreenState
                             color: AppColors.getTextColor(context),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         _buildHistoryList(),
-                        const SizedBox(height: 40),
+                        SizedBox(height: 40),
                       ],
                     ),
                   ),
@@ -217,7 +217,7 @@ class _NotificationsManagementScreenState
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -233,13 +233,13 @@ class _NotificationsManagementScreenState
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               'إدارة الإشعارات',
@@ -261,7 +261,7 @@ class _NotificationsManagementScreenState
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: AppColors.getGlassColor(context, opacity: 0.15),
             borderRadius: BorderRadius.circular(20),
@@ -282,13 +282,13 @@ class _NotificationsManagementScreenState
                     color: AppColors.getTextColor(context),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Target Type Dropdown
                 _buildDropdown(
                   label: 'إرسال إلى',
                   value: _targetType,
-                  items: const [
+                  items: [
                     DropdownMenuItem(
                         value: 'all', child: Text('جميع المستخدمين')),
                     DropdownMenuItem(
@@ -302,7 +302,7 @@ class _NotificationsManagementScreenState
                     });
                   },
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Conditional Selection Fields
                 if (_targetType == 'course')
@@ -333,8 +333,8 @@ class _NotificationsManagementScreenState
                           suffix: _isLoadingData
                               ? Transform.scale(
                                   scale: 0.5,
-                                  child: const CircularProgressIndicator(
-                                      color: Colors.white))
+                                  child: CircularProgressIndicator(
+                                      color: AppColors.getTextColor(context)))
                               : null,
                         ),
                         onChanged: (val) {
@@ -343,14 +343,14 @@ class _NotificationsManagementScreenState
                       ),
                       if (_users.isNotEmpty)
                         Container(
-                          margin: const EdgeInsets.only(top: 8),
+                          margin: EdgeInsets.only(top: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
+                            color: AppColors.getMutedTextColor(context),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
-                                color: Colors.white.withOpacity(0.1)),
+                                color: AppColors.getMutedTextColor(context)),
                           ),
-                          constraints: const BoxConstraints(maxHeight: 150),
+                          constraints: BoxConstraints(maxHeight: 150),
                           child: ListView.builder(
                             shrinkWrap: true,
                             itemCount: _users.length,
@@ -377,7 +377,7 @@ class _NotificationsManagementScreenState
                                   });
                                 },
                                 trailing: isSelected
-                                    ? const Icon(Icons.check,
+                                    ? Icon(Icons.check,
                                         color: Colors.greenAccent)
                                     : null,
                               );
@@ -387,7 +387,7 @@ class _NotificationsManagementScreenState
                     ],
                   ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 TextFormField(
                   style: TextStyle(color: AppColors.getTextColor(context)),
                   decoration: _inputDecoration(
@@ -396,7 +396,7 @@ class _NotificationsManagementScreenState
                       val == null || val.isEmpty ? 'مطلوب' : null,
                   onSaved: (val) => _title = val!,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
                 TextFormField(
                   style: TextStyle(color: AppColors.getTextColor(context)),
                   decoration: _inputDecoration(
@@ -406,7 +406,7 @@ class _NotificationsManagementScreenState
                       val == null || val.isEmpty ? 'مطلوب' : null,
                   onSaved: (val) => _body = val!,
                 ),
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
 
                 // Send Button
                 _buildSubmitButton(),
@@ -442,7 +442,7 @@ class _NotificationsManagementScreenState
       labelText: label,
       labelStyle:
           TextStyle(color: AppColors.getTextColor(context).withOpacity(0.6)),
-      prefixIcon: Icon(icon, color: Colors.white70),
+      prefixIcon: Icon(icon, color: AppColors.getTextColor(context).withOpacity(0.70)),
       suffixIcon: suffix,
       filled: true,
       fillColor: Colors.white.withOpacity(0.05),
@@ -453,7 +453,7 @@ class _NotificationsManagementScreenState
           borderSide: BorderSide(color: Colors.white.withOpacity(0.1))),
       focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.blueAccent, width: 2)),
+          borderSide: BorderSide(color: Colors.blueAccent, width: 2)),
     );
   }
 
@@ -461,13 +461,13 @@ class _NotificationsManagementScreenState
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
             colors: [AppColors.primaryPurple, Colors.blueAccent]),
         boxShadow: [
           BoxShadow(
             color: AppColors.primaryPurple.withOpacity(0.3),
             blurRadius: 12,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -476,24 +476,24 @@ class _NotificationsManagementScreenState
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: EdgeInsets.symmetric(vertical: 16),
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: _isSending
-            ? const SizedBox(
+            ? SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2))
-            : const Row(
+                    color: AppColors.getTextColor(context), strokeWidth: 2))
+            : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.send, color: Colors.white),
+                  Icon(Icons.send, color: AppColors.getTextColor(context)),
                   SizedBox(width: 8),
                   Text('إرسال الإشعار',
                       style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                           fontSize: 16,
                           fontWeight: FontWeight.normal)),
                 ],
@@ -504,8 +504,8 @@ class _NotificationsManagementScreenState
 
   Widget _buildHistoryList() {
     if (_isLoadingHistory) {
-      return const Center(
-          child: CircularProgressIndicator(color: Colors.white));
+      return Center(
+          child: CircularProgressIndicator(color: AppColors.getTextColor(context)));
     }
     if (_history.isEmpty) {
       return Center(
@@ -516,12 +516,12 @@ class _NotificationsManagementScreenState
     }
     return ListView.builder(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       itemCount: _history.length,
       itemBuilder: (context, index) {
         final item = _history[index];
         return Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: EdgeInsets.only(bottom: 12),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: BackdropFilter(
@@ -534,9 +534,9 @@ class _NotificationsManagementScreenState
                       color: AppColors.getGlassColor(context, opacity: 0.2)),
                 ),
                 child: ListTile(
-                  contentPadding: const EdgeInsets.all(16),
+                  contentPadding: EdgeInsets.all(16),
                   leading: Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: _getTypeColor(item['notification_type'])
                           .withOpacity(0.2),
@@ -560,7 +560,7 @@ class _NotificationsManagementScreenState
                   ),
                   trailing: Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: _getTypeColor(item['notification_type'])
                           .withOpacity(0.2),

@@ -12,7 +12,7 @@ class ExamResultScreen extends StatefulWidget {
   final VoidCallback? onFinish;
   final VoidCallback? onNext;
 
-  const ExamResultScreen({
+  ExamResultScreen({
     super.key,
     required this.exam,
     this.userAnswers,
@@ -65,7 +65,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -77,44 +77,44 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
               // Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   child: Column(
                     children: [
                       // Result Card
                       _buildResultCard(percentage, isPassed),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       // Statistics
                       _buildStatistics(correctAnswers),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       // Questions Review
                       if (widget.userAnswers != null) ...[
-                        const Text(
+                        Text(
                           'مراجعة الأسئلة',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        SizedBox(height: 16),
                         ...List.generate(widget.exam.questions.length, (index) {
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
+                            padding: EdgeInsets.only(bottom: 12),
                             child: _buildQuestionReview(index),
                           );
                         }),
                       ],
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       // Action Buttons
                       _buildActionButtons(context),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
                     ],
                   ),
                 ),
@@ -128,7 +128,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -137,32 +137,32 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
+                  icon: Icon(Icons.close, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'نتيجة الاختبار',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
@@ -174,7 +174,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(32),
+          padding: EdgeInsets.all(32),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -186,7 +186,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
             ),
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -213,7 +213,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                 ),
               ),
 
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
 
               // Status
               Text(
@@ -225,19 +225,19 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Percentage - MAIN
               Text(
                 '${percentage.toStringAsFixed(1)}%',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 36,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
 
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
 
               // Score points - SECONDARY
               Text(
@@ -245,7 +245,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white.withOpacity(0.7),
+                  color: AppColors.getTextColor(context, secondary: true),
                 ),
               ),
             ],
@@ -266,7 +266,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
             color: Colors.green,
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: _buildStatCard(
             icon: Icons.cancel,
@@ -275,7 +275,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
             color: Colors.red,
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(
           child: _buildStatCard(
             icon: Icons.assignment,
@@ -299,34 +299,34 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1,
             ),
           ),
           child: Column(
             children: [
               Icon(icon, color: color, size: 32),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 value,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withOpacity(0.8),
+                  color: AppColors.getTextColor(context, secondary: true),
                 ),
               ),
             ],
@@ -347,9 +347,9 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: wasAnswered
@@ -367,7 +367,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(
+                    padding: EdgeInsets.symmetric(
                       horizontal: 12,
                       vertical: 6,
                     ),
@@ -390,30 +390,30 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                       ),
                     ),
                   ),
-                  const Spacer(),
+                  Spacer(),
                   Text(
                     'السؤال ${index + 1}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.getTextColor(context),
                     ),
                   ),
                 ],
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Question Text
               TexViewWidget(
                 question.text,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 15,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Options
               ...List.generate(question.options.length, (optionIndex) {
@@ -421,9 +421,9 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                 final isCorrectAnswer = question.correctAnswer == optionIndex;
 
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: EdgeInsets.only(bottom: 8),
                   child: Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: isCorrectAnswer
                           ? const Color.fromARGB(255, 2, 245, 10).withOpacity(0.2)
@@ -443,19 +443,19 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                     child: Row(
                       children: [
                         if (isCorrectAnswer)
-                          const Icon(
+                          Icon(
                             Icons.check_circle,
                             color: Color.fromARGB(255, 0, 255, 8),
                             size: 20,
                           )
                         else if (isUserAnswer)
-                          const Icon(
+                          Icon(
                             Icons.cancel,
                             color: Color.fromARGB(255, 252, 17, 0),
                             size: 20,
                           ),
                         if (isCorrectAnswer || isUserAnswer)
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8),
                         Expanded(
                           child: TexViewWidget(
                             question.options[optionIndex],
@@ -475,9 +475,9 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
 
               // Explanation
               if (question.explanation != null) ...[
-                const SizedBox(height: 12),
+                SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.blue.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(8),
@@ -489,18 +489,18 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.lightbulb,
                         color: Colors.yellow,
                         size: 20,
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       Expanded(
                         child: TexViewWidget(
                           question.explanation!,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                           ),
                         ),
                       ),
@@ -531,7 +531,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
               },
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
         ],
         Row(
           children: [
@@ -548,7 +548,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                 },
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildActionButton(
                 label: 'إعادة الاختبار',
@@ -590,7 +590,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
             color: isPrimary ? null : Colors.white.withOpacity(0.2),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1,
             ),
           ),
@@ -600,16 +600,16 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
               borderRadius: BorderRadius.circular(12),
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                padding: EdgeInsets.symmetric(vertical: 14),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, color: Colors.white, size: 20),
-                    const SizedBox(width: 8),
+                    Icon(icon, color: AppColors.getTextColor(context), size: 20),
+                    SizedBox(width: 8),
                     Text(
                       label,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context),
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),

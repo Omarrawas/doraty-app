@@ -7,7 +7,7 @@ import '../tips/all_tips_screen.dart';
 import '../categories/subjects_screen.dart';
 
 class FeaturesMenuScreen extends StatelessWidget {
-  const FeaturesMenuScreen({super.key});
+  FeaturesMenuScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,7 @@ class FeaturesMenuScreen extends StatelessWidget {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -27,30 +27,30 @@ class FeaturesMenuScreen extends StatelessWidget {
               // Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'جميع الميزات',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                         ),
                       ),
 
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
 
                       Text(
                         'استكشف جميع ميزات التطبيق',
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withOpacity(0.8),
+                          color: AppColors.getTextColor(context, secondary: true),
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30),
 
                       // Features Grid
                       _buildFeaturesGrid(context),
@@ -67,7 +67,7 @@ class FeaturesMenuScreen extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -76,32 +76,32 @@ class FeaturesMenuScreen extends StatelessWidget {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'القائمة الرئيسية',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
@@ -113,36 +113,36 @@ class FeaturesMenuScreen extends StatelessWidget {
         'icon': Icons.assignment_outlined,
         'title': 'الاختبارات',
         'subtitle': 'اختبر معلوماتك',
-        'color': const Color(0xFF4CAF50),
-        'screen': const ExamsListScreen(),
+        'color': Color(0xFF4CAF50),
+        'screen': ExamsListScreen(),
       },
       {
         'icon': Icons.notifications_none_outlined,
         'title': 'الإشعارات',
         'subtitle': 'ابق على اطلاع',
-        'color': const Color(0xFF2196F3),
-        'screen': const NotificationsScreen(),
+        'color': Color(0xFF2196F3),
+        'screen': NotificationsScreen(),
       },
       {
         'icon': Icons.lightbulb_outline,
         'title': 'النصائح',
         'subtitle': 'نصائح دراسية يومية',
-        'color': const Color(0xFFFFC107),
-        'screen': const AllTipsScreen(),
+        'color': Color(0xFFFFC107),
+        'screen': AllTipsScreen(),
       },
       {
         'icon': Icons.category_outlined,
         'title': 'الأقسام',
         'subtitle': 'تصفح حسب الموضوع',
-        'color': const Color(0xFF9C27B0),
-        'screen': const SubjectsScreen(),
+        'color': Color(0xFF9C27B0),
+        'screen': SubjectsScreen(),
       },
     ];
 
     return GridView.builder(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
@@ -187,7 +187,7 @@ class FeaturesMenuScreen extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -202,7 +202,7 @@ class FeaturesMenuScreen extends StatelessWidget {
                 );
               },
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -210,38 +210,38 @@ class FeaturesMenuScreen extends StatelessWidget {
                       width: 56,
                       height: 56,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
+                        color: AppColors.getMutedTextColor(context),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
                         icon,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                         size: 28,
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
 
                     Text(
                       title,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
 
                     Text(
                       subtitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.white.withOpacity(0.8),
+                        color: AppColors.getTextColor(context, secondary: true),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,

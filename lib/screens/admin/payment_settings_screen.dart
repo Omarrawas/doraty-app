@@ -9,7 +9,7 @@ import '../../core/theme/theme_provider.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class PaymentSettingsScreen extends StatefulWidget {
-  const PaymentSettingsScreen({super.key});
+  PaymentSettingsScreen({super.key});
 
   @override
   State<PaymentSettingsScreen> createState() => _PaymentSettingsScreenState();
@@ -43,7 +43,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('خطأ في تحميل الحسابات: $e',
-                style: const TextStyle(fontFamily: 'Cairo')),
+                style: TextStyle(fontFamily: 'Cairo')),
             backgroundColor: Colors.red,
           ),
         );
@@ -65,8 +65,8 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                 _buildHeader(),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: Colors.white))
+                      ? Center(
+                          child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                       : RefreshIndicator(
                           onRefresh: _loadAccounts,
                           child: _accounts.isEmpty
@@ -84,7 +84,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -100,13 +100,13 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               'إعدادات الدفع',
@@ -131,7 +131,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.refresh, color: Colors.white),
+                  icon: Icon(Icons.refresh, color: AppColors.getTextColor(context)),
                   onPressed: _loadAccounts,
                 ),
               ),
@@ -148,12 +148,12 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.account_balance_wallet_outlined,
-              size: 64, color: Colors.white.withOpacity(0.2)),
-          const SizedBox(height: 16),
-          const Text(
+              size: 64, color: AppColors.getMutedTextColor(context)),
+          SizedBox(height: 16),
+          Text(
             'لا توجد حسابات دفع',
             style: TextStyle(
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
               fontFamily: 'Cairo',
               fontSize: 16,
             ),
@@ -165,7 +165,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
 
   Widget _buildAccountsList() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       itemCount: _accounts.length + 1, // +1 for QR Code
       itemBuilder: (context, index) {
         if (index == 0) {
@@ -178,7 +178,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
 
   Widget _buildQrCodeToggle() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
@@ -194,29 +194,29 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
                   blurRadius: 10,
-                  offset: const Offset(0, 5),
+                  offset: Offset(0, 5),
                 ),
               ],
             ),
             child: Material(
               color: Colors.transparent,
               child: Padding(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: AppColors.getMutedTextColor(context),
                         borderRadius: BorderRadius.circular(15),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.qr_code_2,
-                        color: Colors.white,
+                        color: AppColors.getTextColor(context),
                         size: 30,
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +230,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                               color: AppColors.getTextColor(context),
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          SizedBox(height: 4),
                           Text(
                             _isQrEnabled ? 'مفعل' : 'غبر مفعل',
                             style: TextStyle(
@@ -254,7 +254,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                            SnackBar(
                              content: Text(
                                value ? 'تم تفعيل الدفع عبر QR' : 'تم إيقاف الدفع عبر QR',
-                               style: const TextStyle(fontFamily: 'Cairo'),
+                               style: TextStyle(fontFamily: 'Cairo'),
                              ),
                              backgroundColor: value ? Colors.green : Colors.red,
                            ),
@@ -287,7 +287,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
@@ -301,21 +301,21 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                   width: 1.5),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        padding: EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: cardColor.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(icon, color: cardColor),
                       ),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,7 +329,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                                 color: AppColors.getTextColor(context),
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            SizedBox(height: 4),
                             Text(
                               account.isActive ? 'مفعل' : 'غير مفعل',
                               style: TextStyle(
@@ -345,17 +345,17 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                       ),
                       IconButton(
                         onPressed: () => _showEditDialog(account),
-                        icon: const Icon(Icons.edit, color: Colors.white),
+                        icon: Icon(Icons.edit, color: AppColors.getTextColor(context)),
                       ),
                     ],
                   ),
-                  const Divider(height: 24, color: Colors.white12),
+                  Divider(height: 24, color: AppColors.getTextColor(context).withOpacity(0.12)),
                   _buildDetailRow('اسم الحساب', account.accountName),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   _buildDetailRow('الرقم', account.accountNumber),
                   if (account.instructions != null &&
                       account.instructions!.isNotEmpty) ...[
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     _buildDetailRow('تعليمات', account.instructions!),
                   ],
                 ],
@@ -373,8 +373,8 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: AppColors.getTextColor(context),
             fontFamily: 'Cairo',
             fontSize: 13,
           ),
@@ -383,8 +383,8 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
           child: Text(
             value,
             textAlign: TextAlign.end,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: AppColors.getTextColor(context),
               fontFamily: 'Cairo',
               fontSize: 14,
               fontWeight: FontWeight.w500,
@@ -409,12 +409,12 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
           return Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
-              backgroundColor: const Color(0xFF1E1E2C),
+              backgroundColor: Color(0xFF1E1E2C),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
               title: Text(
                 'تعديل ${account.methodDisplayName}',
-                style: const TextStyle(color: Colors.white, fontFamily: 'Cairo'),
+                style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
               ),
               content: SingleChildScrollView(
                 child: Column(
@@ -422,52 +422,52 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                   children: [
                     TextField(
                       controller: nameController,
-                      style: const TextStyle(
-                          color: Colors.white, fontFamily: 'Cairo'),
-                      decoration: const InputDecoration(
+                      style: TextStyle(
+                          color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
+                      decoration: InputDecoration(
                         labelText: 'اسم الحساب',
                         labelStyle: TextStyle(
-                            color: Colors.white, fontFamily: 'Cairo'),
+                            color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.white30)),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     TextField(
                       controller: numberController,
-                      style: const TextStyle(
-                          color: Colors.white, fontFamily: 'Cairo'),
-                      decoration: const InputDecoration(
+                      style: TextStyle(
+                          color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
+                      decoration: InputDecoration(
                         labelText: 'رقم الحساب / الهاتف',
                         labelStyle: TextStyle(
-                            color: Colors.white, fontFamily: 'Cairo'),
+                            color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.white30)),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     TextField(
                       controller: instructionsController,
-                      style: const TextStyle(
-                          color: Colors.white, fontFamily: 'Cairo'),
+                      style: TextStyle(
+                          color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
                       maxLines: 2,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'تعليمات إضافية',
                         labelStyle: TextStyle(
-                            color: Colors.white, fontFamily: 'Cairo'),
+                            color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: Colors.white30)),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           'الحالة:',
                           style: TextStyle(
-                              color: Colors.white, fontFamily: 'Cairo'),
+                              color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
                         ),
-                        const Spacer(),
+                        Spacer(),
                         Switch(
                           value: isActive,
                           onChanged: (val) => setState(() => isActive = val),
@@ -490,7 +490,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('إلغاء',
+                  child: Text('إلغاء',
                       style: TextStyle(color: Colors.grey, fontFamily: 'Cairo')),
                 ),
                 ElevatedButton(
@@ -525,7 +525,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
 
                       if (mounted) {
                         messenger.showSnackBar(
-                          const SnackBar(
+                          SnackBar(
                             content: Text('تم التحديث بنجاح',
                                 style: TextStyle(fontFamily: 'Cairo')),
                             backgroundColor: Colors.green,
@@ -538,16 +538,16 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                          messenger.showSnackBar(
                           SnackBar(
                             content: Text('خطأ في التحديث: $e',
-                                style: const TextStyle(fontFamily: 'Cairo')),
+                                style: TextStyle(fontFamily: 'Cairo')),
                             backgroundColor: Colors.red,
                           ),
                         );
                       }
                     }
                   },
-                  child: const Text('حفظ',
+                  child: Text('حفظ',
                       style:
-                          TextStyle(color: Colors.white, fontFamily: 'Cairo')),
+                          TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
                 ),
               ],
             ),

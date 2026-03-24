@@ -14,7 +14,7 @@ class TeacherProfileScreen extends StatefulWidget {
   final String? teacherPhoto;
   final String? bio;
 
-  const TeacherProfileScreen({
+  TeacherProfileScreen({
     super.key,
     required this.teacherId,
     required this.teacherName,
@@ -131,7 +131,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
           onRefresh: _refreshProfile,
           color: AppColors.primaryPurple,
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator(color: Colors.white))
+              ? Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
               : NestedScrollView(
                   headerSliverBuilder: (context, innerBoxIsScrolled) {
                     return [
@@ -186,7 +186,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
           Align(
             alignment: isRTL ? Alignment.centerRight : Alignment.centerLeft,
             child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
               onPressed: () => Navigator.pop(context),
             ),
           ),
@@ -202,7 +202,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
                 BoxShadow(
                   color: Colors.black.withOpacity(0.2),
                   blurRadius: 15,
-                  offset: const Offset(0, 8),
+                  offset: Offset(0, 8),
                 ),
               ],
             ),
@@ -211,7 +211,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
                   ? CachedNetworkImage(
                       imageUrl: _teacherPhoto!,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(color: Colors.white10),
+                      placeholder: (context, url) => Container(color: AppColors.getTextColor(context).withOpacity(0.10)),
                       errorWidget: (context, url, error) => Image.network(
                         'https://ui-avatars.com/api/?name=${Uri.encodeComponent(_teacherName)}&background=random&color=fff&size=200',
                       ),
@@ -221,21 +221,21 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
                     ),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           
           // Name & Type
           Text(
             _teacherName,
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             isRTL ? 'مدرب' : 'Trainer',
-            style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6), fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 14, color: AppColors.getTextColor(context, secondary: true), fontWeight: FontWeight.w500),
           ),
           
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           
           // Stats Row
           Row(
@@ -246,7 +246,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
                 _teacherCourses.length.toString(),
                 Icons.library_books_outlined,
               ),
-              const SizedBox(width: 40),
+              SizedBox(width: 40),
               _buildStatItem(
                 isRTL ? 'طالب' : 'Students',
                 _formatNumber(_stats['total_users'] ?? 0),
@@ -270,14 +270,14 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
     return Column(
       children: [
         Icon(icon, color: AppColors.primaryPurple, size: 24),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
         ),
         Text(
           label,
-          style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
+          style: TextStyle(fontSize: 12, color: AppColors.getTextColor(context, secondary: true)),
         ),
       ],
     );
@@ -285,18 +285,18 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
 
   Widget _buildBioSection(bool isRTL) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 30),
       child: Column(
         crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(
             isRTL ? 'نبذة عن المدرب' : 'About the Trainer',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             _teacherBio ?? (isRTL ? 'لا توجد نبذة متاحة حالياً.' : 'No bio available at the moment.'),
-            style: TextStyle(fontSize: 15, color: Colors.white.withOpacity(0.8), height: 1.6),
+            style: TextStyle(fontSize: 15, color: AppColors.getTextColor(context, secondary: true), height: 1.6),
             textAlign: isRTL ? TextAlign.right : TextAlign.left,
           ),
         ],
@@ -309,7 +309,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
       return Center(
         child: Text(
           Provider.of<LocaleProvider>(context).locale == 'ar' ? 'لا توجد دورات متاحة' : 'No courses available',
-          style: const TextStyle(color: Colors.white54),
+          style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54)),
         ),
       );
     }
@@ -319,7 +319,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
     final double childAspectRatio = screenWidth > 600 ? 0.75 : 0.68;
 
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 40),
       itemCount: _teacherCourses.length,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
@@ -347,7 +347,7 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
-      color: const Color(0xFF1E1E2C).withOpacity(0.9), // Match theme or use blurring
+      color: Color(0xFF1E1E2C).withOpacity(0.9), // Match theme or use blurring
       child: _tabBar,
     );
   }

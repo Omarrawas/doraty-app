@@ -17,7 +17,7 @@ import 'course_enrollments_screen.dart';
 import 'teacher_enrollment_stats_screen.dart';
 
 class SubscriptionsManagementScreen extends StatefulWidget {
-  const SubscriptionsManagementScreen({super.key});
+  SubscriptionsManagementScreen({super.key});
 
   @override
   State<SubscriptionsManagementScreen> createState() =>
@@ -126,7 +126,7 @@ class _SubscriptionsManagementScreenState
                 _buildFiltersSection(),
                 Expanded(
                   child: _isLoading
-                      ? const Center(
+                      ? Center(
                           child: CircularProgressIndicator(
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(Colors.white),
@@ -150,7 +150,7 @@ class _SubscriptionsManagementScreenState
     if (_selectedTabIndex == 0) {
       if (_coursesGrouped.isEmpty) return _buildEmptyState();
       return ListView.builder(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         itemCount: _coursesGrouped.length,
         itemBuilder: (context, index) {
           return _buildCourseSummaryCard(_coursesGrouped[index]);
@@ -159,7 +159,7 @@ class _SubscriptionsManagementScreenState
     } else {
       if (_teachersGrouped.isEmpty) return _buildEmptyState();
       return ListView.builder(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),
         itemCount: _teachersGrouped.length,
         itemBuilder: (context, index) {
           return _buildTeacherSummaryCard(_teachersGrouped[index]);
@@ -170,7 +170,7 @@ class _SubscriptionsManagementScreenState
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -186,13 +186,13 @@ class _SubscriptionsManagementScreenState
                       width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Text(
               'إدارة الاشتراكات',
@@ -219,17 +219,17 @@ class _SubscriptionsManagementScreenState
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.print, color: Colors.white),
+                      icon: Icon(Icons.print, color: AppColors.getTextColor(context)),
                       onPressed: _printReport,
                       tooltip: 'طباعة التقرير',
                     ),
                     Container(
                       height: 24,
                       width: 1,
-                      color: Colors.white24,
+                      color: AppColors.getTextColor(context).withOpacity(0.24),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.refresh, color: Colors.white),
+                      icon: Icon(Icons.refresh, color: AppColors.getTextColor(context)),
                       onPressed: _loadData,
                     ),
                   ],
@@ -245,7 +245,7 @@ class _SubscriptionsManagementScreenState
   Widget _buildStatsSection() {
     return Container(
       height: 100,
-      margin: const EdgeInsets.symmetric(horizontal: 20),
+      margin: EdgeInsets.symmetric(horizontal: 20),
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
@@ -258,7 +258,7 @@ class _SubscriptionsManagementScreenState
           _buildStatItem(
             'دخل هذا الشهر',
             _currencyFormat.format(_stats['monthly_revenue'] ?? 0),
-            const Color(0xFF00E5FF),
+            Color(0xFF00E5FF),
             Icons.speed,
           ),
           _buildStatItem(
@@ -282,13 +282,13 @@ class _SubscriptionsManagementScreenState
       String label, String value, Color color, IconData icon) {
     return Container(
       width: 150,
-      margin: const EdgeInsets.only(left: 12),
+      margin: EdgeInsets.only(left: 12),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: AppColors.getGlassColor(context, opacity: 0.15),
               borderRadius: BorderRadius.circular(16),
@@ -304,7 +304,7 @@ class _SubscriptionsManagementScreenState
                 Row(
                   children: [
                     Icon(icon, color: color, size: 14),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6),
                     Text(
                       label,
                       style: TextStyle(
@@ -314,7 +314,7 @@ class _SubscriptionsManagementScreenState
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 FittedBox(
                   fit: BoxFit.scaleDown,
                   child: Text(
@@ -338,7 +338,7 @@ class _SubscriptionsManagementScreenState
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+          padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: BackdropFilter(
@@ -368,14 +368,14 @@ class _SubscriptionsManagementScreenState
                             color: AppColors.getTextColor(context)
                                 .withOpacity(0.6)),
                         border: InputBorder.none,
-                        contentPadding: const EdgeInsets.all(16),
+                        contentPadding: EdgeInsets.all(16),
                       ),
                     ),
-                    const Divider(height: 1, color: Colors.white12),
+                    Divider(height: 1, color: AppColors.getTextColor(context).withOpacity(0.12)),
                     InkWell(
                       onTap: _showFilterDatePicker,
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),
                         child: Row(
                           children: [
@@ -383,7 +383,7 @@ class _SubscriptionsManagementScreenState
                                 color: AppColors.getTextColor(context)
                                     .withOpacity(0.6),
                                 size: 20),
-                            const SizedBox(width: 8),
+                            SizedBox(width: 8),
                             Text(
                               _selectedMonth == null && _selectedYear == null
                                   ? 'تصفية حسب التاريخ: الكل'
@@ -396,7 +396,7 @@ class _SubscriptionsManagementScreenState
                                 fontSize: 14,
                               ),
                             ),
-                            const Spacer(),
+                            Spacer(),
                             if (_selectedMonth != null || _selectedYear != null)
                               GestureDetector(
                                 onTap: () {
@@ -406,11 +406,11 @@ class _SubscriptionsManagementScreenState
                                   });
                                   _loadData();
                                 },
-                                child: const Icon(Icons.close,
-                                    color: Colors.white54, size: 18),
+                                child: Icon(Icons.close,
+                                    color: AppColors.getTextColor(context).withOpacity(0.54), size: 18),
                               ),
-                            const Icon(Icons.arrow_drop_down,
-                                color: Colors.white54),
+                            Icon(Icons.arrow_drop_down,
+                                color: AppColors.getTextColor(context).withOpacity(0.54)),
                           ],
                         ),
                       ),
@@ -428,8 +428,8 @@ class _SubscriptionsManagementScreenState
 
   Widget _buildViewTabs() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      padding: const EdgeInsets.all(4),
+      margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: AppColors.getGlassColor(context, opacity: 0.1),
         borderRadius: BorderRadius.circular(15),
@@ -449,7 +449,7 @@ class _SubscriptionsManagementScreenState
       child: GestureDetector(
         onTap: () => setState(() => _selectedTabIndex = index),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: isSelected ? AppColors.primaryPurple : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
@@ -462,7 +462,7 @@ class _SubscriptionsManagementScreenState
                       ? Colors.white
                       : AppColors.getTextColor(context).withOpacity(0.6),
                   size: 16),
-              const SizedBox(width: 8),
+              SizedBox(width: 8),
               Text(
                 label,
                 style: TextStyle(
@@ -493,7 +493,7 @@ class _SubscriptionsManagementScreenState
     final String status = enrollment['status'] ?? 'active';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
@@ -507,7 +507,7 @@ class _SubscriptionsManagementScreenState
                   width: 1.5),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(16),
               child: Column(
                 children: [
                   if (showCourseInfo) ...[
@@ -529,10 +529,10 @@ class _SubscriptionsManagementScreenState
                                 : null,
                           ),
                           child: courseData?['thumbnail'] == null
-                              ? const Icon(Icons.book, color: Colors.white24)
+                              ? Icon(Icons.book, color: AppColors.getTextColor(context).withOpacity(0.24))
                               : null,
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -547,7 +547,7 @@ class _SubscriptionsManagementScreenState
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(height: 4),
+                              SizedBox(height: 4),
                               Row(
                                 children: [
                                   CircleAvatar(
@@ -561,13 +561,13 @@ class _SubscriptionsManagementScreenState
                                         ? Text(
                                             (userData?['full_name']?[0] ?? 'U')
                                                 .toUpperCase(),
-                                            style: const TextStyle(
+                                            style: TextStyle(
                                                 fontSize: 8,
-                                                color: Colors.white),
+                                                color: AppColors.getTextColor(context)),
                                           )
                                         : null,
                                   ),
-                                  const SizedBox(width: 6),
+                                  SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
                                       StringUtils.cleanTeacherName(
@@ -603,11 +603,11 @@ class _SubscriptionsManagementScreenState
                               ? Text(
                                   (userData?['full_name']?[0] ?? 'U')
                                       .toUpperCase(),
-                                  style: const TextStyle(color: Colors.white),
+                                  style: TextStyle(color: AppColors.getTextColor(context)),
                                 )
                               : null,
                         ),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -636,7 +636,7 @@ class _SubscriptionsManagementScreenState
                       ],
                     ),
                   ],
-                  const Divider(height: 24, color: Colors.white12),
+                  Divider(height: 24, color: AppColors.getTextColor(context).withOpacity(0.12)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -676,7 +676,7 @@ class _SubscriptionsManagementScreenState
                           ),
                           Text(
                             _currencyFormat.format(courseData?['price'] ?? 0),
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.greenAccent,
                               fontSize: 15,
                               fontWeight: FontWeight.normal,
@@ -687,21 +687,21 @@ class _SubscriptionsManagementScreenState
                     ],
                   ),
                   if (status == 'active') ...[
-                    const SizedBox(height: 12),
+                    SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: () =>
                             _confirmChangeStatus(enrollment['id'], 'cancelled'),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
+                          side: BorderSide(
                               color: Colors.redAccent, width: 1.5),
                           foregroundColor: Colors.redAccent,
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10)),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: const Text('إلغاء الاشتراك',
+                        child: Text('إلغاء الاشتراك',
                             style: TextStyle(fontWeight: FontWeight.normal)),
                       ),
                     ),
@@ -738,7 +738,7 @@ class _SubscriptionsManagementScreenState
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.15),
         borderRadius: BorderRadius.circular(8),
@@ -757,7 +757,7 @@ class _SubscriptionsManagementScreenState
     final List<dynamic> enrollments = item['enrollments'] ?? [];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
@@ -774,7 +774,7 @@ class _SubscriptionsManagementScreenState
               data: Theme.of(context).copyWith(
                   dividerColor: Colors.transparent,
                   dividerTheme:
-                      const DividerThemeData(color: Colors.transparent)),
+                      DividerThemeData(color: Colors.transparent)),
               child: ExpansionTile(
                 title: Row(
                   children: [
@@ -792,10 +792,10 @@ class _SubscriptionsManagementScreenState
                         color: Colors.black26,
                       ),
                       child: course?['thumbnail'] == null
-                          ? const Icon(Icons.book, color: Colors.white24)
+                          ? Icon(Icons.book, color: AppColors.getTextColor(context).withOpacity(0.24))
                           : null,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -820,13 +820,13 @@ class _SubscriptionsManagementScreenState
                   ],
                 ),
                 subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: EdgeInsets.only(top: 8),
                   child: Row(
                     children: [
                       _buildSummaryItem(
                           'الطلاب', '${item['enrollment_count']}', Icons.person,
                           color: Colors.blueAccent),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       _buildSummaryItem(
                           'الدخل',
                           _currencyFormat.format(item['total_revenue']),
@@ -837,9 +837,9 @@ class _SubscriptionsManagementScreenState
                 ),
                 iconColor: Colors.white70,
                 collapsedIconColor: Colors.white54,
-                childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
+                childrenPadding: EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  const Divider(color: Colors.white12),
+                  Divider(color: AppColors.getTextColor(context).withOpacity(0.12)),
                   ...enrollments.map((e) => _buildEnrollmentCard(
                       e as Map<String, dynamic>,
                       showCourseInfo: false)),
@@ -857,13 +857,13 @@ class _SubscriptionsManagementScreenState
                           ),
                         );
                       },
-                      icon: const Icon(Icons.open_in_new, size: 14),
-                      label: const Text('إدارة تفصيلية',
+                      icon: Icon(Icons.open_in_new, size: 14),
+                      label: Text('إدارة تفصيلية',
                           style: TextStyle(fontSize: 12)),
                       style:
                           TextButton.styleFrom(foregroundColor: Colors.white70),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                   ],
                 ],
               ),
@@ -879,7 +879,7 @@ class _SubscriptionsManagementScreenState
     final List<dynamic> enrollments = item['enrollments'] ?? [];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: BackdropFilter(
@@ -896,7 +896,7 @@ class _SubscriptionsManagementScreenState
               data: Theme.of(context).copyWith(
                   dividerColor: Colors.transparent,
                   dividerTheme:
-                      const DividerThemeData(color: Colors.transparent)),
+                      DividerThemeData(color: Colors.transparent)),
               child: ExpansionTile(
                 title: Row(
                   children: [
@@ -907,10 +907,10 @@ class _SubscriptionsManagementScreenState
                           ? NetworkImage(teacher!['avatar_url'])
                           : null,
                       child: teacher?['avatar_url'] == null
-                          ? const Icon(Icons.person, color: Colors.white)
+                          ? Icon(Icons.person, color: AppColors.getTextColor(context))
                           : null,
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -936,13 +936,13 @@ class _SubscriptionsManagementScreenState
                   ],
                 ),
                 subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 8),
+                  padding: EdgeInsets.only(top: 8),
                   child: Row(
                     children: [
                       _buildSummaryItem(
                           'الطلاب', '${item['student_count']}', Icons.people,
                           color: Colors.orangeAccent),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8),
                       _buildSummaryItem(
                           'الدخل',
                           _currencyFormat.format(item['total_revenue']),
@@ -953,9 +953,9 @@ class _SubscriptionsManagementScreenState
                 ),
                 iconColor: Colors.white70,
                 collapsedIconColor: Colors.white54,
-                childrenPadding: const EdgeInsets.symmetric(horizontal: 16),
+                childrenPadding: EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  const Divider(color: Colors.white12),
+                  Divider(color: AppColors.getTextColor(context).withOpacity(0.12)),
                   ...enrollments.map((e) => _buildEnrollmentCard(
                       e as Map<String, dynamic>,
                       showCourseInfo:
@@ -975,13 +975,13 @@ class _SubscriptionsManagementScreenState
                           ),
                         );
                       },
-                      icon: const Icon(Icons.open_in_new, size: 14),
-                      label: const Text('إحصائيات المدرس',
+                      icon: Icon(Icons.open_in_new, size: 14),
+                      label: Text('إحصائيات المدرس',
                           style: TextStyle(fontSize: 12)),
                       style:
                           TextButton.styleFrom(foregroundColor: Colors.white70),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                   ],
                 ],
               ),
@@ -998,14 +998,14 @@ class _SubscriptionsManagementScreenState
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(6),
+            padding: EdgeInsets.all(6),
             decoration: BoxDecoration(
               color: (color ?? Colors.white).withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color ?? Colors.white, size: 14),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1036,7 +1036,7 @@ class _SubscriptionsManagementScreenState
           Icon(Icons.search_off,
               color: AppColors.getTextColor(context).withOpacity(0.3),
               size: 60),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             'لا توجد اشتراكات مطابقة',
             style: TextStyle(
@@ -1058,23 +1058,23 @@ class _SubscriptionsManagementScreenState
           backgroundColor: AppColors.getGlassColor(context, opacity: 0.9),
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: Colors.white24)),
-          title: const Text('تأكيد الإجراء',
+              side: BorderSide(color: Colors.white24)),
+          title: Text('تأكيد الإجراء',
               style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          content: const Text(
+                  TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
+          content: Text(
             'هل أنت متأكد من تغيير حالة الاشتراك لهذا الطالب؟ سيؤدي هذا لإلغاء وصوله للمحتوى.',
-            style: TextStyle(color: Colors.white70),
+            style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child:
-                  const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+                  Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60))),
             ),
             Container(
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                     colors: [Colors.redAccent, Colors.red]),
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -1086,7 +1086,7 @@ class _SubscriptionsManagementScreenState
                     await _db.updateEnrollmentStatus(enrollmentId, newStatus);
                     _loadData();
                     messenger.showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text('تم تحديث حالة الاشتراك بنجاح'),
                         backgroundColor: Colors.green,
                       ),
@@ -1099,9 +1099,9 @@ class _SubscriptionsManagementScreenState
                     );
                   }
                 },
-                child: const Text('تأكيد الإلغاء',
+                child: Text('تأكيد الإلغاء',
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
+                        color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
               ),
             ),
           ],
@@ -1123,16 +1123,16 @@ class _SubscriptionsManagementScreenState
             backgroundColor: AppColors.getGlassColor(context, opacity: 0.9),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: Colors.white24),
+              side: BorderSide(color: Colors.white24),
             ),
             titlePadding: EdgeInsets.zero,
-            title: const Column(
+            title: Column(
               children: [
                 SizedBox(height: 16),
                 Text('اختر فترة التصفية',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
+                        color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
                 SizedBox(height: 12),
                 TabBar(
                   indicatorColor: AppColors.primaryPurple,
@@ -1170,7 +1170,7 @@ class _SubscriptionsManagementScreenState
                               fontSize: 14,
                             )),
                         trailing: isSelected
-                            ? const Icon(Icons.check,
+                            ? Icon(Icons.check,
                                 color: AppColors.primaryPurple)
                             : null,
                         onTap: () {
@@ -1201,7 +1201,7 @@ class _SubscriptionsManagementScreenState
                               fontSize: 14,
                             )),
                         trailing: isSelected
-                            ? const Icon(Icons.check,
+                            ? Icon(Icons.check,
                                 color: AppColors.primaryPurple)
                             : null,
                         onTap: () {
@@ -1240,17 +1240,17 @@ class _SubscriptionsManagementScreenState
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('طباعة التقرير'),
-          content: const Text(
+          title: Text('طباعة التقرير'),
+          content: Text(
               'لم يتم تحديد فترة تصفية (شهر أو سنة). سيتم طباعة تقرير لجميع الاشتراكات.\nهل تريد المتابعة؟'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('إلغاء'),
+              child: Text('إلغاء'),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('متابعة'),
+              child: Text('متابعة'),
             ),
           ],
         ),

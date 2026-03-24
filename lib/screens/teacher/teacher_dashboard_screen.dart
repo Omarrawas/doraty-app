@@ -14,7 +14,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
-  const TeacherDashboardScreen({super.key});
+  TeacherDashboardScreen({super.key});
 
   @override
   State<TeacherDashboardScreen> createState() => _TeacherDashboardScreenState();
@@ -92,40 +92,40 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       body: DynamicGradientBackground(
         child: SafeArea(
           child: _isLoading
-              ? const Center(
+              ? Center(
                   child: CircularProgressIndicator(
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 )
               : RefreshIndicator(
                   onRefresh: _loadDashboardData,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                   backgroundColor: AppColors.primaryPurple,
                   child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(20),
+                    physics: AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Header
                         _buildHeader(context),
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
 
                         // Stats Cards
                         _buildStatsCards(context),
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
 
                         // Quick Actions
                         _buildQuickActions(context),
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
 
                         // Recent Exams
                         _buildRecentExams(context),
 
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
 
                         // My Courses
                         _buildMyCourses(context),
@@ -158,50 +158,50 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     ),
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
               ),
             ),
-            const Spacer(),
+            Spacer(),
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: AppColors.getMutedTextColor(context),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: AppColors.getMutedTextColor(context),
                       width: 1,
                     ),
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.print, color: Colors.white),
+                    icon: Icon(Icons.print, color: AppColors.getTextColor(context)),
                     onPressed: _showMonthSelectionDialog,
                     tooltip: 'طباعة التقرير',
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: AppColors.getMutedTextColor(context),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.3),
+                      color: AppColors.getMutedTextColor(context),
                       width: 1,
                     ),
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.refresh, color: Colors.white),
+                    icon: Icon(Icons.refresh, color: AppColors.getTextColor(context)),
                     onPressed: _loadDashboardData,
                   ),
                 ),
@@ -209,7 +209,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         Text(
           'لوحة تحكم المدرس',
           style: TextStyle(
@@ -218,7 +218,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             color: AppColors.getTextColor(context),
           ),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: 8),
         Text(
           'مرحباً بك في لوحة التحكم',
           style: TextStyle(
@@ -244,7 +244,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 color: Colors.greenAccent,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
                 context: context,
@@ -256,7 +256,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Row(
           children: [
             Expanded(
@@ -268,7 +268,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 color: Colors.blue,
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildStatCard(
                 context: context,
@@ -296,7 +296,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: AppColors.getGlassColor(context, opacity: 0.2),
             borderRadius: BorderRadius.circular(20),
@@ -308,14 +308,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.3),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 28),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 value,
                 style: TextStyle(
@@ -324,7 +324,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: 4),
               Text(
                 label,
                 style: TextStyle(
@@ -351,7 +351,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             color: AppColors.getTextColor(context),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         Row(
           children: [
             Expanded(
@@ -364,13 +364,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const ManageExamsScreen(),
+                      builder: (context) => ManageExamsScreen(),
                     ),
                   );
                 },
               ),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: _buildActionCard(
                 context: context,
@@ -381,7 +381,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const StudentsResultsScreen(),
+                      builder: (context) => StudentsResultsScreen(),
                     ),
                   );
                 },
@@ -389,7 +389,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         _buildActionCard(
           context: context,
           icon: Icons.school,
@@ -424,10 +424,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1,
             ),
           ),
@@ -437,11 +437,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               borderRadius: BorderRadius.circular(16),
               onTap: onTap,
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 child: Column(
                   children: [
                     Icon(icon, color: color, size: 32),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Text(
                       label,
                       textAlign: TextAlign.center,
@@ -481,7 +481,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ManageExamsScreen(),
+                    builder: (context) => ManageExamsScreen(),
                   ),
                 );
               },
@@ -492,12 +492,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         if (_recentExams.isEmpty)
           _buildEmptyState(context, 'لا توجد اختبارات')
         else
           ..._recentExams.map((exam) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: EdgeInsets.only(bottom: 12),
                 child: _buildExamCard(context, exam),
               )),
       ],
@@ -513,19 +513,19 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1,
             ),
           ),
           child: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
+                padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: (isPublished ? Colors.green : Colors.orange)
                       .withOpacity(0.3),
@@ -536,7 +536,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   color: isPublished ? Colors.green : Colors.orange,
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -549,7 +549,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4),
                     Text(
                       courseName,
                       style: TextStyle(
@@ -561,7 +561,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 6,
                 ),
@@ -598,7 +598,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             color: AppColors.getTextColor(context),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         if (_teacherCourses.isEmpty)
           _buildEmptyState(context, 'لا توجد دورات مسندة')
         else
@@ -609,7 +609,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 : tc;
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: EdgeInsets.only(bottom: 12),
               child: _buildCourseCard(context, course),
             );
           }),
@@ -629,7 +629,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.getGlassColor(context, opacity: 0.15),
             borderRadius: BorderRadius.circular(20),
@@ -644,14 +644,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: AppColors.primaryPurple.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(Icons.school, color: Colors.blue[300], size: 24),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -664,11 +664,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: (isPublished ? Colors.green : Colors.orange)
@@ -693,7 +693,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Progress Section
               Text(
@@ -703,7 +703,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   fontSize: 12,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               ClipRRect(
                 borderRadius: BorderRadius.circular(4),
                 child: LinearProgressIndicator(
@@ -714,7 +714,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              SizedBox(height: 20),
 
               // Stats Grid
               Row(
@@ -739,7 +739,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     return Column(
       children: [
         Icon(icon, size: 18, color: AppColors.primaryPurple.withOpacity(0.8)),
-        const SizedBox(height: 4),
+        SizedBox(height: 4),
         Text(
           value,
           style: TextStyle(
@@ -765,7 +765,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(30),
+          padding: EdgeInsets.all(30),
           decoration: BoxDecoration(
             color: AppColors.getGlassColor(context, opacity: 0.15),
             borderRadius: BorderRadius.circular(16),
@@ -800,7 +800,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Future<void> _generateAndPrintReport(List<DateTime> selectedMonths) async {
     if (selectedMonths.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('يرجى اختيار شهر واحد على الأقل'),
           backgroundColor: AppColors.error,
         ),
@@ -812,8 +812,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      builder: (context) => Center(
+        child: CircularProgressIndicator(color: AppColors.getTextColor(context)),
       ),
     );
 
@@ -1130,8 +1130,8 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
       backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 600),
-        padding: const EdgeInsets.all(24),
+        constraints: BoxConstraints(maxWidth: 500, maxHeight: 600),
+        padding: EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1145,7 +1145,7 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
 
             // Select All / Deselect All buttons
             Row(
@@ -1153,18 +1153,18 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
               children: [
                 TextButton.icon(
                   onPressed: () => _toggleSelectAll(true),
-                  icon: const Icon(Icons.check_box,
+                  icon: Icon(Icons.check_box,
                       color: AppColors.primaryPurple),
-                  label: const Text('تحديد الكل'),
+                  label: Text('تحديد الكل'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.primaryPurple,
                   ),
                 ),
                 TextButton.icon(
                   onPressed: () => _toggleSelectAll(false),
-                  icon: const Icon(Icons.check_box_outline_blank,
+                  icon: Icon(Icons.check_box_outline_blank,
                       color: AppColors.textSecondary),
-                  label: const Text('إلغاء التحديد'),
+                  label: Text('إلغاء التحديد'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColors.textSecondary,
                   ),
@@ -1172,7 +1172,7 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
               ],
             ),
 
-            const Divider(),
+            Divider(),
 
             // Month list
             Expanded(
@@ -1201,7 +1201,7 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Action buttons
             Row(
@@ -1209,12 +1209,12 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text(
+                  child: Text(
                     'إلغاء',
                     style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: selectedCount > 0
                       ? () {
@@ -1230,10 +1230,10 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
                     backgroundColor: AppColors.primaryPurple,
                     foregroundColor: Colors.white,
                   ),
-                  icon: const Icon(Icons.print, color: Colors.white),
+                  icon: Icon(Icons.print, color: AppColors.getTextColor(context)),
                   label: Text(
                     'طباعة التقرير ($selectedCount)',
-                    style: const TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.getTextColor(context)),
                   ),
                 ),
               ],

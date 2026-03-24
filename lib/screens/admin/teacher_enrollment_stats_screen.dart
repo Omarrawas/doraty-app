@@ -19,7 +19,7 @@ class TeacherEnrollmentStatsScreen extends StatefulWidget {
   final String teacherName;
   final String? avatarUrl;
 
-  const TeacherEnrollmentStatsScreen({
+  TeacherEnrollmentStatsScreen({
     super.key,
     required this.teacherId,
     required this.teacherName,
@@ -80,25 +80,25 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
                 _buildHeader(),
                 Expanded(
                   child: _isLoading
-                      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+                      ? Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                       : RefreshIndicator(
                           onRefresh: _loadStats,
                           color: AppColors.primaryPurple,
                           child: ListView(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                             children: [
                               _buildStatsGrid(),
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24),
                               _buildSectionTitle('أداء الكورسات'),
-                              const SizedBox(height: 12),
+                              SizedBox(height: 12),
                               ...(_stats['courses_breakdown'] as List? ?? [])
                                   .map((course) => _buildCourseStatCard(course)),
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24),
                               _buildSectionTitle('أحدث الاشتراكات (آخر 10)'),
-                              const SizedBox(height: 12),
+                              SizedBox(height: 12),
                               ...(_stats['recent_enrollments'] as List? ?? [])
                                   .map((enrollment) => _buildRecentEnrollmentCard(enrollment)),
-                              const SizedBox(height: 30),
+                              SizedBox(height: 30),
                             ],
                           ),
                         ),
@@ -113,7 +113,7 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -127,13 +127,13 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
                   border: Border.all(color: Colors.white24, width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,21 +142,21 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
                   'إحصائيات المدرس',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white.withOpacity(0.6),
+                    color: AppColors.getTextColor(context, secondary: true),
                   ),
                 ),
                 Text(
                   StringUtils.cleanTeacherName(widget.teacherName),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.normal,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: BackdropFilter(
@@ -168,18 +168,18 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
                   border: Border.all(color: Colors.white24, width: 1),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.print, color: Colors.white),
+                  icon: Icon(Icons.print, color: AppColors.getTextColor(context)),
                   onPressed: _showMonthSelectionDialog,
                   tooltip: 'طباعة التقرير الشهري',
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           CircleAvatar(
             radius: 24,
             backgroundImage: widget.avatarUrl != null ? NetworkImage(widget.avatarUrl!) : null,
-            child: widget.avatarUrl == null ? const Icon(Icons.person, color: Colors.white) : null,
+            child: widget.avatarUrl == null ? Icon(Icons.person, color: AppColors.getTextColor(context)) : null,
           ),
         ],
       ),
@@ -189,7 +189,7 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
   Widget _buildStatsGrid() {
     return GridView.count(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics: NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
       childAspectRatio: 1.5,
       mainAxisSpacing: 12,
@@ -230,7 +230,7 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(16),
@@ -241,13 +241,13 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(icon, color: color, size: 20),
-              const SizedBox(height: 8),
-              Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11)),
+              SizedBox(height: 8),
+              Text(label, style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 11)),
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
                   value,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.normal, fontSize: 16),
+                  style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.normal, fontSize: 16),
                 ),
               ),
             ],
@@ -260,21 +260,21 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
-      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.normal),
+      style: TextStyle(color: AppColors.getTextColor(context), fontSize: 18, fontWeight: FontWeight.normal),
     );
   }
 
   Widget _buildCourseStatCard(Map<String, dynamic> course) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: EdgeInsets.only(bottom: 12),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
+              color: AppColors.getMutedTextColor(context),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white12, width: 1),
             ),
@@ -290,26 +290,26 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
                         : null,
                     color: Colors.black26,
                   ),
-                  child: course['image_url'] == null ? const Icon(Icons.book, color: Colors.white24) : null,
+                  child: course['image_url'] == null ? Icon(Icons.book, color: AppColors.getTextColor(context).withOpacity(0.24)) : null,
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(course['title'],
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.normal)),
+                          style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.normal)),
                       Row(
                         children: [
-                          const Icon(Icons.person, color: Colors.blueAccent, size: 12),
-                          const SizedBox(width: 4),
+                          Icon(Icons.person, color: Colors.blueAccent, size: 12),
+                          SizedBox(width: 4),
                           Text('${course['student_count']} طالب',
-                              style: const TextStyle(color: Colors.white60, fontSize: 12)),
-                          const SizedBox(width: 12),
-                          const Icon(Icons.payments, color: Colors.greenAccent, size: 12),
-                          const SizedBox(width: 4),
+                              style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60), fontSize: 12)),
+                          SizedBox(width: 12),
+                          Icon(Icons.payments, color: Colors.greenAccent, size: 12),
+                          SizedBox(width: 4),
                           Text(_currencyFormat.format(course['revenue']),
-                              style: const TextStyle(color: Colors.white60, fontSize: 12)),
+                              style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60), fontSize: 12)),
                         ],
                       ),
                     ],
@@ -325,24 +325,24 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
 
   Widget _buildRecentEnrollmentCard(Map<String, dynamic> enrollment) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: EdgeInsets.only(bottom: 8),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         tileColor: Colors.white.withOpacity(0.03),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         leading: CircleAvatar(
           backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
           child: Text((enrollment['user_full_name']?[0] ?? 'U').toUpperCase(),
-              style: const TextStyle(color: Colors.white, fontSize: 14)),
+              style: TextStyle(color: AppColors.getTextColor(context), fontSize: 14)),
         ),
         title: Text(enrollment['user_full_name'] ?? 'مستخدم',
-            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.normal)),
+            style: TextStyle(color: AppColors.getTextColor(context), fontSize: 14, fontWeight: FontWeight.normal)),
         subtitle: Text(enrollment['course_title'] ?? '',
-            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+            style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 11)),
         trailing: Text(
           intl.DateFormat('MM/dd')
               .format(DateTime.parse(enrollment['enrolled_at'])),
-          style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 11),
+          style: TextStyle(color: AppColors.getMutedTextColor(context), fontSize: 11),
         ),
       ),
     );
@@ -366,8 +366,8 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(color: Colors.white),
+      builder: (context) => Center(
+        child: CircularProgressIndicator(color: AppColors.getTextColor(context)),
       ),
     );
 
@@ -695,11 +695,11 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
         backgroundColor: AppColors.getGlassColor(context, opacity: 0.9),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: Colors.white24),
+          side: BorderSide(color: Colors.white24),
         ),
-        title: const Text('اختر الأشهر للتقرير',
+        title: Text('اختر الأشهر للتقرير',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
         content: SizedBox(
           width: double.maxFinite,
           child: Column(
@@ -710,21 +710,21 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
                 children: [
                   TextButton.icon(
                     onPressed: () => _toggleSelectAll(true),
-                    icon: const Icon(Icons.select_all, size: 18),
-                    label: const Text('تحديد الكل'),
+                    icon: Icon(Icons.select_all, size: 18),
+                    label: Text('تحديد الكل'),
                     style: TextButton.styleFrom(
                         foregroundColor: Colors.blueAccent),
                   ),
                   TextButton.icon(
                     onPressed: () => _toggleSelectAll(false),
-                    icon: const Icon(Icons.deselect, size: 18),
-                    label: const Text('إلغاء الكل'),
+                    icon: Icon(Icons.deselect, size: 18),
+                    label: Text('إلغاء الكل'),
                     style:
                         TextButton.styleFrom(foregroundColor: Colors.redAccent),
                   ),
                 ],
               ),
-              const Divider(color: Colors.white12),
+              Divider(color: AppColors.getTextColor(context).withOpacity(0.12)),
               Flexible(
                 child: ListView(
                   shrinkWrap: true,
@@ -736,7 +736,7 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
                       onChanged: (val) =>
                           setState(() => _selectedMonths[month] = val!),
                       title: Text(monthName,
-                          style: const TextStyle(color: Colors.white)),
+                          style: TextStyle(color: AppColors.getTextColor(context))),
                       activeColor: AppColors.primaryPurple,
                       checkColor: Colors.white,
                     );
@@ -749,7 +749,7 @@ class _MonthSelectionDialogState extends State<_MonthSelectionDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('إلغاء', style: TextStyle(color: Colors.white60)),
+            child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60))),
           ),
           ElevatedButton(
             onPressed: selectedCount > 0

@@ -8,7 +8,7 @@ class QuizWidget extends StatefulWidget {
   final String title;
   final VoidCallback? onComplete;
 
-  const QuizWidget({
+  QuizWidget({
     super.key,
     required this.questions,
     required this.title,
@@ -73,7 +73,7 @@ class _QuizWidgetState extends State<QuizWidget> {
   @override
   Widget build(BuildContext context) {
     if (widget.questions.isEmpty) {
-      return const SizedBox.shrink();
+      return SizedBox.shrink();
     }
 
     return ClipRRect(
@@ -81,7 +81,7 @@ class _QuizWidgetState extends State<QuizWidget> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -93,7 +93,7 @@ class _QuizWidgetState extends State<QuizWidget> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -111,50 +111,50 @@ class _QuizWidgetState extends State<QuizWidget> {
       children: [
         Row(
           children: [
-            const Icon(
+            Icon(
               Icons.quiz_outlined,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
               size: 24,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Text(
                 widget.title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Text(
           'السؤال ${_currentQuestionIndex + 1} من ${widget.questions.length}',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.white.withOpacity(0.7),
+            color: AppColors.getTextColor(context, secondary: true),
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         Text(
           question.question,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
             height: 1.5,
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         ...List.generate(question.options.length, (index) {
           return _buildOption(index, question);
         }),
         if (_showAnswer && question.explanation != null) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: Colors.blue.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
@@ -165,18 +165,18 @@ class _QuizWidgetState extends State<QuizWidget> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.info_outline,
                   color: Colors.lightBlueAccent,
                   size: 20,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     question.explanation!,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white,
+                      color: AppColors.getTextColor(context),
                       height: 1.4,
                     ),
                   ),
@@ -185,7 +185,7 @@ class _QuizWidgetState extends State<QuizWidget> {
             ),
           ),
         ],
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         if (!_showAnswer)
           SizedBox(
             width: double.infinity,
@@ -199,12 +199,12 @@ class _QuizWidgetState extends State<QuizWidget> {
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              child: const Text(
+              child: Text(
                 'تحقق من الإجابة',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
             ),
@@ -225,10 +225,10 @@ class _QuizWidgetState extends State<QuizWidget> {
                 _currentQuestionIndex < widget.questions.length - 1
                     ? 'السؤال التالي'
                     : 'إنهاء الاختبار',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
             ),
@@ -260,8 +260,8 @@ class _QuizWidgetState extends State<QuizWidget> {
     return GestureDetector(
       onTap: () => _selectAnswer(index),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: EdgeInsets.only(bottom: 12),
+        padding: EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: backgroundColor,
           borderRadius: BorderRadius.circular(12),
@@ -284,18 +284,18 @@ class _QuizWidgetState extends State<QuizWidget> {
                 color: isSelected ? borderColor : Colors.transparent,
               ),
               child: showCorrect
-                  ? const Icon(Icons.check, color: Colors.white, size: 16)
+                  ? Icon(Icons.check, color: AppColors.getTextColor(context), size: 16)
                   : showWrong
-                      ? const Icon(Icons.close, color: Colors.white, size: 16)
+                      ? Icon(Icons.close, color: AppColors.getTextColor(context), size: 16)
                       : null,
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Text(
                 question.options[index],
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
             ),
@@ -317,29 +317,29 @@ class _QuizWidgetState extends State<QuizWidget> {
           color: isPassed ? Colors.greenAccent : Colors.orangeAccent,
           size: 64,
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         Text(
           isPassed ? 'أحسنت!' : 'حاول مرة أخرى',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 24,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Text(
           'لقد أجبت على $_correctAnswers من ${widget.questions.length} بشكل صحيح',
           textAlign: TextAlign.center,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20),
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -352,30 +352,30 @@ class _QuizWidgetState extends State<QuizWidget> {
                   color: isPassed ? Colors.greenAccent : Colors.orangeAccent,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: 8),
               Text(
                 'نسبة النجاح',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white.withOpacity(0.7),
+                  color: AppColors.getTextColor(context, secondary: true),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
           height: 50,
           child: ElevatedButton.icon(
             onPressed: _restartQuiz,
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            label: const Text(
+            icon: Icon(Icons.refresh, color: AppColors.getTextColor(context)),
+            label: Text(
               'إعادة الاختبار',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
             style: ElevatedButton.styleFrom(

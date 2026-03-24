@@ -7,7 +7,7 @@ import '../../core/theme/theme_provider.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class FAQScreen extends StatefulWidget {
-  const FAQScreen({super.key});
+  FAQScreen({super.key});
 
   @override
   State<FAQScreen> createState() => _FAQScreenState();
@@ -60,7 +60,7 @@ class _FAQScreenState extends State<FAQScreen> {
       appBar: AppBar(
         title: Text(
           AppStrings.get('faq', locale),
-          style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+          style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,

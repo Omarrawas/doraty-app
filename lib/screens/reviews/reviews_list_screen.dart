@@ -13,7 +13,7 @@ class ReviewsListScreen extends StatefulWidget {
   final String courseId;
   final String courseName;
 
-  const ReviewsListScreen({
+  ReviewsListScreen({
     super.key,
     required this.courseId,
     required this.courseName,
@@ -97,7 +97,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -109,53 +109,53 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
               // Content
               Expanded(
                 child: _isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white))
+                    ? Center(
+                        child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
                     : SingleChildScrollView(
-                        padding: const EdgeInsets.all(20),
+                        padding: EdgeInsets.all(20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Overall Rating
                             _buildOverallRating(),
 
-                            const SizedBox(height: 24),
+                            SizedBox(height: 24),
 
                             // Rating Distribution
                             _buildRatingDistribution(),
 
-                            const SizedBox(height: 24),
+                            SizedBox(height: 24),
 
                             // Add Review Button
                             _buildAddReviewButton(),
 
-                            const SizedBox(height: 24),
+                            SizedBox(height: 24),
 
                             // Reviews List
-                            const Text(
+                            Text(
                               'التقييمات',
                               style: TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: AppColors.getTextColor(context),
                               ),
                             ),
 
-                            const SizedBox(height: 16),
+                            SizedBox(height: 16),
 
                             if (_reviews.isEmpty)
                               Center(
                                 child: Text(
                                   'لا توجد تقييمات بعد',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.7),
+                                    color: AppColors.getTextColor(context, secondary: true),
                                   ),
                                 ),
                               )
                             else
                               ..._reviews.map((review) {
                                 return Padding(
-                                  padding: const EdgeInsets.only(bottom: 12),
+                                  padding: EdgeInsets.only(bottom: 12),
                                   child: _buildReviewCard(review),
                                 );
                               }),
@@ -172,7 +172,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -181,32 +181,32 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Text(
               'التقييمات والمراجعات',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          SizedBox(width: 48),
         ],
       ),
     );
@@ -218,7 +218,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -230,7 +230,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -241,15 +241,15 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                 children: [
                   Text(
                     _courseRating.averageRating.toStringAsFixed(1),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 48,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.getTextColor(context),
                     ),
                   ),
                   RatingBarIndicator(
                     rating: _courseRating.averageRating,
-                    itemBuilder: (context, index) => const Icon(
+                    itemBuilder: (context, index) => Icon(
                       Icons.star,
                       color: Colors.amber,
                     ),
@@ -257,12 +257,12 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                     itemSize: 20,
                     direction: Axis.horizontal,
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: 8),
                   Text(
                     '${_courseRating.totalReviews} تقييم',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.8),
+                      color: AppColors.getTextColor(context, secondary: true),
                     ),
                   ),
                 ],
@@ -280,7 +280,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -292,7 +292,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -301,20 +301,20 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
               final stars = 5 - index;
               final percentage = _courseRating.getPercentageForRating(stars);
               return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
+                padding: EdgeInsets.only(bottom: 8),
                 child: Row(
                   children: [
                     Text(
                       '$stars',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    const Icon(Icons.star, color: Colors.amber, size: 16),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 4),
+                    Icon(Icons.star, color: Colors.amber, size: 16),
+                    SizedBox(width: 12),
                     Expanded(
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(4),
@@ -328,11 +328,11 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Text(
                       '${percentage.toStringAsFixed(0)}%',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: AppColors.getTextColor(context, secondary: true),
                         fontSize: 13,
                       ),
                     ),
@@ -379,17 +379,17 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                     });
                   }
                 },
-                child: const Padding(
+                child: Padding(
                   padding: EdgeInsets.symmetric(vertical: 14),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add, color: Colors.white),
+                      Icon(Icons.add, color: AppColors.getTextColor(context)),
                       SizedBox(width: 8),
                       Text(
                         'أضف تقييمك',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -411,7 +411,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -423,7 +423,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
             ),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -440,36 +440,36 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                       height: 40,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Container(
-                        color: Colors.white.withOpacity(0.3),
+                        color: AppColors.getMutedTextColor(context),
                       ),
                       errorWidget: (context, url, error) => Container(
-                        color: Colors.white.withOpacity(0.3),
-                        child: const Icon(
+                        color: AppColors.getMutedTextColor(context),
+                        child: Icon(
                           Icons.person,
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                           size: 24,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           review.userName,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                           ),
                         ),
                         Text(
                           _formatDate(review.createdAt),
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withOpacity(0.7),
+                            color: AppColors.getTextColor(context, secondary: true),
                           ),
                         ),
                       ],
@@ -477,7 +477,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                   ),
                   RatingBarIndicator(
                     rating: review.rating,
-                    itemBuilder: (context, index) => const Icon(
+                    itemBuilder: (context, index) => Icon(
                       Icons.star,
                       color: Colors.amber,
                     ),
@@ -488,20 +488,20 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                 ],
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Comment
               Text(
                 review.comment,
                 textAlign: TextAlign.right,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                   height: 1.5,
                 ),
               ),
 
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
 
               // Actions
               Row(
@@ -514,7 +514,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
                     onTap: () {},
                     isActive: review.isLikedBy(_currentUserId),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   _buildActionButton(
                     icon: review.isDislikedBy(_currentUserId)
                         ? Icons.thumb_down
@@ -551,20 +551,20 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
           borderRadius: BorderRadius.circular(8),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
                   icon,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                   size: 16,
                 ),
-                const SizedBox(width: 4),
+                SizedBox(width: 4),
                 Text(
                   label,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context),
                     fontSize: 13,
                   ),
                 ),

@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
+  SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -26,21 +26,21 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Setup animations
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: Duration(milliseconds: 1500),
       vsync: this,
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+        curve: Interval(0.0, 0.6, curve: Curves.easeIn),
       ),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
+        curve: Interval(0.0, 0.6, curve: Curves.easeOutBack),
       ),
     );
 
@@ -52,7 +52,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _checkAuthStatus() async {
     // Wait for minimum splash duration (animation)
-    await Future.delayed(const Duration(milliseconds: 2000));
+    await Future.delayed(Duration(milliseconds: 2000));
 
     if (!mounted) return;
 
@@ -61,12 +61,12 @@ class _SplashScreenState extends State<SplashScreen>
       // If something takes more than 10 seconds, we fallback to guest mode or MainScreen
       await Future.any([
         _performAuthCheck(),
-        Future.delayed(const Duration(seconds: 15)).then((_) {
+        Future.delayed(Duration(seconds: 15)).then((_) {
           debugPrint('⚠️ SplashScreen: Init sequence TIMED OUT. Proceeding to main...');
           if (mounted) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const MainScreen()),
+              MaterialPageRoute(builder: (context) => MainScreen()),
             );
           }
         }),
@@ -76,7 +76,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
+          MaterialPageRoute(builder: (context) => MainScreen()),
         );
       }
     }
@@ -91,7 +91,7 @@ class _SplashScreenState extends State<SplashScreen>
     if (isAuthenticated) {
       // Load user profile with timeout
       try {
-        await authService.loadUserProfile().timeout(const Duration(seconds: 5));
+        await authService.loadUserProfile().timeout(Duration(seconds: 5));
       } catch (e) {
         debugPrint('⚠️ Profile load timed out: $e');
       }
@@ -101,7 +101,7 @@ class _SplashScreenState extends State<SplashScreen>
 
       // Apply screen security with timeout
       try {
-        await _applyScreenSecurity().timeout(const Duration(seconds: 5));
+        await _applyScreenSecurity().timeout(Duration(seconds: 5));
       } catch (e) {
         debugPrint('⚠️ Security check timed out: $e');
       }
@@ -111,12 +111,12 @@ class _SplashScreenState extends State<SplashScreen>
       if (!hasRole) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+          MaterialPageRoute(builder: (context) => RegisterScreen()),
         );
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
+          MaterialPageRoute(builder: (context) => MainScreen()),
         );
       }
     } else {
@@ -124,7 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
+          MaterialPageRoute(builder: (context) => MainScreen()),
         );
       }
     }
@@ -157,7 +157,7 @@ class _SplashScreenState extends State<SplashScreen>
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -178,7 +178,7 @@ class _SplashScreenState extends State<SplashScreen>
                           child: BackdropFilter(
                             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                             child: Container(
-                              padding: const EdgeInsets.all(40),
+                              padding: EdgeInsets.all(40),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   begin: Alignment.topLeft,
@@ -190,7 +190,7 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                                 borderRadius: BorderRadius.circular(30),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.3),
+                                  color: AppColors.getMutedTextColor(context),
                                   width: 1.5,
                                 ),
                               ),
@@ -202,28 +202,28 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ),
                         ),
-                        const SizedBox(height: 30),
+                        SizedBox(height: 30),
                         // App name
-                        const Text(
+                        Text(
                           'منصة دوراتي',
                           style: TextStyle(
                             fontSize: 32,
                             fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                             letterSpacing: 1.2,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        SizedBox(height: 10),
                         // Subtitle
                         Text(
                           'رحلتك التعليمية تبدأ هنا',
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.white.withOpacity(0.9),
+                            color: AppColors.getTextColor(context, secondary: true),
                             letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 50),
+                        SizedBox(height: 50),
                         // Loading indicator
                         SizedBox(
                           width: 40,

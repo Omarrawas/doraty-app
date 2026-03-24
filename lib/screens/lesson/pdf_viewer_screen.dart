@@ -6,7 +6,7 @@ class PdfViewerScreen extends StatefulWidget {
   final String url;
   final String title;
 
-  const PdfViewerScreen({
+  PdfViewerScreen({
     super.key,
     required this.url,
     required this.title,
@@ -26,15 +26,15 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
       appBar: AppBar(
         title: Text(
           widget.title,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: AppColors.getTextColor(context),
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
           overflow: TextOverflow.ellipsis,
         ),
         backgroundColor: AppColors.primaryPurple,
-        iconTheme: const IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: AppColors.getTextColor(context)),
       ),
       body: Stack(
         children: [
@@ -56,7 +56,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
             enableTextSelection: false,
           ),
           if (_isLoading)
-            const Center(
+            Center(
               child: CircularProgressIndicator(
                 color: AppColors.primaryPurple,
               ),
@@ -70,12 +70,12 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('خطأ في التحميل'),
-        content: const Text('تعذر تحميل الملف. يرجى المحاولة مرة أخرى لاحقاً.'),
+        title: Text('خطأ في التحميل'),
+        content: Text('تعذر تحميل الملف. يرجى المحاولة مرة أخرى لاحقاً.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('إغلاق'),
+            child: Text('إغلاق'),
           ),
           TextButton(
             onPressed: () {
@@ -84,7 +84,7 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
                 _isLoading = true;
               });
             },
-            child: const Text('إعادة المحاولة'),
+            child: Text('إعادة المحاولة'),
           ),
         ],
       ),

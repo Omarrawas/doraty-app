@@ -9,7 +9,7 @@ class CustomButton extends StatelessWidget {
   final IconData? icon;
   final double? width;
 
-  const CustomButton({
+  CustomButton({
     super.key,
     required this.text,
     this.onPressed,
@@ -46,7 +46,7 @@ class CustomButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: Center(
             child: isLoading
-                ? const SizedBox(
+                ? SizedBox(
                     height: 24,
                     width: 24,
                     child: CircularProgressIndicator(
@@ -63,7 +63,7 @@ class CustomButton extends StatelessWidget {
                           color: _getTextColor(),
                           size: 20,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8),
                       ],
                       Text(
                         text,

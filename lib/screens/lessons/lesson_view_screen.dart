@@ -28,7 +28,7 @@ class LessonViewScreen extends StatefulWidget {
   final List<Lesson> allLessons;
   final String courseTitle;
 
-  const LessonViewScreen({
+  LessonViewScreen({
     super.key,
     required this.lesson,
     required this.allLessons,
@@ -154,7 +154,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
       _youtubeController = YoutubePlayerController(
         initialVideoId: videoId,
-        flags: const YoutubePlayerFlags(
+        flags: YoutubePlayerFlags(
           autoPlay: false,
           mute: false,
           disableDragSeek: false,
@@ -255,7 +255,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       await _databaseService.markLessonAsCompleted(widget.lesson.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تم تعليم الدرس كمكتمل')),
+          SnackBar(content: Text('تم تعليم الدرس كمكتمل')),
         );
       }
     } catch (e) {
@@ -289,7 +289,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       await _loadNotes();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('تمت إضافة الملاحظة')),
+          SnackBar(content: Text('تمت إضافة الملاحظة')),
         );
       }
     } catch (e) {
@@ -345,7 +345,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                   left: 20,
                   child: IconButton(
                     icon:
-                        const Icon(Icons.fullscreen_exit, color: Colors.white),
+                        Icon(Icons.fullscreen_exit, color: AppColors.getTextColor(context)),
                     onPressed: () {
                       // إجبار الجهاز على العودة للوضع العمودي
                       SystemChrome.setPreferredOrientations([
@@ -353,7 +353,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                         DeviceOrientation.portraitDown,
                       ]);
                       // ثم إعادة السماح بجميع الاتجاهات
-                      Future.delayed(const Duration(milliseconds: 500), () {
+                      Future.delayed(Duration(milliseconds: 500), () {
                         SystemChrome.setPreferredOrientations([
                           DeviceOrientation.portraitUp,
                           DeviceOrientation.portraitDown,
@@ -374,7 +374,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
           body: Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: AppColors.backgroundGradient,
             ),
             child: SafeArea(
@@ -387,20 +387,20 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildVideoPlayer(),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            padding: EdgeInsets.symmetric(horizontal: 20),
                             child: _buildLessonInfo(),
                           ),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                           // نظام التبويبات
                           _buildTabBar(),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                           _buildTabContent(),
-                          const SizedBox(height: 30),
+                          SizedBox(height: 30),
                           // شريط التحكم في الأسفل
                           _buildBottomControls(),
-                          const SizedBox(height: 20),
+                          SizedBox(height: 20),
                         ],
                       ),
                     ),
@@ -416,7 +416,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -425,21 +425,21 @@ class _LessonViewScreenState extends State<LessonViewScreen>
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -448,16 +448,16 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                   widget.courseTitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.7),
+                    color: AppColors.getTextColor(context, secondary: true),
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   'درس ${widget.lesson.orderIndex}',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
               ],
@@ -470,10 +470,10 @@ class _LessonViewScreenState extends State<LessonViewScreen>
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
@@ -507,16 +507,16 @@ class _LessonViewScreenState extends State<LessonViewScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.video_library_outlined,
-                color: Colors.white54,
+                color: AppColors.getTextColor(context).withOpacity(0.54),
                 size: 48,
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Text(
                 'فيديو غير متاح',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                  color: AppColors.getTextColor(context, secondary: true),
                   fontSize: 16,
                 ),
               ),
@@ -550,7 +550,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
           );
         }
       }
-      return const SizedBox.shrink();
+      return SizedBox.shrink();
     }
 
     return Focus(
@@ -560,7 +560,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
         controller: _youtubeController!,
         showVideoProgressIndicator: true,
         progressIndicatorColor: AppColors.primaryPurple,
-        progressColors: const ProgressBarColors(
+        progressColors: ProgressBarColors(
           playedColor: AppColors.primaryPurple,
           handleColor: AppColors.primaryPurple,
         ),
@@ -580,7 +580,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -592,7 +592,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
@@ -602,32 +602,32 @@ class _LessonViewScreenState extends State<LessonViewScreen>
               Text(
                 widget.lesson.title,
                 textAlign: TextAlign.right,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.access_time,
-                    color: Colors.white70,
+                    color: AppColors.getTextColor(context).withOpacity(0.70),
                     size: 18,
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Text(
                     widget.lesson.duration,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white70,
+                      color: AppColors.getTextColor(context).withOpacity(0.70),
                     ),
                   ),
-                  const Spacer(),
+                  Spacer(),
                   if (widget.lesson.isFree)
                     Container(
-                      padding: const EdgeInsets.symmetric(
+                      padding: EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
@@ -643,14 +643,14 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                     ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               // Content Logic
               // Content Logic - Display ONLY description here to avoid duplication
               Builder(
                 builder: (context) {
                   final String description = widget.lesson.description;
 
-                  if (description.isEmpty) return const SizedBox.shrink();
+                  if (description.isEmpty) return SizedBox.shrink();
 
                   // Check if description contains HTML
                   final bool isHtml = description.trim().startsWith('<') ||
@@ -662,8 +662,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                   if (isHtml) {
                     return HtmlWidget(
                       description,
-                      textStyle: const TextStyle(
-                        color: Colors.white,
+                      textStyle: TextStyle(
+                        color: AppColors.getTextColor(context),
                         fontSize: 14,
                         height: 1.5,
                         fontFamily: 'Cairo',
@@ -676,7 +676,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                     return Text(
                       description,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
+                        color: AppColors.getTextColor(context, secondary: true),
                         fontSize: 14,
                         height: 1.5,
                       ),
@@ -692,14 +692,14 @@ class _LessonViewScreenState extends State<LessonViewScreen>
   }
 
   Widget _buildResources() {
-    if (widget.lesson.resources.isEmpty) return const SizedBox.shrink();
+    if (widget.lesson.resources.isEmpty) return SizedBox.shrink();
     
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -711,29 +711,29 @@ class _LessonViewScreenState extends State<LessonViewScreen>
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'المرفقات والموارد',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               ...widget.lesson.resources.map((resource) {
                 final fileName = resource['name'] ?? 'ملف غير معروف';
                 final url = resource['url'] ?? '';
                 final ext = fileName.split('.').last.toLowerCase();
 
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.only(bottom: 12),
                   child: InkWell(
                     onTap: () async {
                       if (ext == 'pdf') {
@@ -767,9 +767,9 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                     },
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: AppColors.getMutedTextColor(context),
                         borderRadius: BorderRadius.circular(12),
                         border:
                             Border.all(color: Colors.white.withOpacity(0.2)),
@@ -782,16 +782,16 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                                 : (ext == 'html' || ext == 'htm'
                                     ? Icons.play_circle_outline
                                     : Icons.attach_file),
-                            color: Colors.white70,
+                            color: AppColors.getTextColor(context).withOpacity(0.70),
                             size: 20,
                           ),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               fileName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white,
+                                color: AppColors.getTextColor(context),
                               ),
                             ),
                           ),
@@ -799,14 +799,14 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                             (ext == 'html' || ext == 'htm')
                                 ? 'تشغيل'
                                 : (ext == 'pdf' ? 'عرض' : 'تنزيل'),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                               color: AppColors.primaryPurple,
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          const Icon(
+                          SizedBox(width: 4),
+                          Icon(
                             Icons.chevron_left,
                             color: AppColors.primaryPurple,
                             size: 16,
@@ -830,7 +830,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -842,22 +842,22 @@ class _LessonViewScreenState extends State<LessonViewScreen>
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'ملاحظاتي',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
@@ -865,7 +865,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                       controller: _noteController,
                       autofocus: false,
                       style:
-                          const TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                          TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
                       decoration: InputDecoration(
                         hintText: 'أضف ملاحظة...',
                         hintStyle: TextStyle(
@@ -882,22 +882,22 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide: BorderSide(
-                            color: Colors.white.withOpacity(0.3),
+                            color: AppColors.getMutedTextColor(context),
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: const BorderSide(
+                          borderSide: BorderSide(
                             color: AppColors.primaryPurple,
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Container(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         colors: [
                           AppColors.primaryPurple,
                           AppColors.primaryBlue,
@@ -906,16 +906,16 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
+                      icon: Icon(Icons.add, color: AppColors.getTextColor(context)),
                       onPressed: _addNote,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               if (_isLoadingNotes)
-                const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
+                Center(
+                  child: CircularProgressIndicator(color: AppColors.getTextColor(context)),
                 )
               else if (_notes.isEmpty)
                 Center(
@@ -923,17 +923,17 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                     'لا توجد ملاحظات بعد',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.white.withOpacity(0.85),
+                      color: AppColors.getTextColor(context, secondary: true),
                     ),
                   ),
                 )
               else
                 ..._notes.map((note) {
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
+                    margin: EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
+                      color: AppColors.getMutedTextColor(context),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -944,15 +944,15 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                             _formatTimestamp(note['timestamp']),
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white.withOpacity(0.75),
+                              color: AppColors.getTextColor(context, secondary: true),
                             ),
                           ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           note['content'] ?? '',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                           ),
                         ),
                       ],
@@ -974,23 +974,23 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
   Widget _buildTabBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: AppColors.getMutedTextColor(context),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: AppColors.getMutedTextColor(context),
               ),
             ),
             child: TabBar(
               controller: _tabController,
               indicator: BoxDecoration(
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [
                     AppColors.primaryPurple,
                     AppColors.primaryBlue,
@@ -999,18 +999,18 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                 borderRadius: BorderRadius.circular(12),
               ),
               indicatorSize: TabBarIndicatorSize.tab,
-              indicatorPadding: const EdgeInsets.all(4),
+              indicatorPadding: EdgeInsets.all(4),
               labelColor: Colors.white,
               unselectedLabelColor: Colors.white.withOpacity(0.6),
-              labelStyle: const TextStyle(
+              labelStyle: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
               ),
-              unselectedLabelStyle: const TextStyle(
+              unselectedLabelStyle: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.normal,
               ),
-              tabs: const [
+              tabs: [
                 Tab(text: 'الشرح'),
                 Tab(text: 'اختبار'),
                 Tab(text: 'ملاحظات'),
@@ -1024,12 +1024,12 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
   Widget _buildTabContent() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: SizedBox(
         height: 600, // ارتفاع محدد للـ TabBarView
         child: TabBarView(
           controller: _tabController,
-          physics: const NeverScrollableScrollPhysics(),
+          physics: NeverScrollableScrollPhysics(),
           children: [
             // تبويب الشرح (يتضمن التطبيقات التفاعلية)
             SingleChildScrollView(child: _buildContentTab()),
@@ -1070,7 +1070,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
         // عرض الموارد إذا كانت موجودة
         if (widget.lesson.resources.isNotEmpty) ...[
-          const SizedBox(height: 20),
+          SizedBox(height: 20),
           _buildResources(),
         ],
 
@@ -1082,7 +1082,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
   Widget _buildInteractiveAppsSection() {
     if (widget.lesson.interactiveElements == null) {
-      return const SizedBox.shrink();
+      return SizedBox.shrink();
     }
 
     // Filter for all interactive types EXCEPT quiz
@@ -1091,33 +1091,33 @@ class _LessonViewScreenState extends State<LessonViewScreen>
         .map((e) => InteractiveElement.fromJson(e))
         .toList();
 
-    if (interactiveApps.isEmpty) return const SizedBox.shrink();
+    if (interactiveApps.isEmpty) return SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 24),
-        const Padding(
+        SizedBox(height: 24),
+        Padding(
           padding: EdgeInsets.symmetric(horizontal: 4),
           child: Text(
             'تطبيقات تفاعلية',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: AppColors.getTextColor(context),
             ),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16),
         ...interactiveApps.map((element) {
           Widget interactiveWidget;
           switch (element.type) {
             // Add other specific types here as needed (e.g. simulation)
             default:
               interactiveWidget = Container(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -1125,18 +1125,18 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                   children: [
                     Text(
                       element.title,
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context),
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
                     if (element.description != null) ...[
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       Text(
                         element.description!,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: AppColors.getTextColor(context, secondary: true),
                           fontSize: 14,
                         ),
                       ),
@@ -1147,7 +1147,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
           }
 
           return Padding(
-            padding: const EdgeInsets.only(bottom: 20),
+            padding: EdgeInsets.only(bottom: 20),
             child: interactiveWidget,
           );
         }),
@@ -1172,42 +1172,42 @@ class _LessonViewScreenState extends State<LessonViewScreen>
     return Column(
       children: quizzes.map((quiz) {
         return Container(
-          margin: const EdgeInsets.only(top: 20),
-          padding: const EdgeInsets.all(20),
+          margin: EdgeInsets.only(top: 20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: Colors.white.withOpacity(0.2)),
           ),
           child: Column(
             children: [
-              const Icon(
+              Icon(
                 Icons.assignment_outlined,
-                color: Colors.white,
+                color: AppColors.getTextColor(context),
                 size: 48,
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               Text(
                 quiz.title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: AppColors.getTextColor(context),
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               if (quiz.description != null) ...[
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
                 Text(
                   quiz.description!,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: AppColors.getTextColor(context, secondary: true),
                     fontSize: 14,
                   ),
                   textAlign: TextAlign.center,
                 ),
               ],
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -1224,18 +1224,18 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryPurple,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
                     elevation: 4,
                   ),
-                  child: const Text(
+                  child: Text(
                     'بدء الاختبار',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.getTextColor(context),
                     ),
                   ),
                 ),
@@ -1252,17 +1252,17 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 60),
+          SizedBox(height: 60),
           Icon(
             Icons.assignment_turned_in_outlined,
-            color: Colors.white.withOpacity(0.3),
+            color: AppColors.getMutedTextColor(context),
             size: 64,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
           Text(
             'لا يوجد اختبار لهذا الدرس',
             style: TextStyle(
-              color: Colors.white.withOpacity(0.6),
+              color: AppColors.getTextColor(context, secondary: true),
               fontSize: 16,
             ),
           ),
@@ -1279,54 +1279,54 @@ class _LessonViewScreenState extends State<LessonViewScreen>
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // معاينة الدرس التالي (إذا وجد)
           if (nextLesson != null) ...[
             Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(12),
+              margin: EdgeInsets.only(bottom: 16),
+              padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
+                color: AppColors.getMutedTextColor(context),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.white.withOpacity(0.1)),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
+                      color: AppColors.getMutedTextColor(context),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.play_arrow_rounded,
-                      color: Colors.white70,
+                      color: AppColors.getTextColor(context).withOpacity(0.70),
                       size: 20,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'التالي:',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white54,
+                            color: AppColors.getTextColor(context).withOpacity(0.54),
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: 4),
                         Text(
                           nextLesson.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white,
+                            color: AppColors.getTextColor(context),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1335,9 +1335,9 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                   ),
                   Text(
                     nextLesson.duration,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white54,
+                      color: AppColors.getTextColor(context).withOpacity(0.54),
                     ),
                   ),
                 ],
@@ -1359,7 +1359,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                 } else {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
+                      SnackBar(
                         content: Text('أحسنت! لقد أكملت جميع دروس الدورة'),
                         backgroundColor: Colors.green,
                       ),
@@ -1371,7 +1371,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding: EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -1385,12 +1385,12 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                     nextLesson != null
                         ? 'إكمال والانتقال للتالي'
                         : 'إكمال الدرس وإنهاء الدورة',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8),
                   Icon(nextLesson != null
                       ? Icons.arrow_forward_rounded
                       : Icons.check_circle_outline),

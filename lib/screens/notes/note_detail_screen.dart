@@ -6,7 +6,7 @@ import '../../models/note.dart';
 class NoteDetailScreen extends StatefulWidget {
   final Note note;
 
-  const NoteDetailScreen({
+  NoteDetailScreen({
     super.key,
     required this.note,
   });
@@ -50,7 +50,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: AppColors.backgroundGradient,
         ),
         child: SafeArea(
@@ -62,26 +62,26 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               // Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Title
                       Text(
                         widget.note.title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: AppColors.getTextColor(context),
                         ),
                       ),
 
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
 
                       // Metadata
                       _buildMetadata(),
 
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24),
 
                       // Content
                       ClipRRect(
@@ -90,7 +90,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(20),
+                            padding: EdgeInsets.all(20),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topLeft,
@@ -102,15 +102,15 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                               ),
                               borderRadius: BorderRadius.circular(20),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.3),
+                                color: AppColors.getMutedTextColor(context),
                                 width: 1.5,
                               ),
                             ),
                             child: Text(
                               widget.note.content,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
-                                color: Colors.white,
+                                color: AppColors.getTextColor(context),
                                 height: 1.8,
                               ),
                             ),
@@ -118,7 +118,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      SizedBox(height: 20),
 
                       // Tags
                       if (widget.note.tags.isNotEmpty) _buildTags(),
@@ -135,7 +135,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20),
       child: Row(
         children: [
           ClipRRect(
@@ -144,21 +144,21 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context, true),
                 ),
               ),
             ),
           ),
-          const Spacer(),
+          Spacer(),
           // Pin Button
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -166,10 +166,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
@@ -183,7 +183,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8),
           // Delete Button
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -191,15 +191,15 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: AppColors.getMutedTextColor(context),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: AppColors.getMutedTextColor(context),
                     width: 1,
                   ),
                 ),
                 child: IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                  icon: Icon(Icons.delete_outline, color: Colors.red),
                   onPressed: _deleteNote,
                 ),
               ),
@@ -217,9 +217,9 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       children: [
         // Date
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
+            color: AppColors.getMutedTextColor(context),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -227,15 +227,15 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             children: [
               Icon(
                 Icons.calendar_today,
-                color: Colors.white.withOpacity(0.8),
+                color: AppColors.getTextColor(context, secondary: true),
                 size: 14,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               Text(
                 '${widget.note.updatedAt.day}/${widget.note.updatedAt.month}/${widget.note.updatedAt.year}',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                 ),
               ),
             ],
@@ -245,7 +245,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         // Video Timestamp
         if (widget.note.videoTimestamp != null)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.blue.withOpacity(0.3),
               borderRadius: BorderRadius.circular(12),
@@ -254,17 +254,17 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.play_circle_outline,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                   size: 14,
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: 6),
                 Text(
                   widget.note.formattedTimestamp,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -279,36 +279,36 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'الوسوم',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: AppColors.getTextColor(context),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: widget.note.tags.map((tag) {
             return Container(
-              padding: const EdgeInsets.symmetric(
+              padding: EdgeInsets.symmetric(
                 horizontal: 12,
                 vertical: 8,
               ),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: AppColors.getMutedTextColor(context),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
+                  color: AppColors.getMutedTextColor(context),
                 ),
               ),
               child: Text(
                 '#$tag',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 14,
-                  color: Colors.white,
+                  color: AppColors.getTextColor(context),
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -327,7 +327,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -339,43 +339,43 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
+                color: AppColors.getMutedTextColor(context),
                 width: 1.5,
               ),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
+                Icon(
                   Icons.warning_amber_rounded,
                   color: Colors.red,
                   size: 48,
                 ),
-                const SizedBox(height: 16),
-                const Text(
+                SizedBox(height: 16),
+                Text(
                   'حذف الملاحظة',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
-                const SizedBox(height: 12),
-                const Text(
+                SizedBox(height: 12),
+                Text(
                   'هل أنت متأكد من حذف هذه الملاحظة؟ لا يمكن التراجع عن هذا الإجراء.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                   ),
                 ),
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
                 Row(
                   children: [
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: AppColors.getMutedTextColor(context),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Material(
@@ -383,13 +383,13 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(12),
                             onTap: () => Navigator.pop(context),
-                            child: const Padding(
+                            child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 12),
                               child: Text(
                                 'إلغاء',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.getTextColor(context),
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -399,7 +399,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: 12),
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
@@ -414,19 +414,19 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                               Navigator.pop(context);
                               Navigator.pop(context, true);
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
+                                SnackBar(
                                   content: Text('تم حذف الملاحظة'),
                                   backgroundColor: Colors.green,
                                 ),
                               );
                             },
-                            child: const Padding(
+                            child: Padding(
                               padding: EdgeInsets.symmetric(vertical: 12),
                               child: Text(
                                 'حذف',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: AppColors.getTextColor(context),
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),

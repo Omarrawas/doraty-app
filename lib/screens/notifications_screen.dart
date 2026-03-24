@@ -6,7 +6,7 @@ import '../models/app_notification.dart';
 import '../core/utils/error_utils.dart';
 
 class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key});
+  NotificationsScreen({super.key});
 
   @override
   State<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -60,7 +60,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم وضع علامة مقروء على جميع الإشعارات')),
+        SnackBar(content: Text('تم وضع علامة مقروء على جميع الإشعارات')),
       );
     }
   }
@@ -69,19 +69,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الإشعارات'),
+        title: Text('الإشعارات'),
         actions: [
           if (_notifications.any((n) => !n.isRead))
             TextButton.icon(
               onPressed: _markAllAsRead,
-              icon: const Icon(Icons.done_all, size: 18),
-              label: const Text('وضع علامة مقروء على الكل'),
+              icon: Icon(Icons.done_all, size: 18),
+              label: Text('وضع علامة مقروء على الكل'),
               style: TextButton.styleFrom(foregroundColor: Colors.white),
             ),
         ],
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? Center(child: CircularProgressIndicator())
           : _notifications.isEmpty
               ? Center(
                   child: Column(
@@ -89,7 +89,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     children: [
                       Icon(Icons.notifications_off_outlined,
                           size: 80, color: Colors.grey[400]),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
                       Text(
                         'لا توجد إشعارات',
                         style: TextStyle(fontSize: 18, color: Colors.grey[600]),
@@ -102,7 +102,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   child: ListView.separated(
                     padding: const EdgeInsets.all(8),
                     itemCount: _notifications.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    separatorBuilder: (context, index) => Divider(height: 1),
                     itemBuilder: (context, index) {
                       final notification = _notifications[index];
                       return _buildNotificationTile(notification);
@@ -132,13 +132,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             notification.body,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             timeago.format(notification.createdAt, locale: 'ar'),
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -149,7 +149,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ? Container(
               width: 10,
               height: 10,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColors.primaryPurple,
                 shape: BoxShape.circle,
               ),

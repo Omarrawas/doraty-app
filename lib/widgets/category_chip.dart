@@ -7,7 +7,7 @@ class CategoryChip extends StatelessWidget {
   final VoidCallback onTap;
   final IconData? icon;
 
-  const CategoryChip({
+  CategoryChip({
     super.key,
     required this.label,
     required this.isSelected,
@@ -20,7 +20,7 @@ class CategoryChip extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         margin: const EdgeInsets.only(left: 8),
         decoration: BoxDecoration(
@@ -39,7 +39,7 @@ class CategoryChip extends StatelessWidget {
                     color:
                         AppColors.primaryPurple.withAlpha((0.3 * 255).round()),
                     blurRadius: 8,
-                    offset: const Offset(0, 4),
+                    offset: Offset(0, 4),
                   ),
                 ]
               : null,
@@ -53,7 +53,7 @@ class CategoryChip extends StatelessWidget {
                 size: 16,
                 color: isSelected ? Colors.white : AppColors.textSecondary,
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
             ],
             Text(
               label,

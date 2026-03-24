@@ -9,7 +9,7 @@ class RichContentViewer extends StatelessWidget {
   final String? htmlContent;
   final String? markdownContent;
 
-  const RichContentViewer({
+  RichContentViewer({
     super.key,
     this.htmlContent,
     this.markdownContent,
@@ -19,7 +19,7 @@ class RichContentViewer extends StatelessWidget {
   Widget build(BuildContext context) {
     // إذا لم يكن هناك محتوى، لا نعرض شيء
     if (htmlContent == null && markdownContent == null) {
-      return const SizedBox.shrink();
+      return SizedBox.shrink();
     }
 
     return ClipRRect(
@@ -27,7 +27,7 @@ class RichContentViewer extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: const EdgeInsets.all(20),
+          padding: EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -39,18 +39,18 @@ class RichContentViewer extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: AppColors.getMutedTextColor(context),
               width: 1.5,
             ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
                   Icon(
                     Icons.description_outlined,
-                    color: Colors.white,
+                    color: AppColors.getTextColor(context),
                     size: 24,
                   ),
                   SizedBox(width: 12),
@@ -59,17 +59,17 @@ class RichContentViewer extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: AppColors.getTextColor(context),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              SizedBox(height: 16),
               if (htmlContent != null)
                 HtmlWidget(
                   htmlContent!,
-                  textStyle: const TextStyle(
-                    color: Colors.white,
+                  textStyle: TextStyle(
+                    color: AppColors.getTextColor(context),
                     fontSize: 16,
                     height: 1.6,
                     fontFamily: 'Cairo',
@@ -135,31 +135,31 @@ class RichContentViewer extends StatelessWidget {
                 MarkdownBody(
                   data: markdownContent!,
                   styleSheet: MarkdownStyleSheet(
-                    p: const TextStyle(
-                      color: Colors.white,
+                    p: TextStyle(
+                      color: AppColors.getTextColor(context),
                       fontSize: 16,
                       height: 1.6,
                     ),
-                    h1: const TextStyle(
-                      color: Colors.white,
+                    h1: TextStyle(
+                      color: AppColors.getTextColor(context),
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
-                    h2: const TextStyle(
-                      color: Colors.white,
+                    h2: TextStyle(
+                      color: AppColors.getTextColor(context),
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
-                    h3: const TextStyle(
-                      color: Colors.white,
+                    h3: TextStyle(
+                      color: AppColors.getTextColor(context),
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
-                    listBullet: const TextStyle(
-                      color: Colors.white,
+                    listBullet: TextStyle(
+                      color: AppColors.getTextColor(context),
                       fontSize: 16,
                     ),
-                    code: const TextStyle(
+                    code: TextStyle(
                       backgroundColor: Colors.black26,
                       color: Colors.greenAccent,
                       fontFamily: 'monospace',
@@ -169,7 +169,7 @@ class RichContentViewer extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: Colors.white24),
                     ),
-                    a: const TextStyle(
+                    a: TextStyle(
                       color: AppColors.primaryPurple,
                       decoration: TextDecoration.underline,
                     ),

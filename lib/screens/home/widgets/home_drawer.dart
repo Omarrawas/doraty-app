@@ -20,7 +20,7 @@ import '../../help/faq_screen.dart';
 class HomeDrawer extends StatelessWidget {
   final List<CategoryModel> categories;
 
-  const HomeDrawer({
+  HomeDrawer({
     super.key,
     required this.categories,
   });
@@ -79,8 +79,8 @@ class HomeDrawer extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => (userProfile?['role'] == 'teacher') 
-                               ? const TeacherDashboardScreen() 
-                               : const AdminDashboardScreen(),
+                               ? TeacherDashboardScreen() 
+                               : AdminDashboardScreen(),
                         ),
                       );
                     },
@@ -104,7 +104,7 @@ class HomeDrawer extends StatelessWidget {
                         style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 14)),
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const ExploreScreen(showBackButton: true)));
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => ExploreScreen(showBackButton: true)));
                         // Note: In a real app, we'd pass the category ID to ExploreScreen
                       },
                     )).toList(),
@@ -117,7 +117,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'my_courses'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const CoursesListScreen(showBackButton: true)));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => CoursesListScreen(showBackButton: true)));
                   },
                 ),
 
@@ -128,7 +128,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'my_receipts'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderHistoryScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => OrderHistoryScreen()));
                   },
                 ),
 
@@ -138,7 +138,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'top_teachers'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const TeachersListScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => TeachersListScreen()));
                   },
                 ),
 
@@ -157,11 +157,11 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'learning_tips_title'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AllTipsScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => AllTipsScreen()));
                   },
                 ),
 
-                const Divider(color: Colors.white10),
+                Divider(color: AppColors.getTextColor(context).withOpacity(0.10)),
 
                 _buildDrawerItem(
                   context,
@@ -169,7 +169,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'settings'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsScreen()));
                   },
                 ),
 
@@ -203,7 +203,7 @@ class HomeDrawer extends StatelessWidget {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const FAQScreen()),
+                      MaterialPageRoute(builder: (_) => FAQScreen()),
                     );
                   },
                 ),
@@ -234,11 +234,11 @@ class HomeDrawer extends StatelessWidget {
                   activeColor: AppColors.primaryPurple,
                 ),
 
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
                 
                 // Social Media Icons
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
@@ -250,21 +250,21 @@ class HomeDrawer extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
 
                 // Logout or Login
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: EdgeInsets.all(20),
                   child: authService.isAuthenticated 
                     ? ElevatedButton.icon(
                         onPressed: () => authService.signOut(),
-                        icon: const Icon(Icons.logout),
+                        icon: Icon(Icons.logout),
                         label: Text(_t(context, 'logout')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red.withOpacity(0.1),
                           foregroundColor: Colors.red,
                           elevation: 0,
-                          minimumSize: const Size(double.infinity, 50),
+                          minimumSize: Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -273,15 +273,15 @@ class HomeDrawer extends StatelessWidget {
                     : ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => LoginScreen()));
                         },
-                        icon: const Icon(Icons.login),
+                        icon: Icon(Icons.login),
                         label: Text(_t(context, 'login_title')),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
                           foregroundColor: AppColors.primaryPurple,
                           elevation: 0,
-                          minimumSize: const Size(double.infinity, 50),
+                          minimumSize: Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -289,7 +289,7 @@ class HomeDrawer extends StatelessWidget {
                       ),
                 ),
                 
-                const SizedBox(height: 20),
+                SizedBox(height: 20),
               ],
             ),
           ),
@@ -303,7 +303,7 @@ class HomeDrawer extends StatelessWidget {
     final photoUrl = profile?['photo_url'] ?? profile?['avatar_url'];
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+      padding: EdgeInsets.fromLTRB(20, 60, 20, 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -320,17 +320,17 @@ class HomeDrawer extends StatelessWidget {
             radius: 30,
             backgroundColor: Colors.white,
             backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-            child: photoUrl == null ? const Icon(Icons.person, size: 35, color: AppColors.primaryPurple) : null,
+            child: photoUrl == null ? Icon(Icons.person, size: 35, color: AppColors.primaryPurple) : null,
           ),
-          const SizedBox(width: 15),
+          SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   userName != null ? '${_t(context, 'welcome_with_name')} $userName 👋' : '${_t(context, 'welcome')} 👋',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context),
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
@@ -340,7 +340,7 @@ class HomeDrawer extends StatelessWidget {
                 Text(
                   _t(context, 'ready_to_learn'),
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: AppColors.getTextColor(context, secondary: true),
                     fontSize: 12,
                   ),
                   maxLines: 1,
@@ -378,7 +378,7 @@ class HomeDrawer extends StatelessWidget {
 
   Widget _buildSocialIcon(IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         shape: BoxShape.circle,
@@ -396,16 +396,16 @@ class HomeDrawer extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(_t(context, 'support_dialog_desc')),
-            const SizedBox(height: 20),
+            SizedBox(height: 20),
             ListTile(
-              leading: const Icon(Icons.email, color: AppColors.primaryPurple),
+              leading: Icon(Icons.email, color: AppColors.primaryPurple),
               title: Text(_t(context, 'email_us')),
               onTap: () {
                 // Email logic
               },
             ),
             ListTile(
-              leading: const Icon(Icons.chat, color: Colors.green),
+              leading: Icon(Icons.chat, color: Colors.green),
               title: Text(_t(context, 'whatsapp_us')),
               onTap: () {
                 // WhatsApp logic

@@ -11,7 +11,7 @@ class BundleCard extends StatefulWidget {
   final Bundle bundle;
   final String? heroTag;
 
-  const BundleCard({
+  BundleCard({
     super.key,
     required this.bundle,
     this.heroTag,
@@ -31,7 +31,7 @@ class _BundleCardState extends State<BundleCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 150),
+      duration: Duration(milliseconds: 150),
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
@@ -67,14 +67,14 @@ class _BundleCardState extends State<BundleCard>
         scale: _scaleAnimation,
         child: Container(
           width: 280,
-          margin: const EdgeInsets.only(bottom: 20),
+          margin: EdgeInsets.only(bottom: 20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.2),
                 blurRadius: 15,
-                offset: const Offset(0, 10),
+                offset: Offset(0, 10),
               ),
             ],
           ),
@@ -91,15 +91,15 @@ class _BundleCardState extends State<BundleCard>
                     width: double.infinity,
                     fit: BoxFit.cover,
                     placeholder: (context, url) => Container(
-                      color: Colors.white.withOpacity(0.05),
-                      child: const Center(
+                      color: AppColors.getMutedTextColor(context),
+                      child: Center(
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     ),
                     errorWidget: (context, url, error) => Container(
                       color: AppColors.primaryPurple.withOpacity(0.1),
-                      child: const Icon(Icons.collections_bookmark,
-                          color: Colors.white24, size: 40),
+                      child: Icon(Icons.collections_bookmark,
+                          color: AppColors.getTextColor(context).withOpacity(0.24), size: 40),
                     ),
                   ),
                 ),
@@ -116,7 +116,7 @@ class _BundleCardState extends State<BundleCard>
                           AppColors.primaryPurple.withOpacity(0.4),
                           Colors.black.withOpacity(0.9),
                         ],
-                        stops: const [0.0, 0.5, 1.0],
+                        stops: [0.0, 0.5, 1.0],
                       ),
                     ),
                   ),
@@ -124,14 +124,14 @@ class _BundleCardState extends State<BundleCard>
 
                 // Content
                 Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       // Badge
                       Container(
-                        padding: const EdgeInsets.symmetric(
+                        padding: EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: AppColors.secondaryGold,
@@ -139,42 +139,42 @@ class _BundleCardState extends State<BundleCard>
                         ),
                         child: Text(
                           AppStrings.get('bundle_badge', locale),
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.black,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       // Title
                       Text(
                         widget.bundle.title,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: AppColors.getTextColor(context),
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       // Course Count
                       Row(
                         children: [
-                          const Icon(Icons.auto_stories_outlined,
-                              color: Colors.white70, size: 14),
-                          const SizedBox(width: 4),
+                          Icon(Icons.auto_stories_outlined,
+                              color: AppColors.getTextColor(context).withOpacity(0.70), size: 14),
+                          SizedBox(width: 4),
                           Text(
                             '${widget.bundle.courses.length} ${AppStrings.get('courses_count', locale)}',
-                            style: const TextStyle(
-                              color: Colors.white70,
+                            style: TextStyle(
+                              color: AppColors.getTextColor(context).withOpacity(0.70),
                               fontSize: 12,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       // Pricing
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -185,8 +185,8 @@ class _BundleCardState extends State<BundleCard>
                               if (widget.bundle.hasDiscount)
                                 Text(
                                   widget.bundle.getOriginalPrice(locale),
-                                  style: const TextStyle(
-                                    color: Colors.white54,
+                                  style: TextStyle(
+                                    color: AppColors.getTextColor(context).withOpacity(0.54),
                                     fontSize: 12,
                                     decoration: TextDecoration.lineThrough,
                                   ),
@@ -205,13 +205,13 @@ class _BundleCardState extends State<BundleCard>
                           ),
                           // Arrow button component (glassmorphism style like CourseCard)
                           Container(
-                            padding: const EdgeInsets.all(8),
+                            padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.white.withOpacity(0.2),
+                              color: AppColors.getMutedTextColor(context),
                             ),
-                            child: const Icon(Icons.arrow_forward,
-                                color: Colors.white, size: 16),
+                            child: Icon(Icons.arrow_forward,
+                                color: AppColors.getTextColor(context), size: 16),
                           ),
                         ],
                       ),

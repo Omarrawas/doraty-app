@@ -10,7 +10,7 @@ class InteractiveQuizScreen extends StatefulWidget {
   final String title;
   final bool isHtml;
 
-  const InteractiveQuizScreen({
+  InteractiveQuizScreen({
     super.key,
     this.content,
     this.url,
@@ -37,7 +37,7 @@ class _InteractiveQuizScreenState extends State<InteractiveQuizScreen> {
     if (!kIsWeb && isMobile) {
       _controller = WebViewController()
         ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..setBackgroundColor(const Color(0x00000000))
+        ..setBackgroundColor(Color(0x00000000))
         ..setNavigationDelegate(
           NavigationDelegate(
             onPageFinished: (String url) {
@@ -97,12 +97,12 @@ class _InteractiveQuizScreenState extends State<InteractiveQuizScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.getTextColor(context))),
         backgroundColor: AppColors.primaryPurple,
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
@@ -111,7 +111,7 @@ class _InteractiveQuizScreenState extends State<InteractiveQuizScreen> {
           if (isMobile)
             WebViewWidget(controller: _controller)
           else
-            const Center(
+            Center(
               child: Padding(
                 padding: EdgeInsets.all(20.0),
                 child: Column(
@@ -129,7 +129,7 @@ class _InteractiveQuizScreenState extends State<InteractiveQuizScreen> {
               ),
             ),
           if (_isLoading && isMobile)
-            const Center(
+            Center(
               child: CircularProgressIndicator(color: AppColors.primaryPurple),
             ),
         ],
