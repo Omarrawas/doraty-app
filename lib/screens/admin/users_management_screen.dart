@@ -38,12 +38,6 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       final roles = await _db.getRoles();
       final currentRole = await _db.getUserRole(); // Added
 
-      // Load user roles for each user
-      for (var user in users) {
-        final userRoles = await _db.getUserRoles(user['id']);
-        user['user_roles'] = userRoles;
-      }
-
       setState(() {
         _users = users;
         _roles = roles;

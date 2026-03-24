@@ -8,7 +8,7 @@ import '../../core/services/database_service.dart';
 import '../courses/course_details_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../teacher/teacher_profile_screen.dart';
-import '../teacher/teachers_list_screen.dart'; 
+import '../teacher/teachers_list_screen.dart';
 import '../../models/category_model.dart';
 import '../explore/widgets/category_card.dart';
 import '../explore/explore_screen.dart';
@@ -85,10 +85,11 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     // Use a dynamic viewport fraction based on screen size (estimated at init)
     _bannerController = PageController(viewportFraction: 0.85);
-    _bottomBannerController = PageController(viewportFraction: 1.0); // Full width for bottom banner
+    _bottomBannerController =
+        PageController(viewportFraction: 1.0); // Full width for bottom banner
     _startBannerAutoPlay();
     _refreshData();
-    
+
     // Listen to sync completion
     SyncService().addListener(_onSyncUpdate);
   }
@@ -99,13 +100,14 @@ class _HomeScreenState extends State<HomeScreen> {
       _refreshData(forceRefresh: false); // Reload from now-updated cache
     }
   }
+
   Future<void> _refreshData({bool forceRefresh = false}) async {
     if (_isRefreshing) return;
     if (mounted) setState(() => _isRefreshing = true);
 
     try {
       debugPrint('🔄 HomeScreen: Refreshing data (force: $forceRefresh)...');
-      
+
       // Load all data points in parallel with individual error catching
       await Future.wait([
         _loadTeachers(forceRefresh: forceRefresh),
@@ -117,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadBundles(forceRefresh: forceRefresh),
         _checkUnreadNotifications(),
       ]);
-      
+
       debugPrint('✅ HomeScreen: Data refresh complete');
     } catch (e) {
       debugPrint('🚨 HomeScreen: Critical error in _refreshData: $e');
@@ -142,33 +144,39 @@ class _HomeScreenState extends State<HomeScreen> {
   void _startBannerAutoPlay() {
     Future.delayed(const Duration(seconds: 4), () {
       if (!mounted) return;
-      
-      final bannerCount = _banners.isNotEmpty 
-          ? _banners.length 
+
+      final bannerCount = _banners.isNotEmpty
+          ? _banners.length
           : _allCourses.where((c) => c.isFeatured).length;
-          
+
       if (bannerCount > 0) {
         // Top Banner
         if (_bannerController.hasClients) {
           final nextPage = (_currentBannerPage + 1) % bannerCount;
-          _bannerController.animateToPage(
+          _bannerController
+              .animateToPage(
             nextPage,
             duration: const Duration(milliseconds: 800),
             curve: Curves.fastOutSlowIn,
-          ).then((_) {
+          )
+              .then((_) {
             if (mounted) setState(() => _currentBannerPage = nextPage);
           });
         }
-        
+
         // Bottom Banner
         if (_bottomBannerController.hasClients && _banners.isNotEmpty) {
-          final nextBottomPage = (_currentBottomBannerPage + 1) % _banners.length;
-          _bottomBannerController.animateToPage(
+          final nextBottomPage =
+              (_currentBottomBannerPage + 1) % _banners.length;
+          _bottomBannerController
+              .animateToPage(
             nextBottomPage,
             duration: const Duration(milliseconds: 800),
             curve: Curves.fastOutSlowIn,
-          ).then((_) {
-            if (mounted) setState(() => _currentBottomBannerPage = nextBottomPage);
+          )
+              .then((_) {
+            if (mounted)
+              setState(() => _currentBottomBannerPage = nextBottomPage);
           });
         }
       }
@@ -178,7 +186,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadTeachers({bool forceRefresh = false}) async {
     try {
-      final teachers = await _databaseService.getAllTeachers(forceRefresh: forceRefresh);
+      final teachers =
+          await _databaseService.getAllTeachers(forceRefresh: forceRefresh);
       final normalized = _normalizeMapList(teachers);
       if (mounted) {
         setState(() {
@@ -193,11 +202,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadCategories({bool forceRefresh = false}) async {
     try {
-      final categoriesData = await _databaseService.getCategories(forceRefresh: forceRefresh);
+      final categoriesData =
+          await _databaseService.getCategories(forceRefresh: forceRefresh);
       final normalized = _normalizeMapList(categoriesData);
       if (mounted) {
         setState(() {
-          _categories = normalized.map((e) => CategoryModel.fromJson(e)).toList();
+          _categories =
+              normalized.map((e) => CategoryModel.fromJson(e)).toList();
         });
       }
     } catch (e) {
@@ -207,7 +218,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadTips({bool forceRefresh = false}) async {
     try {
-      final tipsData = await _databaseService.getTips(forceRefresh: forceRefresh);
+      final tipsData =
+          await _databaseService.getTips(forceRefresh: forceRefresh);
       final normalized = _normalizeMapList(tipsData);
       if (mounted) {
         setState(() {
@@ -221,7 +233,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadBundles({bool forceRefresh = false}) async {
     try {
-      final bundlesData = await _databaseService.getBundles(forceRefresh: forceRefresh);
+      final bundlesData =
+          await _databaseService.getBundles(forceRefresh: forceRefresh);
       final normalized = _normalizeMapList(bundlesData);
       if (mounted) {
         setState(() {
@@ -253,12 +266,11 @@ class _HomeScreenState extends State<HomeScreen> {
       final coursesData =
           await _databaseService.getCourses(forceRefresh: forceRefresh);
       final normalized = _normalizeMapList(coursesData);
-      
+
       if (mounted) {
         setState(() {
-          _allCourses = normalized
-              .map((data) => Course.fromJson(data))
-              .toList();
+          _allCourses =
+              normalized.map((data) => Course.fromJson(data)).toList();
         });
       }
     } catch (e) {
@@ -268,10 +280,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadBanners({bool forceRefresh = false}) async {
     try {
-      final bannersData = await _databaseService.getBanners(forceRefresh: forceRefresh);
+      final bannersData =
+          await _databaseService.getBanners(forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
-          final allBanners = bannersData.map((e) => BannerAd.fromJson(e)).toList();
+          final allBanners =
+              bannersData.map((e) => BannerAd.fromJson(e)).toList();
           _banners = allBanners; // Keep the full list if needed elsewhere
         });
       }
@@ -285,7 +299,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final userId = SupabaseService.instance.currentUserId;
       if (userId == null) return;
 
-      final dynamic rawEnrollments = await _databaseService.getUserEnrollmentsWithProgress(userId);
+      final dynamic rawEnrollments =
+          await _databaseService.getUserEnrollmentsWithProgress(userId);
       if (rawEnrollments is! Iterable) return;
 
       if (mounted) {
@@ -293,7 +308,8 @@ class _HomeScreenState extends State<HomeScreen> {
           for (var item in rawEnrollments) {
             if (item is! Map) continue;
             final enrollment = SafeParser.safeMap(item);
-            final courseId = (enrollment['course_id'] ?? enrollment['id'])?.toString();
+            final courseId =
+                (enrollment['course_id'] ?? enrollment['id'])?.toString();
             if (courseId != null) {
               final progressRaw = enrollment['progress_percentage'];
               final progress = progressRaw is num
@@ -359,7 +375,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     hasUnreadNotifications: _hasUnreadNotifications,
                     t: _t,
                     onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-                    onNotificationTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen())),
+                    onNotificationTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const NotificationsScreen())),
                   ),
                 ),
 
@@ -381,17 +400,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   if (_categories.isNotEmpty) _buildCategoriesSection(),
 
                   // 5. New Courses
-                  if (_allCourses.isNotEmpty) _buildNewCoursesSection(isWideScreen),
+                  if (_allCourses.isNotEmpty)
+                    _buildNewCoursesSection(isWideScreen),
 
                   // 6. Most Watched
-                  if (_allCourses.isNotEmpty) _buildMostWatchedSection(isWideScreen),
+                  if (_allCourses.isNotEmpty)
+                    _buildMostWatchedSection(isWideScreen),
 
                   // 7. Tips Section
                   _buildTipsSection(),
 
                   // 8. Featured Packages
                   _buildPackagesSection(isWideScreen),
-                  
+
                   // 8.5 Bottom Ad Banners
                   _buildBottomAdBanners(),
 
@@ -405,13 +426,15 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const TeachersListScreen(),
+                                builder: (context) =>
+                                    const TeachersListScreen(),
                               ),
                             );
                           }),
                           isWideScreen
                               ? Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20),
                                   child: Wrap(
                                     spacing: 20,
                                     runSpacing: 20,
@@ -424,22 +447,25 @@ class _HomeScreenState extends State<HomeScreen> {
                               : SizedBox(
                                   height: 220,
                                   child: ListView.builder(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20),
                                     scrollDirection: Axis.horizontal,
                                     itemCount: _filteredTeachers.length,
                                     itemBuilder: (context, index) =>
-                                        _buildTeacherItem(_filteredTeachers[index]),
+                                        _buildTeacherItem(
+                                            _filteredTeachers[index]),
                                   ),
                                 ),
                         ],
                       ),
                     ),
-                  
+
                   // 10.5 Become a Teacher CTA (Shows for students/guests only)
                   _buildBecomeTeacherCTA(),
 
                   // 9. Recorded Courses
-                  if (_allCourses.isNotEmpty) _buildRecordedCoursesSection(isWideScreen),
+                  if (_allCourses.isNotEmpty)
+                    _buildRecordedCoursesSection(isWideScreen),
                 ],
                 // Add padding at bottom
                 const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
@@ -538,15 +564,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       ? CachedNetworkImage(
                           imageUrl: avatarUrl,
                           fit: BoxFit.cover,
-                          placeholder: (context, url) => ShimmerLoader.circular(height: 85, width: 85),
+                          placeholder: (context, url) =>
+                              ShimmerLoader.circular(height: 85, width: 85),
                           errorWidget: (context, url, e) => Container(
                             color: Colors.grey.shade900,
-                            child: const Icon(Icons.person, color: Colors.white24, size: 40),
+                            child: const Icon(Icons.person,
+                                color: Colors.white24, size: 40),
                           ),
                         )
                       : Container(
                           color: Colors.grey.shade900,
-                          child: const Icon(Icons.person, color: Colors.white24, size: 40),
+                          child: const Icon(Icons.person,
+                              color: Colors.white24, size: 40),
                         ),
                 ),
               ),
@@ -586,7 +615,8 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 12),
               // Label "مدرب"
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
@@ -610,7 +640,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 
   Widget _buildContinueLearning() {
     // Show only if there are enrolled courses
@@ -645,7 +674,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.1)),
+              border: Border.all(
+                  color: AppColors.getGlassColor(context, opacity: 0.1)),
             ),
             child: Row(
               children: [
@@ -677,7 +707,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       Text(
                         '${_t('completed')} ${(_enrollmentProgress[lastCourse.id] ?? 0.0).toStringAsFixed(0)}%', // Replaced hardcoded string
                         style: TextStyle(
-                          color: AppColors.getTextColor(context, secondary: true),
+                          color:
+                              AppColors.getTextColor(context, secondary: true),
                           fontSize: 12,
                         ),
                       ),
@@ -688,7 +719,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           value:
                               (_enrollmentProgress[lastCourse.id] ?? 0.0) / 100,
                           minHeight: 4,
-                          backgroundColor: AppColors.getGlassColor(context, opacity: 0.1),
+                          backgroundColor:
+                              AppColors.getGlassColor(context, opacity: 0.1),
                           valueColor: const AlwaysStoppedAnimation<Color>(
                               Colors.cyanAccent),
                         ),
@@ -708,7 +740,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     );
                   },
                   icon: Icon(Icons.play_circle_fill,
-                      color: AppColors.primaryPurple.withOpacity(0.9), size: 40),
+                      color: AppColors.primaryPurple.withOpacity(0.9),
+                      size: 40),
                 ),
               ],
             ),
@@ -718,7 +751,6 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 
   Widget _buildShimmerLoading() {
     return Column(
@@ -792,19 +824,26 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               borderRadius: BorderRadius.circular(15),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: AppColors.getGlassColor(context, opacity: 0.1),
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.2)),
+                  border: Border.all(
+                      color: AppColors.getGlassColor(context, opacity: 0.2)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.search, color: AppColors.getTextColor(context, secondary: true)),
+                    Icon(Icons.search,
+                        color:
+                            AppColors.getTextColor(context, secondary: true)),
                     const SizedBox(width: 12),
                     Text(
                       _t('search_hint'),
-                      style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 16),
+                      style: TextStyle(
+                          color:
+                              AppColors.getTextColor(context, secondary: true),
+                          fontSize: 16),
                     ),
                   ],
                 ),
@@ -816,7 +855,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
   Widget _buildCategoriesSection() {
     return SliverToBoxAdapter(
       child: Column(
@@ -825,7 +863,9 @@ class _HomeScreenState extends State<HomeScreen> {
           _buildSectionHeaderBox(_t('categories_title'), () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const SubjectsScreen(showBackButton: true)),
+              MaterialPageRoute(
+                  builder: (context) =>
+                      const SubjectsScreen(showBackButton: true)),
             );
           }),
           SizedBox(
@@ -840,9 +880,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisSpacing: 12,
                 childAspectRatio: 0.75, // height/width ratio: ~ 95 / 130
               ),
-              itemCount: _categories.where((c) => c.parentId == null || c.parentId!.isEmpty).length,
+              itemCount: _categories
+                  .where((c) => c.parentId == null || c.parentId!.isEmpty)
+                  .length,
               itemBuilder: (context, index) {
-                final parentCategories = _categories.where((c) => c.parentId == null || c.parentId!.isEmpty).toList();
+                final parentCategories = _categories
+                    .where((c) => c.parentId == null || c.parentId!.isEmpty)
+                    .toList();
                 final category = parentCategories[index];
                 return CategoryCard(
                   category: category,
@@ -851,7 +895,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ExploreScreen(initialFilter: category.id, showBackButton: true),
+                        builder: (context) => ExploreScreen(
+                            initialFilter: category.id, showBackButton: true),
                       ),
                     );
                   },
@@ -872,7 +917,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (b.createdAt == null) return -1;
       return b.createdAt!.compareTo(a.createdAt!);
     });
-    
+
     return SliverToBoxAdapter(
       child: Column(
         children: [
@@ -880,7 +925,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(initialFilter: 'newest', showBackButton: true),
+                builder: (context) => ExploreScreen(
+                    initialFilter: 'newest', showBackButton: true),
               ),
             );
           }),
@@ -910,7 +956,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Sort by student count descending
     final mostWatched = List<Course>.from(_allCourses);
     mostWatched.sort((a, b) => b.studentsCount.compareTo(a.studentsCount));
-    
+
     return SliverToBoxAdapter(
       child: Column(
         children: [
@@ -918,7 +964,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(initialFilter: 'popular', showBackButton: true),
+                builder: (context) => ExploreScreen(
+                    initialFilter: 'popular', showBackButton: true),
               ),
             );
           }),
@@ -959,7 +1006,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => ExploreScreen(initialFilter: 'recorded', showBackButton: true),
+                builder: (context) => ExploreScreen(
+                    initialFilter: 'recorded', showBackButton: true),
               ),
             );
           }),
@@ -989,9 +1037,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final authService = Provider.of<AuthService>(context, listen: false);
     final userProfile = authService.userProfile;
     final String? role = userProfile?['role'];
-    
+
     // Only show for guests (no profile) or students
-    if (userProfile != null && (role == 'teacher' || role == 'admin' || role == 'super_admin')) {
+    if (userProfile != null &&
+        (role == 'teacher' || role == 'admin' || role == 'super_admin')) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
@@ -1017,7 +1066,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              
+
               // Decorative circles for premium feel
               Positioned(
                 right: -30,
@@ -1031,13 +1080,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              
+
               // Content
               Padding(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   children: [
-                    const Icon(Icons.school_outlined, color: Colors.white, size: 45),
+                    const Icon(Icons.school_outlined,
+                        color: Colors.white, size: 45),
                     const SizedBox(height: 16),
                     const Text(
                       'كن مدرباً وانضم إلينا في رحلة نمو دوراتي',
@@ -1067,14 +1117,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const RegisterScreen(initialRole: 'teacher'),
+                            builder: (context) =>
+                                const RegisterScreen(initialRole: 'teacher'),
                           ),
                         );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: AppColors.deepPurple,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 32, vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -1101,14 +1153,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTipsSection() {
-    if (_tips.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (_tips.isEmpty)
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeaderBox(_t('learning_tips_title'), () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const AllTipsScreen()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const AllTipsScreen()));
           }),
           SizedBox(
             height: 200,
@@ -1124,7 +1178,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => VerticalTipPlayer(tips: _tips, initialIndex: index),
+                        builder: (context) =>
+                            VerticalTipPlayer(tips: _tips, initialIndex: index),
                       ),
                     );
                   },
@@ -1139,7 +1194,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPackagesSection(bool isWideScreen) {
-    if (_bundles.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (_bundles.isEmpty)
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1149,12 +1205,16 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeaderBox(_t('bundles_title'), () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const AllPackagesScreen()));
+            Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const AllPackagesScreen()));
           }),
-          
+
           // Cards List
           SizedBox(
-            height: 290, // Adjusted height to accommodate image, text, divider, price and subscribe button
+            height:
+                290, // Adjusted height to accommodate image, text, divider, price and subscribe button
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
@@ -1199,27 +1259,37 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           // 1. Image
                           ClipRRect(
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(11)),
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(11)),
                             child: AspectRatio(
                               aspectRatio: 1.4,
-                              child: bundle.imageUrl != null && bundle.imageUrl!.isNotEmpty
+                              child: bundle.imageUrl != null &&
+                                      bundle.imageUrl!.isNotEmpty
                                   ? CachedNetworkImage(
                                       imageUrl: bundle.imageUrl!,
                                       fit: BoxFit.cover,
-                                      placeholder: (context, url) => Container(color: Colors.black12),
+                                      placeholder: (context, url) =>
+                                          Container(color: Colors.black12),
                                       errorWidget: (context, url, err) =>
-                                          Container(color: Colors.black12, child: const Icon(Icons.broken_image)),
+                                          Container(
+                                              color: Colors.black12,
+                                              child: const Icon(
+                                                  Icons.broken_image)),
                                     )
-                                  : Container(color: Colors.black12, child: const Icon(Icons.image)),
+                                  : Container(
+                                      color: Colors.black12,
+                                      child: const Icon(Icons.image)),
                             ),
                           ),
 
                           // 2. Content
                           Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                              padding:
+                                  const EdgeInsets.fromLTRB(10, 10, 10, 10),
                               child: Column(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   // Title and Courses Count
                                   Column(
@@ -1230,17 +1300,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
-                                          color: AppColors.getTextColor(context),
+                                          color:
+                                              AppColors.getTextColor(context),
                                           fontSize: 14,
                                           fontWeight: FontWeight.bold,
-                                          fontFamily: 'Cairo', // Standard smooth font
+                                          fontFamily:
+                                              'Cairo', // Standard smooth font
                                         ),
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
                                         '${bundle.courses.length} ${AppStrings.get('courses_count_bundle', locale) == 'courses_count_bundle' ? 'دورات' : AppStrings.get('courses_count_bundle', locale)}',
                                         style: TextStyle(
-                                          color: AppColors.getTextColor(context, secondary: true),
+                                          color: AppColors.getTextColor(context,
+                                              secondary: true),
                                           fontSize: 12,
                                         ),
                                       ),
@@ -1249,7 +1322,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                   // Divider
                                   Divider(
-                                    color: isDark ? Colors.white12 : Colors.grey.shade200,
+                                    color: isDark
+                                        ? Colors.white12
+                                        : Colors.grey.shade200,
                                     height: 10,
                                     thickness: 1,
                                   ),
@@ -1257,15 +1332,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                   // Missing price line added per user request
                                   if (bundle.price > 0)
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         if (bundle.hasDiscount) ...[
                                           Text(
                                             bundle.getOriginalPrice(locale),
                                             style: TextStyle(
-                                              decoration: TextDecoration.lineThrough,
+                                              decoration:
+                                                  TextDecoration.lineThrough,
                                               fontSize: 11,
-                                              color: AppColors.getTextColor(context, secondary: true).withOpacity(0.6),
+                                              color: AppColors.getTextColor(
+                                                      context,
+                                                      secondary: true)
+                                                  .withOpacity(0.6),
                                             ),
                                           ),
                                           const SizedBox(width: 4),
@@ -1275,7 +1355,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 13,
-                                            color: AppColors.getTextColor(context),
+                                            color:
+                                                AppColors.getTextColor(context),
                                           ),
                                         ),
                                       ],
@@ -1286,11 +1367,15 @@ class _HomeScreenState extends State<HomeScreen> {
                                     width: double.infinity,
                                     child: ElevatedButton(
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.mutedPurpleBlue,
+                                        backgroundColor:
+                                            AppColors.mutedPurpleBlue,
                                         foregroundColor: Colors.white,
                                         elevation: 0,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                        padding: const EdgeInsets.symmetric(vertical: 6),
+                                        shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(8)),
+                                        padding: const EdgeInsets.symmetric(
+                                            vertical: 6),
                                         minimumSize: Size.zero,
                                       ),
                                       onPressed: () {
@@ -1307,7 +1392,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                       },
                                       child: const Text(
                                         'اشترك',
-                                        style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold, fontSize: 13),
+                                        style: TextStyle(
+                                            fontFamily: 'Cairo',
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13),
                                       ),
                                     ),
                                   ),
@@ -1323,7 +1411,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
-          
+
           // "See More" full-width button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -1331,15 +1419,23 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const AllPackagesScreen()));
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AllPackagesScreen()));
                 },
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: AppColors.primaryPurple.withOpacity(0.5)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  side: BorderSide(
+                      color: AppColors.primaryPurple.withOpacity(0.5)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: Text(
-                  AppStrings.get('view_plans_button', locale) == 'view_plans_button' ? 'المزيد' : 'المزيد',
+                  AppStrings.get('view_plans_button', locale) ==
+                          'view_plans_button'
+                      ? 'المزيد'
+                      : 'المزيد',
                   style: TextStyle(
                     color: AppColors.primaryPurple,
                     fontWeight: FontWeight.bold,
@@ -1358,19 +1454,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildUnifiedBannerCarousel() {
     final topBanners = _banners.where((b) => b.location == 'top').toList();
-    final bannerItems = topBanners.isNotEmpty 
-        ? topBanners 
-        : _allCourses.where((c) => c.isFeatured).map((c) => BannerAd(
-            id: c.id,
-            title: c.getLocalizedTitle(Provider.of<LocaleProvider>(context).locale),
-            subtitle: _t('featured_course_badge'),
-            imageUrl: c.imageUrl ?? '',
-            type: 'course',
-            targetId: c.id,
-            createdAt: c.createdAt ?? DateTime.now(),
-          )).toList();
+    final bannerItems = topBanners.isNotEmpty
+        ? topBanners
+        : _allCourses
+            .where((c) => c.isFeatured)
+            .map((c) => BannerAd(
+                  id: c.id,
+                  title: c.getLocalizedTitle(
+                      Provider.of<LocaleProvider>(context).locale),
+                  subtitle: _t('featured_course_badge'),
+                  imageUrl: c.imageUrl ?? '',
+                  type: 'course',
+                  targetId: c.id,
+                  createdAt: c.createdAt ?? DateTime.now(),
+                ))
+            .toList();
 
-    if (bannerItems.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    if (bannerItems.isEmpty)
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: Column(
@@ -1416,8 +1517,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBottomAdBanners() {
     // Determine which banners to show at the bottom
-    final bottomBanners = _banners.where((b) => b.location == 'bottom').toList();
-    if (bottomBanners.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+    final bottomBanners =
+        _banners.where((b) => b.location == 'bottom').toList();
+    if (bottomBanners.isEmpty)
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: Column(
@@ -1432,11 +1535,14 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: bottomBanners.length,
               itemBuilder: (context, index) {
                 final item = bottomBanners[index];
-                final isLottie = item.imageUrl.toLowerCase().endsWith('.json') || item.imageUrl.toLowerCase().endsWith('.lottie');
+                final isLottie =
+                    item.imageUrl.toLowerCase().endsWith('.json') ||
+                        item.imageUrl.toLowerCase().endsWith('.lottie');
 
                 // Determine button text
                 String? buttonText = item.subtitle;
-                if ((buttonText == null || buttonText.isEmpty) && item.type == 'external') {
+                if ((buttonText == null || buttonText.isEmpty) &&
+                    item.type == 'external') {
                   buttonText = 'زيارة الرابط';
                 }
 
@@ -1450,28 +1556,33 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? Lottie.network(
                               item.imageUrl,
                               fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Container(color: Colors.black12),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  Container(color: Colors.black12),
                             )
                           : CachedNetworkImage(
                               imageUrl: item.imageUrl,
                               fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(color: Colors.black12),
-                              errorWidget: (context, url, err) => Container(color: Colors.black12),
+                              placeholder: (context, url) =>
+                                  Container(color: Colors.black12),
+                              errorWidget: (context, url, err) =>
+                                  Container(color: Colors.black12),
                             ),
-                            
+
                       // Action Button Overlay
                       if (buttonText != null && buttonText.isNotEmpty)
                         Positioned(
                           bottom: 20,
                           left: 20, // Bottom-left by default
                           child: Directionality(
-                            textDirection: TextDirection.rtl, // Ensure Arabic text rendering is correct
+                            textDirection: TextDirection
+                                .rtl, // Ensure Arabic text rendering is correct
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryPurple,
                                 foregroundColor: Colors.white,
                                 elevation: 8,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 12),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
                                 ),
@@ -1544,7 +1655,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: double.infinity,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(color: Colors.white10),
-                errorWidget: (context, url, e) => Container(color: Colors.grey.shade900),
+                errorWidget: (context, url, e) =>
+                    Container(color: Colors.grey.shade900),
               ),
               Container(
                 decoration: BoxDecoration(
@@ -1569,7 +1681,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       if (item.subtitle != null && item.subtitle!.isNotEmpty)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             color: AppColors.primaryPurple.withOpacity(0.8),
                             borderRadius: BorderRadius.circular(20),
@@ -1595,12 +1708,17 @@ class _HomeScreenState extends State<HomeScreen> {
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 shadows: [
-                                  Shadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
+                                  Shadow(
+                                      color: Colors.black26,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2)),
                                 ],
                               ),
                             ),
                           ),
-                          if (item.type == 'external' || (item.subtitle != null && item.subtitle!.isNotEmpty))
+                          if (item.type == 'external' ||
+                              (item.subtitle != null &&
+                                  item.subtitle!.isNotEmpty))
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
@@ -1608,7 +1726,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 shape: BoxShape.circle,
                                 border: Border.all(color: Colors.white24),
                               ),
-                              child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20),
+                              child: const Icon(Icons.arrow_forward_rounded,
+                                  color: Colors.white, size: 20),
                             ),
                         ],
                       ),
@@ -1625,17 +1744,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleBannerTap(BannerAd item) {
     if (item.type == 'course' && item.targetId != null) {
-      final course = _allCourses.firstWhere((c) => c.id == item.targetId, 
+      final course = _allCourses.firstWhere((c) => c.id == item.targetId,
           orElse: () => Course(
-            id: item.targetId!,
-            title: item.title,
-            instructorName: '',
-            price: 0,
-            rating: 0,
-            studentsCount: 0,
-            lessonsCount: 0,
-            subject: '',
-          ));
+                id: item.targetId!,
+                title: item.title,
+                instructorName: '',
+                price: 0,
+                rating: 0,
+                studentsCount: 0,
+                lessonsCount: 0,
+                subject: '',
+              ));
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -1643,13 +1762,17 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     } else if (item.type == 'package' && item.targetId != null) {
-       final bundle = _bundles.firstWhere((b) => b.id == item.targetId, orElse: () => _bundles.first);
-       Navigator.push(
-         context,
-         MaterialPageRoute(
-           builder: (context) => PackageScreen(packageTitle: bundle.title, courses: bundle.courses, bundle: bundle),
-         ),
-       );
+      final bundle = _bundles.firstWhere((b) => b.id == item.targetId,
+          orElse: () => _bundles.first);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PackageScreen(
+              packageTitle: bundle.title,
+              courses: bundle.courses,
+              bundle: bundle),
+        ),
+      );
     } else if (item.type == 'external' && item.linkUrl != null) {
       final uri = Uri.tryParse(item.linkUrl!);
       if (uri != null) {
@@ -1675,21 +1798,33 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   });
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     final double topPadding = MediaQuery.of(context).padding.top;
     final authService = Provider.of<AuthService>(context);
-    
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
+
     // Safety check to avoid division by zero if maxExtent equals minExtent
     final double range = maxExtent - minExtent;
-    final double currentOpacity = range <= 0 ? 1.0 : (shrinkOffset / range).clamp(0.0, 1.0);
+    final double currentOpacity =
+        range <= 0 ? 1.0 : (shrinkOffset / range).clamp(0.0, 1.0);
+    final Color headerBackgroundColor = isDark
+        ? AppColors.darkCardSurface.withOpacity(overlapsContent ? 0.96 : 0.9)
+        : Colors.white.withOpacity(overlapsContent ? 0.98 : 0.92);
 
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.getGlassColor(context).withOpacity(currentOpacity),
+        color: Color.lerp(
+            Colors.transparent, headerBackgroundColor, currentOpacity),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-        boxShadow: shrinkOffset > 20 
-          ? [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))]
-          : [],
+        boxShadow: shrinkOffset > 20
+            ? [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5))
+              ]
+            : [],
       ),
       child: Padding(
         padding: EdgeInsets.fromLTRB(20, topPadding + 10, 20, 10),
@@ -1706,24 +1841,31 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                   color: AppColors.getGlassColor(context, opacity: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(Icons.menu, color: AppColors.getTextColor(context), size: 24),
+                child: Icon(Icons.menu,
+                    color: AppColors.getTextColor(context), size: 24),
               ),
             ),
-            
+
             // --- Center: App Logo and Name ---
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.school_rounded, 
-                    color: AppColors.primaryPurple, 
+                    Icons.school_rounded,
+                    color: AppColors.primaryPurple,
                     size: 28,
-                    shadows: [Shadow(color: AppColors.primaryPurple.withOpacity(0.5), blurRadius: 10)],
+                    shadows: [
+                      Shadow(
+                          color: AppColors.primaryPurple.withOpacity(0.5),
+                          blurRadius: 10)
+                    ],
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    t('app_name') == 'app_name' ? 'دوراتي' : t('app_name'), // Simple fallback
+                    t('app_name') == 'app_name'
+                        ? 'دوراتي'
+                        : t('app_name'), // Simple fallback
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -1734,7 +1876,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                 ],
               ),
             ),
-            
+
             // --- Left (Trailing): Icons (Cart, Theme Toggle, Notifications, Login) ---
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -1743,14 +1885,14 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                   // If not logged in, we can either hide or show icons limit. Let's show theme and login.
                   IconButton(
                     icon: Icon(
-                      Provider.of<ThemeProvider>(context).isDarkMode 
-                          ? Icons.light_mode_rounded 
-                          : Icons.dark_mode_rounded, 
-                      color: AppColors.getTextColor(context), 
-                      size: 22
-                    ),
+                        Provider.of<ThemeProvider>(context).isDarkMode
+                            ? Icons.light_mode_rounded
+                            : Icons.dark_mode_rounded,
+                        color: AppColors.getTextColor(context),
+                        size: 22),
                     onPressed: () {
-                      Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+                      Provider.of<ThemeProvider>(context, listen: false)
+                          .toggleTheme();
                     },
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -1760,14 +1902,16 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                     onPressed: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const LoginScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const LoginScreen()),
                       );
                     },
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: AppColors.primaryPurple.withOpacity(0.3),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
                     ),
                     child: Text(t('login_title')),
                   ),
@@ -1777,7 +1921,8 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const CartScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const CartScreen()),
                       );
                     },
                     child: Container(
@@ -1786,14 +1931,16 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                         color: AppColors.getGlassColor(context, opacity: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.shopping_cart_outlined, color: AppColors.getTextColor(context), size: 22),
+                      child: Icon(Icons.shopping_cart_outlined,
+                          color: AppColors.getTextColor(context), size: 22),
                     ),
                   ),
                   const SizedBox(width: 12),
                   // Theme Toggle
                   GestureDetector(
                     onTap: () {
-                      Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+                      Provider.of<ThemeProvider>(context, listen: false)
+                          .toggleTheme();
                     },
                     child: Container(
                       padding: const EdgeInsets.all(8),
@@ -1802,12 +1949,11 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        Provider.of<ThemeProvider>(context).isDarkMode 
-                            ? Icons.light_mode_rounded 
-                            : Icons.dark_mode_rounded, 
-                        color: AppColors.getTextColor(context), 
-                        size: 22
-                      ),
+                          Provider.of<ThemeProvider>(context).isDarkMode
+                              ? Icons.light_mode_rounded
+                              : Icons.dark_mode_rounded,
+                          color: AppColors.getTextColor(context),
+                          size: 22),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1822,7 +1968,8 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                       ),
                       child: Stack(
                         children: [
-                          Icon(Icons.notifications_outlined, color: AppColors.getTextColor(context), size: 22),
+                          Icon(Icons.notifications_outlined,
+                              color: AppColors.getTextColor(context), size: 22),
                           if (hasUnreadNotifications)
                             Positioned(
                               top: 0,
@@ -1831,9 +1978,11 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                                 width: 8,
                                 height: 8,
                                 decoration: BoxDecoration(
-                                  color: Colors.redAccent, 
+                                  color: Colors.redAccent,
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: AppColors.getSurfaceColor(context), width: 1.5),
+                                  border: Border.all(
+                                      color: AppColors.getSurfaceColor(context),
+                                      width: 1.5),
                                 ),
                               ),
                             ),
@@ -1858,7 +2007,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   bool shouldRebuild(covariant _HomeHeaderDelegate oldDelegate) {
-    return oldDelegate.userName != userName || 
-           oldDelegate.hasUnreadNotifications != hasUnreadNotifications;
+    return oldDelegate.userName != userName ||
+        oldDelegate.hasUnreadNotifications != hasUnreadNotifications;
   }
 }

@@ -18,6 +18,8 @@ class SubjectsScreen extends StatefulWidget {
 }
 
 class _SubjectsScreenState extends State<SubjectsScreen> {
+  static const double _categoryCardMaxWidth = 150;
+  static const double _categoryCardAspectRatio = 0.9;
   late List<Category> _fallbackCategories;
   List<CategoryModel> _categories = [];
   bool _isLoading = true;
@@ -51,10 +53,20 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
   void _initializeFallbackCategories() {
     final scientificSubjects = [
-      'الرياضيات', 'الفيزياء', 'الكيمياء', 'الأحياء', 'اللغة العربية', 'اللغة الإنجليزية', 'اللغة الفرنسية', 'الديانة',
+      'الرياضيات',
+      'الفيزياء',
+      'الكيمياء',
+      'الأحياء',
+      'اللغة العربية',
+      'اللغة الإنجليزية',
+      'اللغة الفرنسية',
+      'الديانة',
     ];
     final literarySubjects = [
-      'التاريخ', 'الجغرافيا', 'الفلسفة', 'علم الاجتماع',
+      'التاريخ',
+      'الجغرافيا',
+      'الفلسفة',
+      'علم الاجتماع',
     ];
 
     final allSubjects = {...scientificSubjects, ...literarySubjects}.toList();
@@ -76,9 +88,14 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
   Color _getColorForIndex(int index) {
     final colors = [
-      const Color(0xFF7B2CBF), const Color(0xFF5A67D8), const Color(0xFFE91E63),
-      const Color(0xFFFF6B9D), const Color(0xFF00BCD4), const Color(0xFF4CAF50),
-      const Color(0xFFFF9800), const Color(0xFF9C27B0),
+      const Color(0xFF7B2CBF),
+      const Color(0xFF5A67D8),
+      const Color(0xFFE91E63),
+      const Color(0xFFFF6B9D),
+      const Color(0xFF00BCD4),
+      const Color(0xFF4CAF50),
+      const Color(0xFFFF9800),
+      const Color(0xFF9C27B0),
     ];
     return colors[index % colors.length];
   }
@@ -97,29 +114,31 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
             children: [
               _buildHeader(),
               Expanded(
-                child: _isLoading 
-                  ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                  : SingleChildScrollView(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 8),
-                          Consumer<LocaleProvider>(
-                            builder: (context, localeProvider, _) => Text(
-                              AppStrings.get('categories_title', localeProvider.locale),
-                              style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(color: Colors.white))
+                    : SingleChildScrollView(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 8),
+                            Consumer<LocaleProvider>(
+                              builder: (context, localeProvider, _) => Text(
+                                AppStrings.get(
+                                    'categories_title', localeProvider.locale),
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          _buildGrid(),
-                        ],
+                            const SizedBox(height: 16),
+                            _buildGrid(),
+                          ],
+                        ),
                       ),
-                    ),
               ),
             ],
           ),
@@ -146,16 +165,20 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                     width: 1,
                   ),
                 ),
-                child: widget.showBackButton ? IconButton(
-                  icon: Icon(
-                    Provider.of<LocaleProvider>(context, listen: false).locale == 'ar'
-                        ? Icons.arrow_forward_ios_rounded
-                        : Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                ) : const SizedBox(width: 48, height: 48),
+                child: widget.showBackButton
+                    ? IconButton(
+                        icon: Icon(
+                          Provider.of<LocaleProvider>(context, listen: false)
+                                      .locale ==
+                                  'ar'
+                              ? Icons.arrow_forward_ios_rounded
+                              : Icons.arrow_back_ios_new_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                      )
+                    : const SizedBox(width: 48, height: 48),
               ),
             ),
           ),
@@ -184,28 +207,30 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
       return GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: _categoryCardMaxWidth,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: 1.1,
+          childAspectRatio: _categoryCardAspectRatio,
         ),
         itemCount: _fallbackCategories.length,
-        itemBuilder: (context, index) => _buildFallbackCard(_fallbackCategories[index], index),
+        itemBuilder: (context, index) =>
+            _buildFallbackCard(_fallbackCategories[index], index),
       );
     }
 
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: _categoryCardMaxWidth,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 1.1,
+        childAspectRatio: _categoryCardAspectRatio,
       ),
       itemCount: _categories.length,
-      itemBuilder: (context, index) => _buildCategoryCard(_categories[index], index),
+      itemBuilder: (context, index) =>
+          _buildCategoryCard(_categories[index], index),
     );
   }
 
@@ -217,7 +242,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
       color: color,
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => CategoryCoursesScreen(category: category)),
+        MaterialPageRoute(
+            builder: (context) => CategoryCoursesScreen(category: category)),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -228,8 +254,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
             category.getLocalizedName(locale),
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 16, 
-              fontWeight: FontWeight.w600, 
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
               color: Colors.white,
               letterSpacing: 0.5,
             ),
@@ -266,8 +292,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
             category.name,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 16, 
-              fontWeight: FontWeight.w600, 
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
               color: Colors.white,
             ),
             maxLines: 1,
@@ -284,7 +310,8 @@ class _CardWrapper extends StatelessWidget {
   final VoidCallback onTap;
   final Widget child;
 
-  const _CardWrapper({required this.color, required this.onTap, required this.child});
+  const _CardWrapper(
+      {required this.color, required this.onTap, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -340,7 +367,7 @@ class _IconBox extends StatelessWidget {
     if (category.iconUrl != null && !category.iconUrl!.startsWith('http')) {
       return Icon(_getMaterialIcon(category.iconUrl!), color: color, size: 32);
     }
-    
+
     // Otherwise fallback to name-based mapping or generic
     final mapping = {
       'التعليم التربوي': Icons.menu_book,
@@ -359,15 +386,24 @@ class _IconBox extends StatelessWidget {
 
   IconData _getMaterialIcon(String name) {
     switch (name.toLowerCase()) {
-      case 'book': return Icons.menu_book;
-      case 'home': return Icons.home;
-      case 'science': return Icons.science;
-      case 'business': return Icons.business;
-      case 'money': return Icons.attach_money;
-      case 'palette': return Icons.palette;
-      case 'fitness': return Icons.fitness_center;
-      case 'school': return Icons.school;
-      default: return Icons.category;
+      case 'book':
+        return Icons.menu_book;
+      case 'home':
+        return Icons.home;
+      case 'science':
+        return Icons.science;
+      case 'business':
+        return Icons.business;
+      case 'money':
+        return Icons.attach_money;
+      case 'palette':
+        return Icons.palette;
+      case 'fitness':
+        return Icons.fitness_center;
+      case 'school':
+        return Icons.school;
+      default:
+        return Icons.category;
     }
   }
 }
