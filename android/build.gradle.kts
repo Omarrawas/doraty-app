@@ -55,7 +55,7 @@ subprojects {
                 android.namespace = "com.doraty.generated.${project.name.replace("-", "_")}"
             }
 
-            android.compileSdkVersion(35)
+            android.compileSdkVersion(36)
             android.defaultConfig {
                 minSdkVersion(24)
             }
