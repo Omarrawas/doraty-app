@@ -1176,7 +1176,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
           final currentRole = await _db.getUserRole(_selectedTeacherId!);
           if (currentRole == 'student') {
             await _db.assignRole(_selectedTeacherId!, 'teacher');
-            debugPrint('✅ Automatically promoted instructor ${_selectedTeacherId} to teacher role');
+            debugPrint('✅ Automatically promoted instructor $_selectedTeacherId to teacher role');
           }
         }
 
@@ -1195,7 +1195,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
           final currentRole = await _db.getUserRole(_selectedTeacherId!);
           if (currentRole == 'student') {
             await _db.assignRole(_selectedTeacherId!, 'teacher');
-            debugPrint('✅ Automatically promoted instructor ${_selectedTeacherId} to teacher role');
+            debugPrint('✅ Automatically promoted instructor $_selectedTeacherId to teacher role');
           }
         }
 

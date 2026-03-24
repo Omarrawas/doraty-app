@@ -1,4 +1,4 @@
-import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
@@ -176,8 +176,9 @@ class _HomeScreenState extends State<HomeScreen> {
             curve: Curves.fastOutSlowIn,
           )
               .then((_) {
-            if (mounted)
+            if (mounted) {
               setState(() => _currentBottomBannerPage = nextBottomPage);
+            }
           });
         }
       }
@@ -1156,8 +1157,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildTipsSection() {
-    if (_tips.isEmpty)
+    if (_tips.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
 
     return SliverToBoxAdapter(
       child: Column(
@@ -1197,8 +1199,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildPackagesSection(bool isWideScreen) {
-    if (_bundles.isEmpty)
+    if (_bundles.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
 
     final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1490,8 +1493,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ))
             .toList();
 
-    if (bannerItems.isEmpty)
+    if (bannerItems.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
 
     return SliverToBoxAdapter(
       child: Column(
@@ -1539,8 +1543,9 @@ class _HomeScreenState extends State<HomeScreen> {
     // Determine which banners to show at the bottom
     final bottomBanners =
         _banners.where((b) => b.location == 'bottom').toList();
-    if (bottomBanners.isEmpty)
+    if (bottomBanners.isEmpty) {
       return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
 
     return SliverToBoxAdapter(
       child: Column(

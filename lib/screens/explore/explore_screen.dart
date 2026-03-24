@@ -129,8 +129,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
         if (course.categoryIds.contains(_selectedCategoryId)) return true;
 
         // Also check if the course belongs to any subcategory of the selected one
-        if (course.categoryIds.any((cid) => subCatIds.contains(cid)))
+        if (course.categoryIds.any((cid) => subCatIds.contains(cid))) {
           return true;
+        }
 
         // Also check the category names against the selected category model (fallback)
         final selectedCat =
@@ -630,7 +631,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

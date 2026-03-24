@@ -263,8 +263,9 @@ class DatabaseService {
       if (description != null) updates['description'] = description;
       if (imageUrl != null) updates['image_url'] = imageUrl;
       if (price != null) updates['price'] = price;
-      if (discountPercentage != null)
+      if (discountPercentage != null) {
         updates['discount_percentage'] = discountPercentage;
+      }
 
       if (updates.isNotEmpty) {
         await _client.from('bundles').update(updates).eq('id', id);

@@ -215,8 +215,9 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
 
   Widget _buildTeachersList(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
-    if (_filteredTeachers.isEmpty)
+    if (_filteredTeachers.isEmpty) {
       return _buildEmptyState(context, 'لا يوجد مدربين حالياً');
+    }
 
     return Column(
       children: [
@@ -238,8 +239,9 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
 
   Widget _buildRequestsList(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
-    if (_requests.isEmpty)
+    if (_requests.isEmpty) {
       return _buildEmptyState(context, 'لا توجد طلبات انضمام معلقة');
+    }
 
     return RefreshIndicator(
       onRefresh: _loadData,
@@ -378,6 +380,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
   Future<void> _handleStatusUpdate(String teacherId, String status) async {
     try {
       await _db.updateTeacherStatus(teacherId, status);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(status == 'approved'
@@ -388,6 +391,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
       );
       _loadData();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
     }
