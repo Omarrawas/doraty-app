@@ -15,10 +15,12 @@ class TeachersManagementScreen extends StatefulWidget {
   const TeachersManagementScreen({super.key});
 
   @override
-  State<TeachersManagementScreen> createState() => _TeachersManagementScreenState();
+  State<TeachersManagementScreen> createState() =>
+      _TeachersManagementScreenState();
 }
 
-class _TeachersManagementScreenState extends State<TeachersManagementScreen> with SingleTickerProviderStateMixin {
+class _TeachersManagementScreenState extends State<TeachersManagementScreen>
+    with SingleTickerProviderStateMixin {
   final DatabaseService _db = DatabaseService();
   late TabController _tabController;
 
@@ -43,12 +45,13 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      // 1. Fetch all teachers and pending requests
+      // 1. Fetch approved teachers and pending requests separately.
       final teachers = await _db.getAllTeachers();
-      
+      final pendingRequests = await _db.getPendingTeacherRequests();
+
       // 2. Fetch all courses (to group them by teacher later) - optimized batch call
       final allCourses = await _db.getCourses(includeDrafts: true);
-      
+
       // Group courses by instructor_id for efficiency
       final Map<String, List<Map<String, dynamic>>> teacherCoursesMap = {};
       for (var course in allCourses) {
@@ -64,9 +67,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
         teacher['teacher_courses'] = teacherCoursesMap[teacherId] ?? [];
       }
 
-      // Separate current teachers from pending requests
-      final currentTeachers = teachers.where((t) => t['teacher_status'] == 'approved').toList();
-      final pendingRequests = teachers.where((t) => t['teacher_status'] == 'pending').toList();
+      final currentTeachers =
+          teachers.where((t) => t['teacher_status'] != 'pending').toList();
 
       setState(() {
         _teachers = currentTeachers;
@@ -77,7 +79,9 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ErrorUtils.getFriendlyErrorMessage(e)), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -88,11 +92,13 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
     return _teachers.where((t) {
       final name = (t['full_name'] ?? t['name'] ?? '').toString().toLowerCase();
       final bio = (t['bio'] ?? '').toString().toLowerCase();
-      return name.contains(_searchQuery.toLowerCase()) || bio.contains(_searchQuery.toLowerCase());
+      return name.contains(_searchQuery.toLowerCase()) ||
+          bio.contains(_searchQuery.toLowerCase());
     }).toList();
   }
 
-  String _t(String key) => AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +131,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
   }
 
   Widget _buildHeader(BuildContext context) {
-     return Padding(
+    return Padding(
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
@@ -168,7 +174,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
       decoration: BoxDecoration(
         color: AppColors.getGlassColor(context, opacity: 0.1),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.2)),
+        border:
+            Border.all(color: AppColors.getGlassColor(context, opacity: 0.2)),
       ),
       child: TabBar(
         controller: _tabController,
@@ -190,7 +197,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                    decoration: const BoxDecoration(
+                        color: Colors.redAccent, shape: BoxShape.circle),
                     child: Text(
                       _requests.length.toString(),
                       style: const TextStyle(color: Colors.white, fontSize: 10),
@@ -207,7 +215,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
 
   Widget _buildTeachersList(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
-    if (_filteredTeachers.isEmpty) return _buildEmptyState(context, 'لا يوجد مدربين حالياً');
+    if (_filteredTeachers.isEmpty)
+      return _buildEmptyState(context, 'لا يوجد مدربين حالياً');
 
     return Column(
       children: [
@@ -218,7 +227,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               itemCount: _filteredTeachers.length,
-              itemBuilder: (context, index) => _buildTeacherCard(context, _filteredTeachers[index]),
+              itemBuilder: (context, index) =>
+                  _buildTeacherCard(context, _filteredTeachers[index]),
             ),
           ),
         ),
@@ -228,32 +238,40 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
 
   Widget _buildRequestsList(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
-    if (_requests.isEmpty) return _buildEmptyState(context, 'لا توجد طلبات انضمام معلقة');
+    if (_requests.isEmpty)
+      return _buildEmptyState(context, 'لا توجد طلبات انضمام معلقة');
 
     return RefreshIndicator(
       onRefresh: _loadData,
       child: ListView.builder(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         itemCount: _requests.length,
-        itemBuilder: (context, index) => _buildRequestCard(context, _requests[index]),
+        itemBuilder: (context, index) =>
+            _buildRequestCard(context, _requests[index]),
       ),
     );
   }
 
   Widget _buildTeacherCard(BuildContext context, Map<String, dynamic> teacher) {
     final courses = teacher['teacher_courses'] as List<dynamic>? ?? [];
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: _glassDecoration(context),
       child: ExpansionTile(
         leading: CircleAvatar(
           backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
-          backgroundImage: teacher['avatar_url'] != null ? NetworkImage(teacher['avatar_url']) : null,
-          child: teacher['avatar_url'] == null ? const Icon(Icons.person, color: AppColors.primaryPurple) : null,
+          backgroundImage: teacher['avatar_url'] != null
+              ? NetworkImage(teacher['avatar_url'])
+              : null,
+          child: teacher['avatar_url'] == null
+              ? const Icon(Icons.person, color: AppColors.primaryPurple)
+              : null,
         ),
-        title: Text(teacher['full_name'] ?? teacher['name'] ?? 'مدرب', style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(teacher['specialization'] ?? 'تخصص غير محدد', style: const TextStyle(fontSize: 12)),
+        title: Text(teacher['full_name'] ?? teacher['name'] ?? 'مدرب',
+            style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(teacher['specialization'] ?? 'تخصص غير محدد',
+            style: const TextStyle(fontSize: 12)),
         children: [
           const Divider(height: 1),
           Padding(
@@ -261,9 +279,11 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInfoRow(Icons.email_outlined, teacher['email'] ?? 'بدون بريد'),
+                _buildInfoRow(
+                    Icons.email_outlined, teacher['email'] ?? 'بدون بريد'),
                 const SizedBox(height: 8),
-                _buildInfoRow(Icons.school_outlined, 'عدد الكورسات: ${courses.length}'),
+                _buildInfoRow(
+                    Icons.school_outlined, 'عدد الكورسات: ${courses.length}'),
                 const SizedBox(height: 16),
                 Row(
                   children: [
@@ -274,7 +294,9 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
                         color: Colors.blueAccent,
                         onTap: () => Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => CoursesManagementScreen(instructorId: teacher['id'])),
+                          MaterialPageRoute(
+                              builder: (context) => CoursesManagementScreen(
+                                  instructorId: teacher['id'])),
                         ),
                       ),
                     ),
@@ -300,22 +322,32 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
             children: [
               CircleAvatar(
                 backgroundColor: AppColors.primaryBlue.withOpacity(0.1),
-                child: const Icon(Icons.person_add, color: AppColors.primaryBlue),
+                child:
+                    const Icon(Icons.person_add, color: AppColors.primaryBlue),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(request['full_name'] ?? 'طلب جديد', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(request['email'] ?? '', style: TextStyle(fontSize: 12, color: AppColors.getTextColor(context).withOpacity(0.6))),
+                    Text(request['full_name'] ?? 'طلب جديد',
+                        style: const TextStyle(fontWeight: FontWeight.bold)),
+                    Text(request['email'] ?? '',
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.getTextColor(context)
+                                .withOpacity(0.6))),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          if (request['bio'] != null) Text(request['bio'], style: const TextStyle(fontSize: 13), maxLines: 2, overflow: TextOverflow.ellipsis),
+          if (request['bio'] != null)
+            Text(request['bio'],
+                style: const TextStyle(fontSize: 13),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -344,84 +376,117 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen> wit
   }
 
   Future<void> _handleStatusUpdate(String teacherId, String status) async {
-     try {
+    try {
       await _db.updateTeacherStatus(teacherId, status);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(status == 'approved' ? 'تمت الموافقة على الطلب' : 'تم رفض الطلب'), backgroundColor: status == 'approved' ? Colors.green : Colors.orange),
+        SnackBar(
+            content: Text(status == 'approved'
+                ? 'تمت الموافقة على الطلب'
+                : 'تم رفض الطلب'),
+            backgroundColor:
+                status == 'approved' ? Colors.green : Colors.orange),
       );
       _loadData();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ: $e'), backgroundColor: Colors.red));
     }
   }
 
   // Helper widgets (Glass components)
   BoxDecoration _glassDecoration(BuildContext context) => BoxDecoration(
-    color: AppColors.getGlassColor(context, opacity: 0.1),
-    borderRadius: BorderRadius.circular(20),
-    border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.2), width: 1.5),
-  );
+        color: AppColors.getGlassColor(context, opacity: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+            color: AppColors.getGlassColor(context, opacity: 0.2), width: 1.5),
+      );
 
   Widget _buildInfoRow(IconData icon, String text) => Row(
-    children: [
-      Icon(icon, size: 16, color: AppColors.primaryPurple),
-      const SizedBox(width: 8),
-      Text(text, style: TextStyle(fontSize: 13, color: AppColors.getTextColor(context).withOpacity(0.8))),
-    ],
-  );
-
-  Widget _buildActionBtn({required String label, required IconData icon, required Color color, required VoidCallback onTap}) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(12),
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(12), border: Border.all(color: color.withOpacity(0.4))),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 16, color: color),
+          Icon(icon, size: 16, color: AppColors.primaryPurple),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.bold)),
+          Text(text,
+              style: TextStyle(
+                  fontSize: 13,
+                  color: AppColors.getTextColor(context).withOpacity(0.8))),
         ],
-      ),
-    ),
-  );
+      );
 
-  Widget _buildGlassIconButton({required IconData icon, required VoidCallback onTap}) => ClipRRect(
-    borderRadius: BorderRadius.circular(12),
-    child: BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-      child: Container(
-        decoration: BoxDecoration(color: AppColors.getGlassColor(context, opacity: 0.2), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.3))),
-        child: IconButton(icon: Icon(icon, color: AppColors.getTextColor(context)), onPressed: onTap),
-      ),
-    ),
-  );
+  Widget _buildActionBtn(
+          {required String label,
+          required IconData icon,
+          required Color color,
+          required VoidCallback onTap}) =>
+      InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: color.withOpacity(0.4))),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 8),
+              Text(label,
+                  style: TextStyle(
+                      color: color, fontSize: 13, fontWeight: FontWeight.bold)),
+            ],
+          ),
+        ),
+      );
+
+  Widget _buildGlassIconButton(
+          {required IconData icon, required VoidCallback onTap}) =>
+      ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+                color: AppColors.getGlassColor(context, opacity: 0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: AppColors.getGlassColor(context, opacity: 0.3))),
+            child: IconButton(
+                icon: Icon(icon, color: AppColors.getTextColor(context)),
+                onPressed: onTap),
+          ),
+        ),
+      );
 
   Widget _buildSearchBar(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-    child: Container(
-      decoration: _glassDecoration(context),
-      child: TextField(
-        onChanged: (value) => setState(() => _searchQuery = value),
-        decoration: InputDecoration(
-          hintText: _t('search_hint'),
-          prefixIcon: const Icon(Icons.search, size: 20),
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Container(
+          decoration: _glassDecoration(context),
+          child: TextField(
+            onChanged: (value) => setState(() => _searchQuery = value),
+            decoration: InputDecoration(
+              hintText: _t('search_hint'),
+              prefixIcon: const Icon(Icons.search, size: 20),
+              border: InputBorder.none,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 
   Widget _buildEmptyState(BuildContext context, String message) => Center(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(Icons.people_outline, size: 64, color: AppColors.getTextColor(context).withOpacity(0.2)),
-        const SizedBox(height: 16),
-        Text(message, style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.5))),
-      ],
-    ),
-  );
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.people_outline,
+                size: 64,
+                color: AppColors.getTextColor(context).withOpacity(0.2)),
+            const SizedBox(height: 16),
+            Text(message,
+                style: TextStyle(
+                    color: AppColors.getTextColor(context).withOpacity(0.5))),
+          ],
+        ),
+      );
 }

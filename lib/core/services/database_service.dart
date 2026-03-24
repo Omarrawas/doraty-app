@@ -2054,20 +2054,113 @@ class DatabaseService {
 
   // ==================== ENROLLMENTS ====================
 
+  Future<List<String>> getAccessibleCourseIds(
+      {bool forceRefresh = false}) async {
+    final userId = SupabaseService.instance.currentUserId;
+    if (userId == null) return [];
+
+    final List<dynamic> cached = await fetchWithCache(
+      key: 'user_${userId}_accessible_course_ids',
+      forceRefresh: forceRefresh,
+      duration: const Duration(minutes: 15),
+      fetcher: () async {
+        final Set<String> accessibleIds = {};
+
+        try {
+          final enrolled = await _client
+              .from('enrollments')
+              .select('course_id')
+              .eq('user_id', userId);
+          for (final item in enrolled as List) {
+            final courseId = item['course_id']?.toString();
+            if (courseId != null && courseId.isNotEmpty) {
+              accessibleIds.add(courseId);
+            }
+          }
+        } catch (e) {
+          debugPrint('Error loading direct enrollments for access map: $e');
+        }
+
+        try {
+          final paidOrders = await _client
+              .from('orders')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('payment_status', 'paid');
+
+          final orderIds = (paidOrders as List)
+              .map((e) => e['id']?.toString())
+              .whereType<String>()
+              .where((id) => id.isNotEmpty)
+              .toList();
+
+          if (orderIds.isNotEmpty) {
+            final orderItems = await _client
+                .from('order_items')
+                .select('item_id, item_type')
+                .inFilter('order_id', orderIds);
+
+            final courseIdsFromOrders = <String>{};
+            final bundleIds = <String>{};
+
+            for (final item in orderItems as List) {
+              final itemType = item['item_type']?.toString().toLowerCase();
+              final itemId = item['item_id']?.toString();
+              if (itemId == null || itemId.isEmpty) continue;
+
+              if (itemType == 'course') {
+                courseIdsFromOrders.add(itemId);
+              } else if (itemType == 'bundle' || itemType == 'package') {
+                bundleIds.add(itemId);
+              }
+            }
+
+            accessibleIds.addAll(courseIdsFromOrders);
+
+            if (bundleIds.isNotEmpty) {
+              final bundleCourses = await _client
+                  .from('bundle_courses')
+                  .select('course_id')
+                  .inFilter('bundle_id', bundleIds.toList());
+
+              for (final item in bundleCourses as List) {
+                final courseId = item['course_id']?.toString();
+                if (courseId != null && courseId.isNotEmpty) {
+                  accessibleIds.add(courseId);
+                }
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('Error loading paid order access map: $e');
+        }
+
+        return accessibleIds.toList();
+      },
+    );
+
+    return cached.map((e) => e.toString()).toList();
+  }
+
+  Future<bool> hasCourseAccess(String courseId,
+      {bool forceRefresh = false}) async {
+    final accessibleIds =
+        await getAccessibleCourseIds(forceRefresh: forceRefresh);
+    return accessibleIds.contains(courseId);
+  }
+
+  Future<bool> hasBundleAccess(List<String> courseIds,
+      {bool forceRefresh = false}) async {
+    if (courseIds.isEmpty) return false;
+    final accessibleIds =
+        (await getAccessibleCourseIds(forceRefresh: forceRefresh)).toSet();
+    return courseIds.every(accessibleIds.contains);
+  }
+
   /// Check if user is enrolled in a course
   Future<bool> isEnrolled(String courseId) async {
     try {
-      final userId = SupabaseService.instance.currentUserId;
-      if (userId == null) return false;
-
-      final response = await _client
-          .from('enrollments')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('course_id', courseId)
-          .maybeSingle();
-
-      return response != null;
+      return await hasCourseAccess(courseId);
     } catch (e) {
       return false;
     }
@@ -3477,24 +3570,23 @@ class DatabaseService {
           final response = await _client.rpc('get_all_teachers_public');
           final data = SafeParser.safeMapList(response);
 
-          // Transform flattened data to nested structure expected by UI
+          // Normalize to a single top-level shape expected by admin screens.
           return data
               .map((t) {
                 final avatar =
                     _formatAvatarUrl(t['avatar_url'], userId: t['user_id']);
                 return {
+                  'id': t['user_id'],
                   'user_id': t['user_id'],
-                  'users': {
-                    'id': t['user_id'],
-                    'name': t['name'],
-                    'full_name':
-                        t['name'], // Map for admin screen compatibility
-                    'email': t['email'],
-                    'avatar_url': avatar, // الاسم الصحيح الذي يبحث عنه الـ UI
-                    'photo_url': avatar, // احتياطي للتوافق مع بقية الشاشات
-                    'bio': t['bio'], // Include bio field
-                    'subjects': t['subjects'],
-                  }
+                  'name': t['name'],
+                  'full_name': t['name'],
+                  'email': t['email'],
+                  'avatar_url': avatar,
+                  'photo_url': avatar,
+                  'bio': t['bio'],
+                  'subjects': t['subjects'],
+                  'specialization': t['subjects'],
+                  'teacher_status': t['teacher_status'] ?? 'approved',
                 };
               })
               .toList()
@@ -3513,7 +3605,27 @@ class DatabaseService {
                 .select('*, users(*)')
                 .eq('role_id', teacherRole['id']);
 
-            return SafeParser.safeMapList(response);
+            final data = SafeParser.safeMapList(response);
+            return data.map((row) {
+              final user = SafeParser.safeMap(row['users']);
+              final userId =
+                  user['id']?.toString() ?? row['user_id']?.toString();
+              final avatar = _formatAvatarUrl(user['avatar_url']?.toString(),
+                  userId: userId);
+              return {
+                'id': userId,
+                'user_id': userId,
+                'name': user['name'] ?? user['full_name'],
+                'full_name': user['full_name'] ?? user['name'],
+                'email': user['email'],
+                'avatar_url': avatar,
+                'photo_url': avatar,
+                'bio': user['bio'],
+                'subjects': user['subjects'],
+                'specialization': user['subjects'],
+                'teacher_status': user['status'] ?? 'approved',
+              };
+            }).toList();
           } catch (_) {
             return []; // Return empty if both fail
           }

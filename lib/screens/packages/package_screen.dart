@@ -9,11 +9,13 @@ import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../cart/cart_screen.dart';
 import '../../core/providers/cart_provider.dart';
+import '../../core/services/database_service.dart';
+import '../courses/course_details_screen.dart';
 
-class PackageScreen extends StatelessWidget {
+class PackageScreen extends StatefulWidget {
   final String packageTitle;
   final List<Course> courses;
-  final Bundle? bundle; // Optional full bundle object
+  final Bundle? bundle;
 
   const PackageScreen({
     super.key,
@@ -23,18 +25,75 @@ class PackageScreen extends StatelessWidget {
   });
 
   @override
+  State<PackageScreen> createState() => _PackageScreenState();
+}
+
+class _PackageScreenState extends State<PackageScreen> {
+  final DatabaseService _databaseService = DatabaseService();
+  bool _hasBundleAccess = false;
+
+  Bundle get _displayBundle =>
+      widget.bundle ??
+      Bundle(
+        id: 'temp',
+        title: widget.packageTitle,
+        courses: widget.courses,
+        price: widget.courses.fold(0.0, (sum, c) => sum + c.price),
+        discountPercentage: 20,
+      );
+
+  @override
+  void initState() {
+    super.initState();
+    _checkBundleAccess();
+  }
+
+  Future<void> _checkBundleAccess() async {
+    try {
+      final hasAccess = await _databaseService.hasBundleAccess(
+        widget.courses.map((c) => c.id).toList(),
+      );
+      if (mounted) {
+        setState(() => _hasBundleAccess = hasAccess);
+      }
+    } catch (e) {
+      debugPrint('Error checking bundle access: $e');
+    }
+  }
+
+  void _handlePrimaryAction() {
+    if (_hasBundleAccess && widget.courses.isNotEmpty) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) =>
+              CourseDetailsScreen(course: widget.courses.first),
+        ),
+      );
+      return;
+    }
+
+    final cart = Provider.of<CartProvider>(context, listen: false);
+    cart.addItem(
+      id: _displayBundle.id,
+      title: _displayBundle.title,
+      price: _displayBundle.discountedPrice,
+      originalPrice: _displayBundle.price,
+      discountAmount: _displayBundle.price - _displayBundle.discountedPrice,
+      imageUrl: _displayBundle.imageUrl,
+      isBundle: true,
+      originalObject: _displayBundle,
+    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CartScreen()),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final locale = Provider.of<LocaleProvider>(context).locale;
     String t(String key) => AppStrings.get(key, locale);
-
-    // If no bundle object is provided, create a dummy one for the price info
-    final displayBundle = bundle ?? Bundle(
-      id: 'temp',
-      title: packageTitle,
-      courses: courses,
-      price: courses.fold(0.0, (sum, c) => sum + (c.price)),
-      discountPercentage: 20, // Default discount for bundles
-    );
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -51,15 +110,14 @@ class PackageScreen extends StatelessWidget {
               child: CustomScrollView(
                 slivers: [
                   const SliverPadding(padding: EdgeInsets.only(top: 100)),
-                  
-                  // Package Main Info Card
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
                       child: Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: AppColors.getGlassColor(context, opacity: 0.15),
+                          color:
+                              AppColors.getGlassColor(context, opacity: 0.15),
                           borderRadius: BorderRadius.circular(32),
                           border: Border.all(color: Colors.white10),
                           boxShadow: [
@@ -72,8 +130,8 @@ class PackageScreen extends StatelessWidget {
                         ),
                         child: Column(
                           children: [
-                            // Bundle Image or Icon
-                            displayBundle.imageUrl != null && displayBundle.imageUrl!.isNotEmpty
+                            _displayBundle.imageUrl != null &&
+                                    _displayBundle.imageUrl!.isNotEmpty
                                 ? Container(
                                     width: double.infinity,
                                     height: 180,
@@ -91,12 +149,18 @@ class PackageScreen extends StatelessWidget {
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(20),
                                       child: Image.network(
-                                        displayBundle.imageUrl!,
+                                        _displayBundle.imageUrl!,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) => Container(
-                                          color: AppColors.secondaryGold.withOpacity(0.2),
-                                          child: const Icon(Icons.collections_bookmark, 
-                                              color: AppColors.secondaryGold, size: 40),
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Container(
+                                          color: AppColors.secondaryGold
+                                              .withOpacity(0.2),
+                                          child: const Icon(
+                                            Icons.collections_bookmark,
+                                            color: AppColors.secondaryGold,
+                                            size: 40,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -104,15 +168,19 @@ class PackageScreen extends StatelessWidget {
                                 : Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: AppColors.secondaryGold.withOpacity(0.2),
+                                      color: AppColors.secondaryGold
+                                          .withOpacity(0.2),
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(Icons.collections_bookmark, 
-                                        color: AppColors.secondaryGold, size: 40),
+                                    child: const Icon(
+                                      Icons.collections_bookmark,
+                                      color: AppColors.secondaryGold,
+                                      size: 40,
+                                    ),
                                   ),
                             const SizedBox(height: 20),
                             Text(
-                              packageTitle,
+                              widget.packageTitle,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Colors.white,
@@ -124,10 +192,12 @@ class PackageScreen extends StatelessWidget {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.auto_stories, color: Colors.white.withOpacity(0.6), size: 18),
+                                Icon(Icons.auto_stories,
+                                    color: Colors.white.withOpacity(0.6),
+                                    size: 18),
                                 const SizedBox(width: 8),
                                 Text(
-                                  '${courses.length} ${t('courses_count_bundle')}',
+                                  '${widget.courses.length} ${t('courses_count_bundle')}',
                                   style: TextStyle(
                                     color: Colors.white.withOpacity(0.6),
                                     fontSize: 16,
@@ -135,10 +205,10 @@ class PackageScreen extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            if (displayBundle.description != null) ...[
+                            if (_displayBundle.description != null) ...[
                               const SizedBox(height: 20),
                               Text(
-                                displayBundle.description!,
+                                _displayBundle.description!,
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: Colors.white.withOpacity(0.8),
@@ -148,25 +218,8 @@ class PackageScreen extends StatelessWidget {
                               ),
                             ],
                             const SizedBox(height: 24),
-                            // Subscribe Button inside the card
                             ElevatedButton(
-                              onPressed: () {
-                                final cart = Provider.of<CartProvider>(context, listen: false);
-                                cart.addItem(
-                                  id: displayBundle.id,
-                                  title: displayBundle.title,
-                                  price: displayBundle.discountedPrice,
-                                  originalPrice: displayBundle.price,
-                                  discountAmount: displayBundle.price - displayBundle.discountedPrice,
-                                  imageUrl: displayBundle.imageUrl,
-                                  isBundle: true,
-                                  originalObject: displayBundle,
-                                );
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const CartScreen()),
-                                );
-                              },
+                              onPressed: _handlePrimaryAction,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.primaryPurple,
                                 foregroundColor: Colors.white,
@@ -177,7 +230,9 @@ class PackageScreen extends StatelessWidget {
                                 elevation: 0,
                               ),
                               child: Text(
-                                '${t('subscribe_now_prefix')}${displayBundle.getFormattedPrice(locale)}',
+                                _hasBundleAccess
+                                    ? 'أكمل'
+                                    : '${t('subscribe_now_prefix')}${_displayBundle.getFormattedPrice(locale)}',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -190,8 +245,6 @@ class PackageScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                  // Divider/Label
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(20, 40, 20, 20),
@@ -218,46 +271,26 @@ class PackageScreen extends StatelessWidget {
                       ),
                     ),
                   ),
-
-                  // Courses Grid/List
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    sliver: courses.isEmpty
-                        ? SliverToBoxAdapter(
-                            child: Center(
-                              child: Column(
-                                children: [
-                                  const SizedBox(height: 40),
-                                  Icon(Icons.info_outline, color: Colors.white24, size: 60),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    t('no_courses_found'),
-                                    style: const TextStyle(color: Colors.white54),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : SliverGrid(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                final course = courses[index];
-                                return CourseCard(
-                                  course: course,
-                                  heroTag: 'package_course_${course.id}',
-                                );
-                              },
-                              childCount: courses.length,
-                            ),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: MediaQuery.of(context).size.width > 600 ? 3 : 2,
-                              childAspectRatio: 0.72,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 20,
-                            ),
-                          ),
+                    sliver: SliverGrid(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => CourseCard(
+                          course: widget.courses[index],
+                          heroTag: 'package_course_${widget.courses[index].id}',
+                        ),
+                        childCount: widget.courses.length,
+                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        childAspectRatio: 0.62,
+                        crossAxisSpacing: 16,
+                        mainAxisSpacing: 20,
+                      ),
+                    ),
                   ),
-                  const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
+                  const SliverToBoxAdapter(child: SizedBox(height: 30)),
                 ],
               ),
             ),

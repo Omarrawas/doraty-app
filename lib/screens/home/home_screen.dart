@@ -65,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   Set<String> _enrolledCourseIds = {};
+  Set<String> _accessibleCourseIds = {};
   final Map<String, double> _enrollmentProgress = {}; // courseId -> progress %
   final Map<String, String> _enrollmentIds = {}; // courseId -> enrollmentId
 
@@ -249,9 +250,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadEnrolledCourses() async {
     try {
       final enrolledIds = await _databaseService.getEnrolledCourseIds();
+      final accessibleIds = await _databaseService.getAccessibleCourseIds();
       if (mounted) {
         setState(() {
           _enrolledCourseIds = enrolledIds;
+          _accessibleCourseIds = accessibleIds.toSet();
         });
       }
       // Load progress data for enrolled courses
@@ -1221,6 +1224,10 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: _bundles.length,
               itemBuilder: (context, index) {
                 final bundle = _bundles[index];
+                final bundleCourseIds =
+                    bundle.courses.map((course) => course.id).toList();
+                final bool hasBundleAccess = bundleCourseIds.isNotEmpty &&
+                    bundleCourseIds.every(_accessibleCourseIds.contains);
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: InkWell(
@@ -1379,6 +1386,19 @@ class _HomeScreenState extends State<HomeScreen> {
                                         minimumSize: Size.zero,
                                       ),
                                       onPressed: () {
+                                        if (hasBundleAccess &&
+                                            bundle.courses.isNotEmpty) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  CourseDetailsScreen(
+                                                course: bundle.courses.first,
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -1390,8 +1410,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                           ),
                                         );
                                       },
-                                      child: const Text(
-                                        'اشترك',
+                                      child: Text(
+                                        hasBundleAccess ? 'أكمل' : 'اشترك',
                                         style: TextStyle(
                                             fontFamily: 'Cairo',
                                             fontWeight: FontWeight.bold,
