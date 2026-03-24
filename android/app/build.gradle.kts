@@ -19,8 +19,8 @@ val keystoreProperties = Properties().apply {
 
 android {
     namespace = "com.doraty.app"
-    compileSdk = 35
-    ndkVersion = "26.1.10909125"
+    compileSdk = 36
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
