@@ -222,8 +222,9 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                       ),
                     ),
 
-                  // ── منطقة الفيديو ──
-                  Expanded(
+                  // ── Video Area ──
+                  SizedBox(
+                    height: 200, // Fixed height to prevent Expanded crash inside scrollable
                     child: ClipRRect(
                       borderRadius: widget.showHeader
                           ? const BorderRadius.only(
@@ -234,10 +235,10 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          // الفيديو الفعلي
+                          // Actual Video
                           player,
 
-                          // التحكم المخصص (يظهر فقط بعد بدء التشغيل)
+                          // Custom Controls (shown after playback starts)
                           if (_hasStarted)
                             VideoPlayerControls(
                               isYoutube: true,
@@ -247,14 +248,14 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                             ),
 
                           // ── Thumbnail + Play Button Overlay ──
-                          // يظهر فقط قبل بدء التشغيل
+                          // Only shown before playback
                           if (!_hasStarted)
                             GestureDetector(
                               onTap: _startPlayback,
                               child: Stack(
                                 fit: StackFit.expand,
                                 children: [
-                                  // Thumbnail من يوتيوب
+                                  // Youtube Thumbnail
                                   CachedNetworkImage(
                                     imageUrl: _thumbnailUrl,
                                     fit: BoxFit.cover,
@@ -269,7 +270,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                                     ),
                                   ),
 
-                                  // طبقة تعتيم خفيفة
+                                  // Light overlay
                                   Container(
                                     decoration: BoxDecoration(
                                       gradient: LinearGradient(
@@ -283,7 +284,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                                     ),
                                   ),
 
-                                  // زر التشغيل المتحرك في المنتصف
+                                  // Central animated play button
                                   Center(
                                     child: AnimatedBuilder(
                                       animation: _pulseAnimation,
@@ -316,7 +317,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                                     ),
                                   ),
 
-                                  // نص "اضغط للمشاهدة" في الأسفل
+                                  // "Tap to watch" text
                                   Positioned(
                                     bottom: 12,
                                     left: 0,
@@ -343,7 +344,6 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                                 ],
                               ),
                             ),
-                            // أزلنا زر التكبير القديم لأن VideoPlayerControls أصبح يتكفل به
                         ],
                       ),
                     ),

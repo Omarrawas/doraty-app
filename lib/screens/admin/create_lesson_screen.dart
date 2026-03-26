@@ -77,10 +77,24 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     _contentHtml = widget.lessonData?['content'] ?? '';
     _isFree = widget.lessonData?['is_free'] ?? false;
 
-    if (widget.lessonData?['resources'] != null) {
-      for (var item in widget.lessonData!['resources']) {
-        _attachments.add(Map<String, String>.from(item));
+    try {
+      if (widget.lessonData?['resources'] != null) {
+        final rawResources = widget.lessonData!['resources'];
+        if (rawResources is Iterable) {
+          for (var item in rawResources) {
+            try {
+              if (item is Map) {
+                _attachments.add(item.map((key, value) => 
+                  MapEntry(key.toString(), value.toString())));
+              }
+            } catch (e) {
+              debugPrint('Error parsing resource item: $e');
+            }
+          }
+        }
       }
+    } catch (e) {
+      debugPrint('Error initializing resources: $e');
     }
     
     _loadChapters();
@@ -95,8 +109,16 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
           _chapters = chapters;
           _isLoadingChapters = false;
 
-          if (widget.lessonData?['chapter_id'] != null) {
-            _selectedChapterId = widget.lessonData?['chapter_id'];
+          final lessonChapterId = widget.lessonData?['chapter_id']?.toString();
+          if (lessonChapterId != null) {
+            // Safety: Only set _selectedChapterId if it exists in the chapters list
+            final chapterExists = chapters.any((c) => c.id == lessonChapterId);
+            if (chapterExists) {
+              _selectedChapterId = lessonChapterId;
+            } else {
+              debugPrint('⚠️ Chapter ID $lessonChapterId from lesson data not found in chapters list');
+              _selectedChapterId = null; // Fallback to general
+            }
           }
         });
       }
