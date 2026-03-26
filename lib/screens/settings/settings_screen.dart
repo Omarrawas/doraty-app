@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -5,8 +6,6 @@ import '../../core/theme/theme_provider.dart' as theme_provider;
 import '../../core/services/auth_service.dart';
 import '../../core/services/settings_service.dart';
 import '../auth/login_screen.dart';
-import 'terms_conditions_screen.dart';
-import 'privacy_policy_screen.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
@@ -121,10 +120,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: AppColors.getTextColor(context),
                       ),
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => PrivacyPolicyScreen()),
-                        );
+                        context.push('/privacy');
                       },
                     ),
 
@@ -138,10 +134,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         color: AppColors.getTextColor(context),
                       ),
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => TermsConditionsScreen()),
-                        );
+                        context.push('/terms');
                       },
                     ),
 

@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
@@ -104,7 +105,7 @@ class HomeDrawer extends StatelessWidget {
                         style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 14)),
                       onTap: () {
                         Navigator.pop(context);
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => ExploreScreen(showBackButton: true)));
+                        context.push('/courses');
                         // Note: In a real app, we'd pass the category ID to ExploreScreen
                       },
                     )).toList(),
@@ -128,7 +129,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'my_receipts'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => OrderHistoryScreen()));
+                    context.push('/orders');
                   },
                 ),
 
@@ -138,7 +139,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'top_teachers'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => TeachersListScreen()));
+                    context.push('/teachers');
                   },
                 ),
 
@@ -157,7 +158,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'learning_tips_title'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => AllTipsScreen()));
+                    context.push('/tips');
                   },
                 ),
 
@@ -169,7 +170,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'settings'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsScreen()));
+                    context.push('/settings');
                   },
                 ),
 
@@ -201,10 +202,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'faq'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => FAQScreen()),
-                    );
+                    context.push('/faq');
                   },
                 ),
 
@@ -273,7 +271,7 @@ class HomeDrawer extends StatelessWidget {
                     : ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => LoginScreen()));
+                          context.push('/login');
                         },
                         icon: Icon(Icons.login),
                         label: Text(_t(context, 'login_title')),

@@ -18,8 +18,6 @@ class SubjectsScreen extends StatefulWidget {
 }
 
 class _SubjectsScreenState extends State<SubjectsScreen> {
-  static const double _categoryCardMaxWidth = 150;
-  static const double _categoryCardAspectRatio = 0.9;
   late List<Category> _fallbackCategories;
   List<CategoryModel> _categories = [];
   bool _isLoading = true;
@@ -202,16 +200,21 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
   }
 
   Widget _buildGrid() {
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final int crossAxisCount = screenWidth > 600 ? 3 : 2;
+    // Lower aspect ratio means taller card to keep text strictly inside
+    final double aspectRatio = 0.85;
+
     if (_categories.isEmpty && !_isLoading) {
       // Show fallback if no real categories found
       return GridView.builder(
         shrinkWrap: true,
         physics: NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: _categoryCardMaxWidth,
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
           crossAxisSpacing: 16,
           mainAxisSpacing: 16,
-          childAspectRatio: _categoryCardAspectRatio,
+          childAspectRatio: aspectRatio,
         ),
         itemCount: _fallbackCategories.length,
         itemBuilder: (context, index) =>
@@ -222,11 +225,11 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
     return GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: _categoryCardMaxWidth,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: _categoryCardAspectRatio,
+        childAspectRatio: aspectRatio,
       ),
       itemCount: _categories.length,
       itemBuilder: (context, index) =>

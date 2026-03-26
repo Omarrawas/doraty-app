@@ -1,9 +1,9 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/course.dart';
 import '../screens/courses/course_details_screen.dart';
-import '../screens/auth/login_screen.dart';
 import '../core/services/auth_service.dart';
 import '../core/localization/locale_provider.dart';
 import '../core/constants/app_strings.dart';
@@ -16,12 +16,14 @@ class CourseCard extends StatefulWidget {
   final Course course;
   final String? heroTag;
   final double? progress;
+  final bool isHorizontal;
 
   const CourseCard({
     super.key,
     required this.course,
     this.heroTag,
     this.progress,
+    this.isHorizontal = false,
   });
 
   @override
@@ -152,10 +154,20 @@ class _CourseCardState extends State<CourseCard>
                 ),
               );
             },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
+            child: widget.isHorizontal
+                ? _buildHorizontalLayout(context, locale, isDark)
+                : _buildVerticalLayout(context, locale, isDark),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerticalLayout(BuildContext context, String locale, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
                 // --- 1. Top Image with Badges ---
                 Stack(
                   children: [
@@ -274,7 +286,7 @@ class _CourseCardState extends State<CourseCard>
                 // --- 2. Content ---
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(12, 12, 12, 12),
+                    padding: EdgeInsets.fromLTRB(10, 8, 10, 8),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -296,7 +308,7 @@ class _CourseCardState extends State<CourseCard>
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            SizedBox(height: 8),
+                            SizedBox(height: 4),
                             Text(
                               'تقديم ${StringUtils.cleanTeacherName(widget.course.getLocalizedInstructorName(locale))}',
                               textAlign: TextAlign.center,
@@ -381,7 +393,7 @@ class _CourseCardState extends State<CourseCard>
                                   ),
                                 ],
                               ),
-                              SizedBox(height: 12),
+                              SizedBox(height: 6),
                             ],
 
                             // Independent Subscribe Button
@@ -393,7 +405,7 @@ class _CourseCardState extends State<CourseCard>
                                       0xFF434775), // Exact purple-blue color from the image
                                   foregroundColor: Colors.white,
                                   padding:
-                                      EdgeInsets.symmetric(vertical: 10),
+                                      EdgeInsets.symmetric(vertical: 6),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -427,10 +439,229 @@ class _CourseCardState extends State<CourseCard>
                   ),
                 ),
               ],
+    );
+  }
+
+  Widget _buildHorizontalLayout(BuildContext context, String locale, bool isDark) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // --- 1. Top Image with Badges ---
+        SizedBox(
+          width: 140,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Hero(
+                tag: widget.heroTag ?? 'course_image_${widget.course.id}',
+                child: ClipRRect(
+                  borderRadius: const BorderRadiusDirectional.horizontal(
+                      start: Radius.circular(16)),
+                  child: widget.course.imageUrl != null &&
+                          widget.course.imageUrl!.isNotEmpty
+                      ? CachedNetworkImage(
+                          imageUrl: widget.course.imageUrl!,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Colors.grey.withOpacity(0.1),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.primaryPurple),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: Colors.grey.withOpacity(0.1),
+                            child: Icon(Icons.broken_image,
+                                color: Colors.grey, size: 30),
+                          ),
+                        )
+                      : Container(
+                          color: Colors.grey.withOpacity(0.1),
+                          child: Icon(Icons.image_not_supported,
+                              color: Colors.grey),
+                        ),
+                ),
+              ),
+              // Wishlist Icon (Top Right)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: _toggleFavorite,
+                  child: Icon(
+                    _isFavorite
+                        ? Icons.favorite_rounded
+                        : Icons.favorite_border_rounded,
+                    color: _isFavorite ? Colors.redAccent : Colors.white,
+                    size: 22,
+                    shadows: [
+                      Shadow(color: Colors.black45, blurRadius: 6)
+                    ],
+                  ),
+                ),
+              ),
+              // "New" Badge (Top Left)
+              if (widget.course.isNew)
+                Positioned(
+                  top: 8,
+                  left: 8,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.redAccent,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      AppStrings.get('new_badge', locale) == 'new_badge'
+                          ? 'جديد'
+                          : AppStrings.get('new_badge', locale),
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context),
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              // Duration Badge (Bottom Right matching image layout)
+              if (widget.course.durationHours != null &&
+                  widget.course.durationHours!.isNotEmpty)
+                Positioned(
+                  bottom: 8,
+                  right: 8,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.course.durationHours!
+                              .replaceAll('ساعات', 'س')
+                              .replaceAll('دقائق', 'د'),
+                          style: TextStyle(
+                            color: AppColors.getTextColor(context),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textDirection: TextDirection.rtl,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+
+        // --- 2. Content ---
+        Expanded(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(12, 10, 12, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Title
+                Text(
+                  widget.course.getLocalizedTitle(locale),
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.getTextColor(context),
+                    height: 1.3,
+                    fontFamily: 'Cairo',
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 6),
+                
+                // Pricing or Progress
+                if (_hasCourseAccess) ...[
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        AppStrings.get('progress_label', locale),
+                        style: TextStyle(
+                            color: AppColors.getTextColor(context,
+                                secondary: true),
+                            fontSize: 10),
+                      ),
+                      Text(
+                        '${((widget.progress ?? 0) * 100).toInt()}%',
+                        style: TextStyle(
+                            color: AppColors.getTextColor(context),
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: widget.progress ?? 0,
+                      backgroundColor:
+                          AppColors.getGlassColor(context, opacity: 0.1),
+                      valueColor:
+                          const AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                      minHeight: 3,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                ] else if (widget.course.price > 0) ...[
+                  Row(
+                    children: [
+                      Text(
+                        widget.course.getLocalizedPrice(locale),
+                        style: TextStyle(
+                          color: AppColors.getTextColor(context),
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (widget.course.hasDiscount) ...[
+                        SizedBox(width: 8),
+                        Text(
+                          widget.course.getFormattedPrice(locale),
+                          style: TextStyle(
+                            color: AppColors.getTextColor(context,
+                                    secondary: true)
+                                .withOpacity(0.5),
+                            fontSize: 11,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  SizedBox(height: 6),
+                ],
+                
+                // Instructor
+                Text(
+                  'تقديم ${StringUtils.cleanTeacherName(widget.course.getLocalizedInstructorName(locale))}',
+                  textAlign: TextAlign.start,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.getTextColor(context, secondary: true),
+                    fontFamily: 'Cairo',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
             ),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -460,10 +691,7 @@ class _CourseCardState extends State<CourseCard>
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => LoginScreen()),
-              );
+              context.push('/login');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple,

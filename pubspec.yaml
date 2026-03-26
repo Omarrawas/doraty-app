@@ -114,6 +114,7 @@ dependencies:
   no_screenshot: ^0.10.0
   flutter_web_plugins:
     sdk: flutter
+  go_router: ^17.1.0
 
 dev_dependencies:
   flutter_test:

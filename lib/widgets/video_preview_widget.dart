@@ -85,8 +85,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-        overlays: SystemUiOverlay.values);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     super.dispose();
   }
 
@@ -136,8 +135,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
           DeviceOrientation.portraitUp,
           DeviceOrientation.portraitDown,
         ]);
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-            overlays: SystemUiOverlay.values);
+        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       },
       player: YoutubePlayer(
         controller: _controller!,

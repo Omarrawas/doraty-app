@@ -6,6 +6,7 @@ import '../auth/register_screen.dart';
 import '../../main.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
+import 'package:go_router/go_router.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -64,20 +65,14 @@ class _SplashScreenState extends State<SplashScreen>
         Future.delayed(Duration(seconds: 15)).then((_) {
           debugPrint('⚠️ SplashScreen: Init sequence TIMED OUT. Proceeding to main...');
           if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => MainScreen()),
-            );
+            context.go('/');
           }
         }),
       ]);
     } catch (e) {
       debugPrint('❌ Error in splash screen sequence: $e');
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
-        );
+        context.go('/');
       }
     }
   }
@@ -109,23 +104,14 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted) return;
       
       if (!hasRole) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => RegisterScreen()),
-        );
+        context.go('/register');
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
-        );
+        context.go('/');
       }
     } else {
       // Not authenticated
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => MainScreen()),
-        );
+        context.go('/');
       }
     }
   }

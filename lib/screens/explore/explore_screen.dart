@@ -268,8 +268,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final Color subtleSurfaceColor = isDark
         ? Colors.white.withOpacity(0.06)
         : Colors.white.withOpacity(0.38);
-    int crossAxisCount = 2; // Default to 2 columns for better mobile experience
-    double childAspectRatio = 0.65; // Balanced for 2 columns
+    int crossAxisCount = 1; // Default to 1 column for small screens (Horizontal layout)
+    double childAspectRatio = 2.6; // Matches horizontal card aspect ratio
+    bool isSmallScreen = screenWidth <= 550;
 
     if (screenWidth > 1200) {
       crossAxisCount = 4;
@@ -279,7 +280,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       childAspectRatio = 0.68;
     } else if (screenWidth > 550) {
       crossAxisCount = 2;
-      childAspectRatio = 0.62;
+      childAspectRatio = 0.65;
     }
 
     final displayCats = _displayCategories;
@@ -535,6 +536,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                       course: _filteredCourses[index],
                                       heroTag:
                                           'explore_course_image_${_filteredCourses[index].id}',
+                                      isHorizontal: isSmallScreen,
                                     );
                                   },
                                   childCount: _filteredCourses.length,

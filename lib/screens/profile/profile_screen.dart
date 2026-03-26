@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -18,6 +19,7 @@ import '../../models/course.dart';
 import '../courses/course_details_screen.dart';
 import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
+import '../favorites/favorites_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -377,6 +379,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ],
 
 
+                        SizedBox(height: 20),
+                        
+                        // Quick Actions Row
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildQuickActionCard(
+                                icon: Icons.favorite_rounded,
+                                label: 'مفضلتي',
+                                iconColor: Colors.redAccent,
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const FavoritesScreen(),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        
                         SizedBox(height: 30),
                         
                         // Tab Switcher for Course Progress
@@ -651,6 +674,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _buildQuickActionCard({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? iconColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Material(
+          color: AppColors.getMutedTextColor(context),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(16),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.white.withOpacity(0.08)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: (iconColor ?? AppColors.primaryPurple).withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      icon,
+                      color: iconColor ?? AppColors.primaryPurple,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.getTextColor(context),
+                        fontFamily: 'Cairo',
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_left_rounded,
+                    color: AppColors.getTextColor(context, secondary: true),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 
   Widget _buildCounterCard({required String label, required String value}) {
     return Container(
@@ -1113,10 +1196,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => RegisterScreen()),
-                );
+                context.push('/register');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple,
@@ -1177,10 +1257,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => LoginScreen()),
-                );
+                context.push('/login');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple,

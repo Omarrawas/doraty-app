@@ -1,4 +1,5 @@
 
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_colors.dart';
@@ -427,13 +428,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildSectionHeaderBox(_t('top_teachers'), () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    TeachersListScreen(),
-                              ),
-                            );
+                            context.push('/teachers');
                           }),
                           isWideScreen
                               ? Padding(
@@ -888,25 +883,14 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeaderBox(_t('categories_title'), () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) =>
-                      SubjectsScreen(showBackButton: true)),
-            );
+            context.push('/topics');
           }),
           SizedBox(
-            height: 220, // Enough height for 2 rows of ~95px cards plus padding
-            child: GridView.builder(
+            height: 120, // Height for a single row of cards
+            child: ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 20),
               scrollDirection: Axis.horizontal,
               physics: BouncingScrollPhysics(),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // 2 rows
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.75, // height/width ratio: ~ 95 / 130
-              ),
               itemCount: _categories
                   .where((c) => c.parentId == null || c.parentId!.isEmpty)
                   .length,
@@ -917,15 +901,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 final category = parentCategories[index];
                 return CategoryCard(
                   category: category,
-                  margin: EdgeInsets.zero, // Margin handled by Grid spacing
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ExploreScreen(
-                            initialFilter: category.id, showBackButton: true),
-                      ),
-                    );
+                    context.push('/courses');
                   },
                 );
               },
@@ -949,16 +926,10 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           _buildSectionHeaderBox(_t('new_courses'), () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ExploreScreen(
-                    initialFilter: 'newest', showBackButton: true),
-              ),
-            );
+            context.push('/courses');
           }),
           SizedBox(
-            height: isWideScreen ? 340 : 280,
+            height: isWideScreen ? 380 : 340,
             child: ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
@@ -967,8 +938,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 return Padding(
                   padding: EdgeInsets.symmetric(horizontal: 5),
                   child: SizedBox(
-                    width: isWideScreen ? 280 : 220,
-                    child: CourseCard(course: newCourses[index]),
+                    width: isWideScreen ? 320 : 280,
+                    child: CourseCard(
+                        course: newCourses[index],
+                        heroTag: 'new_${newCourses[index].id}'),
                   ),
                 );
               },
@@ -988,16 +961,10 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           _buildSectionHeaderBox(_t('most_watched'), () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ExploreScreen(
-                    initialFilter: 'popular', showBackButton: true),
-              ),
-            );
+            context.push('/courses');
           }),
           SizedBox(
-            height: isWideScreen ? 340 : 280,
+            height: isWideScreen ? 380 : 340,
             child: ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
@@ -1006,8 +973,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 return Padding(
                   padding: EdgeInsets.symmetric(horizontal: 5),
                   child: SizedBox(
-                    width: isWideScreen ? 280 : 220,
-                    child: CourseCard(course: mostWatched[index]),
+                    width: isWideScreen ? 320 : 280,
+                    child: CourseCard(
+                        course: mostWatched[index],
+                        heroTag: 'watched_${mostWatched[index].id}'),
                   ),
                 );
               },
@@ -1020,37 +989,38 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildRecordedCoursesSection(bool isWideScreen) {
     var recordedCourses = List<Course>.from(_allCourses);
-    // Shuffle to differentiate from New Courses
-    recordedCourses.shuffle();
+    
     if (recordedCourses.isEmpty) {
       return SliverToBoxAdapter(child: SizedBox.shrink());
     }
+
+    int rowsCount = recordedCourses.length > 5 ? 2 : 1;
+    double cardHeight = isWideScreen ? 380 : 340;
+    double cardWidth = isWideScreen ? 320 : 280;
+    double containerHeight = (cardHeight * rowsCount) + ((rowsCount - 1) * 15.0);
 
     return SliverToBoxAdapter(
       child: Column(
         children: [
           _buildSectionHeaderBox(_t('recorded_courses'), () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => ExploreScreen(
-                    initialFilter: 'recorded', showBackButton: true),
-              ),
-            );
+            context.push('/courses');
           }),
           SizedBox(
-            height: isWideScreen ? 340 : 280,
-            child: ListView.builder(
+            height: containerHeight,
+            child: GridView.builder(
               padding: EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
-              itemCount: recordedCourses.take(10).length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: rowsCount,
+                childAspectRatio: cardHeight / cardWidth,
+                mainAxisSpacing: 10,
+                crossAxisSpacing: 15,
+              ),
+              itemCount: recordedCourses.length,
               itemBuilder: (context, index) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 5),
-                  child: SizedBox(
-                    width: isWideScreen ? 280 : 220,
-                    child: CourseCard(course: recordedCourses[index]),
-                  ),
+                return CourseCard(
+                  course: recordedCourses[index],
+                  heroTag: 'recorded_${recordedCourses[index].id}',
                 );
               },
             ),
@@ -1141,13 +1111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                RegisterScreen(initialRole: 'teacher'),
-                          ),
-                        );
+                        context.push('/register');
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
@@ -1189,8 +1153,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeaderBox(_t('learning_tips_title'), () {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (context) => AllTipsScreen()));
+            context.push('/tips');
           }),
           SizedBox(
             height: 200,
@@ -1234,10 +1197,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSectionHeaderBox(_t('bundles_title'), () {
-            Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => AllPackagesScreen()));
+            context.push('/packages');
           }),
 
           // Cards List
@@ -1465,10 +1425,7 @@ class _HomeScreenState extends State<HomeScreen> {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
-                  Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => AllPackagesScreen()));
+                  context.push('/packages');
                 },
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(
@@ -1861,6 +1818,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
         : Colors.white.withOpacity(overlapsContent ? 0.98 : 0.92);
 
     return Container(
+      height: maxExtent,
       decoration: BoxDecoration(
         color: Color.lerp(
             Colors.transparent, headerBackgroundColor, currentOpacity),
@@ -1948,11 +1906,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                   SizedBox(width: 12),
                   TextButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => LoginScreen()),
-                      );
+                      context.push('/login');
                     },
                     style: TextButton.styleFrom(
                       foregroundColor: Colors.white,
@@ -1967,11 +1921,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                   // Cart Icon
                   GestureDetector(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => CartScreen()),
-                      );
+                      context.push('/cart');
                     },
                     child: Container(
                       padding: EdgeInsets.all(8),

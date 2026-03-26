@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
@@ -343,10 +344,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                 originalObject: widget.course,
               );
 
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => CartScreen()),
-              );
+              context.push('/cart');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple,
@@ -384,10 +382,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => LoginScreen()),
-              );
+              context.push('/login');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple,

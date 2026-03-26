@@ -115,8 +115,6 @@ class _LessonViewScreenState extends State<LessonViewScreen>
           DeviceOrientation.landscapeLeft,
           DeviceOrientation.landscapeRight,
         ],
-        systemOverlaysOnEnterFullScreen: [],
-        systemOverlaysAfterFullScreen: SystemUiOverlay.values,
       );
 
       _videoController!.addListener(() {

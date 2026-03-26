@@ -524,8 +524,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             DeviceOrientation.portraitUp,
             DeviceOrientation.portraitDown,
           ]);
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
-              overlays: SystemUiOverlay.values);
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
         },
         player: YoutubePlayer(
           controller: _youtubePlayerController!,

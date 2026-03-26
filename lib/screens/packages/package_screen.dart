@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -84,10 +85,7 @@ class _PackageScreenState extends State<PackageScreen> {
       isBundle: true,
       originalObject: _displayBundle,
     );
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => CartScreen()),
-    );
+    context.push('/cart');
   }
 
   @override

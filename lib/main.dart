@@ -19,27 +19,26 @@ import 'core/theme/theme_provider.dart';
 import 'core/services/supabase_service.dart';
 import 'core/env/multi_env.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 import 'core/services/settings_service.dart';
 import 'core/localization/locale_provider.dart';
 import 'core/services/local_database.dart';
 import 'package:doraty/core/constants/app_strings.dart';
-
 import 'package:hive_flutter/hive_flutter.dart';
 import 'core/services/sync_service.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/app_update_service.dart';
-import 'core/utils/url_strategy_noop.dart'
-    if (dart.library.html) 'core/utils/url_strategy_web.dart';
+import 'package:flutter_web_plugins/url_strategy.dart'; // Ensure proper URL strategy
+import 'core/routing/app_router.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   // Use runZonedGuarded for production safety
   runZonedGuarded(() async {
     // 1. Minimum possible setup to reach runApp quickly
     WidgetsFlutterBinding.ensureInitialized();
-    configureUrlStrategy();
+    usePathUrlStrategy(); // Use Path URL Strategy
     
     // 2. Parallelize critical initializations
     try {
@@ -116,7 +115,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<ThemeProvider, LocaleProvider>(
       builder: (context, themeProvider, localeProvider, child) {
-        return MaterialApp(
+        return MaterialApp.router(
           title: 'منصة دوراتي',
           debugShowCheckedModeBanner: false,
 
@@ -137,8 +136,8 @@ class MyApp extends StatelessWidget {
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.materialThemeMode,
 
-          // Home
-          home: SplashScreen(),
+          // Router mapping
+          routerConfig: appRouter,
         );
       },
     );
@@ -146,13 +145,33 @@ class MyApp extends StatelessWidget {
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final Widget? child;
+  final GoRouterState? routeState;
+
+  const MainScreen({super.key, this.child, this.routeState});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
+  int _calculateSelectedIndex(BuildContext context) {
+    if (widget.routeState == null) {
+      final String location = GoRouterState.of(context).uri.path;
+      if (location.startsWith('/courses')) return 1;
+      if (location.startsWith('/tips')) return 2;
+      if (location.startsWith('/topics')) return 3;
+      if (location.startsWith('/profile')) return 4;
+      return 0; // '/'
+    }
+
+    final String location = widget.routeState!.uri.path;
+    if (location.startsWith('/courses')) return 1;
+    if (location.startsWith('/tips')) return 2;
+    if (location.startsWith('/topics')) return 3;
+    if (location.startsWith('/profile')) return 4;
+    return 0;
+  }
 
   @override
   void initState() {
@@ -184,16 +203,28 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final bool isWideScreen = screenWidth > 900;
 
     final navProvider = Provider.of<NavigationProvider>(context);
-    final int currentIndex = navProvider.currentIndex;
+    final int currentIndex = _calculateSelectedIndex(context);
 
-    // Build common screens
-    final List<Widget> screens = [
-      HomeScreen(),
-      ExploreScreen(),
-      AllTipsScreen(showAppBar: false, isVisible: currentIndex == 2, showCloseButton: false),
-      SubjectsScreen(showBackButton: false),
-      ProfileScreen(),
-    ];
+    void _onItemTapped(int index, BuildContext context) {
+      navProvider.setIndex(index);
+      switch (index) {
+        case 0:
+          context.go('/');
+          break;
+        case 1:
+          context.go('/courses');
+          break;
+        case 2:
+          context.go('/tips');
+          break;
+        case 3:
+          context.go('/topics');
+          break;
+        case 4:
+          context.go('/profile');
+          break;
+      }
+    }
 
     return Scaffold(
       extendBody: true,
@@ -237,7 +268,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     child: NavigationRail(
                       selectedIndex: currentIndex,
                       onDestinationSelected: (index) {
-                        navProvider.setIndex(index);
+                        _onItemTapped(index, context);
                       },
                       backgroundColor:
                           AppColors.getSurfaceColor(context).withOpacity(0.95),
@@ -308,7 +339,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: 1200),
                       child: DynamicGradientBackground(
-                        child: _buildCurrentScreen(currentIndex),
+                        child: widget.child ?? _buildCurrentScreen(currentIndex),
                       ),
                     ),
                   ),
@@ -339,7 +370,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                       borderRadius: BorderRadius.circular(30),
                       clipBehavior: Clip.none,
                       child: CurvedNavigationBar(
-                        index: currentIndex >= screens.length ? 0 : currentIndex,
+                        index: currentIndex > 4 ? 0 : currentIndex,
                         height: 60.0,
                         items: <Widget>[
                           _buildNavItem(Icons.home_outlined, 0, currentIndex),
@@ -354,7 +385,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         animationCurve: Curves.easeInOut,
                         animationDuration: Duration(milliseconds: 300),
                         onTap: (index) {
-                          navProvider.setIndex(index);
+                          _onItemTapped(index, context);
                         },
                       ),
                     ),

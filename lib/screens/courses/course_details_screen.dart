@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -25,13 +26,14 @@ import '../auth/login_screen.dart';
 import '../../core/theme/theme_provider.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
-  final Course course;
-
+  final Course? course;
+  final String? courseId;
   final String? heroTag;
 
   const CourseDetailsScreen({
     super.key,
-    required this.course,
+    this.course,
+    this.courseId,
     this.heroTag,
   });
 
@@ -62,33 +64,64 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
+  bool _isLoadingCourse = false;
+  Course? _course;
+
   @override
   void initState() {
     super.initState();
-    _instructorPhoto = widget.course.instructorPhoto;
+    _course = widget.course;
+    if (_course != null) {
+      _initCourseData();
+    } else if (widget.courseId != null) {
+      _fetchAndInitCourse(widget.courseId!);
+    }
+  }
+
+  Future<void> _fetchAndInitCourse(String id) async {
+    setState(() => _isLoadingCourse = true);
+    try {
+      final json = await _databaseService.getCourseById(id);
+      if (json != null) {
+        setState(() {
+          _course = Course.fromJson(json);
+        });
+        _initCourseData();
+      }
+    } catch (e) {
+      debugPrint('Error loading course by id: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingCourse = false);
+    }
+  }
+
+  void _initCourseData() {
+    if (_course == null) return;
+    _instructorPhoto = _course!.instructorPhoto;
     _instructorName =
-        StringUtils.cleanTeacherName(widget.course.instructorName);
+        StringUtils.cleanTeacherName(_course!.instructorName);
     _loadLessons();
     _loadReviews();
     _checkEnrollment();
     _refreshInstructorInfo();
     _refreshCourseData();
-    _studentsCount = widget.course.studentsCount; // Initialize students count
+    _studentsCount = _course!.studentsCount; // Initialize students count
     _checkUserReview();
     _checkFavoriteStatus();
     _loadSimilarCourses();
 
     debugPrint(
-        '🏁 CourseDetailsScreen initialized for Course ID: ${widget.course.id}');
-    debugPrint('👨‍🏫 Instructor ID: ${widget.course.instructorId}');
+        '🏁 CourseDetailsScreen initialized for Course ID: ${_course!.id}');
+    debugPrint('👨‍🏫 Instructor ID: ${_course!.instructorId}');
     debugPrint(
-        '👨‍🏫 Instructor Name (passed): ${widget.course.instructorName}');
+        '👨‍🏫 Instructor Name (passed): ${_course!.instructorName}');
   }
 
   Future<void> _checkUserReview() async {
+    if (_course == null) return;
     try {
       final review =
-          await _databaseService.getUserReviewForCourse(widget.course.id);
+          await _databaseService.getUserReviewForCourse(_course!.id);
       if (mounted) {
         setState(() {
           _userReview = review;
@@ -100,8 +133,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<void> _refreshCourseData() async {
+    if (_course == null) return;
     try {
-      final courseData = await _databaseService.getCourseById(widget.course.id);
+      final courseData = await _databaseService.getCourseById(_course!.id);
       if (mounted && courseData != null) {
         setState(() {
           _studentsCount = courseData['students_count'] ?? _studentsCount;
@@ -113,10 +147,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<void> _refreshInstructorInfo() async {
-    if (widget.course.instructorId == null) return;
+    if (_course == null || _course!.instructorId == null) return;
     try {
       final profile =
-          await _databaseService.getUserProfile(widget.course.instructorId!);
+          await _databaseService.getUserProfile(_course!.instructorId!);
       if (mounted && profile.isNotEmpty) {
         setState(() {
           _instructorPhoto = profile['avatar_url'];
@@ -131,9 +165,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<void> _checkEnrollment() async {
+    if (_course == null) return;
     try {
       final isEnrolled =
-          await _databaseService.hasCourseAccess(widget.course.id);
+          await _databaseService.hasCourseAccess(_course!.id);
       if (mounted) {
         setState(() {
           _isEnrolled = isEnrolled;
@@ -145,8 +180,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<void> _checkFavoriteStatus() async {
+    if (_course == null) return;
     try {
-      final isFavorite = await _databaseService.isFavorite(widget.course.id);
+      final isFavorite = await _databaseService.isFavorite(_course!.id);
       if (mounted) {
         setState(() {
           _isFavorite = isFavorite;
@@ -158,10 +194,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<void> _toggleFavorite() async {
+    if (_course == null) return;
     if (!_checkAuthAndShowDialog()) return;
     try {
       final newStatus = await _databaseService.toggleFavorite(
-        widget.course.id,
+        _course!.id,
         !_isFavorite,
       );
       if (mounted) {
@@ -189,10 +226,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<void> _loadLessons() async {
+    if (_course == null) return;
     try {
       final results = await Future.wait([
-        _databaseService.getLessons(widget.course.id),
-        _databaseService.getChapters(widget.course.id),
+        _databaseService.getLessons(_course!.id),
+        _databaseService.getChapters(_course!.id),
       ]);
 
       final lessons = results[0] as List<Map<String, dynamic>>;
@@ -210,8 +248,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<void> _loadReviews() async {
+    if (_course == null) return;
     try {
-      final reviews = await _databaseService.getReviews(widget.course.id);
+      final reviews = await _databaseService.getReviews(_course!.id);
       if (mounted) {
         setState(() {
           _reviews = reviews;
@@ -236,6 +275,24 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     bool isRTL = Provider.of<LocaleProvider>(context).locale == 'ar';
+
+    if (_isLoadingCourse) {
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_course == null) {
+      return Scaffold(
+        body: Center(
+          child: ProfessionalEmptyState(
+            icon: Icons.error_outline,
+            title: 'الكورس غير موجود',
+            message: 'تعذر العثور على الكورس المطلوب بخصائص هذا الرابط',
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       body: Container(
@@ -270,7 +327,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Future<void> _loadSimilarCourses() async {
     try {
       final courses = await _databaseService.getSimilarCourses(
-          widget.course.id, widget.course.categoryIds);
+          _course!.id, _course!.categoryIds);
       if (mounted) {
         setState(() {
           _similarCourses = courses;
@@ -431,11 +488,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     return AspectRatio(
       aspectRatio: 16 / 9,
       child:
-          widget.course.videoUrl != null && widget.course.videoUrl!.isNotEmpty
+          _course!.videoUrl != null && _course!.videoUrl!.isNotEmpty
               ? VideoPreviewWidget(
-                  videoUrl: widget.course.videoUrl!,
+                  videoUrl: _course!.videoUrl!,
                   showHeader: !isSquare, // Hide header if square (side-by-side)
-                  thumbnailUrl: widget.course.imageUrl, // تمرير صورة الدورة
+                  thumbnailUrl: _course!.imageUrl, // تمرير صورة الدورة
                 )
               : _buildCourseImagePlaceholder(isSquare: isSquare),
     );
@@ -448,7 +505,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         alignment: Alignment.center,
         children: [
           CachedNetworkImage(
-            imageUrl: widget.course.imageUrl ?? '',
+            imageUrl: _course!.imageUrl ?? '',
             width: double.infinity,
             fit: BoxFit.cover,
             errorWidget: (context, url, error) =>
@@ -474,15 +531,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          widget.course.getLocalizedTitle(locale),
+          _course!.getLocalizedTitle(locale),
           style: TextStyle(
               fontSize: isWide ? 32 : 24,
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(context)),
           textAlign: isRTL ? TextAlign.right : TextAlign.left,
         ),
-        if (widget.course.categories.isNotEmpty ||
-            widget.course.tags.isNotEmpty)
+        if (_course!.categories.isNotEmpty ||
+            _course!.tags.isNotEmpty)
           Padding(
             padding: EdgeInsets.only(top: 8, bottom: 4),
             child: Wrap(
@@ -490,9 +547,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               runSpacing: 6,
               alignment: isRTL ? WrapAlignment.end : WrapAlignment.start,
               children: [
-                ...widget.course.categories
+                ..._course!.categories
                     .map((cat) => _buildTinyTag(cat, Colors.blueAccent)),
-                ...widget.course.tags.map((tag) => _buildTinyTag(
+                ..._course!.tags.map((tag) => _buildTinyTag(
                     '#${AppStrings.get(tag, locale)}', Colors.purpleAccent)),
               ],
             ),
@@ -516,15 +573,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           isRTL ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
         _buildStatBadge(
-            Icons.bar_chart_rounded, _t(widget.course.level ?? 'all_levels')),
+            Icons.bar_chart_rounded, _t(_course!.level ?? 'all_levels')),
         SizedBox(width: 12),
         if (!_isEnrolled) ...[
           _buildStatBadge(Icons.access_time_rounded,
-              '${widget.course.durationHours ?? "0"} ${_t("hours_short")}'),
+              '${_course!.durationHours ?? "0"} ${_t("hours_short")}'),
           SizedBox(width: 12),
         ],
         _buildStatBadge(Icons.play_circle_outline_rounded,
-            '${widget.course.lessonsCount} ${_t("lessons")}'),
+            '${_course!.lessonsCount} ${_t("lessons")}'),
       ],
     );
   }
@@ -544,12 +601,12 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Widget _buildInstructorSmallCard(bool isRTL) {
     return InkWell(
       onTap: () {
-        if (widget.course.instructorId != null) {
+        if (_course!.instructorId != null) {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => TeacherProfileScreen(
-                teacherId: widget.course.instructorId!,
+                teacherId: _course!.instructorId!,
                 teacherName: _instructorName,
                 teacherPhoto: _instructorPhoto,
               ),
@@ -651,7 +708,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             shadowColor: AppColors.primaryPurple.withOpacity(0.5),
           ),
           child: Text(
-            '${_t("course_subscribe_now_prefix")}${widget.course.getLocalizedPrice(Provider.of<LocaleProvider>(context).locale)}',
+            '${_t("course_subscribe_now_prefix")}${_course!.getLocalizedPrice(Provider.of<LocaleProvider>(context).locale)}',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
@@ -703,12 +760,12 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         _buildDescriptionSection(isRTL),
         SizedBox(height: 30),
         _buildCourseContentButton(isRTL),
-        if (widget.course.outcomes.isNotEmpty)
+        if (_course!.outcomes.isNotEmpty)
           _buildListSection(
-              _t('course_outcomes'), widget.course.outcomes, isRTL),
-        if (widget.course.targetAudience.isNotEmpty)
+              _t('course_outcomes'), _course!.outcomes, isRTL),
+        if (_course!.targetAudience.isNotEmpty)
           _buildListSection(
-              _t('target_audience'), widget.course.targetAudience, isRTL),
+              _t('target_audience'), _course!.targetAudience, isRTL),
         _buildReviewsSection(isRTL),
         SizedBox(height: 40),
         _buildSimilarCoursesSection(isRTL),
@@ -732,17 +789,17 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundImage: widget.course.instructorPhoto != null
-                ? CachedNetworkImageProvider(widget.course.instructorPhoto!)
+            backgroundImage: _course!.instructorPhoto != null
+                ? CachedNetworkImageProvider(_course!.instructorPhoto!)
                 : null,
             backgroundColor: Colors.grey[800],
-            child: widget.course.instructorPhoto == null
+            child: _course!.instructorPhoto == null
                 ? Icon(Icons.person, color: AppColors.getTextColor(context).withOpacity(0.54), size: 50)
                 : null,
           ),
           SizedBox(height: 16),
           Text(
-            widget.course.instructorName,
+            _course!.instructorName,
             style: TextStyle(
                 color: AppColors.getTextColor(context), fontSize: 20, fontWeight: FontWeight.bold),
           ),
@@ -776,7 +833,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Widget _buildDescriptionSection(bool isRTL) {
-    final description = widget.course.description ?? '';
+    final description = _course!.description ?? '';
     if (description.isEmpty) return SizedBox.shrink();
 
     bool isLong = description.length > 200;
@@ -1137,7 +1194,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => CourseContentScreen(
-                    course: widget.course,
+                    course: _course!,
                     lessonsData: _lessons,
                     chapters: _chapters,
                     isEnrolled: _isEnrolled, // تمرير حالة الاشتراك
@@ -1210,7 +1267,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         MaterialPageRoute(
           builder: (context) => lesson_ui.LessonScreen(
             lesson: firstLesson,
-            courseTitle: widget.course.title,
+            courseTitle: _course!.title,
             isEnrolled: true,
           ),
         ),
@@ -1221,21 +1278,18 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     // New Behavior: Add to Cart and Go to Cart Screen
     final cart = Provider.of<CartProvider>(context, listen: false);
     cart.addItem(
-      id: widget.course.id,
-      title: widget.course.title,
-      price: widget.course.discountedPrice,
-      originalPrice: widget.course.price.toDouble(),
-      discountAmount: widget.course.hasDiscount
-          ? (widget.course.price - widget.course.discountedPrice).toDouble()
+      id: _course!.id,
+      title: _course!.title,
+      price: _course!.discountedPrice,
+      originalPrice: _course!.price.toDouble(),
+      discountAmount: _course!.hasDiscount
+          ? (_course!.price - _course!.discountedPrice).toDouble()
           : 0,
-      imageUrl: widget.course.imageUrl,
-      originalObject: widget.course,
+      imageUrl: _course!.imageUrl,
+      originalObject: _course!,
     );
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => CartScreen()),
-    );
+    context.push('/cart');
   }
 
   Widget _buildReviewsTab() {
@@ -1442,7 +1496,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                   );
 
                   await _databaseService.addReview(
-                    courseId: widget.course.id,
+                    courseId: _course!.id,
                     rating: selectedRating,
                     comment: commentController.text,
                   );
@@ -1532,10 +1586,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => LoginScreen()),
-              );
+              context.push('/login');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple,
