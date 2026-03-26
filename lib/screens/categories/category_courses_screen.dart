@@ -39,12 +39,22 @@ class _CategoryCoursesScreenState extends State<CategoryCoursesScreen> {
     _locale = Provider.of<LocaleProvider>(context, listen: false).locale;
 
     try {
+      // If category was opened via slug URL (name is empty), resolve it from DB first
+      CategoryModel resolvedCategory = widget.category;
+      if (resolvedCategory.name.isEmpty && resolvedCategory.slug.isNotEmpty) {
+        final json = await _dbService.getCategoryBySlugOrId(resolvedCategory.slug);
+        if (json != null) {
+          resolvedCategory = CategoryModel.fromJson(json);
+          if (mounted) setState(() {});
+        }
+      }
+
       // 1. Load subcategories
-      final subCatsData = await _dbService.getSubCategories(widget.category.id);
+      final subCatsData = await _dbService.getSubCategories(resolvedCategory.id);
       _subCategories = subCatsData.map((json) => CategoryModel.fromJson(json)).toList();
 
       // 2. Load courses for the main category
-      final coursesData = await _dbService.getCourses(categoryId: widget.category.id);
+      final coursesData = await _dbService.getCourses(categoryId: resolvedCategory.id);
       _allCourses = coursesData.map((json) => Course.fromJson(json)).toList();
       _filteredCourses = _allCourses;
       

@@ -79,6 +79,25 @@ class DatabaseService {
     }
   }
 
+  /// Get a category by its slug or ID
+  Future<Map<String, dynamic>?> getCategoryBySlugOrId(String value) async {
+    try {
+      final isUuid = RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+              caseSensitive: false)
+          .hasMatch(value);
+      final response = await _client
+          .from('categories')
+          .select()
+          .eq(isUuid ? 'id' : 'slug', value)
+          .maybeSingle();
+      return response;
+    } catch (e) {
+      debugPrint('Error getting category by slug/id: $e');
+      return null;
+    }
+  }
+
   /// Get subcategory IDs for a parent ID
   Future<List<String>> getSubCategoryIds(String parentId) async {
     try {
@@ -990,13 +1009,14 @@ class DatabaseService {
       duration: const Duration(hours: 1),
       fetcher: () async {
         try {
+          final isUuid = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false).hasMatch(courseId);
           final response = await _client.from('courses').select('''
                 *, 
                 users!instructor_id(full_name, avatar_url),
                 course_category_junction(category:categories(id, name, name_en)),
                 chapters:chapters(*, lessons:lessons(*)),
                 course_tags(tag)
-              ''').eq('id', courseId).single();
+              ''').eq(isUuid ? 'id' : 'slug', courseId).single();
 
           final course = Map<String, dynamic>.from(response);
 
@@ -1034,13 +1054,13 @@ class DatabaseService {
 
           return course;
         } catch (e) {
-          debugPrint('Error getting course by id: $e');
           // Fallback to simple select
           try {
+            final isUuid = RegExp(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', caseSensitive: false).hasMatch(courseId);
             final res = await _client
                 .from('courses')
                 .select()
-                .eq('id', courseId)
+                .eq(isUuid ? 'id' : 'slug', courseId)
                 .single();
             return Map<String, dynamic>.from(res);
           } catch (_) {

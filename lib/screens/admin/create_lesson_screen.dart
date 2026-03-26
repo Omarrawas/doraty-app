@@ -39,6 +39,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _titleController;
+  late TextEditingController _slugController;
   late TextEditingController _videoUrlController;
   late TextEditingController _durationController;
   
@@ -62,6 +63,9 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     super.initState();
     _titleController = TextEditingController(
       text: widget.lessonData?['title'] ?? '',
+    );
+    _slugController = TextEditingController(
+      text: widget.lessonData?['slug'] ?? '',
     );
     _videoUrlController = TextEditingController(
       text: widget.lessonData?['video_url'] ?? '',
@@ -150,6 +154,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   @override
   void dispose() {
     _titleController.dispose();
+    _slugController.dispose();
     _videoUrlController.dispose();
     _durationController.dispose();
     super.dispose();
@@ -273,6 +278,25 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
                                       return 'الرجاء إدخال عنوان الدرس';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _slugController,
+                                  decoration: _inputDecoration(
+                                    label: 'الرابط المخصص (Slug)',
+                                    hint: 'مثال: intro-lesson-1',
+                                    icon: Icons.link,
+                                  ).copyWith(
+                                    helperText: 'اتركه فارغاً ليتم توليده تلقائياً من الاسم.',
+                                    helperStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 11),
+                                  ),
+                                  style: TextStyle(color: AppColors.getTextColor(context)),
+                                  validator: (value) {
+                                    if (value != null && value.isNotEmpty && !RegExp(r'^[a-z0-9-]+$').hasMatch(value)) {
+                                      return 'يجب أن يحتوي الرابط على أحرف إنجليزية صغيرة، أرقام وشرطات ( - ) فقط';
                                     }
                                     return null;
                                   },
@@ -896,9 +920,16 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
       }
 
       if (widget.lessonId != null) {
+        final slug = _slugController.text.isNotEmpty 
+            ? _slugController.text.trim() 
+            : _titleController.text.trim().toLowerCase()
+                .replaceAll(RegExp(r'[^\w\s\u0600-\u06FF-]'), '')
+                .replaceAll(RegExp(r'\s+'), '-');
+                
         await _db.updateLesson(widget.lessonId!, {
           'chapter_id': _selectedChapterId,
           'title': _titleController.text.trim(),
+          'slug': slug,
           'description': _descriptionHtml,
           'video_url': _videoUrlController.text.trim(),
           'duration': duration,
@@ -907,10 +938,17 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
           'resources': _attachments,
         });
       } else {
+        final slug = _slugController.text.isNotEmpty 
+            ? _slugController.text.trim() 
+            : _titleController.text.trim().toLowerCase()
+                .replaceAll(RegExp(r'[^\w\s\u0600-\u06FF-]'), '')
+                .replaceAll(RegExp(r'\s+'), '-');
+
         await _db.createLesson({
           'course_id': widget.courseId,
           'chapter_id': _selectedChapterId,
           'title': _titleController.text.trim(),
+          'slug': slug,
           'description': _descriptionHtml,
           'video_url': _videoUrlController.text.trim(),
           'duration': duration,

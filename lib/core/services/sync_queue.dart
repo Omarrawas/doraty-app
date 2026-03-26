@@ -51,9 +51,20 @@ class SyncQueue {
 
   static const String _boxName = 'sync_queue';
   final LocalDatabase _localDb = LocalDatabase();
+  bool _boxInitialized = false;
+
+  /// Ensure the sync_queue box is open before any operation
+  Future<void> _ensureInitialized() async {
+    if (!_boxInitialized) {
+      await _localDb.init();
+      await _localDb.ensureBoxOpen(_boxName);
+      _boxInitialized = true;
+    }
+  }
 
   /// Add a task to the queue
   Future<void> addTask(SyncTask task) async {
+    await _ensureInitialized();
     final tasks = await getTasks();
     tasks.add(task);
     await _saveTasks(tasks);
@@ -62,6 +73,7 @@ class SyncQueue {
 
   /// Get all pending tasks
   Future<List<SyncTask>> getTasks() async {
+    await _ensureInitialized();
     final raw = _localDb.get<List<dynamic>>('pending_tasks', boxName: _boxName);
     if (raw == null) return [];
     return raw.map((e) => SyncTask.fromJson(SafeParser.safeMap(e))).toList();
@@ -69,6 +81,7 @@ class SyncQueue {
 
   /// Remove a task by ID
   Future<void> removeTask(String id) async {
+    await _ensureInitialized();
     final tasks = await getTasks();
     tasks.removeWhere((t) => t.id == id);
     await _saveTasks(tasks);

@@ -1,4 +1,3 @@
-import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -108,34 +107,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.info_outline,
                       title: _t('version'),
                       subtitle: _appVersion.isNotEmpty ? _appVersion : '...',
-                    ),
-
-                    _buildSettingCard(
-                      icon: Icons.privacy_tip_outlined,
-                      title: _t('privacy_policy'),
-                      trailing: Icon(
-                        selectedLanguage == 'ar'
-                            ? Icons.chevron_left
-                            : Icons.chevron_right,
-                        color: AppColors.getTextColor(context),
-                      ),
-                      onTap: () {
-                        context.push('/privacy');
-                      },
-                    ),
-
-                    _buildSettingCard(
-                      icon: Icons.description_outlined,
-                      title: _t('terms_conditions'),
-                      trailing: Icon(
-                        selectedLanguage == 'ar'
-                            ? Icons.chevron_left
-                            : Icons.chevron_right,
-                        color: AppColors.getTextColor(context),
-                      ),
-                      onTap: () {
-                        context.push('/terms');
-                      },
                     ),
 
                     SizedBox(height: 24),

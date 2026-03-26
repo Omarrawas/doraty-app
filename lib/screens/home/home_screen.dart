@@ -9,24 +9,15 @@ import '../../core/services/database_service.dart';
 import '../courses/course_details_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../teacher/teacher_profile_screen.dart';
-import '../teacher/teachers_list_screen.dart';
 import '../../models/category_model.dart';
 import '../explore/widgets/category_card.dart';
-import '../explore/explore_screen.dart';
 import '../../core/providers/navigation_provider.dart';
 import '../packages/package_screen.dart';
-import '../packages/all_packages_screen.dart';
-import '../tips/all_tips_screen.dart';
-import '../notifications/notifications_screen.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../core/services/sync_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../widgets/course_card.dart';
 import 'widgets/home_drawer.dart';
-import '../cart/cart_screen.dart';
-import '../auth/login_screen.dart';
-import '../auth/register_screen.dart';
-import '../categories/subjects_screen.dart';
 
 import 'package:provider/provider.dart';
 import '../../core/constants/app_strings.dart';
@@ -380,10 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     hasUnreadNotifications: _hasUnreadNotifications,
                     t: _t,
                     onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-                    onNotificationTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => NotificationsScreen())),
+                    onNotificationTap: () => context.push('/notifications'),
                   ),
                 ),
 

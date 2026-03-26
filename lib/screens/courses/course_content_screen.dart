@@ -11,9 +11,7 @@ import '../../models/lesson.dart';
 import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../../widgets/empty_state.dart';
 import '../../core/services/auth_service.dart';
-import '../auth/login_screen.dart';
 import '../../core/utils/safe_parser.dart';
-import '../cart/cart_screen.dart';
 import '../../core/providers/cart_provider.dart';
 
 class CourseContentScreen extends StatefulWidget {

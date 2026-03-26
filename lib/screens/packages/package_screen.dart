@@ -8,7 +8,6 @@ import '../../widgets/course_card.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
-import '../cart/cart_screen.dart';
 import '../../core/providers/cart_provider.dart';
 import '../../core/services/database_service.dart';
 import '../courses/course_details_screen.dart';

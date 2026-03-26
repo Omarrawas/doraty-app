@@ -67,14 +67,25 @@ class LocalDatabase {
     }
   }
 
-  /// Get a box by name, defaults to general box
+  /// Ensure a custom box is open (for use by SyncQueue and other services)
+  Future<void> ensureBoxOpen(String name) async {
+    if (!_boxes.containsKey(name)) {
+      await _openBox(name);
+    }
+  }
+
+  /// Get a box by name, defaults to general box.
+  /// Auto-opens box if Hive already has it open, to survive hot reload.
   Box _getBox([String? name]) {
     final boxName = name ?? boxGeneral;
     if (!_boxes.containsKey(boxName) && Hive.isBoxOpen(boxName)) {
       _boxes[boxName] = Hive.box(boxName);
     }
     if (!_boxes.containsKey(boxName)) {
-      throw Exception('Box $boxName not opened. Call init() first.');
+      // Instead of throwing, silently return the general box as a fallback
+      // to prevent crashes from uninitialized optional boxes (e.g. sync_queue)
+      debugPrint('⚠️ LocalDatabase: Box "$boxName" not opened, falling back to general box.');
+      return _boxes[boxGeneral] ?? (throw Exception('LocalDatabase not initialized. Call init() first.'));
     }
     return _boxes[boxName]!;
   }
@@ -171,15 +182,30 @@ class LocalDatabase {
 
       // Use data-instance checks instead of T== (T== breaks on minified Flutter Web)
       if (data is Iterable && data is! String) {
-        // Always deep-normalize lists coming from Hive (they may be ReadOnlyList<dynamic>)
-        final asList = SafeParser.safeMapList(data);
-        try { return asList as T; } catch (_) {}
-        // Fallback: try as plain List<dynamic>
-        try { return data.toList() as T; } catch (_) {}
+        final rawList = data.toList();
+
+        // 1. First try a direct cast — handles List<String>, List<int>, etc.
+        try { return rawList as T; } catch (_) {}
+
+        // 2. Try as List<String> (e.g. enrolled_ids)
+        try {
+          final asStrings = rawList.map((e) => e?.toString() ?? '').toList();
+          return asStrings as T;
+        } catch (_) {}
+
+        // 3. Try as List<Map<String,dynamic>> (e.g. courses, lessons)
+        try {
+          final asMaps = SafeParser.safeMapList(rawList);
+          return asMaps as T;
+        } catch (_) {}
+
+        // 4. Final fallback: raw dynamic list
+        try { return rawList as T; } catch (_) {}
       }
       if (data is Map) {
         final asMap = SafeParser.safeMap(data);
         try { return asMap as T; } catch (_) {}
+        try { return data as T; } catch (_) {}
       }
 
       // Primitive types

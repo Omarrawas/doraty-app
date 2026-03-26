@@ -11,9 +11,20 @@ import '../../screens/admin/admin_dashboard_screen.dart';
 import '../../screens/auth/login_screen.dart';
 import '../../screens/auth/register_screen.dart';
 import '../../screens/settings/settings_screen.dart';
-import '../../screens/teacher/teachers_list_screen.dart';
 import '../../screens/packages/all_packages_screen.dart';
+import '../../screens/teacher/teachers_list_screen.dart';
+import '../../screens/teacher/teacher_dashboard_screen.dart';
+import '../../screens/courses/courses_list_screen.dart';
 import '../../screens/splash/splash_screen.dart';
+import '../../screens/help/faq_screen.dart';
+import '../../screens/settings/privacy_policy_screen.dart';
+import '../../screens/settings/terms_conditions_screen.dart';
+import '../../screens/favorites/favorites_screen.dart';
+import '../../screens/cart/cart_screen.dart';
+import '../../screens/notifications_screen.dart';
+
+import '../../screens/categories/category_courses_screen.dart';
+import '../../models/category_model.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -33,7 +44,7 @@ final GoRouter appRouter = GoRouter(
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (BuildContext context, GoRouterState state, Widget child) {
-        return MainScreen(child: child, routeState: state);
+        return MainScreen(routeState: state, child: child);
       },
       routes: [
         GoRoute(
@@ -67,6 +78,17 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/category/:slug',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) {
+        final slug = state.pathParameters['slug'] ?? '';
+        // CategoryCoursesScreen needs a CategoryModel, so we pass slug as a fallback id
+        return CategoryCoursesScreen(
+          category: CategoryModel(id: slug, name: '', slug: slug),
+        );
+      },
+    ),
+    GoRoute(
       path: '/admin',
       parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) => const AdminDashboardScreen(),
@@ -95,6 +117,46 @@ final GoRouter appRouter = GoRouter(
       path: '/packages',
       parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) => AllPackagesScreen(),
+    ),
+    GoRoute(
+      path: '/faq',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => FAQScreen(),
+    ),
+    GoRoute(
+      path: '/privacy',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => PrivacyPolicyScreen(),
+    ),
+    GoRoute(
+      path: '/terms',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => TermsConditionsScreen(),
+    ),
+    GoRoute(
+      path: '/favorites',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => FavoritesScreen(),
+    ),
+    GoRoute(
+      path: '/teacher_dashboard',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => TeacherDashboardScreen(),
+    ),
+    GoRoute(
+      path: '/my_courses',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => CoursesListScreen(showBackButton: true),
+    ),
+    GoRoute(
+      path: '/cart',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => CartScreen(),
+    ),
+    GoRoute(
+      path: '/notifications',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => const NotificationsScreen(),
     ),
   ],
 );

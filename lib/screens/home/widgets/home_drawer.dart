@@ -7,16 +7,6 @@ import '../../../core/localization/locale_provider.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../models/category_model.dart';
-import '../../explore/explore_screen.dart';
-import '../../courses/courses_list_screen.dart';
-import '../../tips/all_tips_screen.dart';
-import '../../settings/settings_screen.dart';
-import '../../admin/admin_dashboard_screen.dart';
-import '../../teacher/teacher_dashboard_screen.dart';
-import '../../profile/order_history_screen.dart';
-import '../../auth/login_screen.dart';
-import '../../teacher/teachers_list_screen.dart';
-import '../../help/faq_screen.dart';
 
 class HomeDrawer extends StatelessWidget {
   final List<CategoryModel> categories;
@@ -76,14 +66,11 @@ class HomeDrawer extends StatelessWidget {
                         : _t(context, 'admin_dashboard'),
                     onTap: () {
                       Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => (userProfile?['role'] == 'teacher') 
-                               ? TeacherDashboardScreen() 
-                               : AdminDashboardScreen(),
-                        ),
-                      );
+                      if (userProfile?['role'] == 'teacher') {
+                        context.push('/teacher_dashboard');
+                      } else {
+                        context.push('/admin');
+                      }
                     },
                   ),
                 
@@ -118,7 +105,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'my_courses'),
                   onTap: () {
                     Navigator.pop(context);
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => CoursesListScreen(showBackButton: true)));
+                    context.push('/my_courses');
                   },
                 ),
 
@@ -149,6 +136,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'favorites'),
                   onTap: () {
                     Navigator.pop(context);
+                    context.push('/favorites');
                   },
                 ),
 
@@ -208,10 +196,21 @@ class HomeDrawer extends StatelessWidget {
 
                 _buildDrawerItem(
                   context,
+                  icon: Icons.privacy_tip_outlined,
+                  title: _t(context, 'privacy_policy'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/privacy');
+                  },
+                ),
+
+                _buildDrawerItem(
+                  context,
                   icon: Icons.description_outlined,
                   title: _t(context, 'terms_conditions'),
                   onTap: () {
                     Navigator.pop(context);
+                    context.push('/terms');
                   },
                 ),
 

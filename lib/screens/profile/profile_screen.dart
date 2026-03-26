@@ -17,8 +17,6 @@ import '../../core/utils/string_utils.dart';
 import '../../core/utils/error_utils.dart';
 import '../../models/course.dart';
 import '../courses/course_details_screen.dart';
-import '../auth/login_screen.dart';
-import '../auth/register_screen.dart';
 import '../favorites/favorites_screen.dart';
 
 class ProfileScreen extends StatefulWidget {

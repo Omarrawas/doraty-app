@@ -5,6 +5,7 @@ import 'lesson.dart';
 class Course {
   final String id;
   final String title;
+  final String slug;
   final String? description;
   final String? instructorId;
   final String instructorName;
@@ -43,6 +44,7 @@ class Course {
   Course({
     required this.id,
     required this.title,
+    this.slug = '',
     this.description,
     this.instructorId,
     required this.instructorName,
@@ -91,6 +93,7 @@ class Course {
       return Course(
         id: SafeParser.toStringSafe(json['id']),
         title: SafeParser.toStringSafe(json['title']),
+        slug: SafeParser.toStringSafe(json['slug'], fallback: ''), // Added slug
         description: SafeParser.toStringSafe(json['description']),
         instructorId: SafeParser.toStringSafe(json['instructor_id']),
         instructorName: SafeParser.toStringSafe(json['instructor_name']),
@@ -128,6 +131,7 @@ class Course {
       return Course(
         id: 'error_${DateTime.now().millisecondsSinceEpoch}',
         title: 'خطأ في تحميل الدورة',
+        slug: '',
         instructorName: '',
         price: 0,
         rating: 0,
@@ -142,6 +146,7 @@ class Course {
     return {
       'id': id,
       'title': title,
+      'slug': slug.isNotEmpty ? slug : null,
       'description': description,
       'instructor_id': instructorId,
       'instructor_name': instructorName,

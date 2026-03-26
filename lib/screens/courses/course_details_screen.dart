@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
+import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
 import '../../models/lesson.dart';
@@ -14,7 +15,6 @@ import '../teacher/teacher_profile_screen.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
 import 'course_content_screen.dart';
-import '../cart/cart_screen.dart';
 import '../../core/providers/cart_provider.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/error_utils.dart';
@@ -22,7 +22,6 @@ import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
 import '../../core/services/auth_service.dart';
-import '../auth/login_screen.dart';
 import '../../core/theme/theme_provider.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
@@ -384,11 +383,20 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       children: [
         IconButton(
           icon: Icon(Icons.share_rounded, color: AppColors.getTextColor(context), size: 22),
-          onPressed: () {
-            // Placeholder for share functionality
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('ميزة المشاركة ستتوفر قريباً')),
-            );
+          onPressed: () async {
+            if (_course != null) {
+              final String courseIdentifier = (_course!.slug.isNotEmpty) ? _course!.slug : _course!.id;
+              final String courseUrl = 'https://doraty.me/course/$courseIdentifier';
+              await Clipboard.setData(ClipboardData(text: courseUrl));
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('تم نسخ رابط الدورة! يمكنك مشاركته الآن.'),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            }
           },
         ),
         IconButton(

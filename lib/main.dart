@@ -10,7 +10,6 @@ import 'screens/explore/explore_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/tips/all_tips_screen.dart';
 import 'screens/categories/subjects_screen.dart';
-import 'screens/splash/splash_screen.dart';
 import 'widgets/dynamic_gradient_background.dart';
 import 'core/providers/navigation_provider.dart';
 import 'core/providers/cart_provider.dart';
@@ -205,7 +204,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     final navProvider = Provider.of<NavigationProvider>(context);
     final int currentIndex = _calculateSelectedIndex(context);
 
-    void _onItemTapped(int index, BuildContext context) {
+    void onItemTapped(int index, BuildContext context) {
       navProvider.setIndex(index);
       switch (index) {
         case 0:
@@ -268,7 +267,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                     child: NavigationRail(
                       selectedIndex: currentIndex,
                       onDestinationSelected: (index) {
-                        _onItemTapped(index, context);
+                        onItemTapped(index, context);
                       },
                       backgroundColor:
                           AppColors.getSurfaceColor(context).withOpacity(0.95),
@@ -385,7 +384,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
                         animationCurve: Curves.easeInOut,
                         animationDuration: Duration(milliseconds: 300),
                         onTap: (index) {
-                          _onItemTapped(index, context);
+                          onItemTapped(index, context);
                         },
                       ),
                     ),

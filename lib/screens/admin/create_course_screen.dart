@@ -36,6 +36,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   final _formKey = GlobalKey<FormState>();
 
   late TextEditingController _titleController;
+  late TextEditingController _slugController;
   late TextEditingController _descriptionController;
   late TextEditingController
       _subjectController; // Renamed from _categoryController
@@ -90,6 +91,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     _titleController = TextEditingController(
       text: widget.courseData?['title'] ?? '',
+    );
+    _slugController = TextEditingController(
+      text: widget.courseData?['slug'] ?? '',
     );
     _descriptionController = TextEditingController(
       text: widget.courseData?['description'] ?? '',
@@ -254,6 +258,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   @override
   void dispose() {
     _titleController.dispose();
+    _slugController.dispose();
     _descriptionController.dispose();
     _subjectController.dispose();
     _levelController.dispose();
@@ -341,6 +346,25 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
                                       return _t('error_enter_title');
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                SizedBox(height: 16),
+                                TextFormField(
+                                  controller: _slugController,
+                                  decoration: _inputDecoration(
+                                    label: 'الرابط المخصص (Slug)',
+                                    hint: 'مثال: flutter-course-2024',
+                                    icon: Icons.link,
+                                  ).copyWith(
+                                    helperText: 'اتركه فارغاً ليتم توليده تلقائياً من الاسم (بحروف انجليزية أو أرقام فقط).',
+                                    helperStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 11),
+                                  ),
+                                  style: TextStyle(color: AppColors.getTextColor(context)),
+                                  validator: (value) {
+                                    if (value != null && value.isNotEmpty && !RegExp(r'^[a-z0-9-]+$').hasMatch(value)) {
+                                      return 'يجب أن يحتوي الرابط على أحرف إنجليزية صغيرة، أرقام وشرطات ( - ) فقط';
                                     }
                                     return null;
                                   },
@@ -1141,6 +1165,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     try {
       final courseData = {
         'title': _titleController.text,
+        'slug': _slugController.text.isNotEmpty 
+            ? _slugController.text 
+            : _titleController.text.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), ''),
         'description': _descriptionController.text,
         'category_id':
             _selectedCategoryIds.first, // Fallback for single category

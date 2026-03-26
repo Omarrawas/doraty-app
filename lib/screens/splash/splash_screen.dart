@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/screen_security_service.dart';
-import '../auth/register_screen.dart';
-import '../../main.dart';
 import 'package:provider/provider.dart';
 import '../../core/services/auth_service.dart';
 import 'package:go_router/go_router.dart';

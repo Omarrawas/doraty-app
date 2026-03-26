@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import '../models/course.dart';
-import '../screens/courses/course_details_screen.dart';
 import '../core/services/auth_service.dart';
 import '../core/localization/locale_provider.dart';
 import '../core/constants/app_strings.dart';
@@ -142,17 +141,7 @@ class _CourseCardState extends State<CourseCard>
             onTapUp: (_) => _controller.reverse(),
             onTapCancel: () => _controller.reverse(),
             onTap: () {
-              final courseToPush = widget.course;
-              final heroTagToPush = widget.heroTag;
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CourseDetailsScreen(
-                    course: courseToPush,
-                    heroTag: heroTagToPush,
-                  ),
-                ),
-              );
+              context.push('/course/${widget.course.id}');
             },
             child: widget.isHorizontal
                 ? _buildHorizontalLayout(context, locale, isDark)
@@ -412,15 +401,7 @@ class _CourseCardState extends State<CourseCard>
                                   elevation: 0,
                                 ),
                                 onPressed: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => CourseDetailsScreen(
-                                        course: widget.course,
-                                        heroTag: widget.heroTag,
-                                      ),
-                                    ),
-                                  );
+                                  context.push('/course/${widget.course.id}');
                                 },
                                 child: Text(
                                   _hasCourseAccess ? 'أكمل مشاهدة' : 'اشترك',

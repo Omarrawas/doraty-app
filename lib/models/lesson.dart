@@ -6,6 +6,7 @@ class Lesson {
   final String courseId;
   final String? chapterId; // Added chapterId
   final String title;
+  final String? slug; // Added slug
   final String description;
   final String videoUrl;
   final String duration; // stored as string like "45:00"
@@ -24,6 +25,7 @@ class Lesson {
     required this.courseId,
     this.chapterId,
     required this.title,
+    this.slug,
     required this.description,
     required this.videoUrl,
     required this.duration,
@@ -67,6 +69,7 @@ class Lesson {
         courseId: SafeParser.toStringSafe(json['course_id']),
         chapterId: SafeParser.toStringSafe(json['chapter_id']),
         title: SafeParser.toStringSafe(json['title']),
+        slug: SafeParser.toStringSafe(json['slug'], fallback: ''),
         description: SafeParser.toStringSafe(json['description']),
         videoUrl: SafeParser.toStringSafe(json['video_url']),
         duration: SafeParser.toStringSafe(json['duration'], fallback: '0:00'),
@@ -101,6 +104,7 @@ class Lesson {
       'course_id': courseId,
       'chapter_id': chapterId,
       'title': title,
+      'slug': slug != null && slug!.isNotEmpty ? slug : null,
       'description': description,
       'video_url': videoUrl,
       'duration': duration,
@@ -129,6 +133,7 @@ class Lesson {
     String? courseId,
     String? chapterId,
     String? title,
+    String? slug,
     String? description,
     String? videoUrl,
     String? duration,
@@ -147,6 +152,7 @@ class Lesson {
       courseId: courseId ?? this.courseId,
       chapterId: chapterId ?? this.chapterId,
       title: title ?? this.title,
+      slug: slug ?? this.slug,
       description: description ?? this.description,
       videoUrl: videoUrl ?? this.videoUrl,
       duration: duration ?? this.duration,
