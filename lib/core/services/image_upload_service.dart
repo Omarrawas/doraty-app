@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path/path.dart' as path;
@@ -10,7 +9,7 @@ class ImageUploadService {
   final ImagePicker _picker = ImagePicker();
 
   /// Pick image from gallery or camera
-  Future<File?> pickImage({ImageSource source = ImageSource.gallery}) async {
+  Future<XFile?> pickImage({ImageSource source = ImageSource.gallery}) async {
     try {
       final XFile? image = await _picker.pickImage(
         source: source,
@@ -19,26 +18,24 @@ class ImageUploadService {
         imageQuality: 85,
       );
 
-      if (image != null) {
-        return File(image.path);
-      }
-      return null;
+      return image;
     } catch (e) {
       rethrow;
     }
   }
 
   /// Upload image to Supabase Storage
-  Future<String> uploadImage(File imageFile, String bucket,
+  Future<String> uploadImage(XFile imageFile, String bucket,
       {String? folder}) async {
     try {
       final fileName =
           '${DateTime.now().millisecondsSinceEpoch}_${path.basename(imageFile.path)}';
       final filePath = folder != null ? '$folder/$fileName' : fileName;
 
-      await _client.storage.from(bucket).upload(
+      final bytes = await imageFile.readAsBytes();
+      await _client.storage.from(bucket).uploadBinary(
             filePath,
-            imageFile,
+            bytes,
             fileOptions: const FileOptions(
               cacheControl: '3600',
               upsert: false,
@@ -53,7 +50,7 @@ class ImageUploadService {
   }
 
   /// Upload image to GitHub
-  Future<String> uploadImageToGitHub(File imageFile, {String? folder}) async {
+  Future<String> uploadImageToGitHub(XFile imageFile, {String? folder}) async {
     try {
       final githubService = GitHubApiService();
       final bytes = await imageFile.readAsBytes();

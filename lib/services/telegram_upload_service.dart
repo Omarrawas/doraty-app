@@ -1,7 +1,7 @@
-import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 
 class TelegramUploadService {
   final String botToken = dotenv.get('TIPS_BOT_TOKEN', fallback: '');
@@ -10,7 +10,7 @@ class TelegramUploadService {
 
   final Dio _dio = Dio();
 
-  Future<String?> uploadAndGetLink(File videoFile) async {
+  Future<String?> uploadAndGetLink(XFile videoFile) async {
     try {
       if (botToken.isEmpty || chatId.isEmpty) {
         throw Exception("Telegram configuration is missing. Check your .env file.");
@@ -19,9 +19,10 @@ class TelegramUploadService {
       // 1. Prepare Upload to Telegram
       String url = "https://api.telegram.org/bot$botToken/sendVideo";
       
+      final bytes = await videoFile.readAsBytes();
       FormData formData = FormData.fromMap({
         'chat_id': chatId,
-        'video': await MultipartFile.fromFile(videoFile.path),
+        'video': MultipartFile.fromBytes(bytes, filename: videoFile.name),
       });
 
       // 2. Perform Request

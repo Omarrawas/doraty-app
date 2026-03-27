@@ -7,7 +7,6 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../services/telegram_upload_service.dart';
 import '../../core/services/image_upload_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class CreateTipScreen extends StatefulWidget {
   final Tip? tip;
@@ -99,7 +98,7 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
 
     setState(() => _isUploading = true);
     try {
-      final String? streamUrl = await _telegramService.uploadAndGetLink(File(video.path));
+      final String? streamUrl = await _telegramService.uploadAndGetLink(video);
       
       if (streamUrl != null) {
         setState(() {

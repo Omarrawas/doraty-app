@@ -16,7 +16,6 @@ import '../../core/utils/error_utils.dart';
 import '../../widgets/rich_text_editor.dart';
 import '../../services/youtube_upload_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class CreateLessonScreen extends StatefulWidget {
   final String courseId;
@@ -48,8 +47,8 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
 
   bool _isFree = false;
   bool _isSaving = false;
-  bool _isUploadingToGitHub = false;
   bool _isUploadingToYoutube = false;
+  bool _isUploadingToGitHub = false;
   final YoutubeUploadService _youtubeService = YoutubeUploadService();
   final List<Map<String, String>> _attachments = [];
   
@@ -61,21 +60,29 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(
-      text: widget.lessonData?['title'] ?? '',
-    );
-    _slugController = TextEditingController(
-      text: widget.lessonData?['slug'] ?? '',
-    );
-    _videoUrlController = TextEditingController(
-      text: widget.lessonData?['video_url'] ?? '',
-    );
-    _durationController = TextEditingController(
-      text: widget.lessonData?['duration']?.toString() ?? '',
-    );
-    _descriptionHtml = widget.lessonData?['description'] ?? '';
-    _contentHtml = widget.lessonData?['content'] ?? '';
-    _isFree = widget.lessonData?['is_free'] ?? false;
+    try {
+      _titleController = TextEditingController(
+        text: widget.lessonData?['title']?.toString() ?? '',
+      );
+      _slugController = TextEditingController(
+        text: widget.lessonData?['slug']?.toString() ?? '',
+      );
+      _videoUrlController = TextEditingController(
+        text: widget.lessonData?['video_url']?.toString() ?? '',
+      );
+      _durationController = TextEditingController(
+        text: widget.lessonData?['duration']?.toString() ?? '',
+      );
+      _descriptionHtml = widget.lessonData?['description']?.toString() ?? '';
+      _contentHtml = widget.lessonData?['content']?.toString() ?? '';
+      _isFree = widget.lessonData?['is_free'] == true || widget.lessonData?['is_free'] == 'true';
+    } catch (e) {
+      debugPrint('Error in CreateLessonScreen initState variables: $e');
+      _titleController = TextEditingController();
+      _slugController = TextEditingController();
+      _videoUrlController = TextEditingController();
+      _durationController = TextEditingController();
+    }
 
     try {
       if (widget.lessonData?['resources'] != null) {
@@ -141,6 +148,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
           decoration: InputDecoration(
             labelText: 'عنوان الفصل',
             hintText: 'مثال: المقدمة',
+            labelStyle: TextStyle(color: AppColors.getTextColor(context)),
           ),
         ),
         actions: [
@@ -191,7 +199,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     setState(() => _isUploadingToYoutube = true);
     try {
       final String? ytUrl = await _youtubeService.uploadUnlistedVideo(
-        File(video.path), 
+        video, 
         _titleController.text.isEmpty ? "New Lesson" : _titleController.text,
         "Lesson uploaded from Doraty App"
       );
@@ -222,24 +230,62 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditing = widget.lessonId != null;
-    final isDark = context.watch<ThemeProvider>().isDarkMode;
+    final isDark = Provider.of<ThemeProvider>(context, listen: false).isDarkMode;
 
     return Theme(
       data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
-      child: Scaffold(
-        body: DynamicGradientBackground(
-          child: SafeArea(
-            child: Column(
-              children: [
-                _buildHeader(context, isEditing),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.all(20),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+      child: Builder(
+        builder: (context) {
+          try {
+            return Scaffold(
+              body: DynamicGradientBackground(
+                child: SafeArea(
+                  child: _buildContent(context, isEditing, isDark),
+                ),
+              ),
+            );
+          } catch (e) {
+            debugPrint('❌ CreateLessonScreen Build Error: $e');
+            return Scaffold(
+              body: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red, size: 60),
+                      SizedBox(height: 16),
+                      Text('حدث خطأ أثناء تحميل الصفحة:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      SizedBox(height: 8),
+                      Text(e.toString(), textAlign: TextAlign.center, style: TextStyle(color: Colors.red)),
+                      SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('رجوع'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, bool isEditing, bool isDark) {
+    return Column(
+      children: [
+        _buildHeader(context, isEditing),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(20),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                           // Chapter Selection
                           _buildGlassContainer(
                             title: 'الفصل',
@@ -466,11 +512,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                   ),
                 ),
               ],
-            ),
-          ),
-        ),
-      ),
-    );
+            );
   }
 
   Widget _buildHeader(BuildContext context, bool isEditing) {

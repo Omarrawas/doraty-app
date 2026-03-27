@@ -12,7 +12,6 @@ import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../services/youtube_upload_service.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 
 class CreateCourseScreen extends StatefulWidget {
   final String? courseId;
@@ -51,9 +50,11 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   bool _isPublished = false;
   bool _isSaving = false;
-  bool _isUploading = false;
   bool _isUploadingToYoutube = false;
+  XFile? _courseImage;
+  bool _isUploadingImage = false;
   final YoutubeUploadService _youtubeService = YoutubeUploadService();
+  final ImageUploadService _imageUploadService = ImageUploadService();
 
   List<Map<String, dynamic>> _teachers = [];
   String? _selectedTeacherId;
@@ -281,7 +282,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     setState(() => _isUploadingToYoutube = true);
     try {
       final String? ytUrl = await _youtubeService.uploadUnlistedVideo(
-        File(video.path), 
+        video, 
         _titleController.text.isEmpty ? "New Course Video" : "${_titleController.text} Preview",
         "Course preview uploaded from Doraty App"
       );
@@ -299,6 +300,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         throw Exception('فشل الحصول على رابط يوتيوب');
       }
     } catch (e) {
+      debugPrint("YouTube Upload Error: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('خطأ في الرفع: $e')),
@@ -619,8 +621,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                     ),
                                     child: IconButton(
                                       onPressed:
-                                          _isUploading ? null : _uploadImage,
-                                      icon: _isUploading
+                                          _isUploadingImage ? null : _uploadImage,
+                                      icon: _isUploadingImage
                                           ? SizedBox(
                                               width: 24,
                                               height: 24,
@@ -1281,46 +1283,58 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     }
   }
 
-  Future<void> _uploadImage() async {
-    setState(() => _isUploading = true);
-
+  Future<void> _pickCourseImage() async {
     try {
-      final imageService = ImageUploadService();
-      final imageFile = await imageService.pickImage();
-      
-      if (imageFile != null) {
-        final url = await imageService.uploadImageToGitHub(
-          imageFile,
-          folder: 'images/courses',
-        );
-
-        if (mounted) {
-          setState(() {
-            _imageUrlController.text = url;
-            _isUploading = false;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('تم رفع الصورة بنجاح'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
-      } else {
-        if (mounted) setState(() => _isUploading = false);
+      final XFile? image = await _imageUploadService.pickImage();
+      if (image != null) {
+        setState(() {
+          _courseImage = image;
+        });
+        // Auto upload after picking
+        await _uploadCourseImage();
       }
     } catch (e) {
+      debugPrint('Error picking image: $e');
       if (mounted) {
-        setState(() => _isUploading = false);
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('خطأ في رفع الصورة: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في اختيار الصورة: $e'), backgroundColor: Colors.red),
+        );
       }
     }
+  }
+
+  Future<void> _uploadCourseImage() async {
+    if (_courseImage == null) return;
+    
+    setState(() => _isUploadingImage = true);
+    try {
+      final String url = await _imageUploadService.uploadImageToGitHub(
+        _courseImage!,
+        folder: 'courses/images',
+      );
+      
+      setState(() {
+        _imageUrlController.text = url;
+        _isUploadingImage = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('تم رفع الصورة بنجاح!'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error uploading image: $e');
+      setState(() => _isUploadingImage = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطأ في رفع الصورة: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _uploadImage() async {
+    await _pickCourseImage();
   }
 }
