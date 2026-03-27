@@ -3,6 +3,9 @@ import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
 import '../../models/course.dart';
 import 'course_details_screen.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
+import 'package:provider/provider.dart';
 
 class CourseLoaderScreen extends StatefulWidget {
   final String courseId;
@@ -56,8 +59,9 @@ class _CourseLoaderScreenState extends State<CourseLoaderScreen> {
         );
       } else {
         if (mounted) {
+          final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('عذراً، لم يتم العثور على الدورة')),
+             SnackBar(content: Text(AppStrings.get('course_not_found', locale))),
           );
           Navigator.pop(context);
         }

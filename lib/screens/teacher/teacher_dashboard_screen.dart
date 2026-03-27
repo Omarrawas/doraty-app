@@ -12,6 +12,9 @@ import 'package:intl/intl.dart' as intl;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:provider/provider.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -30,6 +33,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
   final intl.NumberFormat _currencyFormat =
       intl.NumberFormat.currency(symbol: 'ل.س ', decimalDigits: 0);
+
+  String _t(String key) {
+    if (!mounted) return key;
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
 
   @override
   void initState() {
@@ -181,7 +190,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   child: IconButton(
                     icon: Icon(Icons.print, color: AppColors.getTextColor(context)),
                     onPressed: _showMonthSelectionDialog,
-                    tooltip: 'طباعة التقرير',
+                    tooltip: _t('print_report'),
                   ),
                 ),
               ),
@@ -211,20 +220,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         ),
         SizedBox(height: 20),
         Text(
-          'لوحة تحكم المدرس',
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-            color: AppColors.getTextColor(context),
-          ),
+          _t('teacher_dashboard'),
+          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
         ),
         SizedBox(height: 8),
         Text(
-          'مرحباً بك في لوحة التحكم',
-          style: TextStyle(
-            fontSize: 16,
-            color: AppColors.getTextColor(context).withOpacity(0.95),
-          ),
+          _t('teacher_dashboard_welcome'),
+          style: TextStyle(fontSize: 16, color: AppColors.getTextColor(context).withOpacity(0.95)),
         ),
       ],
     );
@@ -239,7 +241,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               child: _buildStatCard(
                 context: context,
                 icon: Icons.payments,
-                label: 'إجمالي الدخل',
+                label: _t('total_income'),
                 value: _currencyFormat.format(_stats['total_revenue'] ?? 0),
                 color: Colors.greenAccent,
               ),
@@ -249,7 +251,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               child: _buildStatCard(
                 context: context,
                 icon: Icons.people,
-                label: 'إجمالي الطلاب',
+                label: _t('total_students_stat'),
                 value: '${_stats['total_students'] ?? 0}',
                 color: Colors.orangeAccent,
               ),
@@ -263,7 +265,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               child: _buildStatCard(
                 context: context,
                 icon: Icons.school,
-                label: 'الدورات',
+                label: _t('courses_stat'),
                 value: '${_stats['total_courses'] ?? 0}',
                 color: Colors.blue,
               ),
@@ -273,7 +275,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               child: _buildStatCard(
                 context: context,
                 icon: Icons.assignment,
-                label: 'الاختبارات',
+                label: _t('exams_stat'),
                 value: '${_stats['total_exams'] ?? 0}',
                 color: Colors.purple,
               ),
@@ -344,12 +346,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'إجراءات سريعة',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.getTextColor(context),
-          ),
+          _t('quick_actions'),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
         ),
         SizedBox(height: 16),
         Row(
@@ -358,7 +356,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               child: _buildActionCard(
                 context: context,
                 icon: Icons.add_circle,
-                label: 'إنشاء اختبار',
+                label: _t('create_exam'),
                 color: Colors.green,
                 onTap: () {
                   Navigator.push(
@@ -375,7 +373,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               child: _buildActionCard(
                 context: context,
                 icon: Icons.people,
-                label: 'نتائج الطلاب',
+                label: _t('student_results'),
                 color: Colors.orange,
                 onTap: () {
                   Navigator.push(
@@ -393,7 +391,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         _buildActionCard(
           context: context,
           icon: Icons.school,
-          label: 'إدارة دوراتي',
+          label: _t('manage_my_courses'),
           color: Colors.blue,
           onTap: () {
             final userId = SupabaseService.instance.currentUserId;
@@ -469,32 +467,20 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'الاختبارات الأخيرة',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.getTextColor(context),
-              ),
+              _t('recent_exams'),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
             ),
             TextButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ManageExamsScreen(),
-                  ),
-                );
+                Navigator.push(context, MaterialPageRoute(builder: (context) => ManageExamsScreen()));
               },
-              child: Text(
-                'عرض الكل',
-                style: TextStyle(color: AppColors.getTextColor(context)),
-              ),
+              child: Text(_t('view_all'), style: TextStyle(color: AppColors.getTextColor(context))),
             ),
           ],
         ),
         SizedBox(height: 12),
         if (_recentExams.isEmpty)
-          _buildEmptyState(context, 'لا توجد اختبارات')
+          _buildEmptyState(context, _t('no_exams_assigned'))
         else
           ..._recentExams.map((exam) => Padding(
                 padding: EdgeInsets.only(bottom: 12),
@@ -506,7 +492,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
   Widget _buildExamCard(BuildContext context, Map<String, dynamic> exam) {
     final isPublished = exam['is_published'] as bool? ?? false;
-    final courseName = exam['courses']?['title'] ?? 'دورة';
+    final courseName = exam['courses']?['title'] ?? '';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -542,7 +528,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      exam['title'] ?? 'اختبار',
+                      exam['title'] ?? '',
                       style: TextStyle(
                         color: AppColors.getTextColor(context),
                         fontSize: 16,
@@ -571,7 +557,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  isPublished ? 'منشور' : 'مسودة',
+                  isPublished ? _t('published') : _t('draft'),
                   style: TextStyle(
                     color: isPublished ? Colors.green : Colors.orange,
                     fontSize: 12,
@@ -591,16 +577,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'دوراتي',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.getTextColor(context),
-          ),
+          _t('my_courses'),
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
         ),
         SizedBox(height: 12),
         if (_teacherCourses.isEmpty)
-          _buildEmptyState(context, 'لا توجد دورات مسندة')
+          _buildEmptyState(context, _t('no_courses_assigned'))
         else
           ..._teacherCourses.map((tc) {
             // Check if the data is wrapped in a 'courses' key (from joins) or direct

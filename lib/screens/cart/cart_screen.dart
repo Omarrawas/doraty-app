@@ -23,7 +23,7 @@ class CartScreen extends StatelessWidget {
       backgroundColor: Color(0xFF1E1E2C), // Dark theme as per screenshot
       appBar: AppBar(
         title: Text(
-          isRTL ? 'محتوى السلة' : 'Basket Content',
+          t('cart_content'),
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
         ),
         centerTitle: false,
@@ -86,7 +86,7 @@ class CartScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      item.isBundle ? (isRTL ? 'باقة' : 'Bundle') : (isRTL ? 'دورة' : 'Course'),
+                      item.isBundle ? AppStrings.get('bundle_badge', locale) : AppStrings.get('course', locale),
                       style: TextStyle(color: AppColors.getMutedTextColor(context), fontSize: 12),
                     ),
                     Text(
@@ -140,10 +140,10 @@ class CartScreen extends StatelessWidget {
           if (item.isBundle) Divider(color: AppColors.getTextColor(context).withOpacity(0.10), height: 24),
 
           // Pricing Breakdown (as per screenshot)
-          _buildPriceRow(context, isRTL ? 'السعر' : 'Price', '$currencyLabel ${formatter.format(item.originalPrice)}', isWhite: true),
+          _buildPriceRow(context, AppStrings.get('price', locale), '$currencyLabel ${formatter.format(item.originalPrice)}', isWhite: true),
           if (item.discountAmount > 0)
-            _buildPriceRow(context, isRTL ? 'خصم' : 'Discount', '$currencyLabel ${formatter.format(item.discountAmount)}-', isRed: true),
-          _buildPriceRow(context, isRTL ? 'المجموع' : 'Subtotal', '$currencyLabel ${formatter.format(item.price)}', isBold: true),
+            _buildPriceRow(context, AppStrings.get('discount', locale), '$currencyLabel ${formatter.format(item.discountAmount)}-', isRed: true),
+          _buildPriceRow(context, AppStrings.get('subtotal', locale), '$currencyLabel ${formatter.format(item.price)}', isBold: true),
 
           
           if (cart.items.values.toList().indexOf(item) < cart.items.length - 1)
@@ -232,13 +232,13 @@ class CartScreen extends StatelessWidget {
                 style: TextStyle(color: AppColors.getTextColor(context), fontSize: 20, fontWeight: FontWeight.bold),
               ),
               Text(
-                isRTL ? 'المبلغ الإجمالي' : 'Total Amount',
+                t('total_amount'),
                 style: TextStyle(color: AppColors.getTextColor(context), fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           SizedBox(height: 12),
-          _buildSummaryRow(context, isRTL ? 'المجموع' : 'Subtotal', '$currencyLabel ${formatter.format(cart.totalAmount)}'),
+          _buildSummaryRow(context, t('subtotal'), '$currencyLabel ${formatter.format(cart.totalAmount)}'),
 
           SizedBox(height: 12),
           Align(
@@ -248,7 +248,7 @@ class CartScreen extends StatelessWidget {
                 // Future: Discount Code Logic
               },
               child: Text(
-                isRTL ? 'إضافة رمز الخصم' : 'Add Discount Code',
+                t('add_discount_code'),
                 style: TextStyle(color: Color(0xFF6A6BB2), fontWeight: FontWeight.bold),
               ),
             ),
@@ -262,7 +262,7 @@ class CartScreen extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => PaymentScreen(
                       amount: cart.totalAmount,
-                      title: isRTL ? 'إتمام عملية التسجيل' : 'Complete Registration',
+                      title: t('complete_registration'),
                     ),
                   ),
                 );
@@ -281,7 +281,7 @@ class CartScreen extends StatelessWidget {
                 Icon(Icons.credit_card_rounded, size: 20),
                 SizedBox(width: 12),
                 Text(
-                  isRTL ? 'إتمام عملية التسجيل' : 'Complete Registration',
+                  t('complete_registration'),
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],

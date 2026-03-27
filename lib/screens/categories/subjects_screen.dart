@@ -51,20 +51,20 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
   void _initializeFallbackCategories() {
     final scientificSubjects = [
-      'الرياضيات',
-      'الفيزياء',
-      'الكيمياء',
-      'الأحياء',
-      'اللغة العربية',
-      'اللغة الإنجليزية',
-      'اللغة الفرنسية',
-      'الديانة',
+      'subject_math',
+      'subject_physics',
+      'subject_chemistry',
+      'subject_biology',
+      'subject_arabic',
+      'subject_english',
+      'subject_french',
+      'subject_religion',
     ];
     final literarySubjects = [
-      'التاريخ',
-      'الجغرافيا',
-      'الفلسفة',
-      'علم الاجتماع',
+      'subject_history',
+      'subject_geography',
+      'subject_philosophy',
+      'subject_sociology',
     ];
 
     final allSubjects = {...scientificSubjects, ...literarySubjects}.toList();
@@ -73,7 +73,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
       return Category(
         id: '${entry.key + 1}',
         name: entry.value,
-        description: 'دورات ${entry.value} للثانوية العامة',
+        description: 'high_school_courses_desc',
         icon: _getIconForSubject(entry.value),
         coursesCount: (entry.key + 1) * 3,
       );
@@ -273,6 +273,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
   Widget _buildFallbackCard(Category category, int index) {
     final color = _getColorForIndex(index);
 
+    final locale = Provider.of<LocaleProvider>(context).locale;
+
     return _CardWrapper(
       color: color,
       onTap: () {},
@@ -292,7 +294,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
           ),
           SizedBox(height: 16),
           Text(
-            category.name,
+            AppStrings.get(category.name, locale),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 16,

@@ -21,6 +21,9 @@ import '../lesson/pdf_viewer_screen.dart';
 import '../lesson/interactive_quiz_screen.dart';
 import '../../widgets/lesson/rich_content_viewer.dart';
 import '../../widgets/lesson/external_video_player.dart';
+import 'package:provider/provider.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
 
 
 class LessonViewScreen extends StatefulWidget {
@@ -59,6 +62,12 @@ class _LessonViewScreenState extends State<LessonViewScreen>
   // Throttling variables for progress updates
   int _lastUpdatePosition = 0;
   DateTime _lastUpdateTime = DateTime.now();
+
+  String _t(String key) {
+    if (!mounted) return key;
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
 
   @override
   void initState() {
@@ -253,7 +262,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       await _databaseService.markLessonAsCompleted(widget.lesson.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تم تعليم الدرس كمكتمل')),
+          SnackBar(content: Text(_t('lesson_marked_completed'))),
         );
       }
     } catch (e) {
@@ -287,7 +296,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       await _loadNotes();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تمت إضافة الملاحظة')),
+          SnackBar(content: Text(_t('note_added'))),
         );
       }
     } catch (e) {
@@ -451,7 +460,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                 ),
                 SizedBox(height: 4),
                 Text(
-                  'درس ${widget.lesson.orderIndex}',
+                  '${_t('lesson_number')}${widget.lesson.orderIndex}',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -512,7 +521,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
               ),
               SizedBox(height: 12),
               Text(
-                'فيديو غير متاح',
+                _t('video_unavailable'),
                 style: TextStyle(
                   color: AppColors.getTextColor(context, secondary: true),
                   fontSize: 16,
@@ -717,7 +726,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'المرفقات والموارد',
+                _t('attachments_resources'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -726,7 +735,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
               ),
               SizedBox(height: 16),
               ...widget.lesson.resources.map((resource) {
-                final fileName = resource['name'] ?? 'ملف غير معروف';
+                final fileName = resource['name'] ?? _t('unknown_file');
                 final url = resource['url'] ?? '';
                 final ext = fileName.split('.').last.toLowerCase();
 

@@ -13,6 +13,8 @@ import '../../core/services/screen_security_service.dart';
 import 'register_screen.dart';
 import '../../core/utils/error_utils.dart';
 import '../../main.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -26,6 +28,12 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
+
+  String _t(String key) {
+    if (!mounted) return key;
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
 
   late final StreamSubscription<AuthState> _authSubscription;
 
@@ -147,7 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'منصة دوراتي',
+                                  _t('platform_name'),
                                   style: TextStyle(
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -179,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             // Welcome Text
                             Text(
-                              'مرحباً بك',
+                              _t('welcome_text'),
                               style: TextStyle(
                                 fontSize: 36,
                                 fontWeight: FontWeight.bold,
@@ -192,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             // Email Field
                             _buildGlassTextField(
                               controller: _emailController,
-                              hint: 'البريد الإلكتروني',
+                              hint: _t('email_label'),
                               icon: Icons.email_outlined,
                               keyboardType: TextInputType.emailAddress,
                             ),
@@ -202,7 +210,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             // Password Field
                             _buildGlassTextField(
                               controller: _passwordController,
-                              hint: 'كلمة المرور',
+                              hint: _t('password_label'),
                               icon: Icons.lock_outline,
                               isPassword: true,
                             ),
@@ -218,7 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             TextButton(
                               onPressed: _showForgotPasswordDialog,
                               child: Text(
-                                'نسيت كلمة المرور؟',
+                                _t('forgot_password'),
                                 style: TextStyle(
                                   color: AppColors.getTextColor(context),
                                   fontSize: 15,
@@ -241,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Padding(
                                   padding: EdgeInsets.symmetric(horizontal: 16),
                                   child: Text(
-                                    'أو',
+                                    _t('or'),
                                     style: TextStyle(
                                       color: AppColors.getTextColor(context),
                                       fontSize: 16,
@@ -277,7 +285,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  'ليس لديك حساب؟',
+                                  _t('dont_have_account'),
                                   style: TextStyle(
                                     color: AppColors.getTextColor(context),
                                     fontSize: 15,
@@ -288,7 +296,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     context.push('/register');
                                   },
                                   child: Text(
-                                    'سجل الآن',
+                                    _t('register_now'),
                                     style: TextStyle(
                                       color: AppColors.getTextColor(context),
                                       fontSize: 15,
@@ -422,7 +430,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   )
                 : Text(
-                    'تسجيل الدخول',
+                    _t('login_title'),
                     style: TextStyle(
                       color: AppColors.getTextColor(context),
                       fontSize: 18,
@@ -438,12 +446,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleLogin() async {
     // Validate inputs
     if (_emailController.text.trim().isEmpty) {
-      _showErrorSnackBar('الرجاء إدخال البريد الإلكتروني');
+      _showErrorSnackBar(_t('error_enter_email'));
       return;
     }
 
     if (_passwordController.text.isEmpty) {
-      _showErrorSnackBar('الرجاء إدخال كلمة المرور');
+      _showErrorSnackBar(_t('error_enter_password'));
       return;
     }
 
@@ -493,7 +501,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               backgroundColor: AppColors.getSurfaceColor(context),
               title: Text(
-                'استعادة كلمة المرور',
+                _t('reset_password'),
                 style: TextStyle(
                   fontFamily: 'Cairo',
                   fontWeight: FontWeight.bold,
@@ -505,7 +513,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    'أدخل بريدك الإلكتروني وسنرسل لك رابطاً لتعيين كلمة مرور جديدة.',
+                    _t('reset_password_desc'),
                     style: TextStyle(
                       fontFamily: 'Cairo',
                       color: AppColors.getTextColor(context, secondary: true),
@@ -521,7 +529,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: AppColors.getTextColor(context),
                     ),
                     decoration: InputDecoration(
-                      hintText: 'البريد الإلكتروني',
+                      hintText: _t('email_label'),
                       hintStyle: TextStyle(
                         fontFamily: 'Cairo',
                         color: AppColors.getTextColor(context, secondary: true),
@@ -554,7 +562,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextButton(
                   onPressed: () => Navigator.pop(context),
                   child: Text(
-                    'إلغاء',
+                    _t('cancel'),
                     style: TextStyle(fontFamily: 'Cairo', color: Colors.grey),
                   ),
                 ),
@@ -574,7 +582,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text(
-                                  'الرجاء إدخال البريد الإلكتروني',
+                                  _t('error_enter_email'),
                                   textAlign: TextAlign.right,
                                   style: TextStyle(fontFamily: 'Cairo'),
                                 ),
@@ -597,7 +605,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(
-                                    'تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني.',
+                                    _t('reset_password_success'),
                                     textAlign: TextAlign.right,
                                     style: TextStyle(fontFamily: 'Cairo'),
                                   ),
@@ -634,7 +642,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         child: Text(
-                          'إرسال',
+                          _t('send'),
                           style: TextStyle(fontFamily: 'Cairo', color: AppColors.getTextColor(context)),
                         ),
                       ),
@@ -678,7 +686,7 @@ class _LoginScreenState extends State<LoginScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('جاري التحقق من الحساب...',
+              content: Text(_t('checking_account'),
                   style: TextStyle(fontFamily: 'Cairo')),
             ),
           );
@@ -701,7 +709,7 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() {
           _isLoading = false;
         });
-        if (e.toString() != 'تم إلغاء تسجيل الدخول عبر جوجل') {
+        if (e.toString() != _t('login_canceled')) {
           _showErrorSnackBar(_getErrorMessage(e));
         }
       }

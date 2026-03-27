@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
 import 'create_exam_screen.dart';
 import 'manage_questions_screen.dart';
 
@@ -19,6 +22,12 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
   List<Map<String, dynamic>> _exams = [];
   bool _isLoading = true;
   String _filter = 'all'; // all, published, draft
+
+  String _t(String key) {
+    if (!mounted) return key;
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
 
   @override
   void initState() {
@@ -109,7 +118,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
         },
         backgroundColor: AppColors.primaryPurple,
         icon: Icon(Icons.add),
-        label: Text('إنشاء اختبار'),
+        label: Text(_t('create_exam')),
       ),
     );
   }
@@ -142,7 +151,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
           SizedBox(width: 16),
           Expanded(
             child: Text(
-              'إدارة الاختبارات',
+              _t('exams_management'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
@@ -160,11 +169,11 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
       padding: EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          _buildFilterTab('الكل', 'all'),
+          _buildFilterTab(_t('all'), 'all'),
           SizedBox(width: 8),
-          _buildFilterTab('منشور', 'published'),
+          _buildFilterTab(_t('published'), 'published'),
           SizedBox(width: 8),
-          _buildFilterTab('مسودة', 'draft'),
+          _buildFilterTab(_t('draft'), 'draft'),
         ],
       ),
     );
@@ -214,7 +223,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
 
   Widget _buildExamCard(Map<String, dynamic> exam) {
     final isPublished = exam['is_published'] as bool? ?? false;
-    final courseName = exam['courses']?['title'] ?? 'دورة';
+    final courseName = exam['courses']?['title'] ?? '';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -297,7 +306,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                             ),
                           ),
                           child: Text(
-                            isPublished ? 'منشور' : 'مسودة',
+                            exam['is_published'] == true ? _t('published') : _t('draft'),
                             style: TextStyle(
                               color: isPublished ? Colors.green : Colors.orange,
                               fontSize: 12,
@@ -312,12 +321,12 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                       children: [
                         _buildInfoChip(
                           Icons.access_time,
-                          '${exam['duration']} دقيقة',
+                          '${exam['duration']} ${_t('minute')}',
                         ),
                         SizedBox(width: 12),
                         _buildInfoChip(
                           Icons.assignment,
-                          '${exam['total_points']} نقطة',
+                          '${exam['total_points']} ${_t('points')}',
                         ),
                       ],
                     ),
@@ -348,7 +357,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                             icon: isPublished
                                 ? Icons.visibility_off
                                 : Icons.visibility,
-                            label: isPublished ? 'إلغاء النشر' : 'نشر',
+                            label: isPublished ? _t('unpublish') : _t('publish'),
                             color: isPublished ? Colors.orange : Colors.green,
                             onTap: () => _togglePublish(exam),
                           ),
@@ -473,7 +482,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
                   Icon(Icons.assignment, color: AppColors.getTextColor(context), size: 64),
                   SizedBox(height: 16),
                   Text(
-                    'لا توجد اختبارات',
+                    _t('no_exams'),
                     style: TextStyle(
                       fontSize: 18,
                       color: AppColors.getTextColor(context, secondary: true),
@@ -497,7 +506,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isPublished ? 'تم إلغاء النشر' : 'تم النشر'),
+            content: Text(isPublished ? _t('unpublish_success') : _t('publish_success')),
             backgroundColor: Colors.green,
           ),
         );
@@ -520,20 +529,19 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.primaryPurple,
-        title:
-            Text('حذف الاختبار', style: TextStyle(color: AppColors.getTextColor(context))),
+        title: Text(_t('delete_exam'), style: TextStyle(color: AppColors.getTextColor(context))),
         content: Text(
-          'هل أنت متأكد من حذف هذا الاختبار؟',
+          _t('confirm_delete_exam'),
           style: TextStyle(color: AppColors.getTextColor(context)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context))),
+            child: Text(_t('cancel'), style: TextStyle(color: AppColors.getTextColor(context))),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text(_t('delete'), style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -547,7 +555,7 @@ class _ManageExamsScreenState extends State<ManageExamsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تم حذف الاختبار'),
+            content: Text(_t('delete_exam_success')),
             backgroundColor: Colors.green,
           ),
         );

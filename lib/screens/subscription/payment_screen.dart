@@ -7,6 +7,9 @@ import '../../models/payment_account.dart';
 import '../../services/payment_service.dart' as service;
 import '../../models/course.dart';
 import '../payment/qr_scanner_screen.dart';
+import 'package:provider/provider.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
 
 class PaymentScreen extends StatefulWidget {
   final Course? course;
@@ -32,6 +35,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
   bool _isProcessing = false;
   bool _isLoadingAccounts = true;
   List<PaymentAccount> _paymentAccounts = [];
+
+  String _t(String key) {
+    if (!mounted) return key;
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
 
   @override
   void initState() {
@@ -200,7 +209,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             _buildScanQrCard(),
                             SizedBox(height: 24),
                             Text(
-                              'اختر طريقة الدفع',
+                              _t('choose_payment_method'),
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -272,7 +281,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
           Expanded(
             child: Text(
-              'الدفع',
+              _t('payment_screen_title'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
@@ -313,7 +322,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'ملخص الطلب',
+                _t('order_summary'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -347,7 +356,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'المجموع',
+                    _t('total_label'),
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -476,7 +485,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'تفاصيل الدفع',
+                _t('payment_details'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -535,7 +544,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   textAlign: TextAlign.right,
                   style: TextStyle(color: AppColors.getTextColor(context)),
                   decoration: InputDecoration(
-                    labelText: 'رقم الهاتف الذي حولت منه',
+                    labelText: _t('phone_from'),
                     labelStyle: TextStyle(color: AppColors.getTextColor(context)),
                     hintText: '09XX XXX XXX',
                     hintStyle: TextStyle(
@@ -620,7 +629,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'بعد إتمام التحويل، أدخل رقم العملية الذي حصلت عليه من التطبيق',
+                        _t('transfer_complete_tip'),
                         style: TextStyle(
                           fontSize: 13,
                           color: AppColors.getTextColor(context, secondary: true),
@@ -737,7 +746,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'هل لديك كود تفعيل؟',
+                          _t('qr_activate_title'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -746,7 +755,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                         ),
                         SizedBox(height: 4),
                         Text(
-                          'امسح رمز QR لتفعيل الدورة مباشرة',
+                          _t('scan_qr_to_activate_course'),
                           style: TextStyle(
                             fontSize: 14,
                             color: AppColors.getTextColor(context).withOpacity(0.70),
@@ -775,7 +784,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     }
                   },
                   icon: Icon(Icons.camera_alt),
-                  label: Text('اشحن بالكود (QR)'),
+                  label: Text(_t('charge_with_qr')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.purple,
@@ -835,7 +844,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                   SizedBox(height: 24),
                   Text(
-                    'طلبك قيد المراجعة',
+                    _t('order_under_review'),
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -844,7 +853,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                   SizedBox(height: 12),
                   Text(
-                    'تم إرسال طلبك بنجاح\nسيتم مراجعته والرد عليك قريباً',
+                    _t('order_sent_success'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
@@ -853,7 +862,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'رقم الطلب: ${orderId.substring(0, 8)}...',
+                    '${_t('order_number_prefix')}${orderId.substring(0, 8)}...',
                     style: TextStyle(
                       fontSize: 13,
                       color: AppColors.getTextColor(context, secondary: true),

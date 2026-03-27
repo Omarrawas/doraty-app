@@ -4,6 +4,9 @@ import '../../core/theme/app_colors.dart';
 import '../../models/exam.dart';
 import 'exam_taking_screen.dart';
 import 'exam_result_screen.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
+import 'package:provider/provider.dart';
 
 class ExamsListScreen extends StatefulWidget {
   const ExamsListScreen({super.key});
@@ -13,36 +16,42 @@ class ExamsListScreen extends StatefulWidget {
 }
 
 class _ExamsListScreenState extends State<ExamsListScreen> {
-  final List<Exam> _upcomingExams = [
+  String _t(String key) {
+    if (!mounted) return key;
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
+
+  List<Exam> get _upcomingExams => [
     Exam(
       id: '1',
-      title: 'اختبار الفصل الأول - الرياضيات',
-      description: 'اختبار شامل للفصل الأول يغطي المعادلات التربيعية والتفاضل',
+      title: _t('exam_math_title'),
+      description: _t('exam_math_desc'),
       courseId: '1',
-      courseName: 'الرياضيات المتقدمة',
+      courseName: _t('exam_math_course'),
       questions: [],
       duration: 60,
       totalPoints: 100,
     ),
     Exam(
       id: '2',
-      title: 'اختبار الفيزياء - الحركة',
-      description: 'اختبار على قوانين الحركة والسرعة والتسارع',
+      title: _t('exam_physics_title'),
+      description: _t('exam_physics_desc'),
       courseId: '2',
-      courseName: 'الفيزياء',
+      courseName: _t('exam_physics_course'),
       questions: [],
       duration: 45,
       totalPoints: 50,
     ),
   ];
 
-  final List<Exam> _completedExams = [
+  List<Exam> get _completedExams => [
     Exam(
       id: '3',
-      title: 'اختبار الكيمياء - الجدول الدوري',
-      description: 'اختبار على عناصر الجدول الدوري وخصائصها',
+      title: _t('exam_chemistry_title'),
+      description: _t('exam_chemistry_desc'),
       courseId: '3',
-      courseName: 'الكيمياء',
+      courseName: _t('exam_chemistry_course'),
       questions: [],
       duration: 30,
       totalPoints: 50,
@@ -77,7 +86,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                     children: [
                       // Upcoming Exams
                       Text(
-                        'الاختبارات القادمة',
+                        _t('upcoming_exams'),
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -88,7 +97,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                       SizedBox(height: 16),
 
                       if (_upcomingExams.isEmpty)
-                        _buildEmptyState('لا توجد اختبارات قادمة')
+                        _buildEmptyState(_t('no_upcoming_exams'))
                       else
                         ..._upcomingExams.map((exam) {
                           return Padding(
@@ -101,7 +110,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
 
                       // Completed Exams
                       Text(
-                        'الاختبارات المكتملة',
+                        _t('completed_exams'),
                         style: TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -112,7 +121,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                       SizedBox(height: 16),
 
                       if (_completedExams.isEmpty)
-                        _buildEmptyState('لا توجد اختبارات مكتملة')
+                        _buildEmptyState(_t('no_completed_exams'))
                       else
                         ..._completedExams.map((exam) {
                           return Padding(
@@ -160,7 +169,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
           ),
           Expanded(
             child: Text(
-              'الاختبارات',
+              _t('exams'),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 22,
@@ -266,7 +275,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                         SizedBox(width: 12),
                         _buildInfoChip(
                           icon: Icons.assignment,
-                          label: '${exam.totalPoints} نقطة',
+                          label: '${exam.totalPoints} ${_t('points')}',
                         ),
                         if (!isUpcoming && exam.score != null) ...[
                           SizedBox(width: 12),
@@ -285,7 +294,7 @@ class _ExamsListScreenState extends State<ExamsListScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          'ابدأ الاختبار',
+                          _t('start_exam'),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.getTextColor(context),

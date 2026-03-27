@@ -14,6 +14,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
 
 class SubscriptionsManagementScreen extends StatefulWidget {
   const SubscriptionsManagementScreen({super.key});
@@ -28,6 +30,12 @@ class _SubscriptionsManagementScreenState
   final DatabaseService _db = DatabaseService();
   final NumberFormat _currencyFormat =
       NumberFormat.currency(symbol: 'ل.س ', decimalDigits: 0);
+
+  String _t(String key) {
+    if (!mounted) return key;
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
 
 
   List<Map<String, dynamic>> _coursesGrouped = [];
@@ -194,7 +202,7 @@ class _SubscriptionsManagementScreenState
           SizedBox(width: 16),
           Expanded(
             child: Text(
-              'إدارة الاشتراكات',
+              _t('manage_subscriptions'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.normal,
@@ -220,7 +228,7 @@ class _SubscriptionsManagementScreenState
                     IconButton(
                       icon: Icon(Icons.print, color: AppColors.getTextColor(context)),
                       onPressed: _printReport,
-                      tooltip: 'طباعة التقرير',
+                      tooltip: _t('print_report'),
                     ),
                     Container(
                       height: 24,
@@ -249,25 +257,25 @@ class _SubscriptionsManagementScreenState
         scrollDirection: Axis.horizontal,
         children: [
           _buildStatItem(
-            'الدخل الكلي',
+            _t('total_revenue'),
             _currencyFormat.format(_stats['total_revenue'] ?? 0),
             Colors.greenAccent,
             Icons.account_balance_wallet,
           ),
           _buildStatItem(
-            'دخل هذا الشهر',
+            _t('monthly_revenue'),
             _currencyFormat.format(_stats['monthly_revenue'] ?? 0),
             Color(0xFF00E5FF),
             Icons.speed,
           ),
           _buildStatItem(
-            'نشطة',
+            _t('active'),
             '${_stats['active_subscriptions'] ?? 0}',
             Colors.blueAccent,
             Icons.check_circle,
           ),
           _buildStatItem(
-            'إجمالي الطلاب',
+            _t('total_students'),
             '${_stats['total_enrollments'] ?? 0}',
             Colors.purpleAccent,
             Icons.people,
@@ -359,7 +367,7 @@ class _SubscriptionsManagementScreenState
                       },
                       style: TextStyle(color: AppColors.getTextColor(context)),
                       decoration: InputDecoration(
-                        hintText: 'بحث باسم الطالب أو الدورة...',
+                        hintText: _t('search_subscription_hint'),
                         hintStyle: TextStyle(
                             color: AppColors.getTextColor(context)
                                 .withOpacity(0.4)),
@@ -385,10 +393,10 @@ class _SubscriptionsManagementScreenState
                             SizedBox(width: 8),
                             Text(
                               _selectedMonth == null && _selectedYear == null
-                                  ? 'تصفية حسب التاريخ: الكل'
+                                  ? _t('filter_by_date_all')
                                   : _selectedMonth != null
-                                      ? 'تصفية: ${DateFormat('MMMM yyyy', 'ar').format(_selectedMonth!)}'
-                                      : 'تصفية: سنة $_selectedYear',
+                                      ? '${_t('filter_prefix')}${DateFormat('MMMM yyyy', 'ar').format(_selectedMonth!)}'
+                                      : '${_t('filter_prefix')}${_t('year_prefix')}$_selectedYear',
                               style: TextStyle(
                                 color: AppColors.getTextColor(context)
                                     .withOpacity(0.8),
@@ -435,8 +443,8 @@ class _SubscriptionsManagementScreenState
       ),
       child: Row(
         children: [
-          _buildTabItem(0, 'حسب الدورة', Icons.book),
-          _buildTabItem(1, 'حسب المدرس', Icons.person),
+          _buildTabItem(0, _t('by_course'), Icons.book),
+          _buildTabItem(1, _t('by_teacher'), Icons.person),
         ],
       ),
     );
@@ -537,7 +545,7 @@ class _SubscriptionsManagementScreenState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                courseData?['title'] ?? 'دورة غير منسوبة',
+                                courseData?['title'] ?? _t('unassigned_course'),
                                 style: TextStyle(
                                   color: AppColors.getTextColor(context),
                                   fontWeight: FontWeight.normal,
@@ -570,7 +578,7 @@ class _SubscriptionsManagementScreenState
                                   Expanded(
                                     child: Text(
                                       StringUtils.cleanTeacherName(
-                                          userData?['full_name'] ?? 'مستخدم'),
+                                          userData?['full_name'] ?? _t('user')),
                                       style: TextStyle(
                                         color: AppColors.getTextColor(context)
                                             .withOpacity(0.7),
@@ -613,7 +621,7 @@ class _SubscriptionsManagementScreenState
                             children: [
                               Text(
                                 StringUtils.cleanTeacherName(
-                                    userData?['full_name'] ?? 'طالب'),
+                                    userData?['full_name'] ?? _t('student')),
                                 style: TextStyle(
                                   color: AppColors.getTextColor(context),
                                   fontWeight: FontWeight.normal,
@@ -643,7 +651,7 @@ class _SubscriptionsManagementScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'تاريخ الاشتراك',
+                            _t('subscription_date'),
                             style: TextStyle(
                               color: AppColors.getTextColor(context)
                                   .withOpacity(0.5),
@@ -666,7 +674,7 @@ class _SubscriptionsManagementScreenState
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
-                            'المبلغ',
+                            _t('amount'),
                             style: TextStyle(
                               color: AppColors.getTextColor(context)
                                   .withOpacity(0.5),
@@ -700,7 +708,7 @@ class _SubscriptionsManagementScreenState
                               borderRadius: BorderRadius.circular(10)),
                           padding: EdgeInsets.symmetric(vertical: 12),
                         ),
-                        child: Text('إلغاء الاشتراك',
+                        child: Text(_t('cancel_subscription'),
                             style: TextStyle(fontWeight: FontWeight.normal)),
                       ),
                     ),
@@ -721,15 +729,15 @@ class _SubscriptionsManagementScreenState
     switch (status) {
       case 'active':
         color = Colors.green;
-        label = 'نشط';
+        label = _t('active');
         break;
       case 'expired':
         color = Colors.orange;
-        label = 'منتهي';
+        label = _t('expired');
         break;
       case 'cancelled':
         color = Colors.red;
-        label = 'ملغي';
+        label = _t('cancelled');
         break;
       default:
         color = Colors.grey;
@@ -800,14 +808,14 @@ class _SubscriptionsManagementScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            course?['title'] ?? 'دورة غير منسوبة',
+                            course?['title'] ?? _t('unassigned_course'),
                             style: TextStyle(
                                 color: AppColors.getTextColor(context),
                                 fontWeight: FontWeight.normal,
                                 fontSize: 16),
                           ),
                           Text(
-                            'السعر: ${_currencyFormat.format(course?['price'] ?? 0)}',
+                            '${_t('price')}: ${_currencyFormat.format(course?['price'] ?? 0)}',
                             style: TextStyle(
                                 color: AppColors.getTextColor(context)
                                     .withOpacity(0.6),
@@ -823,11 +831,11 @@ class _SubscriptionsManagementScreenState
                   child: Row(
                     children: [
                       _buildSummaryItem(
-                          'الطلاب', '${item['enrollment_count']}', Icons.person,
+                          _t('students_count_label'), '${item['enrollment_count']}', Icons.person,
                           color: Colors.blueAccent),
                       SizedBox(width: 8),
                       _buildSummaryItem(
-                          'الدخل',
+                          _t('revenue'),
                           _currencyFormat.format(item['total_revenue']),
                           Icons.payments,
                           color: Colors.greenAccent),
@@ -850,7 +858,7 @@ class _SubscriptionsManagementScreenState
                         );
                       },
                       icon: Icon(Icons.open_in_new, size: 14),
-                      label: Text('إدارة تفصيلية',
+                      label: Text(_t('detailed_management'),
                           style: TextStyle(fontSize: 12)),
                       style:
                           TextButton.styleFrom(foregroundColor: Colors.white70),
@@ -909,14 +917,14 @@ class _SubscriptionsManagementScreenState
                         children: [
                           Text(
                             StringUtils.cleanTeacherName(
-                                teacher?['full_name'] ?? 'مدرس مجهول'),
+                                teacher?['full_name'] ?? _t('unspecified_teacher')),
                             style: TextStyle(
                                 color: AppColors.getTextColor(context),
                                 fontWeight: FontWeight.normal,
                                 fontSize: 16),
                           ),
                           Text(
-                            'عدد الكورسات: ${item['course_count']}',
+                            '${_t('course_count_prefix')}${item['course_count']}',
                             style: TextStyle(
                                 color: AppColors.getTextColor(context)
                                     .withOpacity(0.6),
@@ -932,11 +940,11 @@ class _SubscriptionsManagementScreenState
                   child: Row(
                     children: [
                       _buildSummaryItem(
-                          'الطلاب', '${item['student_count']}', Icons.people,
+                          _t('students_count_label'), '${item['student_count']}', Icons.people,
                           color: Colors.orangeAccent),
                       SizedBox(width: 8),
                       _buildSummaryItem(
-                          'الدخل',
+                          _t('revenue'),
                           _currencyFormat.format(item['total_revenue']),
                           Icons.account_balance,
                           color: Colors.blueAccent),
@@ -956,14 +964,14 @@ class _SubscriptionsManagementScreenState
                     TextButton.icon(
                       onPressed: () {
                         final teacherId = teacher?['id'] ?? '';
-                        final name = Uri.encodeComponent(teacher?['full_name'] ?? 'مدرس مجهول');
+                        final name = Uri.encodeComponent(teacher?['full_name'] ?? _t('unspecified_teacher'));
                         final avatar = teacher?['avatar_url'] != null ? '&avatar=${Uri.encodeComponent(teacher!['avatar_url'])}' : '';
                         context.push(
                           '/admin/subscriptions/teacher/$teacherId?name=$name$avatar',
                         );
                       },
                       icon: Icon(Icons.open_in_new, size: 14),
-                      label: Text('إحصائيات المدرس',
+                      label: Text(_t('teacher_stats'),
                           style: TextStyle(fontSize: 12)),
                       style:
                           TextButton.styleFrom(foregroundColor: Colors.white70),
@@ -1025,7 +1033,7 @@ class _SubscriptionsManagementScreenState
               size: 60),
           SizedBox(height: 16),
           Text(
-            'لا توجد اشتراكات مطابقة',
+            _t('no_matching_subscriptions'),
             style: TextStyle(
               color: AppColors.getTextColor(context).withOpacity(0.5),
               fontSize: 16,
@@ -1046,18 +1054,18 @@ class _SubscriptionsManagementScreenState
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(color: Colors.white24)),
-          title: Text('تأكيد الإجراء',
+          title: Text(_t('confirm_cancellation'),
               style:
                   TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
           content: Text(
-            'هل أنت متأكد من تغيير حالة الاشتراك لهذا الطالب؟ سيؤدي هذا لإلغاء وصوله للمحتوى.',
+            _t('cancel_subscription_confirm'),
             style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
               child:
-                  Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60))),
+                  Text(_t('cancel'), style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60))),
             ),
             Container(
               decoration: BoxDecoration(
@@ -1074,7 +1082,7 @@ class _SubscriptionsManagementScreenState
                     _loadData();
                     messenger.showSnackBar(
                       SnackBar(
-                        content: Text('تم تحديث حالة الاشتراك بنجاح'),
+                        content: Text(_t('subscription_updated_success')),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -1086,7 +1094,7 @@ class _SubscriptionsManagementScreenState
                     );
                   }
                 },
-                child: Text('تأكيد الإلغاء',
+                child: Text(_t('confirm_cancellation'),
                     style: TextStyle(
                         color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
               ),
@@ -1116,7 +1124,7 @@ class _SubscriptionsManagementScreenState
             title: Column(
               children: [
                 SizedBox(height: 16),
-                Text('اختر فترة التصفية',
+                Text(_t('select_filter_period'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                         color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
@@ -1126,8 +1134,8 @@ class _SubscriptionsManagementScreenState
                   labelColor: AppColors.primaryPurple,
                   unselectedLabelColor: Colors.white60,
                   tabs: [
-                    Tab(text: 'شهري'),
-                    Tab(text: 'سنوي'),
+                    Tab(text: _t('monthly')),
+                    Tab(text: _t('yearly')),
                   ],
                 ),
               ],
@@ -1180,7 +1188,7 @@ class _SubscriptionsManagementScreenState
                       bool isSelected = _selectedYear == year;
 
                       return ListTile(
-                        title: Text('سنة $year',
+                        title: Text('${_t('year_prefix')}$year',
                             style: TextStyle(
                               color: isSelected
                                   ? AppColors.primaryPurple
@@ -1227,17 +1235,16 @@ class _SubscriptionsManagementScreenState
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('طباعة التقرير'),
-          content: Text(
-              'لم يتم تحديد فترة تصفية (شهر أو سنة). سيتم طباعة تقرير لجميع الاشتراكات.\nهل تريد المتابعة؟'),
+          title: Text(_t('print_report')),
+          content: Text(_t('print_all_confirm_desc')),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: Text('إلغاء'),
+              child: Text(_t('cancel')),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: Text('متابعة'),
+              child: Text(_t('continue_action')),
             ),
           ],
         ),
@@ -1260,7 +1267,7 @@ class _SubscriptionsManagementScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text('فشل إنشاء التقرير: $e'),
+              content: Text('${_t('fail_generate_report')}$e'),
               backgroundColor: Colors.red),
         );
       }
@@ -1312,20 +1319,20 @@ class _SubscriptionsManagementScreenState
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text('التقرير المالي',
+              pw.Text(_t('financial_report'),
                   style: pw.TextStyle(
                       fontSize: 24, font: fontBold, color: PdfColors.purple)),
-              pw.Text('منصة دوراتي التعليمية',
+              pw.Text(_t('platform_name'),
                   style: const pw.TextStyle(fontSize: 14)),
             ],
           ),
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
-              pw.Text('الفترة: ${data['period']}',
+              pw.Text('${_t('period_prefix')}${data['period']}',
                   style: const pw.TextStyle(fontSize: 12)),
               pw.Text(
-                  'تاريخ الطباعة: ${DateFormat('yyyy/MM/dd').format(DateTime.now())}',
+                  '${_t('print_date_prefix')}${DateFormat('yyyy/MM/dd').format(DateTime.now())}',
                   style: const pw.TextStyle(fontSize: 10)),
             ],
           ),
@@ -1345,11 +1352,11 @@ class _SubscriptionsManagementScreenState
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
           _buildPdfSummaryItem(
-              'إجمالي الإيرادات',
+              _t('total_revenue'),
               '${(data['total_revenue'] as double).toStringAsFixed(0)} ل.س',
               fontBold),
           _buildPdfSummaryItem(
-              'عدد الاشتراكات', '${data['total_enrollments']}', fontBold),
+              _t('enrollments_count'), '${data['total_enrollments']}', fontBold),
         ],
       ),
     );
@@ -1371,7 +1378,7 @@ class _SubscriptionsManagementScreenState
     final items = data['enrollments'] as List<dynamic>;
 
     return pw.Table.fromTextArray(
-      headers: ['الرقم', 'التاريخ', 'الطالب', 'الدورة', 'طريقة الدفع', 'السعر'],
+      headers: [_t('id_label'), _t('date'), _t('student_role'), _t('course'), _t('payment_method'), _t('price')],
       data: List<List<dynamic>>.generate(items.length, (index) {
         final item = items[index];
         
@@ -1388,7 +1395,7 @@ class _SubscriptionsManagementScreenState
           dateStr,
           item['user_full_name'] ?? item['student_name'] ?? '-',
           item['course_title'] ?? '-',
-          item['payment_method'] ?? 'نقدي',
+          item['payment_method'] ?? _t('cash'),
           '${item['course_price'] ?? 0} ل.س',
         ];
       }),

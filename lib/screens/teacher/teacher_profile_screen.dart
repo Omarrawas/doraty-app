@@ -7,6 +7,7 @@ import '../../core/utils/string_utils.dart';
 import '../../core/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   final String teacherId;
@@ -31,12 +32,17 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
   List<Course> _teacherCourses = [];
   bool _isLoading = true;
 
-  // Teacher data loaded from database
   String? _teacherBio;
   String? _teacherPhoto;
   String _teacherName = '';
   Map<String, dynamic> _stats = {};
   late TabController _tabController;
+
+  String _t(String key) {
+    if (!mounted) return key;
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
 
   @override
   void initState() {
@@ -151,8 +157,8 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
                             labelColor: Colors.white,
                             unselectedLabelColor: Colors.white.withOpacity(0.5),
                             tabs: [
-                              Tab(text: isRTL ? 'الرئيسية' : 'Home'),
-                              Tab(text: isRTL ? 'الدورات' : 'Courses'),
+                              Tab(text: _t('home')),
+                              Tab(text: _t('courses')),
                             ],
                           ),
                         ),
@@ -242,7 +248,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
           ),
           SizedBox(height: 4),
           Text(
-            isRTL ? 'مدرب' : 'Trainer',
+            _t('trainer'),
             style: TextStyle(fontSize: 14, color: AppColors.getTextColor(context, secondary: true), fontWeight: FontWeight.w500),
           ),
           
@@ -253,13 +259,13 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildStatItem(
-                isRTL ? 'دورة' : 'Courses',
+                _t('course'),
                 _teacherCourses.length.toString(),
                 Icons.library_books_outlined,
               ),
               SizedBox(width: 40),
               _buildStatItem(
-                isRTL ? 'طالب' : 'Students',
+                _t('students'),
                 _formatNumber(_stats['total_users'] ?? 0),
                 Icons.people_outline_rounded,
               ),
@@ -301,12 +307,12 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
         crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(
-            isRTL ? 'نبذة عن المدرب' : 'About the Trainer',
+            _t('about_trainer'),
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
           ),
           SizedBox(height: 16),
           Text(
-            _teacherBio ?? (isRTL ? 'لا توجد نبذة متاحة حالياً.' : 'No bio available at the moment.'),
+            _teacherBio ?? _t('no_bio_available'),
             style: TextStyle(fontSize: 15, color: AppColors.getTextColor(context, secondary: true), height: 1.6),
             textAlign: isRTL ? TextAlign.right : TextAlign.left,
           ),
@@ -319,7 +325,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
     if (_teacherCourses.isEmpty) {
       return Center(
         child: Text(
-          Provider.of<LocaleProvider>(context).locale == 'ar' ? 'لا توجد دورات متاحة' : 'No courses available',
+          _t('no_courses_available'),
           style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54)),
         ),
       );

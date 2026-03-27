@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/course.dart';
 import '../../core/theme/app_colors.dart';
 import '../../screens/courses/course_details_screen.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
 
 class CoursePreviewModal extends StatelessWidget {
   final Course course;
@@ -142,7 +145,7 @@ class CoursePreviewModal extends StatelessWidget {
                 Icon(Icons.play_circle_fill, size: 24),
                 SizedBox(width: 12),
                 Text(
-                  'ابدأ الدورة الآن',
+                  AppStrings.get('start_course_now', Provider.of<LocaleProvider>(context, listen: false).locale),
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ],
