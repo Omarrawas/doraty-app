@@ -578,7 +578,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                       TextFormField(
                                         controller: _imageUrlController,
                                         decoration: _inputDecoration(
-                                          label: _t('image_url_label'),
+                                          label: _t('course_image_url'),
                                           hint: _t('image_url_hint'),
                                           icon: Icons.image_rounded,
                                         ),

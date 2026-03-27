@@ -8,7 +8,9 @@ import '../../core/services/database_service.dart';
 import '../../models/bundle.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/error_utils.dart';
-import 'create_bundle_screen.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class BundlesManagementScreen extends StatefulWidget {
   const BundlesManagementScreen({super.key});
@@ -21,6 +23,11 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
   final DatabaseService _db = DatabaseService();
   List<Bundle> _bundles = [];
   bool _isLoading = true;
+
+  String _t(String key) {
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
 
   @override
   void initState() {
@@ -70,7 +77,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
                       : _bundles.isEmpty
                           ? Center(
                               child: Text(
-                                'لا يوجد باقات حالياً',
+                                _t('no_bundles_found_admin'),
                                 style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.5)),
                               ),
                             )
@@ -89,14 +96,11 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => CreateBundleScreen()),
-            );
+            final result = await context.push('/admin/bundles/create');
             if (result == true) _loadBundles();
           },
           icon: Icon(Icons.add),
-          label: Text('إضافة باقة جديدة'),
+          label: Text(_t('add_new_bundle')),
           backgroundColor: AppColors.primaryPurple,
           foregroundColor: Colors.white,
         ),
@@ -116,7 +120,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
           SizedBox(width: 16),
           Expanded(
             child: Text(
-              'إدارة الباقات',
+              _t('bundles_management'),
               style: TextStyle(
                 fontSize: 22,
                 color: AppColors.getTextColor(context),
@@ -178,7 +182,7 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
                 children: [
                   SizedBox(height: 4),
                   Text(
-                    '${bundle.courses.length} دورات | ${bundle.price} ل.س',
+                    '${bundle.courses.length} ${_t('courses_count_bundle')} | ${bundle.price} ${_t('currency_syp')}',
                     style: TextStyle(
                       color: AppColors.getTextColor(context).withOpacity(0.6),
                       fontSize: 13,
@@ -192,11 +196,9 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
                   IconButton(
                     icon: Icon(Icons.edit_rounded, color: Colors.blueAccent),
                     onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CreateBundleScreen(bundle: bundle),
-                        ),
+                      final result = await context.push(
+                        '/admin/bundles/edit/${bundle.id}',
+                        extra: bundle,
                       );
                       if (result == true) _loadBundles();
                     },
@@ -218,13 +220,13 @@ class _BundlesManagementScreenState extends State<BundlesManagementScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('تأكيد الحذف'),
-        content: Text('هل أنت متأكد من حذف هذه الباقة؟'),
+        title: Text(_t('confirm_delete_title')),
+        content: Text(_t('delete_bundle_confirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('لا')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(_t('no'))),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('نعم', style: TextStyle(color: Colors.red)),
+            child: Text(_t('yes'), style: TextStyle(color: Colors.red)),
           ),
         ],
       ),

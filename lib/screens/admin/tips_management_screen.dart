@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../core/services/database_service.dart';
 import '../../models/tip.dart';
 import '../../core/theme/app_colors.dart';
 import '../../widgets/dynamic_gradient_background.dart';
-import 'create_tip_screen.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class TipsManagementScreen extends StatefulWidget {
   const TipsManagementScreen({super.key});
@@ -16,6 +19,11 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
   final DatabaseService _db = DatabaseService();
   List<Tip> _tips = [];
   bool _isLoading = true;
+
+  String _t(String key) {
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
 
   @override
   void initState() {
@@ -35,7 +43,7 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
       setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في تحميل النصائح: $e')),
+          SnackBar(content: Text('${_t('error_loading')}: $e')),
         );
       }
     }
@@ -45,17 +53,17 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('حذف النصيحة'),
-        content: Text('هل أنت متأكد من حذف "${tip.title}"؟'),
+        title: Text(_t('delete_tip')),
+        content: Text(_t('delete_tip_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('إلغاء'),
+            child: Text(_t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text('حذف'),
+            child: Text(_t('delete')),
           ),
         ],
       ),
@@ -67,13 +75,13 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
         _loadTips();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('تم حذف النصيحة بنجاح')),
+            SnackBar(content: Text(_t('tip_deleted_success'))),
           );
         }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطأ في الحذف: $e')),
+            SnackBar(content: Text('${_t('error_delete_tip')}: $e')),
           );
         }
       }
@@ -85,7 +93,7 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('إدارة النصائح'),
+        title: Text(_t('tips_management')),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
@@ -106,14 +114,14 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
                         Icon(Icons.lightbulb_outline, size: 80, color: AppColors.getTextColor(context).withOpacity(0.24)),
                         SizedBox(height: 16),
                         Text(
-                          'لا توجد نصائح حالياً',
+                          _t('no_tips_found'),
                           style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 18),
                         ),
                         SizedBox(height: 24),
                         ElevatedButton.icon(
                           onPressed: () => _navigateToCreate(),
                           icon: Icon(Icons.add),
-                          label: Text('أضف أول نصيحة'),
+                          label: Text(_t('add_first_tip')),
                         ),
                       ],
                     ),
@@ -161,7 +169,7 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
                                 children: [
                                   Icon(Icons.visibility, size: 14, color: AppColors.getTextColor(context).withOpacity(0.54)),
                                   SizedBox(width: 4),
-                                  Text('${tip.viewsCount} مشاهدة', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54), fontSize: 12)),
+                                  Text('${tip.viewsCount} ${_t('views_unit')}', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54), fontSize: 12)),
                                 ],
                               ),
                               if (tip.linkedCourse != null) ...[
@@ -172,7 +180,7 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
                                     SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
-                                        'مرتبط بدورة: ${tip.linkedCourse!.title}',
+                                        '${_t('linked_to_course')}: ${tip.linkedCourse!.title}',
                                         style: TextStyle(color: AppColors.secondaryGold, fontSize: 12),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
@@ -205,18 +213,15 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
         onPressed: () => _navigateToCreate(),
         backgroundColor: AppColors.primaryPurple,
         icon: Icon(Icons.add),
-        label: Text('نصيحة جديدة'),
+        label: Text(_t('new_tip')),
       ),
     );
   }
 
   void _navigateToCreate({Tip? tip}) async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CreateTipScreen(tip: tip),
-      ),
-    );
+    final path =
+        tip != null ? '/admin/tips/edit/${tip.id}' : '/admin/tips/create';
+    final result = await context.push(path, extra: tip);
 
     if (result == true) {
       _loadTips();

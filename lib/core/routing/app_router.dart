@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../main.dart';
+import 'dart:typed_data';
+import 'package:pdf/pdf.dart';
+import 'package:printing/printing.dart';
 import '../../screens/courses/course_details_screen.dart';
 import '../../screens/home/home_screen.dart';
 import '../../screens/explore/explore_screen.dart';
@@ -42,8 +45,16 @@ import '../../screens/admin/notifications_management_screen.dart';
 import '../../screens/admin/qr_management_screen.dart';
 import '../../screens/admin/updates_management_screen.dart';
 import '../../screens/admin/security_settings_screen.dart';
+import '../../screens/admin/create_bundle_screen.dart';
+import '../../screens/admin/create_tip_screen.dart';
+import '../../screens/admin/course_enrollments_screen.dart';
+import '../../screens/admin/teacher_enrollment_stats_screen.dart';
+import '../../screens/admin/payment_receipt_detail_screen.dart';
+import '../../screens/admin/financial_reports_screen.dart';
 import '../../screens/teacher/create_exam_screen.dart';
 import '../../screens/teacher/manage_questions_screen.dart';
+import '../../models/bundle.dart';
+import '../../models/tip.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -127,10 +138,36 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'bundles',
           builder: (context, state) => const BundlesManagementScreen(),
+          routes: [
+            GoRoute(
+              path: 'create',
+              builder: (context, state) => const CreateBundleScreen(),
+            ),
+            GoRoute(
+              path: 'edit/:id',
+              builder: (context, state) {
+                final bundle = state.extra as Bundle?;
+                return CreateBundleScreen(bundle: bundle);
+              },
+            ),
+          ],
         ),
         GoRoute(
           path: 'tips',
           builder: (context, state) => const TipsManagementScreen(),
+          routes: [
+            GoRoute(
+              path: 'create',
+              builder: (context, state) => const CreateTipScreen(),
+            ),
+            GoRoute(
+              path: 'edit/:id',
+              builder: (context, state) {
+                final tip = state.extra as Tip?;
+                return CreateTipScreen(tip: tip);
+              },
+            ),
+          ],
         ),
         GoRoute(
           path: 'banners',
@@ -195,10 +232,42 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'subscriptions',
           builder: (context, state) => const SubscriptionsManagementScreen(),
+          routes: [
+            GoRoute(
+              path: 'course/:courseId',
+              builder: (context, state) {
+                final courseId = state.pathParameters['courseId']!;
+                final courseTitle = state.uri.queryParameters['title'] ?? '';
+                return CourseEnrollmentsScreen(courseId: courseId, courseTitle: courseTitle);
+              },
+            ),
+            GoRoute(
+              path: 'teacher/:teacherId',
+              builder: (context, state) {
+                final teacherId = state.pathParameters['teacherId']!;
+                final teacherName = state.uri.queryParameters['name'] ?? '';
+                final avatarUrl = state.uri.queryParameters['avatar'];
+                return TeacherEnrollmentStatsScreen(
+                  teacherId: teacherId,
+                  teacherName: teacherName,
+                  avatarUrl: avatarUrl,
+                );
+              },
+            ),
+          ],
         ),
         GoRoute(
           path: 'payments',
           builder: (context, state) => const PaymentReceiptsScreen(),
+          routes: [
+            GoRoute(
+              path: 'detail/:id',
+              builder: (context, state) {
+                final id = state.pathParameters['id']!;
+                return PaymentReceiptDetailScreen(receiptId: id);
+              },
+            ),
+          ],
         ),
         GoRoute(
           path: 'payment-settings',
@@ -219,6 +288,25 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'security',
           builder: (context, state) => const SecuritySettingsScreen(),
+        ),
+        GoRoute(
+          path: 'reports/financial',
+          builder: (context, state) => const FinancialReportsScreen(),
+          routes: [
+            GoRoute(
+              path: 'preview',
+              builder: (context, state) {
+                final generator = state.extra as Future<Uint8List> Function(PdfPageFormat);
+                return Scaffold(
+                  appBar: AppBar(title: const Text('معاينة التقرير')),
+                  body: PdfPreview(
+                    build: generator,
+                    canDebug: false,
+                  ),
+                );
+              },
+            ),
+          ],
         ),
         GoRoute(
           path: 'exams/create',

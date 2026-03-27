@@ -6,9 +6,10 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../widgets/dynamic_gradient_background.dart';
-import '../teacher/create_exam_screen.dart';
-import '../teacher/manage_questions_screen.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/utils/error_utils.dart';
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
 
 class AdminExamsManagementScreen extends StatefulWidget {
   final String courseId;
@@ -32,6 +33,8 @@ class _AdminExamsManagementScreenState
   List<Map<String, dynamic>> _exams = [];
   bool _isLoading = true;
   String _filter = 'all'; // all, published, draft
+
+  String _t(String key) => AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   @override
   void initState() {
@@ -110,20 +113,15 @@ class _AdminExamsManagementScreenState
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-            final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CreateExamScreen(
-                    initialCourseId: widget.courseId,
-                    loadAllCourses: true,
-                  ),
-                ));
+            final result = await context.push(
+              '/admin/exams/create?courseId=${widget.courseId}',
+            );
             if (result == true) _loadExams();
           },
           backgroundColor: AppColors.primaryPurple,
           icon: Icon(Icons.add, color: AppColors.getTextColor(context)),
           label:
-              Text('إنشاء اختبار', style: TextStyle(color: AppColors.getTextColor(context))),
+              Text(_t('create_exam'), style: TextStyle(color: AppColors.getTextColor(context))),
         ),
       ),
     );
@@ -159,7 +157,7 @@ class _AdminExamsManagementScreenState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'إدارة الاختبارات',
+                  _t('manage_exams'),
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.normal,
@@ -186,11 +184,11 @@ class _AdminExamsManagementScreenState
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Row(
         children: [
-          _buildFilterTab('الكل', 'all'),
+          _buildFilterTab(_t('all'), 'all'),
           SizedBox(width: 12),
-          _buildFilterTab('منشور', 'published'),
+          _buildFilterTab(_t('published'), 'published'),
           SizedBox(width: 12),
-          _buildFilterTab('مسودة', 'draft'),
+          _buildFilterTab(_t('draft'), 'draft'),
         ],
       ),
     );
@@ -260,7 +258,7 @@ class _AdminExamsManagementScreenState
                 children: [
                   Expanded(
                     child: Text(
-                      exam['title'] ?? 'اختبار',
+                      exam['title'] ?? _t('exam'),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.normal,
@@ -284,7 +282,7 @@ class _AdminExamsManagementScreenState
                       ),
                     ),
                     child: Text(
-                      isPublished ? 'منشور' : 'مسودة',
+                      isPublished ? _t('published') : _t('draft'),
                       style: TextStyle(
                         color: isPublished
                             ? Colors.greenAccent
@@ -300,11 +298,11 @@ class _AdminExamsManagementScreenState
               Row(
                 children: [
                   _buildInfoChip(
-                      Icons.access_time, '${exam['duration']} دقيقة'),
+                      Icons.access_time, '${exam['duration']} ${_t('minute')}'),
                   SizedBox(width: 12),
                   _buildInfoChip(
                       Icons.assignment_outlined,
-                      '${exam['total_points']} نقطة'),
+                      '${exam['total_points']} ${_t('point')}'),
                 ],
               ),
               SizedBox(height: 20),
@@ -313,21 +311,14 @@ class _AdminExamsManagementScreenState
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CreateExamScreen(
-                              examId: exam['id'],
-                              examData: exam,
-                              loadAllCourses: true,
-                              initialCourseId: widget.courseId,
-                            ),
-                          ),
+                        final result = await context.push(
+                          '/admin/exams/create?courseId=${widget.courseId}',
+                          extra: exam,
                         );
                         if (result == true) _loadExams();
                       },
                       icon: Icon(Icons.edit, size: 18),
-                      label: Text('تعديل'),
+                      label: Text(_t('edit')),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: BorderSide(color: Colors.white.withOpacity(0.3)),
@@ -357,7 +348,7 @@ class _AdminExamsManagementScreenState
                         isPublished ? Icons.visibility_off : Icons.visibility,
                         size: 18,
                       ),
-                      label: Text(isPublished ? 'إلغاء النشر' : 'نشر'),
+                      label: Text(isPublished ? _t('unpublish') : _t('publish')),
                     ),
                   ),
                   SizedBox(width: 8),
@@ -389,19 +380,13 @@ class _AdminExamsManagementScreenState
                   ),
                   child: ElevatedButton.icon(
                     onPressed: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ManageQuestionsScreen(
-                            examId: exam['id'],
-                            examTitle: exam['title'] ?? 'اختبار',
-                          ),
-                        ),
+                      final result = await context.push(
+                        '/admin/exams/questions/${exam['id']}?title=${Uri.encodeComponent(exam['title'] ?? _t('exam'))}',
                       );
                       if (result == true) _loadExams();
                     },
                     icon: Icon(Icons.list_alt, color: AppColors.getTextColor(context)),
-                    label: Text('إدارة الأسئلة',
+                    label: Text(_t('manage_questions'),
                         style: TextStyle(color: AppColors.getTextColor(context))),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.transparent,
@@ -467,7 +452,7 @@ class _AdminExamsManagementScreenState
                     color: AppColors.getMutedTextColor(context), size: 64),
                 SizedBox(height: 24),
                 Text(
-                  'لا توجد اختبارات',
+                  _t('no_exams_found'),
                   style: TextStyle(
                     fontSize: 18,
                     color: AppColors.getTextColor(context),
@@ -476,7 +461,7 @@ class _AdminExamsManagementScreenState
                 ),
                 SizedBox(height: 12),
                 Text(
-                  'ابدأ بإنشاء اختبار جديد لهذه الدورة',
+                  _t('create_exam_prompt'),
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.getTextColor(context).withOpacity(0.6),
@@ -498,7 +483,7 @@ class _AdminExamsManagementScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(isPublished ? 'تم إلغاء النشر' : 'تم النشر'),
+            content: Text(isPublished ? _t('unpublish_success') : _t('publish_success')),
             backgroundColor: Colors.green,
           ),
         );
@@ -520,16 +505,16 @@ class _AdminExamsManagementScreenState
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('حذف الاختبار'),
-        content: Text('هل أنت متأكد من حذف هذا الاختبار؟'),
+        title: Text(_t('delete_exam_title')),
+        content: Text(_t('delete_exam_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('إلغاء'),
+            child: Text(_t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text(_t('delete'), style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -543,12 +528,11 @@ class _AdminExamsManagementScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تم حذف الاختبار'),
+            content: Text(_t('delete_exam_success')),
             backgroundColor: Colors.green,
           ),
         );
       }
-
       _loadExams();
     } catch (e) {
       if (mounted) {

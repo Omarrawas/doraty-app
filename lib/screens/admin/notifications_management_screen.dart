@@ -10,6 +10,9 @@ import '../../models/course.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/safe_parser.dart';
 
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
+
 class NotificationsManagementScreen extends StatefulWidget {
   const NotificationsManagementScreen({super.key});
 
@@ -33,6 +36,8 @@ class _NotificationsManagementScreenState
   List<Course> _courses = [];
   List<Map<String, dynamic>> _users = [];
   bool _isLoadingData = false;
+
+  String _t(String key) => AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   // Sending State
   bool _isSending = false;
@@ -110,7 +115,7 @@ class _NotificationsManagementScreenState
 
     if (_targetType != 'all' && _selectedTargetId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('يرجى اختيار المستهدف (كورس أو مستخدم)')),
+        SnackBar(content: Text(_t('select_target_error'))),
       );
       return;
     }
@@ -142,10 +147,10 @@ class _NotificationsManagementScreenState
       // The direct call was redundant and used a mismatched slug.
       debugPrint('FCM push triggered automatically via DB webhook on admin_notifications');
       
-      if (mounted) {
+    if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تم الإرسال بنجاح إلى $userCount مستخدم'),
+            content: Text(_t('notification_sent_success').replaceAll('{count}', userCount.toString())),
             backgroundColor: Colors.green,
           ),
         );
@@ -162,7 +167,7 @@ class _NotificationsManagementScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('فشل الإرسال: $e'),
+            content: Text('${_t('notification_send_failed')}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -193,7 +198,7 @@ class _NotificationsManagementScreenState
                         _buildComposeSection(),
                         SizedBox(height: 32),
                         Text(
-                          'سجل الإشعارات المرسلة',
+                          _t('notification_history'),
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.normal,
@@ -242,7 +247,7 @@ class _NotificationsManagementScreenState
           SizedBox(width: 16),
           Expanded(
             child: Text(
-              'إدارة الإشعارات',
+              _t('notifications_management'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.normal,
@@ -275,7 +280,7 @@ class _NotificationsManagementScreenState
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'إرسال إشعار جديد',
+                  _t('send_new_notification'),
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.normal,
@@ -286,14 +291,14 @@ class _NotificationsManagementScreenState
 
                 // Target Type Dropdown
                 _buildDropdown(
-                  label: 'إرسال إلى',
+                  label: _t('send_to'),
                   value: _targetType,
                   items: [
                     DropdownMenuItem(
-                        value: 'all', child: Text('جميع المستخدمين')),
+                        value: 'all', child: Text(_t('all_users'))),
                     DropdownMenuItem(
-                        value: 'course', child: Text('طلاب دورة محددة')),
-                    DropdownMenuItem(value: 'user', child: Text('مستخدم محدد')),
+                        value: 'course', child: Text(_t('specific_course_students'))),
+                    DropdownMenuItem(value: 'user', child: Text(_t('specific_user'))),
                   ],
                   onChanged: (val) {
                     setState(() {
@@ -307,7 +312,7 @@ class _NotificationsManagementScreenState
                 // Conditional Selection Fields
                 if (_targetType == 'course')
                   _buildDropdown(
-                    label: 'اختر الدورة',
+                    label: _t('select_course'),
                     value: _selectedTargetId,
                     items: _courses.map((course) {
                       return DropdownMenuItem(
@@ -318,7 +323,7 @@ class _NotificationsManagementScreenState
                     }).toList(),
                     onChanged: (val) => setState(() => _selectedTargetId = val),
                     validator: (val) =>
-                        val == null ? 'يرجى اختيار الدورة' : null,
+                        val == null ? _t('select_course_error') : null,
                   ),
 
                 if (_targetType == 'user')
@@ -328,7 +333,7 @@ class _NotificationsManagementScreenState
                         style:
                             TextStyle(color: AppColors.getTextColor(context)),
                         decoration: _inputDecoration(
-                          label: 'بحث عن مستخدم',
+                          label: _t('search_users_hint'),
                           icon: Icons.search,
                           suffix: _isLoadingData
                               ? Transform.scale(
@@ -359,7 +364,7 @@ class _NotificationsManagementScreenState
                               final isSelected =
                                   _selectedTargetId == user['id'];
                               return ListTile(
-                                title: Text(user['full_name'] ?? 'بدون اسم',
+                                title: Text(user['full_name'] ?? _t('no_name'),
                                     style: TextStyle(
                                         color:
                                             AppColors.getTextColor(context))),
@@ -391,19 +396,19 @@ class _NotificationsManagementScreenState
                 TextFormField(
                   style: TextStyle(color: AppColors.getTextColor(context)),
                   decoration: _inputDecoration(
-                      label: 'عنوان الإشعار', icon: Icons.title),
+                      label: _t('notification_title'), icon: Icons.title),
                   validator: (val) =>
-                      val == null || val.isEmpty ? 'مطلوب' : null,
+                      val == null || val.isEmpty ? _t('required') : null,
                   onSaved: (val) => _title = val!,
                 ),
                 SizedBox(height: 16),
                 TextFormField(
                   style: TextStyle(color: AppColors.getTextColor(context)),
                   decoration: _inputDecoration(
-                      label: 'نص الإشعار', icon: Icons.message),
+                      label: _t('notification_body'), icon: Icons.message),
                   maxLines: 3,
                   validator: (val) =>
-                      val == null || val.isEmpty ? 'مطلوب' : null,
+                      val == null || val.isEmpty ? _t('required') : null,
                   onSaved: (val) => _body = val!,
                 ),
                 SizedBox(height: 32),
@@ -491,7 +496,7 @@ class _NotificationsManagementScreenState
                 children: [
                   Icon(Icons.send, color: AppColors.getTextColor(context)),
                   SizedBox(width: 8),
-                  Text('إرسال الإشعار',
+                  Text(_t('send_notification_btn'),
                       style: TextStyle(
                           color: AppColors.getTextColor(context),
                           fontSize: 16,
@@ -509,7 +514,7 @@ class _NotificationsManagementScreenState
     }
     if (_history.isEmpty) {
       return Center(
-        child: Text('لا يوجد سجل للإشعارات',
+        child: Text(_t('no_notification_history'),
             style: TextStyle(
                 color: AppColors.getTextColor(context).withOpacity(0.5))),
       );
@@ -615,11 +620,11 @@ class _NotificationsManagementScreenState
   String _getTypeLabel(String? type) {
     switch (type) {
       case 'all':
-        return 'الجميع';
+        return _t('all');
       case 'course':
-        return 'دورة';
+        return _t('course');
       case 'user':
-        return 'مستخدم';
+        return _t('user');
       default:
         return type ?? '';
     }

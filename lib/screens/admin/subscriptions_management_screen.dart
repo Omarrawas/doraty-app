@@ -13,8 +13,7 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart';
-import 'course_enrollments_screen.dart';
-import 'teacher_enrollment_stats_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class SubscriptionsManagementScreen extends StatefulWidget {
   const SubscriptionsManagementScreen({super.key});
@@ -846,15 +845,8 @@ class _SubscriptionsManagementScreenState
                   if (enrollments.isNotEmpty) ...[
                     TextButton.icon(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CourseEnrollmentsScreen(
-                              courseId: course?['id'] ?? '',
-                              courseTitle:
-                                  course?['title'] ?? 'دورة غير منسوبة',
-                            ),
-                          ),
+                        context.push(
+                          '/admin/subscriptions/course/${course?['id'] ?? ''}?title=${Uri.encodeComponent(course?['title'] ?? '')}',
                         );
                       },
                       icon: Icon(Icons.open_in_new, size: 14),
@@ -963,16 +955,11 @@ class _SubscriptionsManagementScreenState
                   if (enrollments.isNotEmpty) ...[
                     TextButton.icon(
                       onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => TeacherEnrollmentStatsScreen(
-                              teacherId: teacher?['id'] ?? '',
-                              teacherName:
-                                  teacher?['full_name'] ?? 'مدرس مجهول',
-                              avatarUrl: teacher?['avatar_url'],
-                            ),
-                          ),
+                        final teacherId = teacher?['id'] ?? '';
+                        final name = Uri.encodeComponent(teacher?['full_name'] ?? 'مدرس مجهول');
+                        final avatar = teacher?['avatar_url'] != null ? '&avatar=${Uri.encodeComponent(teacher!['avatar_url'])}' : '';
+                        context.push(
+                          '/admin/subscriptions/teacher/$teacherId?name=$name$avatar',
                         );
                       },
                       icon: Icon(Icons.open_in_new, size: 14),

@@ -255,11 +255,11 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Row(
         children: [
-          _buildFilterTab(context, 'الكل', 'all'),
+          _buildFilterTab(context, _t('all'), 'all'),
           SizedBox(width: 10),
-          _buildFilterTab(context, 'منشور', 'published'),
+          _buildFilterTab(context, _t('published'), 'published'),
           SizedBox(width: 10),
-          _buildFilterTab(context, 'مسودة', 'draft'),
+          _buildFilterTab(context, _t('draft'), 'draft'),
         ],
       ),
     );

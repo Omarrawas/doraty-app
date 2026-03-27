@@ -9,6 +9,8 @@ import '../../core/services/supabase_service.dart';
 import '../../core/utils/error_utils.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -442,56 +444,59 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
+
   Widget _buildQuickActions(int crossAxisCount, double childAspectRatio) {
     final List<Map<String, dynamic>> actions = [
       if (_userRole != 'teacher') ...[
         {
           'icon': Icons.people_alt_rounded,
-          'title': 'المستخدمين',
-          'subtitle': 'إدارة جميع مستخدمي المنصة',
+          'title': _t('admin_users'),
+          'subtitle': _t('admin_users_desc'),
           'color': Colors.blueAccent,
           'onTap': () => context.push('/admin/users'),
         },
         {
           'icon': Icons.category_rounded,
-          'title': 'التصنيفات',
-          'subtitle': 'إدارة تصنيفات الدورات',
+          'title': _t('admin_categories'),
+          'subtitle': _t('admin_categories_desc'),
           'color': Colors.pinkAccent,
           'onTap': () => context.push('/admin/categories'),
         },
         {
           'icon': Icons.school_rounded,
-          'title': 'شؤون المدرسين',
-          'subtitle': 'إدارة المدربين وطلبات الانضمام',
+          'title': _t('admin_teachers'),
+          'subtitle': _t('admin_teachers_desc'),
           'color': Colors.deepPurpleAccent,
           'onTap': () => context.push('/admin/teachers'),
         },
         {
           'icon': Icons.collections_bookmark_rounded,
-          'title': 'الباقات',
-          'subtitle': 'إدارة باقات الدورات',
+          'title': _t('admin_bundles'),
+          'subtitle': _t('admin_bundles_desc'),
           'color': Colors.indigoAccent,
           'onTap': () => context.push('/admin/bundles'),
         },
         {
           'icon': Icons.lightbulb_rounded,
-          'title': 'نصائح',
-          'subtitle': 'إدارة نصائح الفيديو القصيرة',
+          'title': _t('tips'),
+          'subtitle': _t('admin_tips_desc'),
           'color': Colors.amberAccent,
           'onTap': () => context.push('/admin/tips'),
         },
         {
           'icon': Icons.view_carousel_rounded,
-          'title': 'الإعلانات',
-          'subtitle': 'إدارة صور البنر المتحركة',
+          'title': _t('admin_banners_side'),
+          'subtitle': _t('admin_banners_desc'),
           'color': Colors.deepOrangeAccent,
           'onTap': () => context.push('/admin/banners'),
         },
       ],
       {
         'icon': Icons.library_books_rounded,
-        'title': _userRole == 'teacher' ? 'دوراتي' : 'الدورات',
-        'subtitle': 'إدارة محتوى الدورات',
+        'title': _userRole == 'teacher' ? _t('my_courses') : _t('manage_courses'),
+        'subtitle': _t('admin_courses_desc'), // I need to add this key or use a generic one
         'color': Colors.tealAccent,
         'onTap': () {
           final instructorParam = _userRole == 'teacher' ? '?instructorId=$_userId' : '';
@@ -501,51 +506,58 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       if (_userRole != 'teacher') ...[
         {
           'icon': Icons.card_membership_rounded,
-          'title': 'الاشتراكات',
-          'subtitle': 'متابعة اشتراكات الطلاب',
+          'title': _t('admin_subscriptions_side'),
+          'subtitle': _t('admin_subscriptions_desc'),
           'color': Colors.amberAccent,
           'onTap': () => context.push('/admin/subscriptions'),
         },
         {
           'icon': Icons.receipt_long_rounded,
-          'title': 'الدفع',
-          'subtitle': 'مراجعة إيصالات الدفع',
+          'title': _t('admin_payments_side'),
+          'subtitle': _t('admin_payments_desc'),
           'color': Colors.orangeAccent,
           'onTap': () => context.push('/admin/payments'),
         },
         {
           'icon': Icons.account_balance_wallet_rounded,
-          'title': 'حسابات الدفع',
-          'subtitle': 'تعديل حسابات الدفع',
+          'title': _t('admin_payment_settings_side'),
+          'subtitle': _t('admin_payment_settings_desc'),
           'color': Colors.cyan,
           'onTap': () => context.push('/admin/payment-settings'),
         },
         {
+          'icon': Icons.analytics_rounded,
+          'title': _t('admin_financial_reports'),
+          'subtitle': _t('admin_financial_reports_desc'),
+          'color': Colors.greenAccent,
+          'onTap': () => context.push('/admin/reports/financial'),
+        },
+        {
           'icon': Icons.notifications_active_rounded,
-          'title': 'الإشعارات',
-          'subtitle': 'إرسال تنبيهات عامة',
+          'title': _t('admin_notifications_side'),
+          'subtitle': _t('admin_notifications_desc'),
           'color': Colors.redAccent,
           'onTap': () => context.push('/admin/notifications'),
         },
         {
           'icon': Icons.qr_code_2_rounded,
-          'title': 'أكواد QR',
-          'subtitle': 'إنشاء أكواد التفعيل',
+          'title': _t('admin_qr_side'),
+          'subtitle': _t('admin_qr_desc'),
           'color': Colors.greenAccent,
           'onTap': () => context.push('/admin/qr'),
         },
         if (_userRole == 'super_admin')
           {
             'icon': Icons.system_update_rounded,
-            'title': 'تحديثات التطبيق',
-            'subtitle': 'إصدار نسخة جديدة',
+            'title': _t('admin_updates_side'),
+            'subtitle': _t('admin_updates_desc'),
             'color': Colors.blue,
             'onTap': () => context.push('/admin/updates'),
           },
         {
           'icon': Icons.security,
-          'title': 'إعدادات الأمان',
-          'subtitle': 'التحكم في لقطات الشاشة',
+          'title': _t('admin_security_side'),
+          'subtitle': _t('admin_security_desc'),
           'color': Colors.red.shade400,
           'onTap': () => context.push('/admin/security'),
         },
@@ -558,7 +570,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         Padding(
           padding: EdgeInsets.symmetric(horizontal: 8),
           child: Text(
-            'الإجراءات السريعة',
+            _t('admin_quick_actions'),
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.normal,
@@ -668,7 +680,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'أحدث محاولات الطلاب',
+                _t('admin_recent_attempts'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.normal,
@@ -676,7 +688,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
               ),
               Text(
-                'عرض الكل',
+                _t('admin_view_all'),
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.blueAccent.withOpacity(0.8),
@@ -702,7 +714,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ),
                 child: Center(
                   child: Text(
-                    'لا توجد محاولات حديثة في سجل النظام',
+                    _t('admin_no_attempts'),
                     style: TextStyle(
                         color: AppColors.getTextColor(context).withOpacity(0.5),
                         fontSize: 14),
@@ -748,13 +760,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                             : null,
                         backgroundColor:
                             AppColors.primaryPurple.withOpacity(0.2),
-                        child: user?['avatar_url'] == null
-                            ? Icon(Icons.person,
-                                color: AppColors.getTextColor(context), size: 24)
-                            : null,
                       ),
                       title: Text(
-                        user?['full_name'] ?? 'طالب مجهول',
+                        user?['full_name'] ?? _t('anonymous_user'),
                         style: TextStyle(
                           fontWeight: FontWeight.normal,
                           color: AppColors.getTextColor(context),
@@ -765,7 +773,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         children: [
                           SizedBox(height: 4),
                           Text(
-                            exam?['title'] ?? 'اختبار غير معروف',
+                            exam?['title'] ?? _t('admin_unknown_exam'),
                             style: TextStyle(
                               fontSize: 13,
                               color: AppColors.getTextColor(context)
@@ -806,7 +814,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               ),
                             ),
                             Text(
-                              isPassed ? 'ناجح' : 'راسب',
+                              isPassed ? _t('admin_passed') : _t('admin_failed'),
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.normal,

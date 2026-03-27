@@ -7,7 +7,7 @@ import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
-import 'payment_receipt_detail_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class PaymentReceiptsScreen extends StatefulWidget {
   const PaymentReceiptsScreen({super.key});
@@ -283,12 +283,8 @@ class _PaymentReceiptsScreenState extends State<PaymentReceiptsScreen> {
               color: Colors.transparent,
               child: InkWell(
                 onTap: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          PaymentReceiptDetailScreen(receiptId: receipt['id']),
-                    ),
+                  final result = await context.push(
+                    '/admin/payments/detail/${receipt['id']}',
                   );
                   if (result == true) _loadData();
                 },

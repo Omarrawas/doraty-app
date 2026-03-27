@@ -8,6 +8,8 @@ import '../../core/services/database_service.dart';
 import '../../core/utils/string_utils.dart';
 import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
 
 class UsersManagementScreen extends StatefulWidget {
   const UsersManagementScreen({super.key});
@@ -30,6 +32,9 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
     super.initState();
     _loadData();
   }
+
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
@@ -140,7 +145,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
           SizedBox(width: 16),
           Expanded(
             child: Text(
-              'إدارة المستخدمين',
+              _t('admin_users'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.normal,
@@ -155,7 +160,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              '${_users.length} مستخدم',
+              _t('admin_users_count').replaceAll('{count}', _users.length.toString()),
               style: TextStyle(
                 color: AppColors.getTextColor(context),
                 fontWeight: FontWeight.normal,
@@ -186,7 +191,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               onChanged: (value) => setState(() => _searchQuery = value),
               style: TextStyle(color: AppColors.getTextColor(context)),
               decoration: InputDecoration(
-                hintText: 'بحث عن مستخدم...',
+                hintText: _t('search_users_hint'),
                 hintStyle: TextStyle(
                     color: AppColors.getTextColor(context).withOpacity(0.5)),
                 prefixIcon: Icon(Icons.search,
@@ -204,8 +209,8 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   Widget _buildUserCard(BuildContext context, Map<String, dynamic> user) {
     final userRoles = user['user_roles'] as List? ?? [];
     final roleName = userRoles.isNotEmpty
-        ? (userRoles.first['roles']?['display_name'] ?? 'طالب')
-        : 'طالب';
+        ? (userRoles.first['roles']?['display_name'] ?? _t('student_role'))
+        : _t('student_role');
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -245,7 +250,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                         children: [
                           Text(
                             StringUtils.cleanTeacherName(
-                                user['full_name'] ?? 'مستخدم'),
+                                user['full_name'] ?? _t('user')),
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.normal,
@@ -291,14 +296,14 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                         child: _buildActionButton(
                           context: context,
                           icon: Icons.admin_panel_settings,
-                          label: 'تعيين دور',
+                          label: _t('assign_role'),
                           onTap: () => _showRoleDialog(user),
                         ),
                       )
                     else
                       Expanded(
                         child: Text(
-                          'لا يمكن تعديل أدوار المديرين',
+                          _t('cannot_edit_admin_roles'),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: AppColors.getTextColor(context,
@@ -419,7 +424,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                       color: AppColors.getTextColor(context), size: 64),
                   SizedBox(height: 16),
                   Text(
-                    'لا توجد نتائج',
+                    _t('no_results'),
                     style: TextStyle(
                       fontSize: 18,
                       color: AppColors.getTextColor(context).withOpacity(0.8),
@@ -440,7 +445,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: AppColors.primaryPurple,
-        title: Text('تعيين دور', style: TextStyle(color: AppColors.getTextColor(context))),
+        title: Text(_t('assign_role'), style: TextStyle(color: AppColors.getTextColor(context))),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: _roles.where((r) {
@@ -464,7 +469,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                     navigator.pop();
                     messenger.showSnackBar(
                       SnackBar(
-                        content: Text('تم تعيين الدور'),
+                        content: Text(_t('role_assigned_success')),
                         backgroundColor: Colors.green,
                       ),
                     );
@@ -488,7 +493,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('إلغاء', style: TextStyle(color: AppColors.getTextColor(context))),
+            child: Text(_t('cancel'), style: TextStyle(color: AppColors.getTextColor(context))),
           ),
         ],
       ),

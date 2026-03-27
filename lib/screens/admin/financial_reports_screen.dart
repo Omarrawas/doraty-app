@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/constants/app_strings.dart';
+import '../../core/localization/locale_provider.dart';
 
 class FinancialReportsScreen extends StatefulWidget {
   const FinancialReportsScreen({super.key});
@@ -19,6 +22,11 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
   DateTimeRange? _dateRange;
   String? _selectedCourseId;
   List<Map<String, dynamic>> _courses = [];
+
+  String _t(String key) {
+    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    return AppStrings.get(key, locale);
+  }
 
   @override
   void initState() {
@@ -112,18 +120,18 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              pw.Text('التقرير المالي',
+              pw.Text(_t('financial_report'),
                   style: pw.TextStyle(fontSize: 24, font: fontBold, color: PdfColors.purple)),
-              pw.Text('منصة دوراتي التعليمية',
+              pw.Text(_t('platform_name'),
                   style: const pw.TextStyle(fontSize: 14)),
             ],
           ),
           pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.end,
             children: [
-              pw.Text('الفترة: ${data['period']}',
+              pw.Text('${_t('period')}: ${data['period']}',
                   style: const pw.TextStyle(fontSize: 12)),
-              pw.Text('تاريخ الطباعة: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.now())}',
+              pw.Text('${_t('print_date')}: ${intl.DateFormat('yyyy/MM/dd').format(DateTime.now())}',
                   style: const pw.TextStyle(fontSize: 10)),
             ],
           ),
@@ -142,9 +150,9 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          _buildSummaryItem('إجمالي الإيرادات',
+          _buildSummaryItem(_t('total_revenue'),
               '${(data['totalEarnings'] as double).toStringAsFixed(2)} \$', fontBold),
-          _buildSummaryItem('عدد الاشتراكات', '${data['totalEnrollments']}', fontBold),
+          _buildSummaryItem(_t('enrollments_count'), '${data['totalEnrollments']}', fontBold),
         ],
       ),
     );
@@ -163,7 +171,7 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
     final items = data['items'] as List<Map<String, dynamic>>;
 
     return pw.Table.fromTextArray(
-      headers: ['التاريخ', 'الطالب', 'الدورة', 'المبلغ'],
+      headers: [_t('date'), _t('student'), _t('course'), _t('amount')],
       data: items.map((item) {
         return [
           intl.DateFormat('yyyy/MM/dd').format(DateTime.parse(item['date'])),
@@ -183,17 +191,9 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
   }
   
   void _openPdfPreview() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
-          appBar: AppBar(title: Text('معاينة التقرير')),
-          body: PdfPreview(
-            build: (format) => _generatePdf(format),
-            canDebug: false,
-          ),
-        ),
-      ),
+    context.push(
+      '/admin/reports/financial/preview',
+      extra: _generatePdf,
     );
   }
 
@@ -201,7 +201,7 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('التقارير المالية'),
+        title: Text(_t('admin_financial_reports')),
         backgroundColor: AppColors.primaryPurple,
       ),
       body: Padding(
@@ -216,7 +216,7 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
                     ListTile(
                       leading: Icon(Icons.date_range),
                       title: Text(_dateRange == null
-                          ? 'اختر الفترة الزمنية'
+                          ? _t('select_period')
                           : '${intl.DateFormat('yyyy/MM/dd').format(_dateRange!.start)} - ${intl.DateFormat('yyyy/MM/dd').format(_dateRange!.end)}'),
                       trailing: Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: _pickDateRange,
@@ -224,12 +224,12 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
                     Divider(),
                     DropdownButtonFormField<String>(
                       decoration: InputDecoration(
-                        labelText: 'تصفية حسب الدورة (اختياري)',
+                        labelText: _t('filter_by_course_optional'),
                         prefixIcon: Icon(Icons.book),
                         border: InputBorder.none,
                       ),
                       items: [
-                        DropdownMenuItem(value: null, child: Text('الكل')),
+                        DropdownMenuItem(value: null, child: Text(_t('all'))),
                         ..._courses.map((c) => DropdownMenuItem(
                               value: c['id'] as String,
                               child: Text(
@@ -261,7 +261,7 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
                 ),
                 icon: Icon(Icons.picture_as_pdf, color: AppColors.getTextColor(context)),
                 label: Text(
-                  'استخراج التقرير',
+                  _t('generate_report'),
                   style: TextStyle(color: AppColors.getTextColor(context), fontSize: 16),
                 ),
               ),

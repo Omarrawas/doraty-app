@@ -9,6 +9,9 @@ import '../../models/category_model.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/error_utils.dart';
 
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
+
 class CategoriesManagementScreen extends StatefulWidget {
   const CategoriesManagementScreen({super.key});
 
@@ -20,6 +23,8 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
   final DatabaseService _db = DatabaseService();
   List<CategoryModel> _categories = [];
   bool _isLoading = true;
+
+  String _t(String key) => AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   @override
   void initState() {
@@ -92,7 +97,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _showAddEditDialog(),
           icon: Icon(Icons.add),
-          label: Text('إضافة تصنيف'),
+          label: Text(_t('add_category')),
           backgroundColor: AppColors.primaryPurple,
           foregroundColor: Colors.white,
         ),
@@ -127,7 +132,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
           SizedBox(width: 16),
           Expanded(
             child: Text(
-              'إدارة التصنيفات',
+              _t('categories_management'),
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.normal,
@@ -202,7 +207,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                               ),
                             ),
                             Text(
-                              'التصنيف الأساسي (${parent.slug})',
+                              '${_t('base_category')} (${parent.slug})',
                               style: TextStyle(
                                 color: AppColors.getTextColor(context).withOpacity(0.6),
                                 fontSize: 12,
@@ -231,7 +236,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'التصنيفات الفرعية:',
+                          '${_t('sub_categories')}:',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: AppColors.getTextColor(context).withOpacity(0.8),
@@ -251,7 +256,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                   Padding(
                     padding: EdgeInsets.all(16.0),
                     child: Text(
-                      'لا توجد تصنيفات فرعية',
+                      _t('no_sub_categories'),
                       style: TextStyle(
                         color: AppColors.getTextColor(context).withOpacity(0.5),
                         fontStyle: FontStyle.italic,
@@ -347,36 +352,36 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isEditing ? 'تعديل التصنيف' : 'إضافة تصنيف جديد'),
+        title: Text(isEditing ? _t('edit_category') : _t('add_new_category')),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: InputDecoration(labelText: 'اسم التصنيف'),
+                decoration: InputDecoration(labelText: _t('category_name')),
               ),
               SizedBox(height: 12),
               TextField(
                 controller: slugController,
-                decoration: InputDecoration(labelText: 'المعرف (Slug)'),
+                decoration: InputDecoration(labelText: _t('slug_label')),
               ),
               SizedBox(height: 12),
               TextField(
                 controller: iconController,
-                decoration: InputDecoration(labelText: 'رابط الأيقونة (اختياري)'),
+                decoration: InputDecoration(labelText: _t('icon_url_optional')),
               ),
               DropdownButtonFormField<String?>(
                 value: selectedParentId,
                 decoration: InputDecoration(
-                  labelText: 'التصنيف الأب (اختياري)',
-                  hintText: 'تصنيف رئيسي',
+                  labelText: _t('parent_category_optional'),
+                  hintText: _t('main_category'),
                 ),
                 dropdownColor: Theme.of(context).brightness == Brightness.dark ? AppColors.darkBackground : Colors.white,
                 items: [
-                  const DropdownMenuItem<String?>(
+                  DropdownMenuItem<String?>(
                     value: null,
-                    child: Text('بدون (تصنيف رئيسي)', style: TextStyle(color: Colors.grey)),
+                    child: Text(_t('none_main_category'), style: TextStyle(color: Colors.grey)),
                   ),
                   ...parentOptions.map((c) => DropdownMenuItem<String?>(
                     value: c.id,
@@ -391,13 +396,13 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('إلغاء'),
+            child: Text(_t('cancel')),
           ),
           ElevatedButton(
             onPressed: () async {
               if (nameController.text.isEmpty || slugController.text.isEmpty) {
                  ScaffoldMessenger.of(context).showSnackBar(
-                   SnackBar(content: Text('الرجاء ملء الحقول المطلوبة')),
+                   SnackBar(content: Text(_t('please_fill_required_fields'))),
                  );
                  return;
               }
@@ -434,7 +439,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                 }
               }
             },
-            child: Text(isEditing ? 'حفظ' : 'إضافة'),
+            child: Text(isEditing ? _t('save') : _t('add_new')),
           ),
         ],
       ),
@@ -445,11 +450,11 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('تأكيد الحذف'),
-        content: Text('هل أنت متأكد من حذف هذا التصنيف؟'),
+        title: Text(_t('confirm_delete_title')),
+        content: Text(_t('delete_category_confirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('لا')),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text('نعم', style: TextStyle(color: Colors.red))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(_t('no'))),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(_t('yes'), style: TextStyle(color: Colors.red))),
         ],
       ),
     );

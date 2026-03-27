@@ -9,7 +9,9 @@ import '../../models/banner_ad.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/error_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../core/services/image_upload_service.dart'; // Added
+import '../../core/services/image_upload_service.dart';
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
 
 class BannersManagementScreen extends StatefulWidget {
   const BannersManagementScreen({super.key});
@@ -22,7 +24,9 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
   final DatabaseService _db = DatabaseService();
   List<BannerAd> _banners = [];
   bool _isLoading = true;
-  bool _isUploading = false; // Added
+  bool _isUploading = false;
+
+  String _t(String key) => AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   @override
   void initState() {
@@ -72,7 +76,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                       : _banners.isEmpty
                           ? Center(
                               child: Text(
-                                'لا يوجد إعلانات حالياً',
+                                _t('no_banners_found_admin'),
                                 style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.5)),
                               ),
                             )
@@ -92,7 +96,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _showAddEditBannerDialog(),
           icon: Icon(Icons.add),
-          label: Text('إضافة إعلان جديد'),
+          label: Text(_t('add_new_banner')),
           backgroundColor: AppColors.primaryPurple,
           foregroundColor: Colors.white,
         ),
@@ -112,7 +116,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
           SizedBox(width: 16),
           Expanded(
             child: Text(
-              'إدارة الإعلانات والبنرات',
+              _t('banners_management_title'),
               style: TextStyle(
                 fontSize: 22,
                 color: AppColors.getTextColor(context),
@@ -174,14 +178,14 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'النوع: ${banner.type}',
+                    '${_t('type_label')}: ${banner.type}',
                     style: TextStyle(
                       color: AppColors.getTextColor(context).withOpacity(0.6),
                       fontSize: 13,
                     ),
                   ),
                   Text(
-                    'المكان: ${banner.location == 'top' ? 'علوي' : 'سفلي'}',
+                    '${_t('location_label')}: ${banner.location == 'top' ? _t('top_location') : _t('bottom_location')}',
                     style: TextStyle(
                       color: AppColors.primaryPurple.withOpacity(0.8),
                       fontSize: 12,
@@ -224,7 +228,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           backgroundColor: AppColors.getSurfaceColor(context),
-          title: Text(banner == null ? 'إضافة إعلان جديد' : 'تعديل الإعلان'),
+          title: Text(banner == null ? _t('add_new_banner') : _t('edit_banner')),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -241,7 +245,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('معاينة الإعلان:', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60), fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text('${_t('ad_preview')}:', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60), fontSize: 12, fontWeight: FontWeight.bold)),
                       SizedBox(height: 10),
                       _buildPreviewItem(
                         BannerAd(
@@ -257,11 +261,11 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                     ],
                   ),
                 ),
-                _buildDialogField('العنوان الرئيسي', titleController, (val) => setDialogState(() {})),
-                _buildDialogField('العنوان الفرعي / نص زر التفاعل (اختياري)', subtitleController, (val) => setDialogState(() {})),
+                _buildDialogField(_t('main_title'), titleController, (val) => setDialogState(() {})),
+                _buildDialogField(_t('subtitle_action_text_optional'), subtitleController, (val) => setDialogState(() {})),
                 Row(
                   children: [
-                    Expanded(child: _buildDialogField('رابط الصورة', imageUrlController, (val) => setDialogState(() {}))),
+                    Expanded(child: _buildDialogField(_t('image_url_label'), imageUrlController, (val) => setDialogState(() {}))),
                     IconButton(
                       icon: _isUploading 
                           ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
@@ -288,13 +292,13 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                 DropdownButtonFormField<String>(
                   value: selectedType,
                   dropdownColor: AppColors.getSurfaceColor(context),
-                  decoration: InputDecoration(labelText: 'نوع الإعلان'),
+                  decoration: InputDecoration(labelText: _t('ad_type')),
                   items: ['ad', 'course', 'package', 'external'].map((type) {
                     String label = type;
-                    if (type == 'ad') label = 'إعلان عام';
-                    if (type == 'course') label = 'كورس محدد';
-                    if (type == 'package') label = 'باقة / عرض';
-                    if (type == 'external') label = 'رابط خارجي';
+                    if (type == 'ad') label = _t('general_ad');
+                    if (type == 'course') label = _t('specific_course');
+                    if (type == 'package') label = _t('bundle_offer');
+                    if (type == 'external') label = _t('external_link');
                     return DropdownMenuItem(value: type, child: Text(label));
                   }).toList(),
                   onChanged: (val) {
@@ -312,7 +316,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                 SizedBox(height: 16),
                 if (selectedType == 'course')
                   _buildTargetSelector(
-                    label: 'اختر الكورس',
+                    label: _t('select_course'),
                     targetId: targetIdController.text,
                     type: 'course',
                     onSelected: (String id, String name, String? imageUrl) {
@@ -326,7 +330,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                   )
                 else if (selectedType == 'package')
                   _buildTargetSelector(
-                    label: 'اختر الباقة',
+                    label: _t('select_bundle'),
                     targetId: targetIdController.text,
                     type: 'package',
                     onSelected: (String id, String name, String? imageUrl) {
@@ -339,15 +343,15 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                     },
                   )
                 else if (selectedType == 'external')
-                  _buildDialogField('رابط خارجي', linkUrlController),
+                  _buildDialogField(_t('external_link'), linkUrlController),
                 SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: selectedLocation,
                   dropdownColor: AppColors.getSurfaceColor(context),
-                  decoration: InputDecoration(labelText: 'مكان الظهور'),
+                  decoration: InputDecoration(labelText: _t('display_location')),
                   items: [
-                    {'value': 'top', 'label': 'رئيسي (أعلى)'},
-                    {'value': 'bottom', 'label': 'ثانوي (أسفل)'},
+                    {'value': 'top', 'label': _t('main_top')},
+                    {'value': 'bottom', 'label': _t('secondary_bottom')},
                   ].map((loc) {
                     return DropdownMenuItem(value: loc['value'], child: Text(loc['label']!));
                   }).toList(),
@@ -402,7 +406,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                   }
                 }
               },
-              child: Text('حفظ'),
+              child: Text(_t('save')),
             ),
           ],
         ),
@@ -431,7 +435,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
       // Small landscape preview
       String? buttonText = item.subtitle;
       if ((buttonText == null || buttonText.isEmpty) && item.type == 'external') {
-        buttonText = 'زيارة الرابط';
+        buttonText = _t('visit_link');
       }
 
       return Container(
@@ -529,7 +533,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            item.title.isEmpty ? 'عنوان الإعلان' : item.title,
+                            item.title.isEmpty ? _t('ad_title_fallback') : item.title,
                             style: TextStyle(color: AppColors.getTextColor(context), fontSize: 14, fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -577,7 +581,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                 SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    targetId.isEmpty ? 'انقر للاختيار...' : 'مُعرّف: $targetId',
+                    targetId.isEmpty ? _t('click_to_select') : '${_t('id_label')}: $targetId',
                     style: TextStyle(
                       color: targetId.isEmpty ? Colors.white30 : Colors.white,
                       fontSize: 14,
@@ -611,13 +615,13 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('تأكيد الحذف'),
-        content: Text('هل أنت متأكد من حذف هذا الإعلان؟'),
+        title: Text(_t('confirm_delete_title')),
+        content: Text(_t('delete_banner_confirm')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text('لا')),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(_t('no'))),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('نعم', style: TextStyle(color: Colors.red)),
+            child: Text(_t('yes'), style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -658,7 +662,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
           });
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('تم رفع الصورة بنجاح'), backgroundColor: Colors.green),
+              SnackBar(content: Text(_t('image_upload_success')), backgroundColor: Colors.green),
             );
           }
         }
@@ -669,7 +673,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
       if (mounted) {
         setDialogState(() => _isUploading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في رفع الصورة: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('${_t('error_upload_image')}: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -692,6 +696,8 @@ class _TargetSearchDialogState extends State<_TargetSearchDialog> {
   List<dynamic> _items = [];
   List<dynamic> _filteredItems = [];
   bool _isLoading = true;
+
+  String _t(String key) => AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   @override
   void initState() {
@@ -738,7 +744,7 @@ class _TargetSearchDialogState extends State<_TargetSearchDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       backgroundColor: Color(0xFF1E1E2C),
-      title: Text(widget.type == 'course' ? 'اختر الكورس' : 'اختر الباقة'),
+      title: Text(widget.type == 'course' ? _t('select_course') : _t('select_bundle')),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
@@ -747,7 +753,7 @@ class _TargetSearchDialogState extends State<_TargetSearchDialog> {
             TextField(
               controller: _searchController,
               decoration: InputDecoration(
-                hintText: 'بحث بالاسم أو اسم المعلم...',
+                hintText: _t('search_hint_name_teacher'),
                 hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.30)),
                 prefixIcon: Icon(Icons.search, color: AppColors.getTextColor(context).withOpacity(0.70)),
                 filled: true,
@@ -762,7 +768,7 @@ class _TargetSearchDialogState extends State<_TargetSearchDialog> {
             else
               Expanded(
                 child: _filteredItems.isEmpty
-                    ? Center(child: Text('لا توجد نتائج', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.30))))
+                    ? Center(child: Text(_t('no_results'), style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.30))))
                     : ListView.builder(
                         itemCount: _filteredItems.length,
                         itemBuilder: (context, index) {
@@ -793,7 +799,7 @@ class _TargetSearchDialogState extends State<_TargetSearchDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text('إغلاق')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(_t('close'))),
       ],
     );
   }

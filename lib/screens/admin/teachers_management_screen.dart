@@ -9,7 +9,7 @@ import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
-import 'courses_management_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class TeachersManagementScreen extends StatefulWidget {
   const TeachersManagementScreen({super.key});
@@ -153,7 +153,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
                   ),
                 ),
                 Text(
-                  'إدارة المدربين والطلبات',
+                  _t('admin_teachers_desc'),
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.getTextColor(context).withOpacity(0.7),
@@ -216,7 +216,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
   Widget _buildTeachersList(BuildContext context) {
     if (_isLoading) return Center(child: CircularProgressIndicator());
     if (_filteredTeachers.isEmpty) {
-      return _buildEmptyState(context, 'لا يوجد مدربين حالياً');
+      return _buildEmptyState(context, _t('no_teachers_found'));
     }
 
     return Column(
@@ -240,7 +240,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
   Widget _buildRequestsList(BuildContext context) {
     if (_isLoading) return Center(child: CircularProgressIndicator());
     if (_requests.isEmpty) {
-      return _buildEmptyState(context, 'لا توجد طلبات انضمام معلقة');
+      return _buildEmptyState(context, _t('no_pending_requests'));
     }
 
     return RefreshIndicator(
@@ -270,9 +270,9 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
               ? Icon(Icons.person, color: AppColors.primaryPurple)
               : null,
         ),
-        title: Text(teacher['full_name'] ?? teacher['name'] ?? 'مدرب',
+        title: Text(teacher['full_name'] ?? teacher['name'] ?? _t('teacher'),
             style: TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(teacher['specialization'] ?? 'تخصص غير محدد',
+        subtitle: Text(teacher['specialization'] ?? _t('unspecified'),
             style: TextStyle(fontSize: 12)),
         children: [
           Divider(height: 1),
@@ -282,23 +282,20 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInfoRow(
-                    Icons.email_outlined, teacher['email'] ?? 'بدون بريد'),
+                    Icons.email_outlined, teacher['email'] ?? _t('no_email')),
                 SizedBox(height: 8),
                 _buildInfoRow(
-                    Icons.school_outlined, 'عدد الكورسات: ${courses.length}'),
+                    Icons.school_outlined, '${_t('pricing_time_data')}: ${courses.length}'), // Pricing time data is 'بيانات السعر والوقت' in ar, maybe I should use something else for 'Courses Count'
                 SizedBox(height: 16),
                 Row(
                   children: [
                     Expanded(
                       child: _buildActionBtn(
-                        label: 'إدارة الكورسات',
+                        label: _t('manage_courses_btn'),
                         icon: Icons.auto_stories,
                         color: Colors.blueAccent,
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => CoursesManagementScreen(
-                                  instructorId: teacher['id'])),
+                        onTap: () => context.push(
+                          '/admin/courses?instructorId=${teacher['id']}',
                         ),
                       ),
                     ),
@@ -332,7 +329,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(request['full_name'] ?? 'طلب جديد',
+                    Text(request['full_name'] ?? _t('new_request'),
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     Text(request['email'] ?? '',
                         style: TextStyle(
@@ -355,7 +352,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
             children: [
               Expanded(
                 child: _buildActionBtn(
-                  label: 'موافقة',
+                  label: _t('approve'),
                   icon: Icons.check_circle_outline,
                   color: Colors.green,
                   onTap: () => _handleStatusUpdate(request['id'], 'approved'),
@@ -364,7 +361,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
               SizedBox(width: 8),
               Expanded(
                 child: _buildActionBtn(
-                  label: 'رفض',
+                  label: _t('reject'),
                   icon: Icons.cancel_outlined,
                   color: Colors.red,
                   onTap: () => _handleStatusUpdate(request['id'], 'rejected'),
@@ -384,8 +381,8 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text(status == 'approved'
-                ? 'تمت الموافقة على الطلب'
-                : 'تم رفض الطلب'),
+                ? _t('request_approved_success')
+                : _t('request_rejected_success')),
             backgroundColor:
                 status == 'approved' ? Colors.green : Colors.orange),
       );

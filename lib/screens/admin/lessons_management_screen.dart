@@ -9,6 +9,8 @@ import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../models/chapter.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/localization/locale_provider.dart';
+import '../../core/constants/app_strings.dart';
 
 class LessonsManagementScreen extends StatefulWidget {
   final String courseId;
@@ -38,6 +40,9 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     super.initState();
     _loadLessons();
   }
+
+  String _t(String key) => AppStrings.get(
+      key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   Future<void> _loadLessons() async {
     setState(() => _isLoading = true);
@@ -166,7 +171,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                                     orElse: () => Chapter(
                                         id: '',
                                         courseId: widget.courseId,
-                                        title: 'دروس أخرى',
+                                        title: _t('other_lessons'),
                                         orderIndex: 999),
                                   );
 
@@ -201,7 +206,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
           },
           backgroundColor: AppColors.primaryPurple,
           icon: Icon(Icons.add, color: AppColors.getTextColor(context)),
-          label: Text('إضافة درس',
+          label: Text(_t('add_lesson'),
               style: TextStyle(
                   color: AppColors.getTextColor(context), fontWeight: FontWeight.normal)),
         ),
@@ -239,7 +244,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'دروس الدورة',
+                  _t('course_lessons'),
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.normal,
@@ -274,7 +279,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                 child: IconButton(
                   onPressed: _manageChapters,
                   icon: Icon(Icons.category, color: AppColors.getTextColor(context)),
-                  tooltip: 'إدارة الفصول',
+                  tooltip: _t('manage_chapters'),
                 ),
               ),
             ),
@@ -345,7 +350,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          lesson['title'] ?? 'درس',
+                          lesson['title'] ?? _t('lesson'),
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.normal,
@@ -362,7 +367,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                                 size: 14),
                             SizedBox(width: 4),
                             Text(
-                              '$minutes دقيقة',
+                              '$minutes ${_t('minutes_unit')}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppColors.getTextColor(context)
@@ -406,7 +411,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                             color: Colors.green.withOpacity(0.5), width: 1),
                       ),
                       child: Text(
-                        'مجاني',
+                        _t('free'),
                         style: TextStyle(
                           color: Colors.greenAccent,
                           fontSize: 11,
@@ -435,7 +440,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
               if (_exams.any((e) => e['lesson_id'] == lesson['id'])) ...[
                 Divider(color: AppColors.getTextColor(context).withOpacity(0.12)),
                 Text(
-                  'الاختبارات:',
+                  _t('exams_label'),
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.normal,
@@ -469,7 +474,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                           SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              exam['title'] ?? 'اختبار',
+                              exam['title'] ?? _t('exam'),
                               style: TextStyle(
                                 fontSize: 13,
                                 color: AppColors.getTextColor(context),
@@ -492,8 +497,8 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                   Expanded(
                     child: _buildActionButton(
                       context: context,
-                      icon: Icons.edit,
-                      label: 'تعديل',
+                       icon: Icons.edit,
+                      label: _t('edit'),
                       color: Colors.blue,
                       onTap: () async {
                         final result = await context.push(
@@ -509,7 +514,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                     child: _buildActionButton(
                       context: context,
                       icon: Icons.add_task,
-                      label: 'إضافة اختبار',
+                      label: _t('add_exam'),
                       color: Colors.orange,
                       onTap: () async {
                         final result = await context.push(
@@ -601,7 +606,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                       color: AppColors.getTextColor(context), size: 64),
                   SizedBox(height: 16),
                   Text(
-                    'لا توجد دروس',
+                    _t('no_lessons'),
                     style: TextStyle(
                       fontSize: 18,
                       color: AppColors.getTextColor(context).withOpacity(0.8),
@@ -610,7 +615,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'ابدأ بإضافة الدرس الأول',
+                    _t('start_adding_first_lesson'),
                     style: TextStyle(
                       fontSize: 14,
                       color: AppColors.getTextColor(context).withOpacity(0.6),
@@ -695,7 +700,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تم تحديث الترتيب'),
+            content: Text(_t('order_updated')),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 1),
           ),
@@ -718,18 +723,18 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('حذف الدرس'),
+        title: Text(_t('delete_lesson')),
         content: Text(
-          'هل أنت متأكد من حذف "${lesson['title']}"؟',
+          _t('delete_lesson_confirm'),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('إلغاء'),
+            child: Text(_t('cancel')),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text(_t('delete'), style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -743,7 +748,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('تم حذف الدرس'),
+            content: Text(_t('lesson_removed')),
             backgroundColor: Colors.green,
           ),
         );
@@ -767,11 +772,11 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: Text('إدارة الفصول'),
+            title: Text(_t('manage_chapters')),
             content: SizedBox(
               width: double.maxFinite,
               child: _chapters.isEmpty
-                  ? Center(child: Text('لا توجد فصول بعد'))
+                  ? Center(child: Text(_t('no_chapters_yet')))
                   : ListView.builder(
                       shrinkWrap: true,
                       itemCount: _chapters.length,
@@ -791,21 +796,21 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                                   final result = await showDialog<String>(
                                     context: context,
                                     builder: (context) => AlertDialog(
-                                      title: Text('تعديل الفصل'),
+                                      title: Text(_t('edit_chapter')),
                                       content: TextField(
                                         controller: controller,
                                         decoration: InputDecoration(
-                                            labelText: 'العنوان'),
+                                            labelText: _t('title')),
                                       ),
                                       actions: [
                                         TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(context),
-                                            child: Text('إلغاء')),
+                                            child: Text(_t('cancel'))),
                                         TextButton(
                                           onPressed: () => Navigator.pop(
                                               context, controller.text),
-                                          child: Text('حفظ'),
+                                          child: Text(_t('save')),
                                         ),
                                       ],
                                     ),
@@ -832,18 +837,18 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                                   final confirm = await showDialog<bool>(
                                     context: context,
                                     builder: (context) => AlertDialog(
-                                      title: Text('حذف الفصل'),
+                                      title: Text(_t('delete_chapter')),
                                       content: Text(
-                                          'هل أنت متأكد؟ ستبقى الدروس ولكن بدون فصل.'),
+                                          _t('delete_chapter_confirm')),
                                       actions: [
                                         TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(context, false),
-                                            child: Text('إلغاء')),
+                                            child: Text(_t('cancel'))),
                                         TextButton(
                                             onPressed: () =>
                                                 Navigator.pop(context, true),
-                                            child: Text('حذف',
+                                            child: Text(_t('delete'),
                                                 style: TextStyle(
                                                     color: Colors.red))),
                                       ],
@@ -868,7 +873,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('إغلاق'),
+                child: Text(_t('close')),
               ),
               ElevatedButton(
                 onPressed: () async {
@@ -876,19 +881,19 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                   final result = await showDialog<String>(
                     context: context,
                     builder: (context) => AlertDialog(
-                      title: Text('إضافة فصل'),
+                      title: Text(_t('add_chapter')),
                       content: TextField(
                         controller: controller,
-                        decoration: InputDecoration(labelText: 'العنوان'),
+                        decoration: InputDecoration(labelText: _t('title')),
                       ),
                       actions: [
                         TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: Text('إلغاء')),
+                            child: Text(_t('cancel'))),
                         TextButton(
                           onPressed: () =>
                               Navigator.pop(context, controller.text),
-                          child: Text('إضافة'),
+                          child: Text(_t('add')),
                         ),
                       ],
                     ),
@@ -904,7 +909,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                     }
                   }
                 },
-                child: Text('إضافة جديد'),
+                child: Text(_t('add_new')),
               ),
             ],
           );
