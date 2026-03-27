@@ -22,9 +22,28 @@ import '../../screens/settings/terms_conditions_screen.dart';
 import '../../screens/favorites/favorites_screen.dart';
 import '../../screens/cart/cart_screen.dart';
 import '../../screens/notifications_screen.dart';
-
 import '../../screens/categories/category_courses_screen.dart';
 import '../../models/category_model.dart';
+import '../../screens/admin/users_management_screen.dart';
+import '../../screens/admin/categories_management_screen.dart';
+import '../../screens/admin/teachers_management_screen.dart';
+import '../../screens/admin/bundles_management_screen.dart';
+import '../../screens/admin/tips_management_screen.dart';
+import '../../screens/admin/banners_management_screen.dart';
+import '../../screens/admin/courses_management_screen.dart';
+import '../../screens/admin/create_course_screen.dart';
+import '../../screens/admin/lessons_management_screen.dart';
+import '../../screens/admin/exams_management_screen.dart';
+import '../../screens/admin/create_lesson_screen.dart';
+import '../../screens/admin/subscriptions_management_screen.dart';
+import '../../screens/admin/payment_receipts_screen.dart';
+import '../../screens/admin/payment_settings_screen.dart';
+import '../../screens/admin/notifications_management_screen.dart';
+import '../../screens/admin/qr_management_screen.dart';
+import '../../screens/admin/updates_management_screen.dart';
+import '../../screens/admin/security_settings_screen.dart';
+import '../../screens/teacher/create_exam_screen.dart';
+import '../../screens/teacher/manage_questions_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -92,6 +111,132 @@ final GoRouter appRouter = GoRouter(
       path: '/admin',
       parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) => const AdminDashboardScreen(),
+      routes: [
+        GoRoute(
+          path: 'users',
+          builder: (context, state) => const UsersManagementScreen(),
+        ),
+        GoRoute(
+          path: 'categories',
+          builder: (context, state) => const CategoriesManagementScreen(),
+        ),
+        GoRoute(
+          path: 'teachers',
+          builder: (context, state) => const TeachersManagementScreen(),
+        ),
+        GoRoute(
+          path: 'bundles',
+          builder: (context, state) => const BundlesManagementScreen(),
+        ),
+        GoRoute(
+          path: 'tips',
+          builder: (context, state) => const TipsManagementScreen(),
+        ),
+        GoRoute(
+          path: 'banners',
+          builder: (context, state) => const BannersManagementScreen(),
+        ),
+        GoRoute(
+          path: 'courses',
+          builder: (context, state) {
+            final instructorId = state.uri.queryParameters['instructorId'];
+            return CoursesManagementScreen(instructorId: instructorId);
+          },
+          routes: [
+            GoRoute(
+              path: 'create',
+              builder: (context, state) {
+                final instructorId = state.uri.queryParameters['instructorId'];
+                return CreateCourseScreen(preselectedInstructorId: instructorId);
+              },
+            ),
+            GoRoute(
+              path: 'edit/:id',
+              builder: (context, state) {
+                final id = state.pathParameters['id']!;
+                final courseData = state.extra as Map<String, dynamic>?;
+                return CreateCourseScreen(courseId: id, courseData: courseData);
+              },
+            ),
+            GoRoute(
+              path: ':courseId/lessons',
+              builder: (context, state) {
+                final courseId = state.pathParameters['courseId']!;
+                final courseTitle = state.uri.queryParameters['title'] ?? '';
+                return LessonsManagementScreen(courseId: courseId, courseTitle: courseTitle);
+              },
+            ),
+            GoRoute(
+              path: ':courseId/exams',
+              builder: (context, state) {
+                final courseId = state.pathParameters['courseId']!;
+                final courseTitle = state.uri.queryParameters['title'] ?? '';
+                return AdminExamsManagementScreen(courseId: courseId, courseTitle: courseTitle);
+              },
+            ),
+          ],
+        ),
+        GoRoute(
+          path: 'lessons/create/:courseId',
+          builder: (context, state) {
+            final courseId = state.pathParameters['courseId']!;
+            return CreateLessonScreen(courseId: courseId);
+          },
+        ),
+        GoRoute(
+          path: 'lessons/edit/:lessonId',
+          builder: (context, state) {
+            final lessonId = state.pathParameters['lessonId']!;
+            final courseId = state.uri.queryParameters['courseId'] ?? '';
+            final lessonData = state.extra as Map<String, dynamic>?;
+            return CreateLessonScreen(courseId: courseId, lessonId: lessonId, lessonData: lessonData);
+          },
+        ),
+        GoRoute(
+          path: 'subscriptions',
+          builder: (context, state) => const SubscriptionsManagementScreen(),
+        ),
+        GoRoute(
+          path: 'payments',
+          builder: (context, state) => const PaymentReceiptsScreen(),
+        ),
+        GoRoute(
+          path: 'payment-settings',
+          builder: (context, state) => const PaymentSettingsScreen(),
+        ),
+        GoRoute(
+          path: 'notifications',
+          builder: (context, state) => const NotificationsManagementScreen(),
+        ),
+        GoRoute(
+          path: 'qr',
+          builder: (context, state) => const QrManagementScreen(),
+        ),
+        GoRoute(
+          path: 'updates',
+          builder: (context, state) => const UpdatesManagementScreen(),
+        ),
+        GoRoute(
+          path: 'security',
+          builder: (context, state) => const SecuritySettingsScreen(),
+        ),
+        GoRoute(
+          path: 'exams/create',
+          builder: (context, state) {
+            final courseId = state.uri.queryParameters['courseId'] ?? '';
+            final lessonId = state.uri.queryParameters['lessonId'];
+            return CreateExamScreen(initialCourseId: courseId, lessonId: lessonId, loadAllCourses: true);
+          },
+        ),
+        GoRoute(
+          path: 'exams/questions/:examId',
+          builder: (context, state) {
+            final examId = state.pathParameters['examId']!;
+            final examTitle = state.uri.queryParameters['title'] ?? '';
+            return ManageQuestionsScreen(examId: examId, examTitle: examTitle);
+          },
+        ),
+      ],
     ),
     GoRoute(
       path: '/login',

@@ -7,20 +7,7 @@ import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/utils/error_utils.dart';
-import 'users_management_screen.dart';
-import 'teachers_management_screen.dart';
-import 'courses_management_screen.dart';
-import 'subscriptions_management_screen.dart';
-import 'payment_receipts_screen.dart';
-import 'payment_settings_screen.dart';
-import 'categories_management_screen.dart';
-import 'notifications_management_screen.dart';
-import 'qr_management_screen.dart';
-import 'updates_management_screen.dart';
-import 'security_settings_screen.dart';
-import 'bundles_management_screen.dart';
-import 'tips_management_screen.dart';
-import 'banners_management_screen.dart';
+import 'package:go_router/go_router.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -463,60 +450,42 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'title': 'المستخدمين',
           'subtitle': 'إدارة جميع مستخدمي المنصة',
           'color': Colors.blueAccent,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const UsersManagementScreen())),
+          'onTap': () => context.push('/admin/users'),
         },
         {
           'icon': Icons.category_rounded,
           'title': 'التصنيفات',
           'subtitle': 'إدارة تصنيفات الدورات',
           'color': Colors.pinkAccent,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const CategoriesManagementScreen())),
+          'onTap': () => context.push('/admin/categories'),
         },
         {
           'icon': Icons.school_rounded,
           'title': 'شؤون المدرسين',
           'subtitle': 'إدارة المدربين وطلبات الانضمام',
           'color': Colors.deepPurpleAccent,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const TeachersManagementScreen())),
+          'onTap': () => context.push('/admin/teachers'),
         },
         {
           'icon': Icons.collections_bookmark_rounded,
           'title': 'الباقات',
           'subtitle': 'إدارة باقات الدورات',
           'color': Colors.indigoAccent,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const BundlesManagementScreen())),
+          'onTap': () => context.push('/admin/bundles'),
         },
         {
           'icon': Icons.lightbulb_rounded,
           'title': 'نصائح',
           'subtitle': 'إدارة نصائح الفيديو القصيرة',
           'color': Colors.amberAccent,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const TipsManagementScreen())),
+          'onTap': () => context.push('/admin/tips'),
         },
         {
           'icon': Icons.view_carousel_rounded,
           'title': 'الإعلانات',
           'subtitle': 'إدارة صور البنر المتحركة',
           'color': Colors.deepOrangeAccent,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const BannersManagementScreen())),
+          'onTap': () => context.push('/admin/banners'),
         },
       ],
       {
@@ -524,11 +493,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         'title': _userRole == 'teacher' ? 'دوراتي' : 'الدورات',
         'subtitle': 'إدارة محتوى الدورات',
         'color': Colors.tealAccent,
-        'onTap': () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => CoursesManagementScreen(
-                    instructorId: _userRole == 'teacher' ? _userId : null))),
+        'onTap': () {
+          final instructorParam = _userRole == 'teacher' ? '?instructorId=$_userId' : '';
+          context.push('/admin/courses$instructorParam');
+        },
       },
       if (_userRole != 'teacher') ...[
         {
@@ -536,50 +504,35 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'title': 'الاشتراكات',
           'subtitle': 'متابعة اشتراكات الطلاب',
           'color': Colors.amberAccent,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const SubscriptionsManagementScreen())),
+          'onTap': () => context.push('/admin/subscriptions'),
         },
         {
           'icon': Icons.receipt_long_rounded,
           'title': 'الدفع',
           'subtitle': 'مراجعة إيصالات الدفع',
           'color': Colors.orangeAccent,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const PaymentReceiptsScreen())),
+          'onTap': () => context.push('/admin/payments'),
         },
         {
           'icon': Icons.account_balance_wallet_rounded,
           'title': 'حسابات الدفع',
           'subtitle': 'تعديل حسابات الدفع',
           'color': Colors.cyan,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const PaymentSettingsScreen())),
+          'onTap': () => context.push('/admin/payment-settings'),
         },
         {
           'icon': Icons.notifications_active_rounded,
           'title': 'الإشعارات',
           'subtitle': 'إرسال تنبيهات عامة',
           'color': Colors.redAccent,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const NotificationsManagementScreen())),
+          'onTap': () => context.push('/admin/notifications'),
         },
         {
           'icon': Icons.qr_code_2_rounded,
           'title': 'أكواد QR',
           'subtitle': 'إنشاء أكواد التفعيل',
           'color': Colors.greenAccent,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const QrManagementScreen())),
+          'onTap': () => context.push('/admin/qr'),
         },
         if (_userRole == 'super_admin')
           {
@@ -587,20 +540,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             'title': 'تحديثات التطبيق',
             'subtitle': 'إصدار نسخة جديدة',
             'color': Colors.blue,
-            'onTap': () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => const UpdatesManagementScreen())),
+            'onTap': () => context.push('/admin/updates'),
           },
         {
           'icon': Icons.security,
           'title': 'إعدادات الأمان',
           'subtitle': 'التحكم في لقطات الشاشة',
           'color': Colors.red.shade400,
-          'onTap': () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const SecuritySettingsScreen())),
+          'onTap': () => context.push('/admin/security'),
         },
       ],
     ];

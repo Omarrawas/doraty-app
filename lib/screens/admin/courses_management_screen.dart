@@ -7,11 +7,9 @@ import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
-import 'create_course_screen.dart';
-import 'lessons_management_screen.dart';
-import 'exams_management_screen.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class CoursesManagementScreen extends StatefulWidget {
   final String? instructorId; // Added
@@ -146,14 +144,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CreateCourseScreen(
-                  preselectedInstructorId: widget.instructorId,
-                ),
-              ),
-            );
+            final instructorParam =
+                widget.instructorId != null ? '?instructorId=${widget.instructorId}' : '';
+            final result = await context.push('/admin/courses/create$instructorParam');
             if (result == true) _loadCourses();
           },
           backgroundColor: AppColors.primaryPurple,
@@ -474,14 +467,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       icon: Icons.list_alt_rounded,
                       label: _t('lessons'),
                       onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LessonsManagementScreen(
-                              courseId: course['id'],
-                              courseTitle: course['title'] ?? _t('course'),
-                            ),
-                          ),
+                        final result = await context.push(
+                          '/admin/courses/${course['id']}/lessons?title=${Uri.encodeComponent(course['title'] ?? '')}',
                         );
                         if (result == true) _loadCourses();
                       },
@@ -494,14 +481,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       icon: Icons.quiz_rounded,
                       label: _t('exams'),
                       onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AdminExamsManagementScreen(
-                              courseId: course['id'],
-                              courseTitle: course['title'] ?? _t('course'),
-                            ),
-                          ),
+                        final result = await context.push(
+                          '/admin/courses/${course['id']}/exams?title=${Uri.encodeComponent(course['title'] ?? '')}',
                         );
                         if (result == true) _loadCourses();
                       },
@@ -518,14 +499,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       icon: Icons.edit_note_rounded,
                       label: _t('edit'),
                       onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CreateCourseScreen(
-                              courseId: course['id'],
-                              courseData: course,
-                            ),
-                          ),
+                        final result = await context.push(
+                          '/admin/courses/edit/${course['id']}',
+                          extra: course,
                         );
                         if (result == true) _loadCourses();
                       },

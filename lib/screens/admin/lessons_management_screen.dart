@@ -7,10 +7,8 @@ import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
-import 'create_lesson_screen.dart';
 import '../../models/chapter.dart';
-import '../teacher/create_exam_screen.dart';
-import '../teacher/manage_questions_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class LessonsManagementScreen extends StatefulWidget {
   final String courseId;
@@ -198,14 +196,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
         ),
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CreateLessonScreen(
-                  courseId: widget.courseId,
-                ),
-              ),
-            );
+            final result = await context.push('/admin/lessons/create/${widget.courseId}');
             if (result == true) _loadLessons();
           },
           backgroundColor: AppColors.primaryPurple,
@@ -457,14 +448,8 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                     .map((exam) {
                   return InkWell(
                     onTap: () async {
-                      final result = await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ManageQuestionsScreen(
-                            examId: exam['id'],
-                            examTitle: exam['title'],
-                          ),
-                        ),
+                      final result = await context.push(
+                        '/admin/exams/questions/${exam['id']}?title=${Uri.encodeComponent(exam['title'] ?? '')}',
                       );
                       if (result == true) _loadLessons();
                     },
@@ -511,15 +496,9 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                       label: 'تعديل',
                       color: Colors.blue,
                       onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CreateLessonScreen(
-                              courseId: widget.courseId,
-                              lessonId: lesson['id'],
-                              lessonData: lesson,
-                            ),
-                          ),
+                        final result = await context.push(
+                          '/admin/lessons/edit/${lesson['id']}?courseId=${widget.courseId}',
+                          extra: lesson,
                         );
                         if (result == true) _loadLessons();
                       },
@@ -533,15 +512,8 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                       label: 'إضافة اختبار',
                       color: Colors.orange,
                       onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CreateExamScreen(
-                              initialCourseId: widget.courseId,
-                              lessonId: lesson['id'],
-                              loadAllCourses: true,
-                            ),
-                          ),
+                        final result = await context.push(
+                          '/admin/exams/create?courseId=${widget.courseId}&lessonId=${lesson['id']}',
                         );
                         if (result == true) _loadLessons();
                       },
