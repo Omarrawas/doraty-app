@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:ui';
 import 'lesson/video_player_controls.dart';
@@ -31,10 +33,15 @@ class VideoPreviewWidget extends StatefulWidget {
 
 class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     with SingleTickerProviderStateMixin {
-  YoutubePlayerController? _controller;
+  YoutubePlayerController? _youtubeController;
+  VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
+  
   String? _videoId;
+  bool _isYoutube = false;
   bool _isFullScreen = false;
   bool _hasStarted = false;
+  bool _isInitialized = false;
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -42,8 +49,8 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
   @override
   void initState() {
     super.initState();
-    _videoId = YoutubePlayer.convertUrlToId(widget.videoUrl);
-
+    _initPlayer();
+    
     _pulseController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1500),
@@ -52,40 +59,110 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.12).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+  }
 
-    if (_videoId != null) {
-      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
-        _controller = null;
-      } else {
-        _controller = YoutubePlayerController(
-          initialVideoId: _videoId!,
-          flags: YoutubePlayerFlags(
-            autoPlay: false,
-            mute: false,
-            forceHD: false,
-            enableCaption: false,
-            isLive: false,
-            disableDragSeek: false,
-            hideControls: true, 
-            hideThumbnail: true, 
-          ),
-        )..addListener(_onControllerChange);
+  void _initPlayer() {
+    final url = widget.videoUrl;
+    if (url.isEmpty) return;
+
+    // 1. YouTube Check
+    if (url.contains('youtu.be') || url.contains('youtube.com')) {
+      _isYoutube = true;
+      _videoId = YoutubePlayer.convertUrlToId(url);
+      
+      if (_videoId != null) {
+        if (!kIsWeb && defaultTargetPlatform != TargetPlatform.windows) {
+          _youtubeController = YoutubePlayerController(
+            initialVideoId: _videoId!,
+            flags: YoutubePlayerFlags(
+              autoPlay: false,
+              mute: false,
+              forceHD: true,
+              enableCaption: false,
+              isLive: false,
+              disableDragSeek: false,
+              hideControls: true, 
+              hideThumbnail: true,
+            ),
+          )..addListener(_onControllerChange);
+        }
       }
+      return;
+    }
+
+    // 2. Regular Video Check
+    _isYoutube = false;
+    final sanitizedUrl = _sanitizeUrl(url);
+    
+    _videoController = VideoPlayerController.networkUrl(
+      Uri.parse(sanitizedUrl),
+      httpHeaders: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Referer': 'https://supabase.co',
+      },
+    );
+
+    _videoController!.initialize().then((_) {
+      if (!mounted) return;
+      setState(() {
+        _isInitialized = true;
+        final isVertical = _videoController!.value.aspectRatio < 1.0;
+        _chewieController = ChewieController(
+          videoPlayerController: _videoController!,
+          autoPlay: false,
+          looping: false,
+          aspectRatio: _videoController!.value.aspectRatio,
+          deviceOrientationsOnEnterFullScreen: isVertical
+              ? [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]
+              : [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight],
+          placeholder: Container(color: Colors.black),
+          errorBuilder: (context, errorMessage) {
+            return Center(
+              child: Text('فشل تحميل الفيديو', style: TextStyle(color: Colors.white)),
+            );
+          },
+        );
+      });
+      widget.onDurationFetched?.call(_videoController!.value.duration);
+    }).catchError((e) {
+      debugPrint('Error initializing video: $e');
+    });
+  }
+
+  String _sanitizeUrl(String url) {
+    if (url.isEmpty) return url;
+    try {
+      if (url.contains('%')) return url;
+      final uri = Uri.parse(url);
+      final encodedUri = uri.replace(
+        path: _encodePath(uri.path),
+        queryParameters: uri.queryParameters.isNotEmpty ? uri.queryParameters : null,
+      );
+      return encodedUri.toString();
+    } catch (e) {
+      return url.replaceAll(' ', '%20');
     }
   }
 
+  String _encodePath(String path) {
+    if (path.isEmpty) return path;
+    return path.split('/').map((segment) => Uri.encodeComponent(segment)).join('/');
+  }
+
   void _onControllerChange() {
-    if (_controller != null && 
-        _controller!.value.isReady && 
-        _controller!.metadata.duration.inSeconds > 0) {
-      widget.onDurationFetched?.call(_controller!.metadata.duration);
+    if (_youtubeController != null && 
+        _youtubeController!.value.isReady && 
+        _youtubeController!.metadata.duration.inSeconds > 0) {
+      widget.onDurationFetched?.call(_youtubeController!.metadata.duration);
     }
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
-    _controller?.dispose();
+    _youtubeController?.dispose();
+    _videoController?.dispose();
+    _chewieController?.dispose();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -97,22 +174,26 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
   void _startPlayback() {
     setState(() => _hasStarted = true);
     _pulseController.stop();
-    _controller?.play();
+    if (_isYoutube) {
+      _youtubeController?.play();
+    } else {
+      _videoController?.play();
+    }
   }
 
   void _enterFullScreen() {
-    if (_controller != null) {
-      _controller?.toggleFullScreenMode();
+    if (_isYoutube) {
+      _youtubeController?.toggleFullScreenMode();
     } else {
-      setState(() => _isFullScreen = true);
+      _chewieController?.enterFullScreen();
     }
   }
 
   void _exitFullScreen() {
-    if (_controller != null) {
-      _controller?.toggleFullScreenMode();
+    if (_isYoutube) {
+      _youtubeController?.toggleFullScreenMode();
     } else {
-      setState(() => _isFullScreen = false);
+      _chewieController?.exitFullScreen();
     }
   }
 
@@ -123,13 +204,13 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
 
   @override
   Widget build(BuildContext context) {
-    if (_videoId == null) {
+    if (_isYoutube && _videoId == null) {
       return _buildErrorWidget();
     }
 
-    final bool useExternalPlayer = kIsWeb || defaultTargetPlatform == TargetPlatform.windows;
+    final bool useExternalYoutube = _isYoutube && (kIsWeb || defaultTargetPlatform == TargetPlatform.windows);
 
-    if (!useExternalPlayer && _controller != null) {
+    if (_isYoutube && !useExternalYoutube && _youtubeController != null) {
       return YoutubePlayerBuilder(
         onEnterFullScreen: () {
           setState(() => _isFullScreen = true);
@@ -148,7 +229,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
         },
         player: YoutubePlayer(
-          controller: _controller!,
+          controller: _youtubeController!,
           showVideoProgressIndicator: false,
           aspectRatio: 16 / 9,
         ),
@@ -158,10 +239,28 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
       );
     }
 
-    final playerWidget = YoutubePlayerWebWindows(
-      videoId: _videoId!,
-      height: widget.height,
-    );
+    if (useExternalYoutube) {
+      final playerWidget = YoutubePlayerWebWindows(
+        videoId: _videoId!,
+        height: widget.height,
+      );
+      return _buildMainLayout(context, playerWidget);
+    }
+
+    // Regular Video
+    Widget playerWidget;
+    if (_chewieController != null && _videoController != null && _isInitialized) {
+      playerWidget = AspectRatio(
+        aspectRatio: _videoController!.value.aspectRatio,
+        child: Chewie(controller: _chewieController!),
+      );
+    } else {
+      playerWidget = Container(
+        color: Colors.black,
+        child: Center(child: CircularProgressIndicator(color: AppColors.primaryPurple)),
+      );
+    }
+    
     return _buildMainLayout(context, playerWidget);
   }
 
@@ -180,8 +279,9 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
               Center(child: player),
               if (_hasStarted)
                 VideoPlayerControls(
-                  isYoutube: true,
-                  youtubeController: _controller,
+                  isYoutube: _isYoutube,
+                  youtubeController: _youtubeController,
+                  videoController: _videoController,
                   onToggleFullScreen: _exitFullScreen,
                   courseTitle: 'معاينة الفيديو',
                 ),
@@ -244,8 +344,9 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                       player,
                       if (_hasStarted)
                         VideoPlayerControls(
-                          isYoutube: true,
-                          youtubeController: _controller,
+                          isYoutube: _isYoutube,
+                          youtubeController: _youtubeController,
+                          videoController: _videoController,
                           onToggleFullScreen: _enterFullScreen,
                           courseTitle: 'معاينة الفيديو',
                         ),

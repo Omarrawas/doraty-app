@@ -323,6 +323,74 @@ class DatabaseService {
     }
   }
 
+  /// Get bundles that contain courses by a specific teacher
+  Future<List<Map<String, dynamic>>> getBundlesByTeacherId(String teacherId) async {
+    try {
+      // 1. Get IDs of courses owned by this teacher
+      final coursesResponse = await _client
+          .from('courses')
+          .select('id')
+          .eq('instructor_id', teacherId);
+      
+      final List<String> teacherCourseIds = (coursesResponse as List)
+          .map((c) => c['id'] as String)
+          .toList();
+      
+      if (teacherCourseIds.isEmpty) return [];
+
+      // 2. Find bundle IDs that contain these courses
+      final bundleCoursesResponse = await _client
+          .from('bundle_courses')
+          .select('bundle_id')
+          .inFilter('course_id', teacherCourseIds);
+      
+      final List<String> bundleIds = (bundleCoursesResponse as List)
+          .map((bc) => bc['bundle_id'] as String)
+          .toSet() 
+          .toList();
+      
+      if (bundleIds.isEmpty) return [];
+
+      // 3. Fetch these specific bundles. Filter by non-null IDs.
+      final List<String> cleanBundleIds = bundleIds.where((id) => id.isNotEmpty).toList();
+      if (cleanBundleIds.isEmpty) return [];
+
+      final response = await _client
+          .from('bundles')
+          .select()
+          .inFilter('id', cleanBundleIds)
+          .order('created_at', ascending: false);
+      
+      final List<Map<String, dynamic>> bundles =
+          SafeParser.safeMapList(response);
+
+      // 4. Enrich with courses
+      final List<Map<String, dynamic>> enrichedBundles = [];
+      for (var bundle in bundles) {
+        final bCoursesResponse = await _client
+            .from('bundle_courses')
+            .select('course_id')
+            .eq('bundle_id', bundle['id']);
+
+        final List<String> cIds = (bCoursesResponse as List)
+            .map((e) => e['course_id'] as String)
+            .toList();
+
+        final fullCoursesResponse = await _client
+            .from('courses')
+            .select()
+            .inFilter('id', cIds);
+
+        bundle['courses'] = fullCoursesResponse;
+        enrichedBundles.add(bundle);
+      }
+      return enrichedBundles;
+    } catch (e) {
+      debugPrint('Error getting bundles by teacher: $e');
+      return [];
+    }
+  }
+
   // ==================== TIPS (NEW) ====================
 
   /// Get all tips with optional linked course data

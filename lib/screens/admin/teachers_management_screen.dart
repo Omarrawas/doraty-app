@@ -7,6 +7,7 @@ import '../../core/theme/theme_provider.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
+import '../../core/utils/string_utils.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import 'package:go_router/go_router.dart';
@@ -258,17 +259,24 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
     final courses = teacher['teacher_courses'] as List<dynamic>? ?? [];
 
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16, left: 20, right: 20),
       decoration: _glassDecoration(context),
       child: ExpansionTile(
         leading: CircleAvatar(
           backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
-          backgroundImage: teacher['avatar_url'] != null
+          backgroundImage: teacher['avatar_url'] != null && teacher['avatar_url'].toString().startsWith('http')
               ? NetworkImage(teacher['avatar_url'])
               : null,
-          child: teacher['avatar_url'] == null
-              ? Icon(Icons.person, color: AppColors.primaryPurple)
-              : null,
+          child: teacher['avatar_url'] != null && teacher['avatar_url'].toString().startsWith('data:')
+             ? ClipOval(
+                  child: Image.memory(
+                    StringUtils.decodeBase64Image(teacher['avatar_url']),
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
+                  ),
+                )
+             : (teacher['avatar_url'] == null ? Icon(Icons.person, color: AppColors.primaryPurple) : null),
         ),
         title: Text(teacher['full_name'] ?? teacher['name'] ?? _t('teacher'),
             style: TextStyle(fontWeight: FontWeight.bold)),

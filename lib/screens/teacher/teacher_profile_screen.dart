@@ -8,6 +8,8 @@ import '../../core/theme/app_colors.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
+import '../../models/bundle.dart';
+import '../../widgets/bundle_card.dart';
 
 class TeacherProfileScreen extends StatefulWidget {
   final String teacherId;
@@ -30,6 +32,7 @@ class TeacherProfileScreen extends StatefulWidget {
 class _TeacherProfileScreenState extends State<TeacherProfileScreen> with SingleTickerProviderStateMixin {
   final DatabaseService _databaseService = DatabaseService();
   List<Course> _teacherCourses = [];
+  List<Bundle> _teacherBundles = [];
   bool _isLoading = true;
 
   String? _teacherBio;
@@ -85,15 +88,19 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
     try {
       final coursesData =
           await _databaseService.getCoursesByTeacherId(widget.teacherId);
+      final bundlesData =
+          await _databaseService.getBundlesByTeacherId(widget.teacherId);
       if (mounted) {
         setState(() {
           _teacherCourses =
               coursesData.map((data) => Course.fromJson(data)).toList();
+          _teacherBundles =
+              bundlesData.map((data) => Bundle.fromJson(data)).toList();
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('Error loading teacher courses: $e');
+      debugPrint('Error loading teacher courses/bundles: $e');
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -322,31 +329,86 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
   }
 
   Widget _buildCoursesGrid(BuildContext context) {
-    if (_teacherCourses.isEmpty) {
+    if (_teacherCourses.isEmpty && _teacherBundles.isEmpty) {
       return Center(
         child: Text(
           _t('no_courses_available'),
-          style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54)),
+          style: TextStyle(
+              color: AppColors.getTextColor(context).withOpacity(0.54)),
         ),
       );
     }
 
     final screenWidth = MediaQuery.of(context).size.width;
     final int crossAxisCount = screenWidth > 600 ? 3 : 2;
-    final double childAspectRatio = screenWidth > 600 ? 0.75 : 0.68;
+    final double childAspectRatio = screenWidth > 600 ? 0.75 : 0.62;
 
-    return GridView.builder(
-      padding: EdgeInsets.fromLTRB(20, 20, 20, 40),
-      itemCount: _teacherCourses.length,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        childAspectRatio: childAspectRatio,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 20,
-      ),
-      itemBuilder: (context, index) {
-        return CourseCard(course: _teacherCourses[index]);
-      },
+    return CustomScrollView(
+      physics: const NeverScrollableScrollPhysics(), // Let NestedScrollView in parent handle scrolling
+      shrinkWrap: true,
+      slivers: [
+        if (_teacherCourses.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 20, 20, 16),
+              child: Text(
+                _t('courses'),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.getTextColor(context),
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: crossAxisCount,
+                childAspectRatio: childAspectRatio,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 20,
+              ),
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => CourseCard(course: _teacherCourses[index]),
+                childCount: _teacherCourses.length,
+              ),
+            ),
+          ),
+        ],
+        if (_teacherBundles.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(20, 40, 20, 16),
+              child: Text(
+                _t('bundles_label'),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.getTextColor(context),
+                ),
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: BundleCard(
+                    bundle: _teacherBundles[index],
+                    heroTag: 'teacher_profile_bundle_${_teacherBundles[index].id}',
+                  ),
+                ),
+                childCount: _teacherBundles.length,
+              ),
+            ),
+          ),
+        ],
+        SliverToBoxAdapter(child: SizedBox(height: 80)),
+      ],
     );
   }
 }

@@ -56,6 +56,7 @@ import '../../screens/admin/payment_receipt_detail_screen.dart';
 import '../../screens/admin/financial_reports_screen.dart';
 import '../../screens/teacher/create_exam_screen.dart';
 import '../../screens/teacher/manage_questions_screen.dart';
+import '../../screens/admin/teacher_requests_screen.dart';
 import '../../models/bundle.dart';
 import '../../models/tip.dart';
 
@@ -171,6 +172,10 @@ final GoRouter appRouter = GoRouter(
         GoRoute(
           path: 'teachers',
           builder: (context, state) => const TeachersManagementScreen(),
+        ),
+        GoRoute(
+          path: 'teacher-requests',
+          builder: (context, state) => const TeacherRequestsScreen(),
         ),
         GoRoute(
           path: 'bundles',
@@ -371,7 +376,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/register',
       parentNavigatorKey: rootNavigatorKey,
-      builder: (context, state) => RegisterScreen(),
+      builder: (context, state) => const RegisterScreen(),
+      routes: [
+        GoRoute(
+          path: 'complete',
+          builder: (context, state) => const RegisterScreen(isCompletingProfile: true),
+        ),
+      ],
     ),
     GoRoute(
       path: '/settings',

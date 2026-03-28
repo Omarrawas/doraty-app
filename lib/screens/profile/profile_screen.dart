@@ -1189,7 +1189,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
-                context.push('/register');
+                context.push('/register/complete');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple,

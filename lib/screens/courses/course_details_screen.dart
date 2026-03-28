@@ -638,8 +638,13 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               '${_course!.durationHours ?? "0"} ${_t("hours_short")}'),
           SizedBox(width: 12),
         ],
+        // عداد الفصول
+        _buildStatBadge(Icons.grid_view_rounded,
+            '${_chapters.isNotEmpty ? _chapters.length : 0} ${_t("chapters")}'),
+        SizedBox(width: 12),
+        // عداد الدروس
         _buildStatBadge(Icons.play_circle_outline_rounded,
-            '${_course!.lessonsCount} ${_t("lessons")}'),
+            '${_lessons.isNotEmpty ? _lessons.length : _course!.lessonsCount} ${_t("lessons")}'),
       ],
     );
   }

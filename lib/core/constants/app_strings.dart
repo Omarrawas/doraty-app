@@ -194,6 +194,10 @@ class AppStrings {
       'confirm_delete_message': 'هل تريد إزالة هذه الدورة من قائمتك؟',
       'error_label': 'خطأ',
       'lessons_count_label': 'درس',
+      'lessons': 'درساً',
+      'chapters': 'فصلاً',
+      'bundles_label': 'باقات مترابطة',
+      'no_bundles_available': 'لا توجد باقات متاحة حالياً',
       'students_count_label': 'طالب',
       'duration_label': 'ساعة',
       'hours_short': 'ساعة',
@@ -875,6 +879,7 @@ class AppStrings {
       'no_featured_courses_message': 'No featured courses found at the moment.',
       'welcome_with_name': 'Welcome,',
       'lessons': 'lessons',
+      'chapters': 'chapters',
       'ready_to_learn': 'Ready to learn?',
       'search_course_hint': 'Search for a course...',
       'continue_learning': 'Continue Learning',
@@ -1503,6 +1508,8 @@ class AppStrings {
       'transaction_number': 'Transaction Number *',
       'transaction_hint': 'Enter the transfer transaction number',
       'transfer_complete_tip': 'After completing the transfer, enter the transaction number you received from the app',
+      'bundles_label': 'Related Packages',
+      'no_bundles_available': 'No packages available at the moment',
     },
   };
 

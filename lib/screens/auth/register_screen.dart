@@ -128,17 +128,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    if (widget.isCompletingProfile) {
+      await _completeProfile();
+    } else {
+      await _signUp();
+    }
+  }
+
+  Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showErrorSnackBar(_t('pass_dont_match'));
+      return;
+    }
 
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final bool isAlreadyAuth = authService.isAuthenticated;
+    setState(() => _isLoading = true);
 
-    if (!isAlreadyAuth) {
-      if (_passwordController.text != _confirmPasswordController.text) {
-        _showErrorSnackBar(_t('pass_dont_match'));
-        return;
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      await authService.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        fullName: _nameController.text.trim(),
+      );
+
+      if (mounted) {
+        context.go('/register/complete');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showErrorSnackBar(ErrorUtils.getFriendlyErrorMessage(e));
       }
     }
+  }
+
+  Future<void> _completeProfile() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final String? userId = SupabaseService.instance.currentUserId;
+    if (userId == null) throw _t('fail_get_user_id');
 
     if (_selectedRole == 'student' && !_termsAccepted) {
       _showErrorSnackBar('الرجاء الموافقة على الشروط والأحكام');
@@ -155,19 +184,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final dbService = DatabaseService();
 
-      // 1. Auth Signup (if not already auth)
-      if (!isAlreadyAuth) {
-        await authService.signUp(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-          fullName: _nameController.text.trim(),
-        );
-      }
-
-      final String? userId = SupabaseService.instance.currentUserId;
-      if (userId == null) throw _t('fail_get_user_id');
-
-      // 2. Upload Files to GitHub
+      // Upload Files to GitHub
       String? avatarUrl;
       String? cvUrl;
       String? certUrl;
@@ -188,7 +205,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       }
 
-      // 3. Save Role-Specific Profile
+      // Save Role-Specific Profile
       if (_selectedRole == 'student') {
         await dbService.saveStudentProfile({
           'id': userId,
@@ -249,8 +266,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isAlreadyAuth = Provider.of<AuthService>(context).isAuthenticated;
-
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -266,26 +281,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   _buildTopBar(),
                   SizedBox(height: 20),
-                  Text(isAlreadyAuth ? 'إكمال الملف الشخصي' : _t('register_title'), style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
-                  Text(isAlreadyAuth ? 'الرجاء تزويدنا ببعض المعلومات الإضافية' : _t('register_subtitle'), style: TextStyle(fontSize: 16, color: AppColors.getTextColor(context, secondary: true), fontFamily: 'Cairo')),
+                  Text(widget.isCompletingProfile ? 'إكمال الملف الشخصي' : _t('register_title'), style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
+                  Text(widget.isCompletingProfile ? 'الرجاء تزويدنا ببعض المعلومات الإضافية' : _t('register_subtitle'), style: TextStyle(fontSize: 16, color: AppColors.getTextColor(context, secondary: true), fontFamily: 'Cairo')),
                   SizedBox(height: 30),
                   
-                  _buildProfileImagePicker(),
-                  SizedBox(height: 30),
-
-                  _buildHeader(_t('personal_info')),
-                  _buildGlassField(controller: _nameController, label: _t('name'), icon: Icons.person_outline, validator: (v) => v!.isEmpty ? _t('required_field') : null, enabled: !isAlreadyAuth),
-                  SizedBox(height: 16),
-                  _buildGlassField(controller: _emailController, label: _t('email_label'), icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress, validator: (v) => v!.isEmpty ? _t('required_field') : null, enabled: !isAlreadyAuth),
-                  SizedBox(height: 16),
-                  
-                  _buildPremiumRoleSelector(),
-                  SizedBox(height: 20),
-
-                  // Role-Specific Sections
-                  if (_selectedRole == 'student') _buildStudentSection() else _buildTeacherSection(),
-
-                  if (!isAlreadyAuth) ...[
+                  if (widget.isCompletingProfile) ...[
+                    _buildProfileImagePicker(),
+                    SizedBox(height: 30),
+                    _buildPremiumRoleSelector(),
+                    SizedBox(height: 20),
+                    // Role-Specific Sections
+                    if (_selectedRole == 'student') _buildStudentSection() else _buildTeacherSection(),
+                  ] else ...[
+                    _buildHeader(_t('personal_info')),
+                    _buildGlassField(controller: _nameController, label: _t('name'), icon: Icons.person_outline, validator: (v) => v!.isEmpty ? _t('required_field') : null),
+                    SizedBox(height: 16),
+                    _buildGlassField(controller: _emailController, label: _t('email_label'), icon: Icons.email_outlined, keyboardType: TextInputType.emailAddress, validator: (v) => v!.isEmpty ? _t('required_field') : null),
                     SizedBox(height: 32),
                     _buildHeader(_t('security_header')),
                     _buildGlassField(
@@ -313,10 +324,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ],
                   
                   SizedBox(height: 40),
-                  _buildRegisterButton(isAlreadyAuth),
+                  _buildRegisterButton(widget.isCompletingProfile),
 
                   SizedBox(height: 20),
-                  if (!isAlreadyAuth)
+                  if (!widget.isCompletingProfile)
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -568,14 +579,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildRegisterButton(bool isAlreadyAuth) {
+  Widget _buildRegisterButton(bool isCompletingProfile) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(gradient: AppColors.primaryGradient, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: AppColors.primaryPurple.withOpacity(0.3), blurRadius: 12, offset: Offset(0, 6))]),
       child: ElevatedButton(
         onPressed: _isLoading ? null : _register,
         style: ElevatedButton.styleFrom(backgroundColor: Colors.transparent, shadowColor: Colors.transparent, padding: EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-        child: _isLoading ? CircularProgressIndicator(color: AppColors.getTextColor(context)) : Text(isAlreadyAuth ? 'إكمال التسجيل' : _t('register_action'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
+        child: _isLoading ? CircularProgressIndicator(color: AppColors.getTextColor(context)) : Text(isCompletingProfile ? 'إكمال عملية التسجيل' : 'متابعة', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
       ),
     );
   }

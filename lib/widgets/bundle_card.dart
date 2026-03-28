@@ -61,6 +61,7 @@ class _BundleCardState extends State<BundleCard>
         scale: _scaleAnimation,
         child: Container(
           width: 280,
+          height: 200, // Added fixed height to prevent unbounded height errors
           margin: EdgeInsets.only(bottom: 20),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
