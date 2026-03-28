@@ -1321,45 +1321,22 @@ class DatabaseService {
   }
 
   /// Create a chapter
-  Future<void> createChapter({
-    required String courseId,
-    required String title,
-    int? orderIndex,
-  }) async {
+  Future<void> createChapter(Chapter chapter) async {
     try {
-      // If orderIndex is not provided, put it at the end
-      int index = orderIndex ?? 0;
-      if (orderIndex == null) {
-        final chapters = await getChapters(courseId);
-        index = chapters.length;
-      }
-
-      await _client.from('chapters').insert({
-        'course_id': courseId,
-        'title': title,
-        'order_index': index,
-      });
+      final data = chapter.toJson();
+      if (chapter.id.isEmpty) data.remove('id');
+      await _client.from('chapters').insert(data);
     } catch (e) {
       rethrow;
     }
   }
 
   /// Update a chapter
-  Future<void> updateChapter({
-    required String chapterId,
-    String? title,
-    int? orderIndex,
-  }) async {
+  Future<void> updateChapter(Chapter chapter) async {
     try {
-      final updates = <String, dynamic>{};
-      if (title != null) updates['title'] = title;
-      if (orderIndex != null) updates['order_index'] = orderIndex;
-
-      if (updates.isEmpty) return;
-
+      final updates = chapter.toJson();
       updates['updated_at'] = DateTime.now().toIso8601String();
-
-      await _client.from('chapters').update(updates).eq('id', chapterId);
+      await _client.from('chapters').update(updates).eq('id', chapter.id);
     } catch (e) {
       rethrow;
     }
@@ -1373,6 +1350,24 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  /// Reorder chapters
+  Future<void> reorderChapters(List<Map<String, dynamic>> updates) async {
+    try {
+      await _client.from('chapters').upsert(updates);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Get course lessons (alias for getLessons)
+  Future<List<Map<String, dynamic>>> getCourseLessons(String courseId) async {
+    return getLessons(courseId);
+  }
+
+
+
+
 
   // ==================== NOTES ====================
 
@@ -2565,6 +2560,8 @@ class DatabaseService {
       rethrow;
     }
   }
+
+
 
   /// Get exam by ID with questions
   Future<Map<String, dynamic>?> getExamById(String examId) async {
@@ -4495,41 +4492,11 @@ class DatabaseService {
   }
 
   /// Get all lessons for a course (Admin - no progress)
-  Future<List<Map<String, dynamic>>> getCourseLessons(String courseId) async {
-    if (courseId.trim().isEmpty) return [];
-    try {
-      final response = await _client
-          .from('lessons')
-          .select()
-          .eq('course_id', courseId)
-          .order('order_index');
 
-      return SafeParser.safeMapList(response);
-    } catch (e) {
-      rethrow;
-    }
-  }
-
-  /// Reorder lessons
+  /// Reorder lessons (modern upsert)
   Future<void> reorderLessons(List<Map<String, dynamic>> updates) async {
     try {
-      String? courseId;
-      for (var update in updates) {
-        final id = update.remove('id');
-        if (id != null) {
-          await _client.from('lessons').update(update).eq('id', id);
-          if (courseId == null) {
-            final lesson = await _client
-                .from('lessons')
-                .select('course_id')
-                .eq('id', id)
-                .single();
-            courseId = lesson['course_id'];
-          }
-        }
-      }
-      // Reordering shouldn't change duration but let's be safe if order affects something
-      // Actually durations are the same.
+      await _client.from('lessons').upsert(updates);
     } catch (e) {
       rethrow;
     }
@@ -5804,6 +5771,8 @@ class DatabaseService {
       rethrow;
     }
   }
+
+
   // ==================== FINANCIAL REPORTS ====================
 
   // ==================== FINANCIAL REPORTS ====================

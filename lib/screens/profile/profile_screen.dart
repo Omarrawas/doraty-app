@@ -16,7 +16,6 @@ import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
 import '../../core/utils/error_utils.dart';
 import '../../models/course.dart';
-import '../courses/course_details_screen.dart';
 import '../favorites/favorites_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -1043,12 +1042,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
         return InkWell(
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CourseDetailsScreen(course: course),
-              ),
-            );
+            final identifier = course.slug.isNotEmpty ? course.slug : course.id;
+            context.push('/course/$identifier');
           },
           borderRadius: BorderRadius.circular(16),
           child: Container(

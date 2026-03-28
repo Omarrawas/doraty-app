@@ -6,7 +6,6 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../models/course.dart';
 import '../../core/services/database_service.dart';
-import '../courses/course_details_screen.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../teacher/teacher_profile_screen.dart';
 import '../../models/category_model.dart';
@@ -741,13 +740,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 SizedBox(width: 8),
                 IconButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            CourseDetailsScreen(course: lastCourse),
-                      ),
-                    );
+                    final identifier = lastCourse.slug.isNotEmpty ? lastCourse.slug : lastCourse.id;
+                    context.push('/course/$identifier');
                   },
                   icon: Icon(Icons.play_circle_fill,
                       color: AppColors.primaryPurple.withOpacity(0.9),
@@ -1362,27 +1356,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                       onPressed: () {
                                         if (hasBundleAccess &&
                                             bundle.courses.isNotEmpty) {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  CourseDetailsScreen(
-                                                course: bundle.courses.first,
-                                              ),
-                                            ),
-                                          );
+                                          final identifier = bundle.courses.first.slug.isNotEmpty ? bundle.courses.first.slug : bundle.courses.first.id;
+                                          context.push('/course/$identifier');
                                           return;
                                         }
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => PackageScreen(
-                                              packageTitle: bundle.title,
-                                              courses: bundle.courses,
-                                              bundle: bundle,
-                                            ),
-                                          ),
-                                        );
+                                        final identifier = bundle.slug.isNotEmpty ? bundle.slug : bundle.id;
+                                        context.push('/package/$identifier');
                                       },
                                       child: Text(
                                         hasBundleAccess ? 'أكمل' : 'اشترك',
@@ -1748,24 +1727,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 lessonsCount: 0,
                 subject: '',
               ));
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CourseDetailsScreen(course: course),
-        ),
-      );
+      final identifier = course.slug.isNotEmpty ? course.slug : course.id;
+      context.push('/course/$identifier');
     } else if (item.type == 'package' && item.targetId != null) {
       final bundle = _bundles.firstWhere((b) => b.id == item.targetId,
           orElse: () => _bundles.first);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PackageScreen(
-              packageTitle: bundle.title,
-              courses: bundle.courses,
-              bundle: bundle),
-        ),
-      );
+      final identifier = bundle.slug.isNotEmpty ? bundle.slug : bundle.id;
+      context.push('/package/$identifier');
     } else if (item.type == 'external' && item.linkUrl != null) {
       final uri = Uri.tryParse(item.linkUrl!);
       if (uri != null) {

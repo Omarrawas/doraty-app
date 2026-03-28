@@ -344,7 +344,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.getTextColor(context).withOpacity(0.70)), onPressed: () => Navigator.pop(context)),
+        IconButton(icon: Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.getTextColor(context).withOpacity(0.70)), onPressed: () {
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          } else {
+            context.go('/');
+          }
+        }),
         GestureDetector(
           onTap: () => localeProvider.setLocale(isArabic ? 'en' : 'ar'),
           child: Container(

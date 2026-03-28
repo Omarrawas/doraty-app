@@ -89,8 +89,8 @@ class _SplashScreenState extends State<SplashScreen>
         debugPrint('⚠️ Profile load timed out: $e');
       }
       
-      final profile = authService.userProfile;
-      final hasRole = profile != null && profile['role'] != null;
+      // Removed role-check forced registration; we now always go to the home screen
+      // even for accounts with incomplete profiles to allow guest-like access.
 
       // Apply screen security with timeout
       try {
@@ -101,11 +101,10 @@ class _SplashScreenState extends State<SplashScreen>
 
       if (!mounted) return;
       
-      if (!hasRole) {
-        context.go('/register');
-      } else {
-        context.go('/');
-      }
+      // If we are authenticated but have no role, we still allow them to go to the home screen
+      // as a guest/incomplete user. They can finish registration from the profile screen.
+      // This respects the user's request to not be forced to the registration page on startup.
+      context.go('/');
     } else {
       // Not authenticated
       if (mounted) {

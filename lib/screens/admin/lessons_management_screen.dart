@@ -12,6 +12,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 
+import '../../widgets/glass_card.dart';
+
 class LessonsManagementScreen extends StatefulWidget {
   final String courseId;
   final String courseTitle;
@@ -45,52 +47,24 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
   Future<void> _loadLessons() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final lessons = await _db.getCourseLessons(widget.courseId);
       final chapters = await _db.getChapters(widget.courseId);
       final exams = await _db.getAllExamsForCourse(widget.courseId);
 
-      // Sort lessons by chapter order first, then by lesson order
-      lessons.sort((a, b) {
-        final chapterIdA = a['chapter_id'];
-        final chapterIdB = b['chapter_id'];
-
-        if (chapterIdA == chapterIdB) {
-          final int orderA = (a['order_index'] as num?)?.toInt() ?? 0;
-          final int orderB = (b['order_index'] as num?)?.toInt() ?? 0;
-          return orderA.compareTo(orderB);
-        }
-
-        final chapterA = chapters.firstWhere(
-          (c) => c.id == chapterIdA,
-          orElse: () =>
-              Chapter(id: '', courseId: '', title: '', orderIndex: 999),
-        );
-        final chapterB = chapters.firstWhere(
-          (c) => c.id == chapterIdB,
-          orElse: () =>
-              Chapter(id: '', courseId: '', title: '', orderIndex: 999),
-        );
-
-        if (chapterA.orderIndex != chapterB.orderIndex) {
-          return chapterA.orderIndex.compareTo(chapterB.orderIndex);
-        }
-
-        final int orderA = (a['order_index'] as num?)?.toInt() ?? 0;
-        final int orderB = (b['order_index'] as num?)?.toInt() ?? 0;
-        return orderA.compareTo(orderB);
-      });
-
-      setState(() {
-        _lessons = lessons;
-        _chapters = chapters;
-        _exams = exams;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
       if (mounted) {
+        setState(() {
+          _lessons = lessons;
+          _chapters = chapters;
+          _exams = exams;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
               content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
@@ -102,7 +76,9 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeProvider>().isDarkMode;
+    final isDark = context.read<ThemeProvider>().isDarkMode;
+    final double width = MediaQuery.of(context).size.width;
+    final bool isSmallScreen = width < 900;
 
     return Theme(
       data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
@@ -113,6 +89,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
             child: Column(
               children: [
                 _buildHeader(context),
+                _buildTopActions(context),
                 Expanded(
                   child: _isLoading
                       ? Center(
@@ -121,94 +98,16 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                                 AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : _lessons.isEmpty
-                          ? _buildEmptyState(context)
-                          : RefreshIndicator(
-                              onRefresh: _loadLessons,
-                              child: ReorderableListView.builder(
-                                padding: EdgeInsets.all(20),
-                                itemCount: _lessons.length,
-                                onReorder: _reorderLessons,
-                                buildDefaultDragHandles: false,
-                                proxyDecorator: (child, index, animation) {
-                                  return AnimatedBuilder(
-                                    animation: animation,
-                                    builder: (context, child) {
-                                      final double animValue = Curves.easeInOut
-                                          .transform(animation.value);
-                                      final double scale =
-                                          lerpDouble(1, 1.02, animValue)!;
-                                      final double elevation =
-                                          lerpDouble(0, 6, animValue)!;
-                                      return Transform.scale(
-                                        scale: scale,
-                                        child: Material(
-                                          elevation: elevation,
-                                          color: Colors.transparent,
-                                          shadowColor:
-                                              Colors.black.withOpacity(0.5),
-                                          child: child,
-                                        ),
-                                      );
-                                    },
-                                    child: child,
-                                  );
-                                },
-                                itemBuilder: (context, index) {
-                                  final lesson = _lessons[index];
-                                  final prevLesson =
-                                      index > 0 ? _lessons[index - 1] : null;
-
-                                  // Check if chapter changed to show header
-                                  final bool showHeader = index == 0 ||
-                                      lesson['chapter_id'] !=
-                                          prevLesson?['chapter_id'];
-
-                                  // Find chapter info
-                                  final chapterId = lesson['chapter_id'];
-                                  final chapter = _chapters.firstWhere(
-                                    (c) => c.id == chapterId,
-                                    orElse: () => Chapter(
-                                        id: '',
-                                        courseId: widget.courseId,
-                                        title: _t('other_lessons'),
-                                        orderIndex: 999),
-                                  );
-
-                                  return Column(
-                                    key: ValueKey(lesson['id']),
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (showHeader)
-                                        _buildChapterHeader(
-                                            context, chapter.title),
-                                      Padding(
-                                        padding:
-                                            EdgeInsets.only(bottom: 12),
-                                        child: _buildLessonCard(
-                                            context, lesson, index),
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
-                            ),
+                      : RefreshIndicator(
+                          onRefresh: _loadLessons,
+                          child: isSmallScreen
+                              ? _buildMobileView()
+                              : _buildDesktopView(),
+                        ),
                 ),
               ],
             ),
           ),
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () async {
-            final result = await context.push('/admin/lessons/create/${widget.courseId}');
-            if (result == true) _loadLessons();
-          },
-          backgroundColor: AppColors.primaryPurple,
-          icon: Icon(Icons.add, color: AppColors.getTextColor(context)),
-          label: Text(_t('add_lesson'),
-              style: TextStyle(
-                  color: AppColors.getTextColor(context), fontWeight: FontWeight.normal)),
         ),
       ),
     );
@@ -263,25 +162,37 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
               ],
             ),
           ),
-          SizedBox(width: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.getGlassColor(context, opacity: 0.2),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: AppColors.getGlassColor(context, opacity: 0.3),
-                      width: 1),
-                ),
-                child: IconButton(
-                  onPressed: _manageChapters,
-                  icon: Icon(Icons.category, color: AppColors.getTextColor(context)),
-                  tooltip: _t('manage_chapters'),
-                ),
-              ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTopActions(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildHeaderActionButton(
+              context: context,
+              icon: Icons.create_new_folder_rounded,
+              label: _t('add_chapter'),
+              color: Colors.blueAccent,
+              onTap: _addChapter,
+            ),
+          ),
+          SizedBox(width: 12),
+          Expanded(
+            child: _buildHeaderActionButton(
+              context: context,
+              icon: Icons.video_call_rounded,
+              label: _t('add_lesson'),
+              color: AppColors.primaryPurple,
+              onTap: () async {
+                final result = await context
+                    .push('/admin/lessons/create/${widget.courseId}');
+                if (result == true) _loadLessons();
+              },
             ),
           ),
         ],
@@ -289,255 +200,397 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     );
   }
 
-  Widget _buildLessonCard(
-      BuildContext context, Map<String, dynamic> lesson, int index) {
-    final isFree = lesson['is_free'] as bool? ?? false;
-    int durationInSeconds = 0;
-    final durationData = lesson['duration'];
-    if (durationData is int) {
-      durationInSeconds = durationData;
-    } else if (durationData is String) {
-      if (int.tryParse(durationData) != null) {
-        durationInSeconds = int.parse(durationData);
-      } else if (durationData.contains(':')) {
-        final parts =
-            durationData.split(':').map((e) => int.tryParse(e) ?? 0).toList();
-        if (parts.length == 2) {
-          durationInSeconds = parts[0] * 60 + parts[1];
-        } else if (parts.length == 3) {
-          durationInSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
-        }
-      }
-    }
-    final minutes = (durationInSeconds / 60).round();
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          decoration: BoxDecoration(
-            color: AppColors.getGlassColor(context, opacity: 0.2),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppColors.getGlassColor(context, opacity: 0.3),
-              width: 1.5,
-            ),
-          ),
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildHeaderActionButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return GlassCard(
+      opacity: 0.25,
+      padding: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryPurple.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      '${index + 1}',
-                      style: TextStyle(
-                        color: AppColors.getTextColor(context),
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          lesson['title'] ?? _t('lesson'),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.normal,
-                            color: AppColors.getTextColor(context),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Row(
-                          children: [
-                            Icon(Icons.access_time,
-                                color: AppColors.getTextColor(context)
-                                    .withOpacity(1),
-                                size: 14),
-                            SizedBox(width: 4),
-                            Text(
-                              '$minutes ${_t('minutes_unit')}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.getTextColor(context)
-                                    .withOpacity(1),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  // Drag Handle - Larger touch area and better icon
-                  ReorderableDragStartListener(
-                    index: index,
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.getMutedTextColor(context),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.drag_handle_rounded,
-                        color: AppColors.getTextColor(context),
-                        size: 24,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  if (isFree)
-                    Container(
-                      padding:
-                          EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: Colors.green.withOpacity(0.5), width: 1),
-                      ),
-                      child: Text(
-                        _t('free'),
-                        style: TextStyle(
-                          color: Colors.greenAccent,
-                          fontSize: 11,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              if (lesson['description'] != null &&
-                  lesson['description'].toString().isNotEmpty) ...[
-                SizedBox(height: 12),
-                Text(
-                  lesson['description'],
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.getTextColor(context).withOpacity(0.85),
-                  ),
+              Icon(icon, size: 20, color: color),
+              SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.normal,
+                  color: AppColors.getTextColor(context),
                 ),
-              ],
-              SizedBox(height: 16),
-
-              // Exams Section
-              if (_exams.any((e) => e['lesson_id'] == lesson['id'])) ...[
-                Divider(color: AppColors.getTextColor(context).withOpacity(0.12)),
-                Text(
-                  _t('exams_label'),
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.normal,
-                    color: Colors.orangeAccent,
-                  ),
-                ),
-                SizedBox(height: 8),
-                ..._exams
-                    .where((e) => e['lesson_id'] == lesson['id'])
-                    .map((exam) {
-                  return InkWell(
-                    onTap: () async {
-                      final result = await context.push(
-                        '/admin/exams/questions/${exam['id']}?title=${Uri.encodeComponent(exam['title'] ?? '')}',
-                      );
-                      if (result == true) _loadLessons();
-                    },
-                    child: Container(
-                      margin: EdgeInsets.only(bottom: 8),
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.25),
-                        borderRadius: BorderRadius.circular(10),
-                        border:
-                            Border.all(color: Colors.orange.withOpacity(0.5)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.assignment,
-                              size: 16, color: Colors.orangeAccent),
-                          SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              exam['title'] ?? _t('exam'),
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: AppColors.getTextColor(context),
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                          ),
-                          Icon(Icons.chevron_right,
-                              size: 16, color: AppColors.getTextColor(context)),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-              ],
-
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildActionButton(
-                      context: context,
-                       icon: Icons.edit,
-                      label: _t('edit'),
-                      color: Colors.blue,
-                      onTap: () async {
-                        final result = await context.push(
-                          '/admin/lessons/edit/${lesson['id']}?courseId=${widget.courseId}',
-                          extra: lesson,
-                        );
-                        if (result == true) _loadLessons();
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: _buildActionButton(
-                      context: context,
-                      icon: Icons.add_task,
-                      label: _t('add_exam'),
-                      color: Colors.orange,
-                      onTap: () async {
-                        final result = await context.push(
-                          '/admin/exams/create?courseId=${widget.courseId}&lessonId=${lesson['id']}',
-                        );
-                        if (result == true) _loadLessons();
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () => _deleteLesson(lesson),
-                    icon: Icon(Icons.delete, color: Colors.redAccent),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.red.withOpacity(0.25),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMobileView() {
+    if (_chapters.isEmpty && _lessons.isEmpty) {
+      return _buildEmptyState(context);
+    }
+
+    final sortedChapters = [..._chapters]..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+
+    return Theme(
+      data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+      child: ListView.builder(
+        padding: EdgeInsets.all(20),
+        itemCount: sortedChapters.length + 1,
+        itemBuilder: (context, index) {
+          if (index < sortedChapters.length) {
+            final chapter = sortedChapters[index];
+            return _buildChapterExpansionTile(chapter, index, sortedChapters.length);
+          } else {
+            final unorganizedLessons = _lessons.where((l) => l['chapter_id'] == null).toList();
+            if (unorganizedLessons.isEmpty) return SizedBox.shrink();
+            return _buildUnorganizedLessonsTile(unorganizedLessons);
+          }
+        },
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(20),
+        child: GlassCard(
+          opacity: 0.15,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.video_library, color: Colors.white, size: 64),
+              SizedBox(height: 16),
+              Text(
+                _t('no_lessons'),
+                style: TextStyle(fontSize: 18, color: Colors.white70),
+              ),
+              SizedBox(height: 8),
+              Text(
+                _t('start_adding_first_lesson'),
+                style: TextStyle(fontSize: 14, color: Colors.white54),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildChapterExpansionTile(Chapter chapter, int index, int total) {
+    final chapterLessons = _lessons.where((l) => l['chapter_id'] == chapter.id).toList();
+    chapterLessons.sort((a, b) => ((a['order_index'] as num?)?.toInt() ?? 0)
+        .compareTo((b['order_index'] as num?)?.toInt() ?? 0));
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.getGlassColor(context, opacity: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: ExpansionTile(
+          shape: Border(),
+          backgroundColor: Colors.white.withOpacity(0.02),
+          iconColor: Colors.white,
+          collapsedIconColor: Colors.white70,
+          tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          title: Text(
+            chapter.title,
+            style: TextStyle(fontSize: 16, color: Colors.white),
+          ),
+          subtitle: Text(
+            '${chapterLessons.length} ${_t('lessons_count_label')}',
+            style: TextStyle(fontSize: 12, color: Colors.white70),
+          ),
+          trailing: _buildChapterActions(chapter, index, total),
+          children: chapterLessons.asMap().entries.map((entry) {
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: _buildLessonExpansionTile(entry.value, entry.key, chapterLessons.length, chapter.id),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnorganizedLessonsTile(List<Map<String, dynamic>> lessons) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: AppColors.getGlassColor(context, opacity: 0.1).withOpacity(0.05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: ExpansionTile(
+          shape: Border(),
+          title: Text(
+            _t('other_lessons'),
+            style: TextStyle(fontSize: 16, color: Colors.white70),
+          ),
+          children: lessons.asMap().entries.map((entry) {
+            return Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: _buildLessonExpansionTile(entry.value, entry.key, lessons.length, null),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLessonExpansionTile(Map<String, dynamic> lesson, int index, int total, String? chapterId) {
+    final lessonExams = _exams.where((e) => e['lesson_id'] == lesson['id']).toList();
+    final isFree = lesson['is_free'] as bool? ?? false;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: ExpansionTile(
+          shape: Border(),
+          leading: Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.primaryPurple.withOpacity(0.3),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '${index + 1}',
+              style: TextStyle(fontSize: 12, color: Colors.white),
+            ),
+          ),
+          title: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  lesson['title'] ?? '',
+                  style: TextStyle(fontSize: 14, color: Colors.white),
+                ),
+              ),
+              if (isFree)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    _t('free'),
+                    style: TextStyle(fontSize: 9, color: Colors.greenAccent),
+                  ),
+                ),
+            ],
+          ),
+          subtitle: Text(
+            '${lessonExams.length} ${_t('exams_label').replaceAll(':', '')}',
+            style: TextStyle(fontSize: 11, color: Colors.white54),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (index > 0)
+                IconButton(
+                  icon: Icon(Icons.arrow_upward, size: 16, color: Colors.white54),
+                  onPressed: () => _moveLesson(chapterId, index, index - 1),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                ),
+              if (index < total - 1)
+                IconButton(
+                  icon: Icon(Icons.arrow_downward, size: 16, color: Colors.white54),
+                  onPressed: () => _moveLesson(chapterId, index, index + 1),
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(),
+                  visualDensity: VisualDensity.compact,
+                ),
+              SizedBox(width: 8),
+              Icon(Icons.expand_more, color: Colors.white70),
+            ],
+          ),
+          children: [
+            Padding(
+              padding: EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  _buildExamsList(lessonExams),
+                  SizedBox(height: 12),
+                  _buildLessonActionButtons(lesson),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExamsList(List<Map<String, dynamic>> exams) {
+    if (exams.isEmpty) return SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.assignment_turned_in_rounded, size: 14, color: Colors.orangeAccent),
+            SizedBox(width: 6),
+            Text(
+              _t('exams_label'),
+              style: TextStyle(fontSize: 11, color: Colors.orangeAccent),
+            ),
+          ],
+        ),
+        SizedBox(height: 6),
+        ...exams.map((exam) => Container(
+              margin: EdgeInsets.only(bottom: 6),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.03),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white10),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.description_rounded, size: 14, color: Colors.white60),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      exam['title'] ?? '',
+                      style: TextStyle(fontSize: 12, color: Colors.white),
+                    ),
+                  ),
+                  _buildExamActions(exam),
+                ],
+              ),
+            )),
+      ],
+    );
+  }
+
+  Widget _buildChapterActions(Chapter chapter, int index, int total) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (index > 0)
+          IconButton(
+            onPressed: () => _moveChapter(index, index - 1),
+            icon: Icon(Icons.arrow_drop_up_rounded, color: Colors.white54),
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
+          ),
+        if (index < total - 1)
+          IconButton(
+            onPressed: () => _moveChapter(index, index + 1),
+            icon: Icon(Icons.arrow_drop_down_rounded, color: Colors.white54),
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(),
+          ),
+        SizedBox(width: 4),
+        IconButton(
+          onPressed: () => _editChapter(chapter),
+          icon: Icon(Icons.edit_note_rounded, color: Colors.white70, size: 20),
+          tooltip: _t('edit_chapter'),
+        ),
+        IconButton(
+          onPressed: () => _deleteChapter(chapter),
+          icon: Icon(Icons.delete_sweep_rounded, color: Colors.redAccent.withOpacity(0.7), size: 20),
+          tooltip: _t('delete_chapter'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExamActions(Map<String, dynamic> exam) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          padding: EdgeInsets.zero,
+          constraints: BoxConstraints(),
+          onPressed: () => context.push(
+            '/admin/exams/questions/${exam['id']}?title=${Uri.encodeComponent(exam['title'] ?? '')}',
+          ),
+          icon: Icon(Icons.settings_suggest_rounded, color: Colors.blueAccent, size: 18),
+        ),
+        SizedBox(width: 12),
+        IconButton(
+          padding: EdgeInsets.zero,
+          constraints: BoxConstraints(),
+          onPressed: () => _deleteExam(exam),
+          icon: Icon(Icons.remove_circle_outline_rounded, color: Colors.redAccent.withOpacity(0.6), size: 18),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLessonActionButtons(Map<String, dynamic> lesson) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildActionButton(
+            context: context,
+            icon: Icons.edit_rounded,
+            label: _t('edit'),
+            color: Colors.blue,
+            onTap: () async {
+              final result = await context.push(
+                '/admin/lessons/edit/${lesson['id']}?courseId=${widget.courseId}',
+                extra: lesson,
+              );
+              if (result == true) _loadLessons();
+            },
+          ),
+        ),
+        SizedBox(width: 8),
+        Expanded(
+          child: _buildActionButton(
+            context: context,
+            icon: Icons.add_task_rounded,
+            label: _t('add_exam'),
+            color: Colors.orange,
+            onTap: () async {
+              final result = await context.push(
+                '/admin/exams/create?courseId=${widget.courseId}&lessonId=${lesson['id']}',
+              );
+              if (result == true) _loadLessons();
+            },
+          ),
+        ),
+        SizedBox(width: 8),
+        IconButton(
+          onPressed: () => _deleteLesson(lesson),
+          icon: Icon(Icons.delete_forever_rounded, color: Colors.redAccent, size: 24),
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.red.withOpacity(0.1),
+            padding: EdgeInsets.all(8),
+          ),
+        ),
+      ],
     );
   }
 
@@ -582,81 +635,32 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(20),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: EdgeInsets.all(30),
-              decoration: BoxDecoration(
-                color: AppColors.getGlassColor(context, opacity: 0.15),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                    color: AppColors.getGlassColor(context, opacity: 0.3),
-                    width: 1),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.video_library,
-                      color: AppColors.getTextColor(context), size: 64),
-                  SizedBox(height: 16),
-                  Text(
-                    _t('no_lessons'),
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: AppColors.getTextColor(context).withOpacity(0.8),
-                      fontWeight: FontWeight.normal,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    _t('start_adding_first_lesson'),
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.getTextColor(context).withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChapterHeader(BuildContext context, String title) {
+  Widget _buildDesktopView() {
+    final sortedChapters = [..._chapters]..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      padding: EdgeInsets.all(24),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 4,
-            height: 24,
-            decoration: BoxDecoration(
-              color: AppColors.getTextColor(context),
-              borderRadius: BorderRadius.circular(2),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.getMutedTextColor(context),
-                  blurRadius: 8,
-                  spreadRadius: 1,
-                ),
-              ],
+          Expanded(
+            flex: 2,
+            child: _buildDesktopColumn(
+              title: _t('manage_chapters'),
+              icon: Icons.folder_copy_rounded,
+              child: ListView.builder(
+                itemCount: sortedChapters.length,
+                itemBuilder: (context, index) => _buildChapterDesktopCard(sortedChapters[index], index, sortedChapters.length),
+              ),
             ),
           ),
-          SizedBox(width: 12),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.normal,
-              color: AppColors.getTextColor(context),
+          SizedBox(width: 24),
+          Expanded(
+            flex: 5,
+            child: _buildDesktopColumn(
+              title: _t('course_lessons'),
+              icon: Icons.library_books_rounded,
+              child: _buildMobileView(),
             ),
           ),
         ],
@@ -664,74 +668,169 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     );
   }
 
-  Future<void> _reorderLessons(int oldIndex, int newIndex) async {
-    setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
-      final item = _lessons.removeAt(oldIndex);
-      _lessons.insert(newIndex, item);
-
-      // Chapter adoption: if moved to a new position, adopt the chapter of the neighbor
-      if (newIndex > 0) {
-        item['chapter_id'] = _lessons[newIndex - 1]['chapter_id'];
-      } else if (_lessons.length > 1) {
-        item['chapter_id'] = _lessons[newIndex + 1]['chapter_id'];
-      }
-
-      // Update order_index for all lessons
-      for (int i = 0; i < _lessons.length; i++) {
-        _lessons[i]['order_index'] = i + 1;
-      }
-    });
-
-    try {
-      // Save new order and chapter to database
-      final updates = _lessons
-          .map((lesson) => {
-                'id': lesson['id'],
-                'order_index': lesson['order_index'],
-                'chapter_id': lesson['chapter_id'],
-              })
-          .toList();
-
-      await _db.reorderLessons(updates);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_t('order_updated')),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 1),
+  Widget _buildDesktopColumn({required String title, required IconData icon, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            SizedBox(width: 10),
+            Text(
+              title,
+              style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.normal),
+            ),
+          ],
+        ),
+        SizedBox(height: 16),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black12,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: Colors.white.withOpacity(0.05)),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: child,
+            ),
           ),
-        );
-      }
-    } catch (e) {
-      // Revert on error
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChapterDesktopCard(Chapter chapter, int index, int total) {
+    return Container(
+      margin: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
+      ),
+      child: ListTile(
+        title: Text(chapter.title, style: TextStyle(color: Colors.white)),
+        trailing: _buildChapterActions(chapter, index, total),
+      ),
+    );
+  }
+
+  // Action Methods
+  Future<void> _addChapter() async {
+    final controller = TextEditingController();
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('add_chapter')),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(hintText: _t('title')),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(_t('cancel'))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPurple),
+            child: Text(_t('save'), style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && controller.text.isNotEmpty) {
+      await _db.createChapter(Chapter(
+        id: '',
+        courseId: widget.courseId,
+        title: controller.text,
+        orderIndex: _chapters.length + 1,
+      ));
       _loadLessons();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
-              backgroundColor: Colors.red),
-        );
-      }
     }
   }
 
-  Future<void> _deleteLesson(Map<String, dynamic> lesson) async {
+  Future<void> _editChapter(Chapter chapter) async {
+    final controller = TextEditingController(text: chapter.title);
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('edit_chapter')),
+        content: TextField(controller: controller, autofocus: true),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(_t('cancel'))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPurple),
+            child: Text(_t('save'), style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && controller.text.isNotEmpty) {
+      await _db.updateChapter(Chapter(
+        id: chapter.id,
+        courseId: chapter.courseId,
+        title: controller.text,
+        orderIndex: chapter.orderIndex,
+      ));
+      _loadLessons();
+    }
+  }
+
+  Future<void> _moveChapter(int fromIndex, int toIndex) async {
+    final sortedChapters = [..._chapters]..sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
+    if (fromIndex < 0 || toIndex < 0 || fromIndex >= sortedChapters.length || toIndex >= sortedChapters.length) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final ch1 = sortedChapters[fromIndex];
+      final ch2 = sortedChapters[toIndex];
+
+      final updates = [
+        {'id': ch1.id, 'order_index': ch2.orderIndex},
+        {'id': ch2.id, 'order_index': ch1.orderIndex},
+      ];
+
+      await _db.reorderChapters(updates);
+      await _loadLessons();
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _moveLesson(String? chapterId, int fromIndex, int toIndex) async {
+    final chapterLessons = _lessons.where((l) => l['chapter_id'] == chapterId).toList();
+    chapterLessons.sort((a, b) => ((a['order_index'] as num?)?.toInt() ?? 0)
+        .compareTo((b['order_index'] as num?)?.toInt() ?? 0));
+
+    if (fromIndex < 0 || toIndex < 0 || fromIndex >= chapterLessons.length || toIndex >= chapterLessons.length) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final l1 = chapterLessons[fromIndex];
+      final l2 = chapterLessons[toIndex];
+
+      final updates = [
+        {'id': l1['id'], 'order_index': l2['order_index']},
+        {'id': l2['id'], 'order_index': l1['order_index']},
+      ];
+
+      await _db.reorderLessons(updates);
+      await _loadLessons();
+    } catch (e) {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _deleteChapter(Chapter chapter) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(_t('delete_lesson')),
-        content: Text(
-          _t('delete_lesson_confirm'),
-        ),
+        title: Text(_t('delete_chapter')),
+        content: Text(_t('delete_chapter_confirm')),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(_t('cancel')),
-          ),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(_t('cancel'))),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(_t('delete'), style: TextStyle(color: Colors.red)),
@@ -740,181 +839,53 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       ),
     );
 
-    if (confirm != true) return;
-
-    try {
-      await _db.deleteLesson(lesson['id']);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_t('lesson_removed')),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-
+    if (confirm == true) {
+      await _db.deleteChapter(chapter.id);
       _loadLessons();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
-              backgroundColor: Colors.red),
-        );
-      }
     }
   }
 
-  Future<void> _manageChapters() async {
-    showDialog(
+  Future<void> _deleteLesson(Map<String, dynamic> lesson) async {
+    final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: Text(_t('manage_chapters')),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: _chapters.isEmpty
-                  ? Center(child: Text(_t('no_chapters_yet')))
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: _chapters.length,
-                      itemBuilder: (context, index) {
-                        final chapter = _chapters[index];
-                        return ListTile(
-                          title: Text(chapter.title),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: Icon(Icons.edit, size: 20),
-                                onPressed: () async {
-                                  // Edit chapter
-                                  final controller = TextEditingController(
-                                      text: chapter.title);
-                                  final result = await showDialog<String>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: Text(_t('edit_chapter')),
-                                      content: TextField(
-                                        controller: controller,
-                                        decoration: InputDecoration(
-                                            labelText: _t('title')),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context),
-                                            child: Text(_t('cancel'))),
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(
-                                              context, controller.text),
-                                          child: Text(_t('save')),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-
-                                  if (result != null &&
-                                      result.isNotEmpty &&
-                                      result != chapter.title) {
-                                    await _db.updateChapter(
-                                        chapterId: chapter.id, title: result);
-                                    if (context.mounted) {
-                                      _loadLessons();
-                                      Navigator.pop(context);
-                                      _manageChapters();
-                                    }
-                                  }
-                                },
-                              ),
-                              IconButton(
-                                icon: Icon(Icons.delete,
-                                    color: Colors.red, size: 20),
-                                onPressed: () async {
-                                  // Confirm delete
-                                  final confirm = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: Text(_t('delete_chapter')),
-                                      content: Text(
-                                          _t('delete_chapter_confirm')),
-                                      actions: [
-                                        TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, false),
-                                            child: Text(_t('cancel'))),
-                                        TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, true),
-                                            child: Text(_t('delete'),
-                                                style: TextStyle(
-                                                    color: Colors.red))),
-                                      ],
-                                    ),
-                                  );
-
-                                  if (confirm == true) {
-                                    if (context.mounted) {
-                                      _loadLessons();
-                                      Navigator.pop(context);
-                                      _manageChapters();
-                                    }
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(_t('close')),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  final controller = TextEditingController();
-                  final result = await showDialog<String>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text(_t('add_chapter')),
-                      content: TextField(
-                        controller: controller,
-                        decoration: InputDecoration(labelText: _t('title')),
-                      ),
-                      actions: [
-                        TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: Text(_t('cancel'))),
-                        TextButton(
-                          onPressed: () =>
-                              Navigator.pop(context, controller.text),
-                          child: Text(_t('add')),
-                        ),
-                      ],
-                    ),
-                  );
-
-                  if (result != null && result.isNotEmpty && context.mounted) {
-                    await _db.createChapter(
-                        courseId: widget.courseId, title: result);
-                    if (context.mounted) {
-                      _loadLessons();
-                      Navigator.pop(context);
-                      _manageChapters();
-                    }
-                  }
-                },
-                child: Text(_t('add_new')),
-              ),
-            ],
-          );
-        },
+      builder: (context) => AlertDialog(
+        title: Text(_t('delete_lesson')),
+        content: Text(_t('delete_lesson_confirm')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(_t('cancel'))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(_t('delete'), style: TextStyle(color: Colors.red)),
+          ),
+        ],
       ),
     );
+
+    if (confirm == true) {
+      await _db.deleteLesson(lesson['id']);
+      _loadLessons();
+    }
+  }
+
+  Future<void> _deleteExam(Map<String, dynamic> exam) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(_t('delete_exam_title')),
+        content: Text(_t('delete_exam_confirm')),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(_t('cancel'))),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(_t('delete'), style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _db.deleteExam(exam['id']);
+      _loadLessons();
+    }
   }
 }

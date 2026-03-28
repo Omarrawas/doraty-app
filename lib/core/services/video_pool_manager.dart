@@ -44,16 +44,21 @@ class VideoPoolManager {
     // 3. Create new controller
     dynamic controller;
     if (type == VideoType.youtube) {
-      final videoId = YoutubePlayer.convertUrlToId(url) ?? '';
-      controller = YoutubePlayerController(
-        initialVideoId: videoId,
-        flags: const YoutubePlayerFlags(
-          autoPlay: false,
-          mute: false,
-          disableDragSeek: true,
-          loop: true,
-        ),
-      );
+      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+        // Skip initialization on these platforms - they use YoutubePlayerWebWindows
+        controller = null;
+      } else {
+        final videoId = YoutubePlayer.convertUrlToId(url) ?? '';
+        controller = YoutubePlayerController(
+          initialVideoId: videoId,
+          flags: const YoutubePlayerFlags(
+            autoPlay: false,
+            mute: false,
+            disableDragSeek: true,
+            loop: true,
+          ),
+        );
+      }
     } else {
       controller = VideoPlayerController.networkUrl(Uri.parse(url));
       await (controller as VideoPlayerController).initialize();

@@ -10,7 +10,6 @@ import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/providers/cart_provider.dart';
 import '../../core/services/database_service.dart';
-import '../courses/course_details_screen.dart';
 
 class PackageScreen extends StatefulWidget {
   final String packageTitle;
@@ -98,13 +97,8 @@ class _PackageScreenState extends State<PackageScreen> {
 
   void _handlePrimaryAction() {
     if (_hasBundleAccess && _displayCourses.isNotEmpty) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) =>
-              CourseDetailsScreen(course: _displayCourses.first),
-        ),
-      );
+      final identifier = _displayCourses.first.slug.isNotEmpty ? _displayCourses.first.slug : _displayCourses.first.id;
+      context.push('/course/$identifier');
       return;
     }
 

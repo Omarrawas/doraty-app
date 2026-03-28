@@ -402,7 +402,8 @@ class _CourseCardState extends State<CourseCard>
                                   elevation: 0,
                                 ),
                                 onPressed: () {
-                                  context.push('/course/${widget.course.id}');
+                                  final identifier = widget.course.slug.isNotEmpty ? widget.course.slug : widget.course.id;
+                                  context.push('/course/$identifier');
                                 },
                                 child: Text(
                                   _hasCourseAccess ? 'أكمل مشاهدة' : 'اشترك',

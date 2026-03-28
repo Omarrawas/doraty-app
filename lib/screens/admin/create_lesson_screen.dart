@@ -162,8 +162,12 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
               try {
                 // Show local loading if needed, or just await
                 await _db.createChapter(
-                  courseId: widget.courseId,
-                  title: titleController.text.trim(),
+                  Chapter(
+                    id: '',
+                    courseId: widget.courseId,
+                    title: titleController.text.trim(),
+                    orderIndex: _chapters.length,
+                  ),
                 );
                 if (context.mounted) Navigator.pop(context, true);
               } catch (e) {

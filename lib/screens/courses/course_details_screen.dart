@@ -20,6 +20,8 @@ import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/theme/theme_provider.dart';
+import 'course_content_screen.dart';
+import '../../models/chapter.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
   final Course? course;
@@ -42,6 +44,7 @@ class CourseDetailsScreen extends StatefulWidget {
 class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   // Lessons data
   List<Map<String, dynamic>> _lessons = [];
+  List<Chapter> _chapters = [];
 
   // Reviews data
   List<Map<String, dynamic>> _reviews = [];
@@ -75,6 +78,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     }
   }
 
+  @override
+  void didUpdateWidget(CourseDetailsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.courseId != widget.courseId || oldWidget.course != widget.course) {
+      if (widget.courseId != null) {
+        _fetchAndInitCourse(widget.courseId!);
+      }
+    }
+  }
+
   Future<void> _fetchAndInitCourse(String id) async {
     setState(() => _isLoadingCourse = true);
     try {
@@ -82,7 +95,23 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       if (json != null) {
         setState(() {
           _course = Course.fromJson(json);
+          _isLoadingCourse = false;
         });
+
+        // Update browser URL to use slug if possible (for Web SEO)
+        final finalId = widget.courseId ?? widget.course?.id;
+        if (_course!.slug.isNotEmpty && finalId != _course!.slug) {
+          Future.microtask(() {
+            if (mounted) {
+              final String newPath = widget.startAtContent 
+                  ? '/course/${_course!.slug}/content' 
+                  : '/course/${_course!.slug}';
+              
+              // Use go to update URL without adding to history if possible, or just go to correctly routed path
+              context.go(newPath);
+            }
+          });
+        }
         _initCourseData();
       }
     } catch (e) {
@@ -98,6 +127,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     _instructorName =
         StringUtils.cleanTeacherName(_course!.instructorName);
     _loadLessons();
+    _loadChapters();
     _loadReviews();
     _checkEnrollment();
     _refreshInstructorInfo();
@@ -150,7 +180,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           await _databaseService.getUserProfile(_course!.instructorId!);
       if (mounted && profile.isNotEmpty) {
         setState(() {
-          _instructorPhoto = profile['avatar_url'];
+          _instructorPhoto = (profile['avatar_url'] != null && profile['avatar_url'].toString().isNotEmpty) 
+              ? profile['avatar_url'] 
+              : null;
           _instructorName = StringUtils.cleanTeacherName(
               profile['full_name'] ?? _instructorName);
           debugPrint('📸 Instructor Photo URL: $_instructorPhoto');
@@ -237,6 +269,21 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     }
   }
 
+  Future<void> _loadChapters() async {
+    if (_course == null) return;
+    try {
+      final chapters = await _databaseService.getChapters(_course!.id);
+
+      if (mounted) {
+        setState(() {
+          _chapters = chapters;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading chapters: $e');
+    }
+  }
+
   Future<void> _loadReviews() async {
     if (_course == null) return;
     try {
@@ -281,6 +328,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             message: 'تعذر العثور على الكورس المطلوب بخصائص هذا الرابط',
           ),
         ),
+      );
+    }
+
+    // Direct redirection to Content Screen if requested via route
+    if (widget.startAtContent) {
+      return CourseContentScreen(
+        course: _course!,
+        lessonsData: _lessons,
+        chapters: _chapters,
+        isEnrolled: _isEnrolled,
       );
     }
 
@@ -503,13 +560,15 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          CachedNetworkImage(
-            imageUrl: _course!.imageUrl ?? '',
+          (_course!.imageUrl != null && _course!.imageUrl!.isNotEmpty) 
+          ? CachedNetworkImage(
+            imageUrl: _course!.imageUrl!,
             width: double.infinity,
             fit: BoxFit.cover,
             errorWidget: (context, url, error) =>
                 Container(color: Colors.grey[900]),
-          ),
+          )
+          : Container(color: Colors.grey[900]),
           Container(
             color: Colors.black26,
             child: Center(
@@ -632,10 +691,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
-                  backgroundImage: _instructorPhoto != null
+                  backgroundImage: (_instructorPhoto != null && _instructorPhoto!.isNotEmpty)
                       ? CachedNetworkImageProvider(_instructorPhoto!)
                       : null,
-                  child: _instructorPhoto == null
+                  child: (_instructorPhoto == null || _instructorPhoto!.isEmpty)
                       ? Icon(Icons.person, size: 18, color: AppColors.getTextColor(context))
                       : null,
                 ),
@@ -788,11 +847,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         children: [
           CircleAvatar(
             radius: 50,
-            backgroundImage: _course!.instructorPhoto != null
+            backgroundImage: (_course!.instructorPhoto != null && _course!.instructorPhoto!.isNotEmpty)
                 ? CachedNetworkImageProvider(_course!.instructorPhoto!)
                 : null,
             backgroundColor: Colors.grey[800],
-            child: _course!.instructorPhoto == null
+            child: (_course!.instructorPhoto == null || _course!.instructorPhoto!.isEmpty)
                 ? Icon(Icons.person, color: AppColors.getTextColor(context).withOpacity(0.54), size: 50)
                 : null,
           ),

@@ -5,11 +5,13 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:ui';
 import 'lesson/video_player_controls.dart';
+import 'lesson/youtube_player_web_windows.dart';
+import 'package:flutter/foundation.dart';
 
 class VideoPreviewWidget extends StatefulWidget {
   final String videoUrl;
   final bool showHeader;
-  final String? thumbnailUrl; // ← تمت الإضافة
+  final String? thumbnailUrl;
 
   const VideoPreviewWidget({
     super.key,
@@ -32,9 +34,8 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
   YoutubePlayerController? _controller;
   String? _videoId;
   bool _isFullScreen = false;
-  bool _hasStarted = false; // هل بدأ المستخدم التشغيل؟
+  bool _hasStarted = false;
 
-  // Animation للـ play button
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -43,7 +44,6 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     super.initState();
     _videoId = YoutubePlayer.convertUrlToId(widget.videoUrl);
 
-    // إعداد نبضة زر التشغيل
     _pulseController = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: 1500),
@@ -54,19 +54,23 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     );
 
     if (_videoId != null) {
-      _controller = YoutubePlayerController(
-        initialVideoId: _videoId!,
-        flags: YoutubePlayerFlags(
-          autoPlay: false,
-          mute: false,
-          forceHD: false,
-          enableCaption: false,
-          isLive: false,
-          disableDragSeek: false,
-          hideControls: true, 
-          hideThumbnail: true, 
-        ),
-      )..addListener(_onControllerChange); // Added listener
+      if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
+        _controller = null;
+      } else {
+        _controller = YoutubePlayerController(
+          initialVideoId: _videoId!,
+          flags: YoutubePlayerFlags(
+            autoPlay: false,
+            mute: false,
+            forceHD: false,
+            enableCaption: false,
+            isLive: false,
+            disableDragSeek: false,
+            hideControls: true, 
+            hideThumbnail: true, 
+          ),
+        )..addListener(_onControllerChange);
+      }
     }
   }
 
@@ -82,7 +86,6 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
   void dispose() {
     _pulseController.dispose();
     _controller?.dispose();
-    // استعادة الاتجاه الرأسي دائماً عند الخروج
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -91,26 +94,28 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     super.dispose();
   }
 
-  // بدء التشغيل عند الضغط على زر Play
   void _startPlayback() {
     setState(() => _hasStarted = true);
     _pulseController.stop();
     _controller?.play();
   }
 
-  // تفعيل وضع ملء الشاشة
   void _enterFullScreen() {
-    _controller?.toggleFullScreenMode();
-    // onEnterFullScreen سيُفعَّل تلقائياً بعده
+    if (_controller != null) {
+      _controller?.toggleFullScreenMode();
+    } else {
+      setState(() => _isFullScreen = true);
+    }
   }
 
-  // إلغاء وضع ملء الشاشة
   void _exitFullScreen() {
-    _controller?.toggleFullScreenMode();
-    // onExitFullScreen سيُفعَّل تلقائياً بعده
+    if (_controller != null) {
+      _controller?.toggleFullScreenMode();
+    } else {
+      setState(() => _isFullScreen = false);
+    }
   }
 
-  // رابط Thumbnail (يميل لرابط المستخدم إن وُجد، وإلا يوتيوب)
   String get _thumbnailUrl =>
       (widget.thumbnailUrl != null && widget.thumbnailUrl!.isNotEmpty)
           ? widget.thumbnailUrl!
@@ -118,244 +123,192 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
 
   @override
   Widget build(BuildContext context) {
-    if (_videoId == null || _controller == null) {
+    if (_videoId == null) {
       return _buildErrorWidget();
     }
 
-    return YoutubePlayerBuilder(
-      onEnterFullScreen: () {
-        setState(() => _isFullScreen = true);
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.landscapeLeft,
-          DeviceOrientation.landscapeRight,
-        ]);
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-      },
-      onExitFullScreen: () {
-        setState(() => _isFullScreen = false);
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-          DeviceOrientation.portraitDown,
-        ]);
-        SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-      },
-      player: YoutubePlayer(
-        controller: _controller!,
-        showVideoProgressIndicator: false, // يُدار بواسطة VideoPlayerControls
-        aspectRatio: 16 / 9,
-      ),
-      builder: (context, player) {
-        // ── وضع Fullscreen ──
-        if (_isFullScreen) {
-          return PopScope(
-            canPop: false,
-            onPopInvokedWithResult: (didPop, _) {
-              if (!didPop) _exitFullScreen();
-            },
-            child: Scaffold(
-              backgroundColor: Colors.black,
-              body: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Center(child: player),
-                  if (_hasStarted)
-                    VideoPlayerControls(
-                      isYoutube: true,
-                      youtubeController: _controller,
-                      onToggleFullScreen: _exitFullScreen,
-                      courseTitle: 'معاينة الفيديو',
-                    ),
-                ],
-              ),
-            ),
-          );
-        }
+    final bool useExternalPlayer = kIsWeb || defaultTargetPlatform == TargetPlatform.windows;
 
-        // ── الوضع العادي ──
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppColors.getMutedTextColor(context),
-                borderRadius: BorderRadius.circular(16),
-                border:
-                    Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Header ──
-                  if (widget.showHeader)
-                    Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Row(
-                        children: [
-                          Icon(Icons.play_circle,
-                              color: AppColors.getTextColor(context, secondary: true)),
-                          SizedBox(width: 8),
-                          Text(
-                            'معاينة الفيديو',
-                            style: TextStyle(
-                              color: AppColors.getTextColor(context),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Spacer(),
-                          // زر التكبير - يظهر فقط بعد بدء التشغيل
-                          if (_hasStarted)
-                            GestureDetector(
-                              onTap: _enterFullScreen,
-                              child: Container(
-                                padding: EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.getMutedTextColor(context),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Icon(
-                                  Icons.fullscreen_rounded,
-                                  color: AppColors.getTextColor(context, secondary: true),
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
+    if (!useExternalPlayer && _controller != null) {
+      return YoutubePlayerBuilder(
+        onEnterFullScreen: () {
+          setState(() => _isFullScreen = true);
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.landscapeLeft,
+            DeviceOrientation.landscapeRight,
+          ]);
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+        },
+        onExitFullScreen: () {
+          setState(() => _isFullScreen = false);
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        },
+        player: YoutubePlayer(
+          controller: _controller!,
+          showVideoProgressIndicator: false,
+          aspectRatio: 16 / 9,
+        ),
+        builder: (context, player) {
+          return _buildMainLayout(context, player);
+        },
+      );
+    }
 
-                  // ── Video Area ──
-                  SizedBox(
-                    height: widget.height, // Uses passed height or default 200
-                    child: ClipRRect(
-                      borderRadius: widget.showHeader
-                          ? const BorderRadius.only(
-                              bottomLeft: Radius.circular(16),
-                              bottomRight: Radius.circular(16),
-                            )
-                          : BorderRadius.circular(16),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          // Actual Video
-                          player,
+    final playerWidget = YoutubePlayerWebWindows(
+      videoId: _videoId!,
+      height: widget.height,
+    );
+    return _buildMainLayout(context, playerWidget);
+  }
 
-                          // Custom Controls (shown after playback starts)
-                          if (_hasStarted)
-                            VideoPlayerControls(
-                              isYoutube: true,
-                              youtubeController: _controller,
-                              onToggleFullScreen: _enterFullScreen,
-                              courseTitle: 'معاينة الفيديو',
-                            ),
-
-                          // ── Thumbnail + Play Button Overlay ──
-                          // Only shown before playback
-                          if (!_hasStarted)
-                            GestureDetector(
-                              onTap: _startPlayback,
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  // Youtube Thumbnail
-                                  CachedNetworkImage(
-                                    imageUrl: _thumbnailUrl,
-                                    fit: BoxFit.cover,
-                                    placeholder: (context, url) => Container(
-                                      color: Colors.black87,
-                                    ),
-                                    errorWidget: (context, url, error) =>
-                                        Container(
-                                      color: Colors.black87,
-                                      child: Icon(Icons.image_not_supported,
-                                          color: AppColors.getTextColor(context).withOpacity(0.38), size: 48),
-                                    ),
-                                  ),
-
-                                  // Light overlay
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          Colors.black.withOpacity(0.15),
-                                          Colors.black.withOpacity(0.5),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-
-                                  // Central animated play button
-                                  Center(
-                                    child: AnimatedBuilder(
-                                      animation: _pulseAnimation,
-                                      builder: (context, child) {
-                                        return Transform.scale(
-                                          scale: _pulseAnimation.value,
-                                          child: child,
-                                        );
-                                      },
-                                      child: Container(
-                                        width: 64,
-                                        height: 64,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: AppColors.getTextColor(context, secondary: true),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withOpacity(0.3),
-                                              blurRadius: 20,
-                                              spreadRadius: 4,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Icon(
-                                          Icons.play_arrow_rounded,
-                                          color: Color(0xFF7B2CBF),
-                                          size: 40,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                  // "Tap to watch" text
-                                  Positioned(
-                                    bottom: 12,
-                                    left: 0,
-                                    right: 0,
-                                    child: Center(
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 5),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.5),
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: Text(
-                                          'اضغط للمشاهدة',
-                                          style: TextStyle(
-                                            color: AppColors.getTextColor(context),
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+  Widget _buildMainLayout(BuildContext context, Widget player) {
+    if (_isFullScreen) {
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (!didPop) _exitFullScreen();
+        },
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              Center(child: player),
+              if (_hasStarted)
+                VideoPlayerControls(
+                  isYoutube: true,
+                  youtubeController: _controller,
+                  onToggleFullScreen: _exitFullScreen,
+                  courseTitle: 'معاينة الفيديو',
+                ),
+            ],
           ),
-        );
-      },
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.getMutedTextColor(context),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.showHeader)
+                Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(Icons.play_circle, color: AppColors.getTextColor(context, secondary: true)),
+                      SizedBox(width: 8),
+                      Text(
+                        'معاينة الفيديو',
+                        style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold),
+                      ),
+                      Spacer(),
+                      if (_hasStarted)
+                        GestureDetector(
+                          onTap: _enterFullScreen,
+                          child: Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: AppColors.getMutedTextColor(context),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(Icons.fullscreen_rounded, color: AppColors.getTextColor(context, secondary: true), size: 20),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+              SizedBox(
+                height: widget.height,
+                child: ClipRRect(
+                  borderRadius: widget.showHeader
+                      ? const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16))
+                      : BorderRadius.circular(16),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      player,
+                      if (_hasStarted)
+                        VideoPlayerControls(
+                          isYoutube: true,
+                          youtubeController: _controller,
+                          onToggleFullScreen: _enterFullScreen,
+                          courseTitle: 'معاينة الفيديو',
+                        ),
+                      if (!_hasStarted)
+                        GestureDetector(
+                          onTap: _startPlayback,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              CachedNetworkImage(
+                                imageUrl: _thumbnailUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(color: Colors.black87),
+                                errorWidget: (context, url, error) => Container(
+                                  color: Colors.black87,
+                                  child: Icon(Icons.image_not_supported, color: AppColors.getTextColor(context).withOpacity(0.38), size: 48),
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                    colors: [Colors.black.withOpacity(0.15), Colors.black.withOpacity(0.5)],
+                                  ),
+                                ),
+                              ),
+                              Center(
+                                child: AnimatedBuilder(
+                                  animation: _pulseAnimation,
+                                  builder: (context, child) => Transform.scale(scale: _pulseAnimation.value, child: child),
+                                  child: Container(
+                                    width: 64, height: 64,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppColors.getTextColor(context, secondary: true),
+                                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, spreadRadius: 4)],
+                                    ),
+                                    child: Icon(Icons.play_arrow_rounded, color: Color(0xFF7B2CBF), size: 40),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 12, left: 0, right: 0,
+                                child: Center(
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.5), borderRadius: BorderRadius.circular(20)),
+                                    child: Text('اضغط للمشاهدة', style: TextStyle(color: AppColors.getTextColor(context), fontSize: 12, fontWeight: FontWeight.w500)),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -371,12 +324,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
         children: [
           Icon(Icons.error, color: Colors.red),
           SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'رابط الفيديو غير صحيح',
-              style: TextStyle(color: Colors.red),
-            ),
-          ),
+          Expanded(child: Text('رابط الفيديو غير صحيح', style: TextStyle(color: Colors.red))),
         ],
       ),
     );

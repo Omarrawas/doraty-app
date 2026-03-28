@@ -213,9 +213,11 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
       if (!mounted) return;
 
       if (_isYouTube) {
-        _youtubeController = controller as YoutubePlayerController;
+        if (controller != null) {
+          _youtubeController = controller as YoutubePlayerController;
+          _youtubeController?.addListener(_youtubeListener);
+        }
         _extractedVideoId = YoutubePlayer.convertUrlToId(widget.tip.videoUrl);
-        _youtubeController?.addListener(_youtubeListener);
       } else {
         _videoController = controller as VideoPlayerController;
         _videoController?.addListener(_videoListener);

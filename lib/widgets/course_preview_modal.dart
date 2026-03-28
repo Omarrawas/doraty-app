@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/course.dart';
 import '../../core/theme/app_colors.dart';
-import '../../screens/courses/course_details_screen.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
 
@@ -125,12 +125,8 @@ class CoursePreviewModal extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CourseDetailsScreen(course: course),
-                ),
-              );
+              final identifier = course.slug.isNotEmpty ? course.slug : course.id;
+              context.push('/course/$identifier');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple,
