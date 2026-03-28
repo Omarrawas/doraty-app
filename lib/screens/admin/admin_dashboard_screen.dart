@@ -449,6 +449,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildQuickActions(int crossAxisCount, double childAspectRatio) {
     final List<Map<String, dynamic>> actions = [
+      {
+        'icon': Icons.library_books_rounded,
+        'title': _userRole == 'teacher' ? _t('my_courses') : _t('manage_courses'),
+        'subtitle': _t('admin_courses_desc'),
+        'color': Colors.tealAccent,
+        'onTap': () {
+          final instructorParam =
+              _userRole == 'teacher' ? '?instructorId=$_userId' : '';
+          context.push('/admin/courses$instructorParam');
+        },
+      },
       if (_userRole != 'teacher') ...[
         {
           'icon': Icons.people_alt_rounded,
@@ -492,18 +503,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'color': Colors.deepOrangeAccent,
           'onTap': () => context.push('/admin/banners'),
         },
-      ],
-      {
-        'icon': Icons.library_books_rounded,
-        'title': _userRole == 'teacher' ? _t('my_courses') : _t('manage_courses'),
-        'subtitle': _t('admin_courses_desc'), // I need to add this key or use a generic one
-        'color': Colors.tealAccent,
-        'onTap': () {
-          final instructorParam = _userRole == 'teacher' ? '?instructorId=$_userId' : '';
-          context.push('/admin/courses$instructorParam');
-        },
-      },
-      if (_userRole != 'teacher') ...[
         {
           'icon': Icons.card_membership_rounded,
           'title': _t('admin_subscriptions_side'),

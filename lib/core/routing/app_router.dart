@@ -26,6 +26,9 @@ import '../../screens/favorites/favorites_screen.dart';
 import '../../screens/cart/cart_screen.dart';
 import '../../screens/notifications_screen.dart';
 import '../../screens/categories/category_courses_screen.dart';
+import '../../screens/lesson/lesson_screen.dart';
+import '../../screens/teacher/teacher_profile_screen.dart';
+import '../../screens/packages/package_screen.dart';
 import '../../models/category_model.dart';
 import '../../screens/admin/users_management_screen.dart';
 import '../../screens/admin/categories_management_screen.dart';
@@ -103,9 +106,27 @@ final GoRouter appRouter = GoRouter(
       path: '/course/:id',
       parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) {
-        final id = state.pathParameters['id'];
+        final id = state.pathParameters['id']!;
         return CourseDetailsScreen(courseId: id);
       },
+      routes: [
+        GoRoute(
+          path: 'content',
+          builder: (context, state) {
+            final courseId = state.pathParameters['id']!;
+            // This will look for the course and open content
+            return CourseDetailsScreen(courseId: courseId, startAtContent: true);
+          },
+        ),
+        GoRoute(
+          path: 'lesson/:lessonId',
+          builder: (context, state) {
+            final courseId = state.pathParameters['id']!;
+            final lessonId = state.pathParameters['lessonId']!;
+            return LessonScreen(courseId: courseId, lessonId: lessonId);
+          },
+        ),
+      ],
     ),
     GoRoute(
       path: '/category/:slug',
@@ -116,6 +137,22 @@ final GoRouter appRouter = GoRouter(
         return CategoryCoursesScreen(
           category: CategoryModel(id: slug, name: '', slug: slug),
         );
+      },
+    ),
+    GoRoute(
+      path: '/teacher/:id',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return TeacherProfileScreen(teacherId: id);
+      },
+    ),
+    GoRoute(
+      path: '/package/:id',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return PackageScreen(bundleId: id);
       },
     ),
     GoRoute(

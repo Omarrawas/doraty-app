@@ -18,7 +18,7 @@ class TeacherProfileScreen extends StatefulWidget {
   const TeacherProfileScreen({
     super.key,
     required this.teacherId,
-    required this.teacherName,
+    this.teacherName = '',
     this.teacherPhoto,
     this.bio,
   });

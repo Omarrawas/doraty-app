@@ -141,7 +141,8 @@ class _CourseCardState extends State<CourseCard>
             onTapUp: (_) => _controller.reverse(),
             onTapCancel: () => _controller.reverse(),
             onTap: () {
-              context.push('/course/${widget.course.id}');
+              final identifier = widget.course.slug.isNotEmpty ? widget.course.slug : widget.course.id;
+              context.push('/course/$identifier');
             },
             child: widget.isHorizontal
                 ? _buildHorizontalLayout(context, locale, isDark)

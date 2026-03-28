@@ -15,12 +15,14 @@ import '../courses/course_details_screen.dart';
 class PackageScreen extends StatefulWidget {
   final String packageTitle;
   final List<Course> courses;
+  final String? bundleId;
   final Bundle? bundle;
 
   const PackageScreen({
     super.key,
-    required this.packageTitle,
-    required this.courses,
+    this.packageTitle = '',
+    this.courses = const [],
+    this.bundleId,
     this.bundle,
   });
 
@@ -30,29 +32,62 @@ class PackageScreen extends StatefulWidget {
 
 class _PackageScreenState extends State<PackageScreen> {
   final DatabaseService _databaseService = DatabaseService();
+  Bundle? _loadedBundle;
+  bool _isLoading = false;
   bool _hasBundleAccess = false;
 
   Bundle get _displayBundle =>
       widget.bundle ??
+      _loadedBundle ??
       Bundle(
-        id: 'temp',
+        id: widget.bundleId ?? 'temp',
         title: widget.packageTitle,
         courses: widget.courses,
         price: widget.courses.fold(0.0, (sum, c) => sum + c.price),
         discountPercentage: 20,
       );
 
+  List<Course> get _displayCourses =>
+      _loadedBundle?.courses ?? widget.courses;
+
+  String get _displayTitle =>
+      _loadedBundle?.title ?? widget.packageTitle;
+
   @override
   void initState() {
     super.initState();
-    _checkBundleAccess();
+    if (widget.bundle == null && widget.bundleId != null) {
+      _loadBundleDetails();
+    } else {
+      _checkBundleAccess();
+    }
+  }
+
+  Future<void> _loadBundleDetails() async {
+    setState(() => _isLoading = true);
+    try {
+      final data = await _databaseService.getBundleById(widget.bundleId!);
+      if (mounted && data != null) {
+        setState(() {
+          _loadedBundle = Bundle.fromJson(data);
+          _isLoading = false;
+        });
+        _checkBundleAccess();
+      } else if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      debugPrint('Error loading bundle details: $e');
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _checkBundleAccess() async {
     try {
-      final hasAccess = await _databaseService.hasBundleAccess(
-        widget.courses.map((c) => c.id).toList(),
-      );
+      final coursesToCheck = _displayCourses.map((c) => c.id).toList();
+      if (coursesToCheck.isEmpty) return;
+      
+      final hasAccess = await _databaseService.hasBundleAccess(coursesToCheck);
       if (mounted) {
         setState(() => _hasBundleAccess = hasAccess);
       }
@@ -62,12 +97,12 @@ class _PackageScreenState extends State<PackageScreen> {
   }
 
   void _handlePrimaryAction() {
-    if (_hasBundleAccess && widget.courses.isNotEmpty) {
+    if (_hasBundleAccess && _displayCourses.isNotEmpty) {
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) =>
-              CourseDetailsScreen(course: widget.courses.first),
+              CourseDetailsScreen(course: _displayCourses.first),
         ),
       );
       return;
@@ -89,6 +124,13 @@ class _PackageScreenState extends State<PackageScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryPurple),
+        ),
+      );
+    }
     final locale = Provider.of<LocaleProvider>(context).locale;
     String t(String key) => AppStrings.get(key, locale);
 
@@ -177,7 +219,7 @@ class _PackageScreenState extends State<PackageScreen> {
                                   ),
                             SizedBox(height: 20),
                             Text(
-                              widget.packageTitle,
+                              _displayTitle,
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: AppColors.getTextColor(context),
@@ -194,7 +236,7 @@ class _PackageScreenState extends State<PackageScreen> {
                                     size: 18),
                                 SizedBox(width: 8),
                                 Text(
-                                  '${widget.courses.length} ${t('courses_count_bundle')}',
+                                  '${_displayCourses.length} ${t('courses_count_bundle')}',
                                   style: TextStyle(
                                     color: AppColors.getTextColor(context, secondary: true),
                                     fontSize: 16,
@@ -273,10 +315,10 @@ class _PackageScreenState extends State<PackageScreen> {
                     sliver: SliverGrid(
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => CourseCard(
-                          course: widget.courses[index],
-                          heroTag: 'package_course_${widget.courses[index].id}',
+                          course: _displayCourses[index],
+                          heroTag: 'package_course_${_displayCourses[index].id}',
                         ),
-                        childCount: widget.courses.length,
+                        childCount: _displayCourses.length,
                       ),
                       gridDelegate:
                           SliverGridDelegateWithFixedCrossAxisCount(

@@ -32,14 +32,18 @@ import '../../core/constants/app_strings.dart';
 import '../../widgets/lesson/youtube_player_web_windows.dart';
 
 class LessonScreen extends StatefulWidget {
-  final Lesson lesson;
+  final Lesson? lesson;
+  final String? lessonId;
+  final String? courseId;
   final List<Lesson> allLessons;
   final String courseTitle;
   final bool isEnrolled;
 
   const LessonScreen({
     super.key,
-    required this.lesson,
+    this.lesson,
+    this.lessonId,
+    this.courseId,
     this.allLessons = const [],
     this.courseTitle = '',
     this.isEnrolled = false,
@@ -78,19 +82,69 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   final ScrollController _mainScrollController = ScrollController();
 
   late String _videoUrl;
+  bool _isLoading = false;
+  Lesson? _currentLesson;
+  String? _effectiveCourseTitle;
+  bool _effectiveIsEnrolled = false;
+
+  Lesson get lesson => _currentLesson!;
+  String get courseTitle => _effectiveCourseTitle ?? '';
+  bool get isEnrolled => _effectiveIsEnrolled;
 
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
-    _currentHtmlContent = widget.lesson.contentHtml;
-    _videoUrl = (widget.lesson.videoUrl as String?) ?? '';
     
-    _notesFuture = DatabaseService().getNotes(widget.lesson.id);
-    _examsFuture = DatabaseService().getExamsForLesson(widget.lesson.id);
+    _currentLesson = widget.lesson;
+    _effectiveCourseTitle = widget.courseTitle;
+    _effectiveIsEnrolled = widget.isEnrolled;
+
+    if (_currentLesson != null) {
+      _finishInit();
+    } else if (widget.lessonId != null) {
+      _fetchAndInitLesson();
+    }
+  }
+
+  void _finishInit() {
+    if (_currentLesson == null) return;
+    _currentHtmlContent = _currentLesson!.contentHtml;
+    _videoUrl = _currentLesson!.videoUrl;
+    
+    _notesFuture = DatabaseService().getNotes(_currentLesson!.id);
+    _examsFuture = DatabaseService().getExamsForLesson(_currentLesson!.id);
     
     _initLesson();
+  }
+
+  Future<void> _fetchAndInitLesson() async {
+    setState(() => _isLoading = true);
+    try {
+      // Logic to fetch lesson by ID or Slug
+      final lessonJson = await _db.getLessonById(widget.lessonId!);
+      if (lessonJson != null) {
+        _currentLesson = Lesson.fromJson(lessonJson);
+        
+        // If course info is missing, fetch it too
+        if (_effectiveCourseTitle == null || _effectiveCourseTitle!.isEmpty) {
+          final courseId = _currentLesson!.courseId;
+          final courseJson = await _db.getCourseById(courseId);
+          if (courseJson != null) {
+            _effectiveCourseTitle = courseJson['title'] ?? '';
+            // Check enrollment
+            _effectiveIsEnrolled = await _db.isEnrolled(courseId);
+          }
+        }
+
+        _finishInit();
+      }
+    } catch (e) {
+      debugPrint('Error fetching lesson: $e');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _initLesson() async {
@@ -153,13 +207,12 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         duration: Duration(milliseconds: 500), curve: Curves.easeOut);
   }
 
-
-
   void _refreshFutures() {
-    if (mounted) {
+    final curLesson = _currentLesson;
+    if (mounted && curLesson != null) {
       setState(() {
-        _notesFuture = DatabaseService().getNotes(widget.lesson.id);
-        DatabaseService().getLessonQuestions(widget.lesson.id).then((data) {
+        _notesFuture = DatabaseService().getNotes(curLesson.id);
+        DatabaseService().getLessonQuestions(curLesson.id).then((data) {
           if (mounted) {
             setState(() {
               _questionsList =
@@ -167,11 +220,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             });
           }
         });
-        _examsFuture = DatabaseService().getExamsForLesson(widget.lesson.id);
+        _examsFuture = DatabaseService().getExamsForLesson(curLesson.id);
       });
     }
   }
-
 
   Future<void> _deleteNote(String noteId) async {
     final confirmed = await showDialog<bool>(
@@ -286,7 +338,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           MaterialPageRoute(
             builder: (context) => InteractiveQuizScreen(
               content: _currentHtmlContent,
-              title: 'الاختبار التفاعلي: ${widget.lesson.title}',
+              title: 'الاختبار التفاعلي: ${lesson.title}',
               isHtml: true,
             ),
           ),
@@ -451,7 +503,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
 
   void _startWatchTimeTracking() {
-    if (((widget.lesson.videoUrl as String?) ?? '').isEmpty) return;
+    if ((lesson.videoUrl.isEmpty)) return;
 
     _watchTimeTimer = Timer.periodic(Duration(seconds: 1), (timer) {
       bool isPlaying = false;
@@ -474,7 +526,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       if (userId == null) return; // Skip saving progress for guests
       
       await DatabaseService().updateLessonProgress(
-        lessonId: widget.lesson.id,
+        lessonId: lesson.id,
         watchTime: _videoWatchTime,
         lastPosition: _getCurrentVideoPosition(),
         isCompleted: _isLessonCompleted(),
@@ -507,6 +559,14 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading || _currentLesson == null) {
+      return Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primaryPurple),
+        ),
+      );
+    }
+
     if (_isYoutube &&
         _youtubePlayerController != null &&
         !kIsWeb &&
@@ -610,8 +670,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           isYoutube: _isYoutube,
           youtubeController: _youtubePlayerController,
           videoController: _videoPlayerController,
-          lesson: widget.lesson,
-          courseTitle: widget.courseTitle,
+          lesson: lesson,
+          courseTitle: courseTitle,
           onToggleFullScreen: onToggleFullScreen,
         ),
       ],
@@ -650,7 +710,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 ),
               ),
 
-              // 1.5 Education Header (The "Professional" Bar) - Minimalist approach
               SliverToBoxAdapter(
                 child: Padding(
                   padding:
@@ -667,7 +726,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                               color: AppColors.primaryPurple.withOpacity(0.2)),
                         ),
                         child: Text(
-                          '${_t('lesson_prefix')} ${widget.lesson.orderIndex}',
+                          '${_t('lesson_prefix')} ${lesson.orderIndex}',
                           style: TextStyle(
                             color: AppColors.primaryPurple,
                             fontWeight: FontWeight.bold,
@@ -678,7 +737,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          widget.lesson.getLocalizedTitle(
+                          lesson.getLocalizedTitle(
                               Provider.of<LocaleProvider>(context).locale),
                           style: TextStyle(
                             color: AppColors.textPrimary,
@@ -694,9 +753,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 ),
               ),
 
-
-
-              // 3. التبويبات المثبتة
               SliverPersistentHeader(
                 pinned: true,
                 delegate: LessonSliverAppBarDelegate(
@@ -708,7 +764,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                             horizontal: 20, vertical: 10),
                         decoration: BoxDecoration(
                           color: AppColors.getSurfaceColor(context)
-                              .withOpacity(0.8), // Darker background
+                              .withOpacity(0.8),
                           border: Border(
                               bottom: BorderSide(
                                   color: AppColors.getMutedTextColor(context))),
@@ -717,7 +773,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                           padding: EdgeInsets.all(4),
                           decoration: BoxDecoration(
                             color: AppColors.getTextColor(context)
-                                .withOpacity(0.05), // Subtle inner container
+                                .withOpacity(0.05),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: TabBar(
@@ -826,7 +882,6 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           ),
         ),
         bottomNavigationBar: _buildNavigationButtons(),
-
       ),
     );
   }
@@ -854,7 +909,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Widget _buildVideoPlayer() {
-    if (((widget.lesson.videoUrl as String?) ?? '').isEmpty) {
+    if (lesson.videoUrl.isEmpty) {
       return Container(
         width: double.infinity,
         height: 250,
@@ -868,8 +923,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
     if (_isYoutube) {
       if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
-        final videoId = YoutubePlayer.convertUrlToId(
-            (widget.lesson.videoUrl as String?) ?? '');
+        final videoId = YoutubePlayer.convertUrlToId(lesson.videoUrl);
         if (videoId != null) {
           return YoutubePlayerWebWindows(
             videoId: videoId,
@@ -908,17 +962,17 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TexViewWidget(
-          widget.lesson.description,
+          lesson.description,
           style:
               TextStyle(fontSize: 16, height: 1.8, color: AppColors.getTextColor(context)),
         ),
 
-        if (widget.lesson.content != null &&
-            widget.lesson.content != widget.lesson.description &&
-            widget.lesson.content!.isNotEmpty) ...[
+        if (lesson.content != null &&
+            lesson.content != lesson.description &&
+            lesson.content!.isNotEmpty) ...[
           SizedBox(height: 24),
           TexViewWidget(
-            widget.lesson.content!,
+            lesson.content!,
             style:
                 TextStyle(fontSize: 16, height: 1.8, color: AppColors.getTextColor(context)),
           ),
@@ -928,7 +982,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Widget _buildResourcesTab() {
-    if (widget.lesson.resources.isEmpty) {
+    if (lesson.resources.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -947,7 +1001,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ...widget.lesson.resources.map((resource) {
+        ...lesson.resources.map((resource) {
           final fileName = resource['name'] ?? 'ملف غير معروف';
           return Container(
             margin: EdgeInsets.only(bottom: 12),
@@ -1534,8 +1588,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     context,
                     MaterialPageRoute(
                       builder: (context) => AddNoteScreen(
-                        lessonId: widget.lesson.id,
-                        courseId: widget.lesson.courseId,
+                        lessonId: lesson.id,
+                        courseId: lesson.courseId,
                       ),
                     ),
                   );
@@ -1564,8 +1618,8 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     context,
                     MaterialPageRoute(
                       builder: (context) => AddNoteScreen(
-                        lessonId: widget.lesson.id,
-                        courseId: widget.lesson.courseId,
+                        lessonId: lesson.id,
+                        courseId: lesson.courseId,
                         videoTimestamp: timestamp,
                       ),
                     ),
@@ -2330,7 +2384,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
       // Optional: sync with real server data again to ensure consistency
       // but without the jarring refresh since we already updated the list
       final freshData =
-          await DatabaseService().getLessonQuestions(widget.lesson.id);
+          await DatabaseService().getLessonQuestions(lesson.id);
       if (mounted) {
         setState(() {
           _questionsList =
@@ -2435,7 +2489,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     _questionController.clear();
 
     try {
-      await DatabaseService().askLessonQuestion(widget.lesson.id, content);
+      await DatabaseService().askLessonQuestion(lesson.id, content);
       _refreshFutures(); 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2452,7 +2506,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
   }
 
   Widget _buildNavigationButtons() {
-    final currentIndex = widget.allLessons.indexWhere((l) => l.id == widget.lesson.id);
+    final currentIndex = widget.allLessons.indexWhere((l) => l.id == lesson.id);
     final hasNext = currentIndex != -1 && currentIndex < widget.allLessons.length - 1;
     final hasPrev = currentIndex > 0;
     
@@ -2518,7 +2572,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
 
                     // CHECK FOR EXAMS
                     final examsResult =
-                        await _db.getExamsForLesson(widget.lesson.id);
+                        await _db.getExamsForLesson(lesson.id);
 
                     if (!mounted) return;
 

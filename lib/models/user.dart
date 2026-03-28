@@ -1,9 +1,10 @@
-import 'package:flutter/foundation.dart';
 import '../core/utils/safe_parser.dart';
 
 class AppUser {
   final String id;
   final String name;
+  final String? nameEn;
+  final String slug;
   final String email;
   final String? bio;
   final String? photoUrl;
@@ -19,6 +20,8 @@ class AppUser {
   AppUser({
     required this.id,
     required this.name,
+    this.nameEn,
+    this.slug = '',
     required this.email,
     this.photoUrl,
     this.bio,
@@ -26,7 +29,7 @@ class AppUser {
     this.completedCourses = 0,
     this.totalHours = 0,
     this.certificates = 0,
-    this.streakCount = 0,
+    this.streakCount = 1,
     this.lastActivityDate,
     this.badges = const [],
     required this.createdAt,
@@ -36,9 +39,11 @@ class AppUser {
     try {
       return AppUser(
         id: SafeParser.toStringSafe(json['id']),
-        name: SafeParser.toStringSafe(json['name']),
+        name: SafeParser.toStringSafe(json['name'] ?? json['full_name']),
+        nameEn: SafeParser.toStringSafe(json['name_en'] ?? json['full_name_en']),
+        slug: SafeParser.toStringSafe(json['slug'] ?? ''),
         email: SafeParser.toStringSafe(json['email']),
-        photoUrl: SafeParser.toStringSafe(json['photo_url']),
+        photoUrl: SafeParser.toStringSafe(json['photo_url'] ?? json['avatar_url']),
         bio: SafeParser.toStringSafe(json['bio']),
         enrolledCourses: SafeParser.toStringList(json['enrolled_courses']),
         completedCourses: SafeParser.toInt(json['completed_courses']),
@@ -50,9 +55,8 @@ class AppUser {
         createdAt: SafeParser.toDateTime(json['created_at']) ?? DateTime.now(),
       );
     } catch (e) {
-      debugPrint('❌ AppUser.fromJson Error: $e. Data: $json');
       return AppUser(
-        id: SafeParser.toStringSafe(json['id']),
+        id: '',
         name: 'User',
         email: '',
         createdAt: DateTime.now(),
@@ -64,6 +68,8 @@ class AppUser {
     return {
       'id': id,
       'name': name,
+      'name_en': nameEn,
+      'slug': slug,
       'email': email,
       'photo_url': photoUrl,
       'bio': bio,
@@ -76,9 +82,5 @@ class AppUser {
       'badges': badges,
       'created_at': createdAt.toIso8601String(),
     };
-  }
-
-  bool isEnrolledIn(String courseId) {
-    return enrolledCourses.contains(courseId);
   }
 }

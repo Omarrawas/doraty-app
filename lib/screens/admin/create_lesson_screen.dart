@@ -427,6 +427,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     child: VideoPreviewWidget(
                                       videoUrl: _videoUrlController.text,
+                                      height: 150, // Small preview window
                                       onDurationFetched: (duration) {
                                         if (duration.inSeconds > 0 && (_durationController.text.isEmpty || _durationController.text == '0' || _durationController.text == '0:00')) {
                                           setState(() {

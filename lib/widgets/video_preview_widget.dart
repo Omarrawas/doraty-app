@@ -17,9 +17,11 @@ class VideoPreviewWidget extends StatefulWidget {
     this.showHeader = true,
     this.thumbnailUrl,
     this.onDurationFetched,
+    this.height = 200,
   });
   
-  final Function(Duration)? onDurationFetched; // Added property
+  final Function(Duration)? onDurationFetched;
+  final double height;
 
   @override
   State<VideoPreviewWidget> createState() => _VideoPreviewWidgetState();
@@ -224,7 +226,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
 
                   // ── Video Area ──
                   SizedBox(
-                    height: 200, // Fixed height to prevent Expanded crash inside scrollable
+                    height: widget.height, // Uses passed height or default 200
                     child: ClipRRect(
                       borderRadius: widget.showHeader
                           ? const BorderRadius.only(

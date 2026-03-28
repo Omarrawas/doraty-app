@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import '../models/bundle.dart';
-import '../screens/packages/package_screen.dart';
 import '../core/localization/locale_provider.dart';
 import '../core/constants/app_strings.dart';
 import '../core/theme/app_colors.dart';
@@ -53,17 +53,9 @@ class _BundleCardState extends State<BundleCard>
       onTapUp: (_) => _controller.reverse(),
       onTapCancel: () => _controller.reverse(),
       onTap: () {
-        final bundleToPush = widget.bundle;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => PackageScreen(
-              packageTitle: bundleToPush.title,
-              courses: bundleToPush.courses,
-              bundle: bundleToPush,
-            ),
-          ),
-        );
+        // Use slug for SEO friendly URL, fallback to ID
+        final identifier = widget.bundle.id;
+        context.push('/package/$identifier', extra: widget.bundle);
       },
       child: ScaleTransition(
         scale: _scaleAnimation,

@@ -1116,6 +1116,71 @@ class DatabaseService {
     }
   }
 
+  /// Get lesson by ID or Slug
+  Future<Map<String, dynamic>?> getLessonById(String lessonId) async {
+    try {
+      final isUuid = RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+              caseSensitive: false)
+          .hasMatch(lessonId);
+      final response = await _client
+          .from('lessons')
+          .select()
+          .eq(isUuid ? 'id' : 'slug', lessonId)
+          .maybeSingle();
+
+      return response;
+    } catch (e) {
+      debugPrint('Error getting lesson: $e');
+      return null;
+    }
+  }  /// Get Bundle by ID or Slug
+  Future<Map<String, dynamic>?> getBundleById(String bundleId) async {
+    try {
+      final isUuid = RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+              caseSensitive: false)
+          .hasMatch(bundleId);
+      final response = await _client
+          .from('bundles')
+          .select('*, courses(*)')
+          .eq(isUuid ? 'id' : 'slug', bundleId)
+          .maybeSingle();
+
+      return response;
+    } catch (e) {
+      debugPrint('Error getting bundle: $e');
+      return null;
+    }
+  }
+
+
+  /// Get teacher by ID or Slug
+  Future<Map<String, dynamic>?> getTeacherById(String teacherId) async {
+    try {
+      final isUuid = RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+              caseSensitive: false)
+          .hasMatch(teacherId);
+      
+      final response = await _client
+          .from('users')
+          .select('*')
+          .eq(isUuid ? 'id' : 'slug', teacherId)
+          .maybeSingle();
+      
+      if (response != null) {
+        final avatar = _formatAvatarUrl(response['photo_url'] ?? response['avatar_url'], userId: response['id']);
+        response['photo_url'] = avatar;
+        response['avatar_url'] = avatar;
+      }
+      return response;
+    } catch (e) {
+      debugPrint('Error getting teacher: $e');
+      return null;
+    }
+  }
+
   /// Get lesson progress for a specific lesson (private helper)
   Future<Map<String, dynamic>?> _getLessonProgress(String lessonId) async {
     try {
@@ -3106,11 +3171,20 @@ class DatabaseService {
 
       data['updated_at'] = DateTime.now().toUtc().toIso8601String();
 
-      // Upsert into the unified users table
+      // Update public users table (upsert handles both insert and update)
       await _client.from('users').upsert(data);
 
+      // Also ensure teacher-specific table is updated
+      // We extract only the fields needed for the teachers table
+      await _client.from('teachers').upsert({
+        'user_id': userId,
+        'phone_number': data['phone_number'],
+        'subscription_type': data['subscription_type'],
+        'specialization': data['specialization'],
+        'status': 'pending', // Default to pending for approval
+      });
+
       // Automatic role assignment is disabled because teacher accounts now require manual approval by admin.
-      // The admin will review the 'pending' status and assign the teacher role upon approval.
     } catch (e) {
       debugPrint('❌ Error saving teacher profile: $e');
       rethrow;
@@ -3126,8 +3200,16 @@ class DatabaseService {
       data['updated_at'] = DateTime.now().toUtc().toIso8601String();
       data['status'] = 'approved';
 
-      // Upsert into the unified users table
+      // Update public users table
       await _client.from('users').upsert(data);
+
+      // Also ensure student-specific table is updated
+      await _client.from('students').upsert({
+        'user_id': userId,
+        'education_level': data['education_level'],
+        'grade': data['grade'],
+        'specialization': data['specialization'],
+      });
 
       // Also assign the student role if not already assigned
       try {
@@ -3135,7 +3217,6 @@ class DatabaseService {
       } catch (e) {
         debugPrint(
             '⚠️ Could not assign student role automatically (permission?): $e');
-        // Don't rethrow as the profile data is already saved
       }
     } catch (e) {
       debugPrint('❌ Error saving student profile: $e');
@@ -3597,6 +3678,44 @@ class DatabaseService {
     );
   }
 
+  /// Get teacher statistics
+  Future<Map<String, dynamic>> getTeacherStatistics(String teacherId,
+      {bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: 'teacher_stats_$teacherId',
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 1),
+      fetcher: () async {
+        try {
+          final isUuid = RegExp(
+                  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+                  caseSensitive: false)
+              .hasMatch(teacherId);
+
+          String actualId = teacherId;
+          if (!isUuid) {
+            // If slug, find ID first
+            final user = await _client
+                .from('users')
+                .select('id')
+                .eq('slug', teacherId)
+                .maybeSingle();
+            if (user != null) {
+              actualId = user['id'];
+            }
+          }
+
+          final response = await _client
+              .rpc('get_teacher_statistics', params: {'teacher_id_param': actualId});
+          return response as Map<String, dynamic>;
+        } catch (e) {
+          debugPrint('Error getting teacher stats: $e');
+          return {};
+        }
+      },
+    );
+  }
+
   /// Get all teachers
   Future<List<Map<String, dynamic>>> getAllTeachers(
       {bool forceRefresh = false}) async {
@@ -3629,46 +3748,11 @@ class DatabaseService {
                   'teacher_status': t['teacher_status'] ?? 'approved',
                 };
               })
-              .toList()
-              .cast<Map<String, dynamic>>();
+              .where((t) => t['teacher_status'] == 'approved')
+              .toList();
         } catch (e) {
-          // Fallback to old method if RPC not exists (though it will fail for students due to RLS)
-          try {
-            final teacherRole = await _client
-                .from('roles')
-                .select('id')
-                .eq('name', 'teacher')
-                .single();
-
-            final response = await _client
-                .from('user_roles')
-                .select('*, users(*)')
-                .eq('role_id', teacherRole['id']);
-
-            final data = SafeParser.safeMapList(response);
-            return data.map((row) {
-              final user = SafeParser.safeMap(row['users']);
-              final userId =
-                  user['id']?.toString() ?? row['user_id']?.toString();
-              final avatar = _formatAvatarUrl(user['avatar_url']?.toString(),
-                  userId: userId);
-              return {
-                'id': userId,
-                'user_id': userId,
-                'name': user['name'] ?? user['full_name'],
-                'full_name': user['full_name'] ?? user['name'],
-                'email': user['email'],
-                'avatar_url': avatar,
-                'photo_url': avatar,
-                'bio': user['bio'],
-                'subjects': user['subjects'],
-                'specialization': user['subjects'],
-                'teacher_status': user['status'] ?? 'approved',
-              };
-            }).toList();
-          } catch (_) {
-            return []; // Return empty if both fail
-          }
+          debugPrint('Error getting all teachers: $e');
+          return [];
         }
       },
     );
@@ -5906,81 +5990,9 @@ class DatabaseService {
     );
   }
 
-  /// Get statistics for a specific teacher
-  Future<Map<String, dynamic>> getTeacherStatistics(String teacherId,
-      {bool forceRefresh = false}) async {
-    return fetchWithCache(
-      key: 'teacher_stats_$teacherId',
-      forceRefresh: forceRefresh,
-      duration: const Duration(minutes: 30),
-      fetcher: () async {
-        try {
-          // 1. Get courses count by this teacher from both the course itself and the junction table
-          final directCourses = await _client
-              .from('courses')
-              .select('id')
-              .eq('instructor_id', teacherId);
-
-          final junctionCourses = await _client
-              .from('teacher_courses')
-              .select('course_id')
-              .eq('teacher_id', teacherId);
-
-          final List<dynamic> directList = directCourses as List<dynamic>;
-          final List<dynamic> junctionList = junctionCourses as List<dynamic>;
-
-          final Set<String> courseIdsSet = {
-            ...directList.map((c) => c['id'] as String),
-            ...junctionList.map((c) => c['course_id'] as String),
-          };
-
-          final List<String> courseIds = courseIdsSet.toList();
-
-          int studentCount = 0;
-          double totalRevenue = 0;
-          int attemptsCount = 0;
-
-          if (courseIds.isNotEmpty) {
-            // 2. Get enrollments for student count and revenue
-            final enrollmentsRes = await _client
-                .from('enrollments')
-                .select('user_id, paid_amount')
-                .inFilter('course_id', courseIds);
-
-            final List<dynamic> enrollmentsList =
-                enrollmentsRes as List<dynamic>;
-            final uniqueStudents =
-                enrollmentsList.map((e) => e['user_id']).toSet();
-            studentCount = uniqueStudents.length;
-
-            for (var e in enrollmentsList) {
-              totalRevenue += (e['paid_amount'] as num? ?? 0).toDouble();
-            }
-
-            // 3. Get exam attempts for stats
-            final attemptsRes = await _client
-                .from('exam_attempts')
-                .select('id, exams!inner(course_id)')
-                .inFilter('exams.course_id', courseIds);
-
-            attemptsCount = (attemptsRes as List).length;
-          }
-
-          return {
-            'total_courses': courseIds.length,
-            'total_users': studentCount,
-            'total_revenue': totalRevenue,
-            'total_attempts': attemptsCount,
-          };
-        } catch (e) {
-          debugPrint('Error fetching teacher stats: $e');
-          return {
-            'total_courses': 0,
-            'total_users': 0,
-            'total_revenue': 0,
-          };
-        }
-      },
-    );
+  /// Refresh all caches (Global)
+  Future<void> refreshAllCaches() async {
+    await LocalDatabase().clear();
+    debugPrint('✅ Global cache cleared');
   }
 }

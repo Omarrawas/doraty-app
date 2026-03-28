@@ -4,6 +4,7 @@ import '../core/utils/safe_parser.dart';
 class Bundle {
   final String id;
   final String title;
+  final String slug;
   final String? description;
   final String? imageUrl;
   final double price;
@@ -17,6 +18,7 @@ class Bundle {
   Bundle({
     required this.id,
     required this.title,
+    this.slug = '',
     this.description,
     this.imageUrl,
     required this.price,
@@ -47,6 +49,7 @@ class Bundle {
     return Bundle(
       id: json['id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
+      slug: json['slug']?.toString() ?? '',
       description: json['description']?.toString(),
       imageUrl: (json['image_url'] ?? json['thumbnail'])?.toString(),
       price: (json['price'] as num?)?.toDouble() ??
@@ -75,6 +78,7 @@ class Bundle {
     return {
       'id': id,
       'title': title,
+      'slug': slug,
       'description': description,
       'image_url': imageUrl,
       'price': price,

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/services/database_service.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/string_utils.dart';
-import 'teacher_profile_screen.dart';
 import '../../core/theme/app_colors.dart';
 
 class TeachersListScreen extends StatefulWidget {
@@ -308,17 +308,13 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TeacherProfileScreen(
-              teacherId: teacher['user_id'] ?? '',
-              teacherName: name,
-              teacherPhoto: avatarUrl,
-              bio: bio,
-            ),
-          ),
-        );
+        // Use slug if available for SEO friendly URL, fallback to user_id
+        final userData = teacher['users'] as Map<String, dynamic>?;
+        final identifier = teacher['slug'] ?? userData?['slug'] ?? teacher['user_id'] ?? teacher['id'] ?? '';
+        
+        if (identifier.isNotEmpty) {
+          context.push('/teacher/$identifier');
+        }
       },
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12),

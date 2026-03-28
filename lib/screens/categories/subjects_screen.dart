@@ -6,7 +6,7 @@ import '../../models/category.dart';
 import '../../models/category_model.dart';
 import '../../core/services/database_service.dart';
 import '../../core/localization/locale_provider.dart';
-import 'category_courses_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'package:doraty/core/constants/app_strings.dart';
 
 class SubjectsScreen extends StatefulWidget {
@@ -243,11 +243,10 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
     return _CardWrapper(
       color: color,
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(
-            builder: (context) => CategoryCoursesScreen(category: category)),
-      ),
+      onTap: () {
+        final identifier = category.slug.isNotEmpty ? category.slug : category.id;
+        context.push('/category/$identifier');
+      },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

@@ -8,7 +8,6 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/utils/error_utils.dart';
 import 'dart:ui';
 import '../../widgets/tex_view_widget.dart';
-// import '../../widgets/math_symbol_toolbar.dart'; // No longer needed here as it's inside RichTextEditor
 
 import '../../widgets/rich_text_editor.dart';
 
@@ -34,14 +33,10 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
   final _formKey = GlobalKey<FormState>();
   final DatabaseService _db = DatabaseService.instance;
 
-  // Controllers
-  // _questionController removed in favor of _questionHtml
   String _questionHtml = '';
-  // _explanationController removed in favor of _explanationHtml
   String _explanationHtml = '';
   final _pointsController = TextEditingController(text: '1');
 
-  // _optionControllers removed in favor of _optionHtmls
   final List<String> _optionHtmls = ['', ''];
 
   String _questionType = 'multiple_choice';
@@ -55,10 +50,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
   final FocusNode _explanationFocus = FocusNode();
   final FocusNode _pointsFocus = FocusNode();
 
-  List<bool> _showOptionPreviews = [
-    false,
-    false
-  ]; // Track preview state for each option (kept for consistency or rendering)
+  List<bool> _showOptionPreviews = [false, false];
 
   @override
   void initState() {
@@ -106,8 +98,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                 _buildHeader(context),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(
-                        20, 20, 20, 80), // Extra padding for toolbar
+                    padding: EdgeInsets.fromLTRB(20, 20, 20, 80),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -118,19 +109,16 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                             child: Column(
                               children: [
                                 _buildQuestionTypeSelector(),
-                                SizedBox(height: 16),
-                                SizedBox(height: 16),
+                                SizedBox(height: 32),
                                 Padding(
                                   padding: EdgeInsets.only(bottom: 8.0),
                                   child: Text('نص السؤال',
                                       style: TextStyle(
-                                          color:
-                                              AppColors.getTextColor(context))),
+                                          color: AppColors.getTextColor(context))),
                                 ),
                                 RichTextEditor(
                                   initialHtml: _questionHtml,
                                   height: 200,
-                                  textColor: Colors.black,
                                   onContentChanged: (html) {
                                     _questionHtml = html;
                                   },
@@ -171,22 +159,20 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                                     return null;
                                   },
                                 ),
-                                SizedBox(height: 16),
+                                SizedBox(height: 24),
                                 Padding(
                                   padding: EdgeInsets.only(bottom: 8.0),
                                   child: Align(
                                     alignment: Alignment.centerRight,
                                     child: Text('الشرح (اختياري)',
                                         style: TextStyle(
-                                            color: AppColors.getTextColor(
-                                                context))),
+                                            color: AppColors.getTextColor(context))),
                                   ),
                                 ),
                                 RichTextEditor(
                                   initialHtml: _explanationHtml,
                                   height: 120,
                                   isCompact: true,
-                                  textColor: Colors.black,
                                   onContentChanged: (html) {
                                     _explanationHtml = html;
                                   },
@@ -195,7 +181,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
                               ],
                             ),
                           ),
-                          SizedBox(height: 12), // Reduced from 32
+                          SizedBox(height: 32),
                           _buildSubmitButton(),
                           SizedBox(height: 40),
                         ],
@@ -269,8 +255,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
               width: 1.5,
             ),
           ),
-          padding: EdgeInsets.symmetric(
-              horizontal: 16, vertical: 12), // Reduced padding
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -341,8 +326,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
         icon: _isLoading
             ? SizedBox(
@@ -425,7 +409,7 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
         });
       },
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 8), // Reduced from 12
+        padding: EdgeInsets.symmetric(vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
               ? AppColors.primaryPurple
@@ -500,13 +484,12 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
   }
 
   Widget _buildOptionField(int index, String optionHtml) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCorrect = _correctAnswer == index;
-    // Ensure list bounds
+    
     if (index >= _showOptionPreviews.length) {
       _showOptionPreviews.add(false);
     }
-
-    // No focus node management needed
 
     return Column(
       children: [
@@ -521,62 +504,53 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
               width: isCorrect ? 2 : 1,
             ),
           ),
-          child: Theme(
-            data: ThemeData.light(),
-            child: Row(
-              children: [
-                Radio<int>(
-                  value: index,
-                  groupValue: _correctAnswer,
-                  onChanged: (value) {
-                    setState(() => _correctAnswer = value!);
+          child: Row(
+            children: [
+              Radio<int>(
+                value: index,
+                groupValue: _correctAnswer,
+                onChanged: (value) {
+                  setState(() => _correctAnswer = value!);
+                },
+                activeColor: Colors.green,
+              ),
+              Expanded(
+                child: RichTextEditor(
+                  initialHtml: optionHtml,
+                  height: 40,
+                  isCompact: true,
+                  onContentChanged: (html) {
+                    _optionHtmls[index] = html;
                   },
-                  activeColor: Colors.green,
+                  placeholder: 'الخيار ${index + 1}',
                 ),
-                Expanded(
-                  child: RichTextEditor(
-                    initialHtml: optionHtml,
-                    height: 40,
-                    isCompact: true,
-                    textColor: Colors.black,
-                    onContentChanged: (html) {
-                      _optionHtmls[index] = html;
-                    },
-                    placeholder: 'الخيار ${index + 1}',
-                  ),
+              ),
+              IconButton(
+                icon: Icon(
+                  _showOptionPreviews[index] ? Icons.visibility_off : Icons.visibility,
+                  color: Colors.blueAccent,
+                  size: 20
                 ),
+                onPressed: () {
+                  setState(() {
+                    _showOptionPreviews[index] = !_showOptionPreviews[index];
+                  });
+                }
+              ),
+              if (_questionType == 'multiple_choice' && _optionHtmls.length > 2)
                 IconButton(
-                    icon: Icon(
-                        _showOptionPreviews[index]
-                            ? Icons.visibility_off
-                            : Icons.visibility,
-                        color: Colors.blueAccent,
-                        size: 20),
-                    onPressed: () {
-                      setState(() {
-                        _showOptionPreviews[index] =
-                            !_showOptionPreviews[index];
-                      });
-                    }),
-                if (_questionType == 'multiple_choice' &&
-                    _optionHtmls.length > 2)
-                  IconButton(
-                    icon: Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      setState(() {
-                        _optionHtmls.removeAt(index);
-                        _showOptionPreviews.removeAt(index);
-
-                        // Focus node management removed
-
-                        if (_correctAnswer >= _optionHtmls.length) {
-                          _correctAnswer = 0;
-                        }
-                      });
-                    },
-                  ),
-              ],
-            ),
+                  icon: Icon(Icons.delete, color: Colors.red),
+                  onPressed: () {
+                    setState(() {
+                      _optionHtmls.removeAt(index);
+                      _showOptionPreviews.removeAt(index);
+                      if (_correctAnswer >= _optionHtmls.length) {
+                        _correctAnswer = 0;
+                      }
+                    });
+                  },
+                ),
+            ],
           ),
         ),
         if (_showOptionPreviews[index] && optionHtml.isNotEmpty)
@@ -584,14 +558,15 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
             margin: EdgeInsets.only(top: 8),
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.getTextColor(context),
+              color: isDark ? Color(0xFF161922) : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
             ),
             width: double.infinity,
             child: TexViewWidget(
               optionHtml,
-              style: TextStyle(color: Colors.black87, fontSize: 16),
+              style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87, fontSize: 16),
             ),
           ),
       ],
@@ -601,7 +576,6 @@ class _AddQuestionScreenState extends State<AddQuestionScreen> {
   Future<void> _saveQuestion() async {
     if (!_formKey.currentState!.validate()) return;
     
-    // Validate options exist
     if (_questionType != 'essay' && _optionHtmls.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

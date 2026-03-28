@@ -7,14 +7,11 @@ import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
 import '../../models/lesson.dart';
-import '../../models/chapter.dart';
-import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../../core/services/database_service.dart';
 import '../../widgets/video_preview_widget.dart';
 import '../teacher/teacher_profile_screen.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
-import 'course_content_screen.dart';
 import '../../core/providers/cart_provider.dart';
 import 'package:provider/provider.dart';
 import '../../core/utils/error_utils.dart';
@@ -28,12 +25,14 @@ class CourseDetailsScreen extends StatefulWidget {
   final Course? course;
   final String? courseId;
   final String? heroTag;
+  final bool startAtContent;
 
   const CourseDetailsScreen({
     super.key,
     this.course,
     this.courseId,
     this.heroTag,
+    this.startAtContent = false,
   });
 
   @override
@@ -43,7 +42,6 @@ class CourseDetailsScreen extends StatefulWidget {
 class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   // Lessons data
   List<Map<String, dynamic>> _lessons = [];
-  List<Chapter> _chapters = [];
 
   // Reviews data
   List<Map<String, dynamic>> _reviews = [];
@@ -227,18 +225,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Future<void> _loadLessons() async {
     if (_course == null) return;
     try {
-      final results = await Future.wait([
-        _databaseService.getLessons(_course!.id),
-        _databaseService.getChapters(_course!.id),
-      ]);
-
-      final lessons = results[0] as List<Map<String, dynamic>>;
-      final chapters = results[1] as List<Chapter>;
+      final lessons = await _databaseService.getLessons(_course!.id);
 
       if (mounted) {
         setState(() {
           _lessons = lessons;
-          _chapters = chapters;
         });
       }
     } catch (e) {
@@ -1198,17 +1189,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CourseContentScreen(
-                    course: _course!,
-                    lessonsData: _lessons,
-                    chapters: _chapters,
-                    isEnrolled: _isEnrolled, // تمرير حالة الاشتراك
-                  ),
-                ),
-              );
+              context.push('/course/${_course?.slug ?? _course?.id}/content');
             },
             icon: Icon(Icons.list_alt_rounded),
             label: Text(_t('course_content')),
@@ -1270,16 +1251,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     // Check if enrolled first to jump to lessons
     if (_isEnrolled && _lessons.isNotEmpty) {
       final firstLesson = Lesson.fromJson(_lessons.first);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => lesson_ui.LessonScreen(
-            lesson: firstLesson,
-            courseTitle: _course!.title,
-            isEnrolled: true,
-          ),
-        ),
-      );
+      context.push('/course/${_course?.slug ?? _course?.id}/lesson/${firstLesson.slug ?? firstLesson.id}');
       return;
     }
 
