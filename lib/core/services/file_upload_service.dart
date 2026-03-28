@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
 
 class FileUploadService {
-  final SupabaseClient _client = SupabaseService.instance.client;
+  SupabaseClient get _client => SupabaseService.instance.client;
 
   /// Pick files (PDFs, PPTs, etc.)
   Future<List<PlatformFile>> pickFiles({

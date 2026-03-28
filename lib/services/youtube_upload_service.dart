@@ -5,11 +5,11 @@ import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sig
 import 'package:image_picker/image_picker.dart';
 
 class YoutubeUploadService {
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
+  GoogleSignIn get _googleSignIn => GoogleSignIn(
     scopes: [
       yt.YouTubeApi.youtubeUploadScope,
     ],
-    clientId: dotenv.get('GOOGLE_WEB_CLIENT_ID', fallback: ''),
+    clientId: dotenv.isInitialized ? dotenv.get('GOOGLE_WEB_CLIENT_ID', fallback: '') : '',
   );
 
   Future<String?> uploadUnlistedVideo(XFile videoFile, String title, String description) async {

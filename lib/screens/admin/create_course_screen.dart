@@ -197,7 +197,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       }).toList();
 
       // If editing, get the assigned teacher from teacher_courses
-      if (widget.courseId != null) {
+      if (widget.courseId != null && widget.courseId!.trim().isNotEmpty) {
         try {
           final teacherCourseData = await _db.supabaseClient
               .from('teacher_courses')
@@ -313,16 +313,17 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isEditing = widget.courseId != null;
-    final isDark = context.watch<ThemeProvider>().isDarkMode;
+    try {
+      final isEditing = widget.courseId != null;
+      final isDark = context.watch<ThemeProvider>().isDarkMode;
 
-    return Theme(
-      data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
-      child: Scaffold(
-        body: DynamicGradientBackground(
-          child: SafeArea(
-            child: Column(
-              children: [
+      return Theme(
+        data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
+        child: Scaffold(
+          body: DynamicGradientBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
                 _buildHeader(context, isEditing),
                 Expanded(
                   child: SingleChildScrollView(
@@ -805,12 +806,44 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                     ),
                   ),
                 ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint("Critical Error in CreateCourseScreen build: $e");
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.orange, size: 64),
+                const SizedBox(height: 16),
+                const Text(
+                  'حدث خطأ غير متوقع في عرض الصفحة',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  e.toString(),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('العودة للخلف'),
+                ),
               ],
             ),
           ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   Widget _buildHeader(BuildContext context, bool isEditing) {

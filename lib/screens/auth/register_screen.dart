@@ -11,7 +11,7 @@ import '../../core/services/github_storage_service.dart' hide FileType;
 import '../../core/utils/error_utils.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
-import '../../main.dart';
+import 'package:go_router/go_router.dart';
 
 class RegisterScreen extends StatefulWidget {
   final bool isCompletingProfile;
@@ -226,7 +226,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         );
         
         if (mounted) {
-          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => MainScreen()));
+          context.go('/');
         }
       }
     } catch (e) {

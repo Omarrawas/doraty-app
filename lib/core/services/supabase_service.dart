@@ -9,13 +9,21 @@ class SupabaseService {
 
   SupabaseService._();
 
-  SupabaseClient get client {
+  bool get isInitialized {
     try {
-      return Supabase.instance.client;
-    } catch (e) {
-      throw Exception(
-          'Supabase has not been initialized. Please call SupabaseService.initialize() first. Error: $e');
+      Supabase.instance.client;
+      return true;
+    } catch (_) {
+      return false;
     }
+  }
+  
+  SupabaseClient get client {
+    if (!isInitialized) {
+      throw Exception(
+          'Supabase has not been initialized. Please call SupabaseService.initialize() first.');
+    }
+    return Supabase.instance.client;
   }
 
   static Future<void> initialize({

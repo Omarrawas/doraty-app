@@ -4,9 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 class TelegramUploadService {
-  final String botToken = dotenv.get('TIPS_BOT_TOKEN', fallback: '');
-  final String chatId = dotenv.get('TIPS_CHAT_ID', fallback: '');
-  final String streamerHost = dotenv.get('STREAMER_HOST', fallback: 'https://omarrawas17-doraty-video-stream.hf.space');
+  String get botToken => dotenv.isInitialized ? dotenv.get('TIPS_BOT_TOKEN', fallback: '') : '';
+  String get chatId => dotenv.isInitialized ? dotenv.get('TIPS_CHAT_ID', fallback: '') : '';
+  String get streamerHost => dotenv.isInitialized ? dotenv.get('STREAMER_HOST', fallback: 'https://omarrawas17-doraty-video-stream.hf.space') : 'https://omarrawas17-doraty-video-stream.hf.space';
 
   final Dio _dio = Dio();
 

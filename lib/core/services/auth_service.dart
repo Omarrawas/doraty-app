@@ -9,24 +9,35 @@ import 'cache_service.dart';
 import '../utils/safe_parser.dart';
 
 class AuthService extends ChangeNotifier {
-  final SupabaseClient _client = SupabaseService.instance.client;
+  SupabaseClient get _client => SupabaseService.instance.client;
+  bool get _isSupabaseReady => SupabaseService.instance.isInitialized;
 
-  User? get currentUser => _client.auth.currentUser;
+  User? get currentUser => _isSupabaseReady ? _client.auth.currentUser : null;
   bool get isAuthenticated => currentUser != null;
 
   bool _isOffline = false;
   bool get isOffline => _isOffline;
 
-  /// Ensures dynamic data intended to be a `List<Map<String, dynamic>>` is safely parsed.
   Map<String, dynamic>? _userProfile;
   Map<String, dynamic>? get userProfile => _userProfile;
 
   AuthService() {
+    if (!_isSupabaseReady) {
+      debugPrint('⚠️ AuthService: Supabase not initialized, delaying listener setup.');
+      return;
+    }
+    
     // Initial load if authenticated
     if (isAuthenticated) {
       loadUserProfile();
     }
 
+    _setupListeners();
+  }
+
+  void _setupListeners() {
+    if (!_isSupabaseReady) return;
+    
     // Listen to auth state changes
     _client.auth.onAuthStateChange.listen((data) {
       final event = data.event;

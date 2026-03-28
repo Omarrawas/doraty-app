@@ -5,7 +5,7 @@ import 'supabase_service.dart';
 import 'github_api_service.dart';
 
 class ImageUploadService {
-  final SupabaseClient _client = SupabaseService.instance.client;
+  SupabaseClient get _client => SupabaseService.instance.client;
   final ImagePicker _picker = ImagePicker();
 
   /// Pick image from gallery or camera

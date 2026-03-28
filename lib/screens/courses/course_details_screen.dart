@@ -146,7 +146,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Future<void> _refreshInstructorInfo() async {
-    if (_course == null || _course!.instructorId == null) return;
+    if (_course == null || _course!.instructorId == null || _course!.instructorId!.trim().isEmpty) return;
     try {
       final profile =
           await _databaseService.getUserProfile(_course!.instructorId!);

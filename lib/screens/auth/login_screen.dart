@@ -10,9 +10,7 @@ import '../../core/services/auth_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/services/database_service.dart';
 import '../../core/services/screen_security_service.dart';
-import 'register_screen.dart';
 import '../../core/utils/error_utils.dart';
-import '../../main.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
 
@@ -65,10 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
           
           if (mounted) {
             if (!hasRole) {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => RegisterScreen()),
-              );
+              context.go('/register');
             } else {
               // Check if profile exists
               final dbService = DatabaseService.instance;
@@ -78,20 +73,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 final profile = await dbService.getStudentProfile(userId);
                 if (profile == null) {
                   if (mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => RegisterScreen()),
-                    );
+                    context.go('/register');
                   }
                   return;
                 }
               }
 
               if (mounted) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => MainScreen()),
-                );
+                context.go('/');
               }
             }
           }

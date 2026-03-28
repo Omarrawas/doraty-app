@@ -21,7 +21,7 @@ class DatabaseService {
 
   DatabaseService._internal();
 
-  final SupabaseClient _client = SupabaseService.instance.client;
+  SupabaseClient get _client => SupabaseService.instance.client;
 
   // Getter for accessing the client from other classes
   SupabaseClient get supabaseClient => _client;
@@ -1240,6 +1240,7 @@ class DatabaseService {
 
   /// Get chapters for a course
   Future<List<Chapter>> getChapters(String courseId) async {
+    if (courseId.trim().isEmpty) return [];
     try {
       final response = await _client
           .from('chapters')
@@ -1815,6 +1816,8 @@ class DatabaseService {
   /// Get user profile (public info)
   Future<Map<String, dynamic>> getUserProfile(String userId,
       {bool forceRefresh = false}) async {
+    if (userId.trim().isEmpty) return {};
+
     return fetchWithCache(
       key: CacheKeys.userProfile(userId),
       forceRefresh: forceRefresh,
@@ -2484,6 +2487,7 @@ class DatabaseService {
   /// Get all exams for a course (including drafts)
   Future<List<Map<String, dynamic>>> getAllExamsForCourse(
       String courseId) async {
+    if (courseId.trim().isEmpty) return [];
     try {
       final response = await _client
           .from('exams')
@@ -4408,6 +4412,7 @@ class DatabaseService {
 
   /// Get all lessons for a course (Admin - no progress)
   Future<List<Map<String, dynamic>>> getCourseLessons(String courseId) async {
+    if (courseId.trim().isEmpty) return [];
     try {
       final response = await _client
           .from('lessons')
