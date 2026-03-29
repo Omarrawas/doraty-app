@@ -7,6 +7,7 @@ import 'platform_utils.dart';
 import 'local_database.dart';
 import 'cache_service.dart';
 import '../utils/safe_parser.dart';
+import 'screen_security_service.dart';
 
 class AuthService extends ChangeNotifier {
   SupabaseClient get _client => SupabaseService.instance.client;
@@ -30,6 +31,8 @@ class AuthService extends ChangeNotifier {
     // Initial load if authenticated
     if (isAuthenticated) {
       loadUserProfile();
+    } else {
+      ScreenSecurityService().applySecurityPolicy(role: null);
     }
 
     _setupListeners();
@@ -45,6 +48,7 @@ class AuthService extends ChangeNotifier {
         loadUserProfile();
       } else if (event == AuthChangeEvent.signedOut) {
         _userProfile = null;
+        ScreenSecurityService().applySecurityPolicy(role: null);
         notifyListeners();
       }
       notifyListeners();
@@ -101,6 +105,9 @@ class AuthService extends ChangeNotifier {
         ...response,
         'role': role,
       };
+
+      // Apply screen security policy based on the new role
+      await ScreenSecurityService().applySecurityPolicy(role: role);
 
       // 4. CACHE: Save profile for offline use
       await LocalDatabase().set(CacheKeys.userProfile(currentUser!.id), _userProfile);

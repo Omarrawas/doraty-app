@@ -448,7 +448,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: AppColors.getMutedTextColor(context),
+            color: AppColors.getBorderColor(context),
             width: 3,
           ),
           boxShadow: [
@@ -504,9 +504,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               padding: EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppColors.getMutedTextColor(context),
+                color: AppColors.getElevatedSurfaceColor(context),
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                border: Border.all(color: AppColors.getBorderColor(context)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -602,10 +602,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.getMutedTextColor(context),
+              color: AppColors.getElevatedSurfaceColor(context),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: AppColors.getMutedTextColor(context),
+                color: AppColors.getBorderColor(context),
                 width: 1,
               ),
             ),
@@ -622,7 +622,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          color: AppColors.getMutedTextColor(context),
+                          color: AppColors.getSurfaceColor(context),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
@@ -682,7 +682,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: Material(
-          color: AppColors.getMutedTextColor(context),
+          color: AppColors.getElevatedSurfaceColor(context),
           child: InkWell(
             onTap: onTap,
             borderRadius: BorderRadius.circular(16),
@@ -736,9 +736,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.getMutedTextColor(context),
+        color: AppColors.getElevatedSurfaceColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: AppColors.getBorderColor(context)),
       ),
       child: Column(
         children: [
@@ -769,7 +769,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Container(
           height: 50,
           decoration: BoxDecoration(
-            color: AppColors.getMutedTextColor(context),
+            color: AppColors.getElevatedSurfaceColor(context),
             borderRadius: BorderRadius.circular(25),
           ),
           child: Stack(
@@ -910,9 +910,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Container(
             padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.getMutedTextColor(context),
+              color: AppColors.getElevatedSurfaceColor(context),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.2)),
+              border: Border.all(color: AppColors.getBorderColor(context)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1016,7 +1016,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           children: [
             Icon(_selectedTabIndex == 0 ? Icons.play_circle_outline : Icons.check_circle_outline, 
-                 size: 64, color: AppColors.getMutedTextColor(context)),
+                 size: 64, color: AppColors.getTextColor(context, secondary: true)),
             SizedBox(height: 16),
             Text(
               _selectedTabIndex == 0 ? 'لا توجد دورات حالية' : 'لا توجد دورات مكتملة',
@@ -1049,9 +1049,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.getMutedTextColor(context),
+              color: AppColors.getElevatedSurfaceColor(context),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              border: Border.all(color: AppColors.getBorderColor(context)),
             ),
             child: Row(
               children: [

@@ -685,9 +685,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
-              color: AppColors.getMutedTextColor(context),
+              color: AppColors.getElevatedSurfaceColor(context),
               borderRadius: BorderRadius.circular(30),
-              border: Border.all(color: Colors.white.withOpacity(0.1)),
+              border: Border.all(color: AppColors.getBorderColor(context)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -843,7 +843,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       padding: EdgeInsets.all(24),
       margin: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
       decoration: BoxDecoration(
-        color: AppColors.getMutedTextColor(context),
+        color: AppColors.getElevatedSurfaceColor(context),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -988,9 +988,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       ),
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.getMutedTextColor(context),
+          color: AppColors.getElevatedSurfaceColor(context),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.1)),
+          border: Border.all(color: AppColors.getBorderColor(context)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1098,10 +1098,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       margin: EdgeInsets.only(top: 40),
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
       decoration: BoxDecoration(
-        color: AppColors.getMutedTextColor(context),
+        color: AppColors.getSurfaceColor(context),
         border: Border.symmetric(
           horizontal:
-              BorderSide(color: Colors.white.withOpacity(0.05), width: 1),
+              BorderSide(color: AppColors.getBorderColor(context), width: 1),
         ),
       ),
       child: Column(
@@ -1172,7 +1172,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             errorBuilder: (context, error, stackTrace) => Container(
               padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: AppColors.getMutedTextColor(context),
+                color: AppColors.getElevatedSurfaceColor(context),
                 shape: BoxShape.circle,
               ),
               child: Icon(Icons.verified_user_rounded,
@@ -1416,9 +1416,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       margin: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       padding: EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.getMutedTextColor(context),
+        color: AppColors.getElevatedSurfaceColor(context),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: AppColors.getBorderColor(context)),
       ),
       child: Column(
         children: [

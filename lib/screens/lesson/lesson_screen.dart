@@ -1012,10 +1012,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                 child: Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: AppColors.getMutedTextColor(context),
+                    color: AppColors.getElevatedSurfaceColor(context),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppColors.getMutedTextColor(context),
+                      color: AppColors.getBorderColor(context),
                       width: 1.5,
                     ),
                   ),
@@ -1142,10 +1142,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
           child: Container(
             padding: EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: AppColors.getMutedTextColor(context),
+              color: AppColors.getElevatedSurfaceColor(context),
               borderRadius: BorderRadius.circular(16),
               border:
-                  Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                  Border.all(color: AppColors.getBorderColor(context), width: 1.5),
             ),
             child: Column(
               children: [
@@ -1284,10 +1284,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                     child: Container(
                       padding: EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.getMutedTextColor(context),
+                        color: AppColors.getElevatedSurfaceColor(context),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: AppColors.getMutedTextColor(context),
+                          color: AppColors.getBorderColor(context),
                           width: 1.5,
                         ),
                       ),
@@ -1423,7 +1423,7 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                                       padding: EdgeInsets.symmetric(
                                           horizontal: 16, vertical: 12),
                                       decoration: BoxDecoration(
-                                        color: AppColors.getMutedTextColor(context),
+                                        color: AppColors.getSurfaceColor(context),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
                                             color: isPassed
@@ -1579,67 +1579,35 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
     return Column(
       children: [
         // Add Note Button
-        Row(
-          children: [
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddNoteScreen(
-                        lessonId: lesson.id,
-                        courseId: lesson.courseId,
-                      ),
-                    ),
-                  );
-                  if (result == true) {
-                    _refreshFutures();
-                  }
-                },
-                icon: Icon(Icons.add),
-                label: Text('ملاحظة عادية'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withOpacity(0.1),
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.white.withOpacity(0.2))),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final timestamp = _getCurrentVideoPosition();
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddNoteScreen(
+                    lessonId: lesson.id,
+                    courseId: lesson.courseId,
+                    videoTimestamp: timestamp,
+                  ),
                 ),
-              ),
+              );
+              if (result == true) {
+                _refreshFutures();
+              }
+            },
+            icon: Icon(Icons.timer_outlined),
+            label: Text('ملاحظة ذكية'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primaryPurple,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
-            SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final timestamp = _getCurrentVideoPosition();
-                  final result = await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddNoteScreen(
-                        lessonId: lesson.id,
-                        courseId: lesson.courseId,
-                        videoTimestamp: timestamp,
-                      ),
-                    ),
-                  );
-                  if (result == true) {
-                    _refreshFutures();
-                  }
-                },
-                icon: Icon(Icons.timer_outlined),
-                label: Text('ملاحظة ذكية'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryPurple,
-                  foregroundColor: Colors.white,
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
         SizedBox(height: 20),
         
@@ -1669,10 +1637,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                       child: Container(
                         padding: EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          color: AppColors.getMutedTextColor(context),
+                          color: AppColors.getElevatedSurfaceColor(context),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                              color: AppColors.getMutedTextColor(context), width: 1.5),
+                              color: AppColors.getBorderColor(context), width: 1.5),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -1708,10 +1676,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
                       child: Container(
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.getMutedTextColor(context),
+                          color: AppColors.getElevatedSurfaceColor(context),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: AppColors.getMutedTextColor(context), width: 1.5),
+                              color: AppColors.getBorderColor(context), width: 1.5),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1857,10 +1825,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
             child: Container(
               padding: EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: AppColors.getMutedTextColor(context),
+                color: AppColors.getElevatedSurfaceColor(context),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                    color: AppColors.getMutedTextColor(context), width: 1.5),
+                    color: AppColors.getBorderColor(context), width: 1.5),
               ),
               child: Column(
                 children: [
@@ -1935,10 +1903,10 @@ class _LessonScreenState extends State<LessonScreen> with SingleTickerProviderSt
         child: Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.getMutedTextColor(context),
+            color: AppColors.getElevatedSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
             border:
-                Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
+                Border.all(color: AppColors.getBorderColor(context), width: 1.5),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

@@ -40,7 +40,7 @@ final GlobalKey<NavigatorState> _shellNavigatorKey =
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: AppRoutes.splash,
+  initialLocation: AppRoutes.root,
   
   // -- Error Handling --
   errorBuilder: (context, state) => const ErrorScreen(),
