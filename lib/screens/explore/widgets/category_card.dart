@@ -95,10 +95,9 @@ class CategoryCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  // Use matched item color for text in light mode as requested in the mockup, white in dark mode.
-                  color: isDark ? Colors.white : itemColor.withOpacity(0.9),
+                  color: isDark ? Colors.white : const Color(0xFF2D2D3A),
                   height: 1.2,
-                  fontFamily: 'Cairo', // Ensure standard smooth font
+                  fontFamily: 'Cairo',
                 ),
               ),
             ),

@@ -1800,7 +1800,9 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
               child: Container(
                 padding: EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.getGlassColor(context, opacity: 0.1),
+                  color: isDark
+                      ? Colors.white.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.07),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(Icons.menu,
@@ -1882,7 +1884,9 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                     child: Container(
                       padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.getGlassColor(context, opacity: 0.1),
+                        color: isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : Colors.black.withOpacity(0.07),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(Icons.shopping_cart_outlined,
@@ -1899,7 +1903,9 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                     child: Container(
                       padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.getGlassColor(context, opacity: 0.1),
+                        color: isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : Colors.black.withOpacity(0.07),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
@@ -1917,7 +1923,9 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                     child: Container(
                       padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.getGlassColor(context, opacity: 0.1),
+                        color: isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : Colors.black.withOpacity(0.07),
                         shape: BoxShape.circle,
                       ),
                       child: Stack(
