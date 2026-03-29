@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'dart:async';
 import 'package:provider/provider.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
@@ -57,6 +59,8 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   String? _selectedChapterId;
   bool _isLoadingChapters = false;
 
+  Timer? _debounce;
+
   @override
   void initState() {
     super.initState();
@@ -105,6 +109,41 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     }
     
     _loadChapters();
+  }
+
+  Future<void> _fetchYoutubeDuration(String url) async {
+    if (url.isEmpty || (!url.contains('youtube.com') && !url.contains('youtu.be'))) return;
+    
+    // Check if we already have duration to avoid overwriting unless it's empty
+    if (_durationController.text.isNotEmpty && _durationController.text != '0' && _durationController.text != '0:00') {
+      return;
+    }
+
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
+    _debounce = Timer(const Duration(milliseconds: 1000), () async {
+      try {
+        final yt = YoutubeExplode();
+        final video = await yt.videos.get(url);
+        final duration = video.duration;
+        yt.close();
+
+        if (duration != null && duration.inSeconds > 0 && mounted) {
+          setState(() {
+            final h = duration.inHours;
+            final m = duration.inMinutes % 60;
+            final s = duration.inSeconds % 60;
+            if (h > 0) {
+              _durationController.text = '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+            } else {
+              _durationController.text = '$m:${s.toString().padLeft(2, '0')}';
+            }
+          });
+        }
+      } catch (e) {
+        debugPrint('Failed to fetch youtube duration: $e');
+      }
+    });
   }
 
   Future<void> _loadChapters() async {
@@ -187,6 +226,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _titleController.dispose();
     _slugController.dispose();
     _videoUrlController.dispose();
@@ -417,7 +457,10 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                           tooltip: 'رفع إلى يوتيوب (غير مدرج)',
                                         ),
                                   ),
-                                  onChanged: (_) => setState(() {}),
+                                  onChanged: (val) {
+                                    setState(() {});
+                                    _fetchYoutubeDuration(val);
+                                  },
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
                                       return 'الرجاء إدخال رابط الفيديو';

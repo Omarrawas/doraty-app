@@ -244,7 +244,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
         videoId: _videoId!,
         height: widget.height,
       );
-      return _buildMainLayout(context, playerWidget);
+      return _buildMainLayout(context, playerWidget, showThumbnailOverlay: false);
     }
 
     // Regular Video
@@ -264,7 +264,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     return _buildMainLayout(context, playerWidget);
   }
 
-  Widget _buildMainLayout(BuildContext context, Widget player) {
+  Widget _buildMainLayout(BuildContext context, Widget player, {bool showThumbnailOverlay = true}) {
     if (_isFullScreen) {
       return PopScope(
         canPop: false,
@@ -316,7 +316,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                         style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold),
                       ),
                       Spacer(),
-                      if (_hasStarted)
+                      if (_hasStarted && showThumbnailOverlay)
                         GestureDetector(
                           onTap: _enterFullScreen,
                           child: Container(
@@ -342,7 +342,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                     fit: StackFit.expand,
                     children: [
                       player,
-                      if (_hasStarted)
+                      if (_hasStarted && showThumbnailOverlay)
                         VideoPlayerControls(
                           isYoutube: _isYoutube,
                           youtubeController: _youtubeController,
@@ -350,7 +350,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                           onToggleFullScreen: _enterFullScreen,
                           courseTitle: 'معاينة الفيديو',
                         ),
-                      if (!_hasStarted)
+                      if (!_hasStarted && showThumbnailOverlay)
                         GestureDetector(
                           onTap: _startPlayback,
                           child: Stack(

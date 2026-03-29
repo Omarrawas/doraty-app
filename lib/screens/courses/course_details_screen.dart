@@ -820,8 +820,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Widget _buildMainContent(bool isRTL) {
     return Column(
       children: [
-        _buildDescriptionSection(isRTL),
-        SizedBox(height: 30),
         _buildCourseContentButton(isRTL),
         if (_course!.outcomes.isNotEmpty)
           _buildListSection(
@@ -1245,15 +1243,14 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         crossAxisAlignment:
             isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          Text(_t('course_content'),
-              style: TextStyle(
-                  color: AppColors.getTextColor(context),
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold)),
-          SizedBox(height: 16),
           ElevatedButton.icon(
             onPressed: () {
-              context.push('/course/${_course?.slug ?? _course?.id}/content');
+              context.push('/course/${_course?.slug ?? _course?.id}/content', extra: {
+                'course': _course,
+                'lessonsData': _lessons,
+                'chapters': _chapters,
+                'isEnrolled': _isEnrolled,
+              });
             },
             icon: Icon(Icons.list_alt_rounded),
             label: Text(_t('course_content')),

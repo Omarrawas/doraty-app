@@ -258,29 +258,40 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
   Widget _buildTeacherCard(BuildContext context, Map<String, dynamic> teacher) {
     final courses = teacher['teacher_courses'] as List<dynamic>? ?? [];
 
+    final rawSpec = teacher['specialization'];
+    String specString = _t('unspecified');
+    if (rawSpec is List) {
+      specString = rawSpec.map((e) => e.toString()).join('، ');
+    } else if (rawSpec != null && rawSpec.toString().isNotEmpty) {
+      specString = rawSpec.toString();
+    }
+
+    final String teacherName = (teacher['full_name'] ?? teacher['name'] ?? _t('teacher')).toString();
+    final String? avatarUrl = teacher['avatar_url']?.toString();
+
     return Container(
       margin: EdgeInsets.only(bottom: 16, left: 20, right: 20),
       decoration: _glassDecoration(context),
       child: ExpansionTile(
         leading: CircleAvatar(
           backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
-          backgroundImage: teacher['avatar_url'] != null && teacher['avatar_url'].toString().startsWith('http')
-              ? NetworkImage(teacher['avatar_url'])
+          backgroundImage: avatarUrl != null && avatarUrl.startsWith('http')
+              ? NetworkImage(avatarUrl)
               : null,
-          child: teacher['avatar_url'] != null && teacher['avatar_url'].toString().startsWith('data:')
+          child: avatarUrl != null && avatarUrl.startsWith('data:')
              ? ClipOval(
                   child: Image.memory(
-                    StringUtils.decodeBase64Image(teacher['avatar_url']),
+                    StringUtils.decodeBase64Image(avatarUrl),
                     fit: BoxFit.cover,
                     width: double.infinity,
                     height: double.infinity,
                   ),
                 )
-             : (teacher['avatar_url'] == null ? Icon(Icons.person, color: AppColors.primaryPurple) : null),
+             : (avatarUrl == null ? Icon(Icons.person, color: AppColors.primaryPurple) : null),
         ),
-        title: Text(teacher['full_name'] ?? teacher['name'] ?? _t('teacher'),
+        title: Text(teacherName,
             style: TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(teacher['specialization'] ?? _t('unspecified'),
+        subtitle: Text(specString,
             style: TextStyle(fontSize: 12)),
         children: [
           Divider(height: 1),
@@ -290,10 +301,10 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInfoRow(
-                    Icons.email_outlined, teacher['email'] ?? _t('no_email')),
+                    Icons.email_outlined, (teacher['email'] ?? _t('no_email')).toString()),
                 SizedBox(height: 8),
                 _buildInfoRow(
-                    Icons.school_outlined, '${_t('pricing_time_data')}: ${courses.length}'), // Pricing time data is 'بيانات السعر والوقت' in ar, maybe I should use something else for 'Courses Count'
+                    Icons.school_outlined, 'عدد الدورات: ${courses.length}'), 
                 SizedBox(height: 16),
                 Row(
                   children: [
@@ -337,9 +348,9 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(request['full_name'] ?? _t('new_request'),
+                    Text((request['full_name'] ?? _t('new_request')).toString(),
                         style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text(request['email'] ?? '',
+                    Text((request['email'] ?? '').toString(),
                         style: TextStyle(
                             fontSize: 12,
                             color: AppColors.getTextColor(context)
@@ -351,7 +362,7 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
           ),
           SizedBox(height: 12),
           if (request['bio'] != null)
-            Text(request['bio'],
+            Text(request['bio'].toString(),
                 style: TextStyle(fontSize: 13),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis),

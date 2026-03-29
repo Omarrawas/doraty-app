@@ -120,13 +120,15 @@ class _RichTextEditorState extends State<RichTextEditor> {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: isDark ? Color(0xFF1E1E1E) : Colors.white,
+              color: isDark
+                  ? AppColors.getGlassColor(context, opacity: 0.05)
+                  : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _isFocused
-                    ? AppColors.primaryPurple
-                    : (isDark ? Colors.white12 : Colors.black12),
-                width: 1.5,
+                    ? Colors.blueAccent
+                    : (isDark ? AppColors.getGlassColor(context, opacity: 0.1) : Colors.black12),
+                width: _isFocused ? 2.0 : 1.0,
               ),
               boxShadow: [
                 if (_isFocused)
