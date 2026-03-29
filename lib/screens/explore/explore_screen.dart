@@ -261,13 +261,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
         AppColors.getTextColor(context, secondary: true);
     final Color surfaceColor = isDark
         ? AppColors.darkCardSurface.withOpacity(0.88)
-        : Colors.white.withOpacity(0.78);
+        : Colors.white.withOpacity(0.18);
     final Color borderColor = isDark
         ? Colors.white.withOpacity(0.14)
-        : AppColors.primaryPurple.withOpacity(0.18);
+        : Colors.white.withOpacity(0.4);
     final Color subtleSurfaceColor = isDark
         ? Colors.white.withOpacity(0.06)
-        : Colors.white.withOpacity(0.38);
+        : Colors.white.withOpacity(0.20);
     int crossAxisCount = 1; // Default to 1 column for small screens (Horizontal layout)
     double childAspectRatio = 2.6; // Matches horizontal card aspect ratio
     bool isSmallScreen = screenWidth <= 550;
@@ -563,6 +563,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _buildCategoryDropdown() {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     final parentCategories = _categories
         .where((c) => c.parentId == null || c.parentId!.isEmpty)
         .toList();
@@ -571,14 +572,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
+        color: isDark
             ? AppColors.darkCardSurface.withOpacity(0.88)
-            : Colors.white.withOpacity(0.72),
+            : Colors.white.withOpacity(0.18),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
+          color: isDark
               ? Colors.white.withOpacity(0.14)
-              : AppColors.primaryPurple.withOpacity(0.16),
+              : Colors.white.withOpacity(0.4),
         ),
       ),
       child: DropdownButtonHideUnderline(
@@ -695,17 +696,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   Widget _buildDropdown(String label, String value, List<String> options,
       ValueChanged<String?> onChanged) {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
+        color: isDark
             ? AppColors.darkCardSurface.withOpacity(0.88)
-            : Colors.white.withOpacity(0.72),
+            : Colors.white.withOpacity(0.18),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
+          color: isDark
               ? Colors.white.withOpacity(0.14)
-              : AppColors.primaryPurple.withOpacity(0.16),
+              : Colors.white.withOpacity(0.4),
         ),
       ),
       child: DropdownButtonHideUnderline(

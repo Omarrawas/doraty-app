@@ -382,7 +382,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
             width: double.infinity,
             height: double.infinity,
             decoration: BoxDecoration(
-              gradient: AppColors.backgroundGradient,
+              gradient: AppColors.getBackgroundGradient(context),
             ),
             child: SafeArea(
               child: Column(

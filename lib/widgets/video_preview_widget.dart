@@ -297,9 +297,9 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.getMutedTextColor(context),
+            color: AppColors.getElevatedSurfaceColor(context),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+            border: Border.all(color: AppColors.getBorderColor(context), width: 1),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,7 +322,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                           child: Container(
                             padding: EdgeInsets.all(4),
                             decoration: BoxDecoration(
-                              color: AppColors.getMutedTextColor(context),
+                              color: AppColors.getSurfaceColor(context),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Icon(Icons.fullscreen_rounded, color: AppColors.getTextColor(context, secondary: true), size: 20),
