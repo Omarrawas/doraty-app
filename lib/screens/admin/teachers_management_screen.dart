@@ -226,15 +226,85 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
         Expanded(
           child: RefreshIndicator(
             onRefresh: _loadData,
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: GridView.builder(
+              padding: EdgeInsets.all(20),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 0.8,
+                crossAxisSpacing: 15,
+                mainAxisSpacing: 20,
+              ),
               itemCount: _filteredTeachers.length,
               itemBuilder: (context, index) =>
-                  _buildTeacherCard(context, _filteredTeachers[index]),
+                  _buildTeacherGridItem(context, _filteredTeachers[index]),
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTeacherGridItem(BuildContext context, Map<String, dynamic> teacher) {
+    final String teacherName = (teacher['full_name'] ?? teacher['name'] ?? _t('teacher')).toString();
+    final String? avatarUrl = teacher['avatar_url']?.toString();
+
+    return InkWell(
+      onTap: () => context.push('/admin/teachers/detail/${teacher['id']}', extra: teacher),
+      borderRadius: BorderRadius.circular(15),
+      child: Column(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.primaryPurple.withOpacity(0.3), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryPurple.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  )
+                ],
+              ),
+              child: CircleAvatar(
+                backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
+                backgroundImage: avatarUrl != null && avatarUrl.startsWith('http')
+                    ? NetworkImage(avatarUrl)
+                    : null,
+                child: avatarUrl != null && avatarUrl.startsWith('data:')
+                   ? ClipOval(
+                        child: Image.memory(
+                          StringUtils.decodeBase64Image(avatarUrl),
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                          height: double.infinity,
+                        ),
+                      )
+                   : (avatarUrl == null ? Icon(Icons.person, color: AppColors.primaryPurple, size: 30) : null),
+              ),
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            teacherName,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(context),
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            (teacher['teacher_courses'] as List?)?.length.toString() ?? '0',
+            style: TextStyle(
+              fontSize: 10,
+              color: AppColors.primaryPurple.withOpacity(0.7),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -251,79 +321,6 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
         itemCount: _requests.length,
         itemBuilder: (context, index) =>
             _buildRequestCard(context, _requests[index]),
-      ),
-    );
-  }
-
-  Widget _buildTeacherCard(BuildContext context, Map<String, dynamic> teacher) {
-    final courses = teacher['teacher_courses'] as List<dynamic>? ?? [];
-
-    final rawSpec = teacher['specialization'];
-    String specString = _t('unspecified');
-    if (rawSpec is List) {
-      specString = rawSpec.map((e) => e.toString()).join('، ');
-    } else if (rawSpec != null && rawSpec.toString().isNotEmpty) {
-      specString = rawSpec.toString();
-    }
-
-    final String teacherName = (teacher['full_name'] ?? teacher['name'] ?? _t('teacher')).toString();
-    final String? avatarUrl = teacher['avatar_url']?.toString();
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 16, left: 20, right: 20),
-      decoration: _glassDecoration(context),
-      child: ExpansionTile(
-        leading: CircleAvatar(
-          backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
-          backgroundImage: avatarUrl != null && avatarUrl.startsWith('http')
-              ? NetworkImage(avatarUrl)
-              : null,
-          child: avatarUrl != null && avatarUrl.startsWith('data:')
-             ? ClipOval(
-                  child: Image.memory(
-                    StringUtils.decodeBase64Image(avatarUrl),
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: double.infinity,
-                  ),
-                )
-             : (avatarUrl == null ? Icon(Icons.person, color: AppColors.primaryPurple) : null),
-        ),
-        title: Text(teacherName,
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text(specString,
-            style: TextStyle(fontSize: 12)),
-        children: [
-          Divider(height: 1),
-          Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInfoRow(
-                    Icons.email_outlined, (teacher['email'] ?? _t('no_email')).toString()),
-                SizedBox(height: 8),
-                _buildInfoRow(
-                    Icons.school_outlined, 'عدد الدورات: ${courses.length}'), 
-                SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildActionBtn(
-                        label: _t('manage_courses_btn'),
-                        icon: Icons.auto_stories,
-                        color: Colors.blueAccent,
-                        onTap: () => context.push(
-                          '/admin/courses?instructorId=${teacher['id']}',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -419,17 +416,6 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
             color: AppColors.getGlassColor(context, opacity: 0.2), width: 1.5),
-      );
-
-  Widget _buildInfoRow(IconData icon, String text) => Row(
-        children: [
-          Icon(icon, size: 16, color: AppColors.primaryPurple),
-          SizedBox(width: 8),
-          Text(text,
-              style: TextStyle(
-                  fontSize: 13,
-                  color: AppColors.getTextColor(context).withOpacity(0.8))),
-        ],
       );
 
   Widget _buildActionBtn(

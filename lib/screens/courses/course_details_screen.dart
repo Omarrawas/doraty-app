@@ -566,9 +566,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             width: double.infinity,
             fit: BoxFit.cover,
             errorWidget: (context, url, error) =>
-                Container(color: Colors.grey[900]),
+                Container(color: AppColors.getElevatedSurfaceColor(context)),
           )
-          : Container(color: Colors.grey[900]),
+          : Container(color: AppColors.getElevatedSurfaceColor(context)),
           Container(
             color: Colors.black26,
             child: Center(
@@ -820,6 +820,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Widget _buildMainContent(bool isRTL) {
     return Column(
       children: [
+        _buildDescriptionSection(isRTL),
         _buildCourseContentButton(isRTL),
         if (_course!.outcomes.isNotEmpty)
           _buildListSection(
@@ -853,7 +854,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             backgroundImage: (_course!.instructorPhoto != null && _course!.instructorPhoto!.isNotEmpty)
                 ? CachedNetworkImageProvider(_course!.instructorPhoto!)
                 : null,
-            backgroundColor: Colors.grey[800],
+            backgroundColor: AppColors.getElevatedSurfaceColor(context),
             child: (_course!.instructorPhoto == null || _course!.instructorPhoto!.isEmpty)
                 ? Icon(Icons.person, color: AppColors.getTextColor(context).withOpacity(0.54), size: 50)
                 : null,
@@ -1006,9 +1007,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                       imageUrl: course.imageUrl ?? '',
                       fit: BoxFit.cover,
                       placeholder: (context, url) =>
-                          Container(color: Colors.grey[900]),
+                          Container(color: AppColors.getElevatedSurfaceColor(context)),
                       errorWidget: (context, url, error) =>
-                          Container(color: Colors.grey[900]),
+                          Container(color: AppColors.getElevatedSurfaceColor(context)),
                     ),
                   ),
                 ),
@@ -1477,7 +1478,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (innerContext, setState) => AlertDialog(
-          backgroundColor: Color(0xFF1E1E2C),
+          backgroundColor: AppColors.of(context).dialog,
           title: Text(
             _t('add_review'),
             textAlign: TextAlign.right,
@@ -1606,7 +1607,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Color(0xFF1E1E2C),
+        backgroundColor: AppColors.of(context).dialog,
         title: Text(
           _t('login_required_title'),
           style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),

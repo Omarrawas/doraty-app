@@ -133,10 +133,11 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
                       final tip = _tips[index];
                       return Card(
                         margin: EdgeInsets.only(bottom: 16),
-                        color: AppColors.getMutedTextColor(context),
+                        color: AppColors.getCardColor(context),
+                        elevation: 2,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                          side: BorderSide(color: AppColors.getBorderColor(context).withOpacity(0.1)),
                         ),
                         child: ListTile(
                           contentPadding: EdgeInsets.all(12),
@@ -176,12 +177,12 @@ class _TipsManagementScreenState extends State<TipsManagementScreen> {
                                 SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    Icon(Icons.link, size: 14, color: AppColors.secondaryGold),
+                                    Icon(Icons.link, size: 14, color: AppColors.of(context).primary),
                                     SizedBox(width: 4),
                                     Expanded(
                                       child: Text(
                                         '${_t('linked_to_course')}: ${tip.linkedCourse!.title}',
-                                        style: TextStyle(color: AppColors.secondaryGold, fontSize: 12),
+                                          style: TextStyle(color: AppColors.of(context).primary, fontSize: 12, fontWeight: FontWeight.w600),
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),

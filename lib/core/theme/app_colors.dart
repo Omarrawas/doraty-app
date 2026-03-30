@@ -160,16 +160,6 @@ class AppColors {
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient backgroundGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF6B4CE6), // primaryPurple
-      Color(0xFF4E9FF5), // primaryBlue
-      Color(0xFF5A3FC0), // deeper purple
-    ],
-  );
-
   static const LinearGradient darkBackgroundGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -194,38 +184,47 @@ class AppColors {
 
 
 
+  static const LinearGradient lightBackgroundGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Color(0xFFF9FAFB), // Very light grey/white
+      Color(0xFFF3F4F6), // Slightly darker grey
+    ],
+  );
+
   static const AppColorPalette light = AppColorPalette(
     brightness: Brightness.light,
     primary: primaryPurple,
     secondary: primaryBlue,
-    background: Color(0xFF5A3FC0),
-    scaffoldBackground: Color(0xFF6B4CE6),
-    surface: Color(0xFF7B5DD4),
-    surfaceElevated: Color(0xFF7B5DD4),
-    card: Color(0xFF7B5DD4),
-    dialog: Color(0xFF6651C8),
-    drawerBackground: Color(0xFF5A3FC0),
-    inputFill: Color(0x33FFFFFF),
-    inputFillAlt: Color(0x22FFFFFF),
-    appBarBackground: Colors.transparent,
-    appBarForeground: Colors.white,
-    textPrimary: Colors.white,
-    textSecondary: Color(0xFFDED6FF),
-    textMuted: Color(0xFFBBB3E8),
-    iconPrimary: Colors.white,
-    iconSecondary: Color(0xFFDED6FF),
-    border: Color(0x33FFFFFF),
-    borderStrong: Color(0x55FFFFFF),
-    glass: Color(0x33FFFFFF),
-    glassStrong: Color(0x55FFFFFF),
-    navBackground: Color(0xFF5A3FC0),
-    shimmerBase: Color(0xFF7B5DD4),
-    shimmerHighlight: Color(0xFF9B7DF0),
-    backgroundGradient: backgroundGradient,
+    background: Color(0xFFF9FAFB),
+    scaffoldBackground: Color(0xFFFAFBFF),
+    surface: Colors.white,
+    surfaceElevated: Colors.white,
+    card: Colors.white,
+    dialog: Colors.white,
+    drawerBackground: Colors.white,
+    inputFill: Color(0xFFF3F4F6),
+    inputFillAlt: Color(0xFFE5E7EB),
+    appBarBackground: Colors.white,
+    appBarForeground: Color(0xFF111827),
+    textPrimary: Color(0xFF111827),
+    textSecondary: Color(0xFF4B5563),
+    textMuted: Color(0xFF9CA3AF),
+    iconPrimary: Color(0xFF111827),
+    iconSecondary: Color(0xFF6B7280),
+    border: Color(0xFFE5E7EB),
+    borderStrong: Color(0xFFD1D5DB),
+    glass: Color(0x90E0E7FF),
+    glassStrong: Color(0xF2F1F5F9),
+    navBackground: Colors.white,
+    shimmerBase: Color(0xFFF3F4F6),
+    shimmerHighlight: Color(0xFFE5E7EB),
+    backgroundGradient: lightBackgroundGradient,
     overlayStyle: SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
     ),
   );
 

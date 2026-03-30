@@ -197,7 +197,7 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
                           margin: EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white10),
+                            border: BorderSide.none != true ? Border.all(color: AppColors.getBorderColor(context)) : null,
                             image: DecorationImage(
                               image: NetworkImage(_imageUrlController.text),
                               fit: BoxFit.cover,
@@ -233,9 +233,9 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
                       Container(
                         height: 400,
                         decoration: BoxDecoration(
-                          color: AppColors.getMutedTextColor(context),
+                          color: AppColors.getInputFillColor(context, stronger: true),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white10),
+                          border: Border.all(color: AppColors.getBorderColor(context)),
                         ),
                         child: ListView.builder(
                           itemCount: _allCourses.length,
@@ -284,7 +284,7 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
         labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
         hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.30)),
         filled: true,
-        fillColor: Colors.white10,
+        fillColor: AppColors.getInputFillColor(context),
         suffixIcon: suffix,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
       ),

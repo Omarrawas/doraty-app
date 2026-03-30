@@ -336,7 +336,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           end: Alignment.topCenter,
           colors: isLast 
             ? [AppColors.primaryPurple, AppColors.primaryPurple.withOpacity(0.5)]
-            : [Colors.white.withOpacity(0.1), Colors.white.withOpacity(0.3)],
+            : [AppColors.getTextColor(context).withOpacity(0.1), AppColors.getTextColor(context).withOpacity(0.2)],
         ),
         borderRadius: BorderRadius.circular(6),
       ),

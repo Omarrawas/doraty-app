@@ -440,16 +440,14 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                                   : AppColors.getTextColor(context),
                                               fontSize: 13,
                                             ),
-                                            backgroundColor:
-                                                Colors.white.withOpacity(0.05),
+                                            backgroundColor: AppColors.getGlassColor(context, opacity: 0.1),
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               side: BorderSide(
                                                 color: isSelected
                                                     ? AppColors.primaryPurple
-                                                    : Colors.white
-                                                        .withOpacity(0.1),
+                                                    : AppColors.getBorderColor(context),
                                               ),
                                             ),
                                           );
@@ -485,7 +483,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           label: _t('level_label'),
                                           icon: Icons.signal_cellular_alt,
                                         ),
-                                        dropdownColor: Color(0xFF1A1A2E),
+                                        dropdownColor: AppColors.getSurfaceColor(context),
                                         style: TextStyle(color: AppColors.getTextColor(context)),
                                         items: _availableLevels.map((item) {
                                           return DropdownMenuItem(
@@ -543,23 +541,21 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                             selectedColor: AppColors
                                                 .primaryPurple
                                                 .withOpacity(0.5),
-                                            checkmarkColor: Colors.white,
+                                            checkmarkColor: AppColors.getTextColor(context),
                                             labelStyle: TextStyle(
                                               color: isSelected
                                                   ? Colors.white
                                                   : Colors.white70,
                                               fontSize: 12,
                                             ),
-                                            backgroundColor:
-                                                Colors.white.withOpacity(0.05),
+                                            backgroundColor: AppColors.getGlassColor(context, opacity: 0.1),
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
                                                   BorderRadius.circular(8),
                                               side: BorderSide(
                                                 color: isSelected
                                                     ? AppColors.primaryPurple
-                                                    : Colors.white
-                                                        .withOpacity(0.1),
+                                                    : AppColors.getBorderColor(context),
                                               ),
                                             ),
                                           );
@@ -694,7 +690,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                           label: _t('currency'),
                                           icon: Icons.payments_outlined,
                                         ),
-                                        dropdownColor: Color(0xFF1A1A2E),
+                                        dropdownColor: AppColors.getSurfaceColor(context),
                                         style: TextStyle(color: AppColors.getTextColor(context)),
                                         items: [
                                           DropdownMenuItem(
@@ -737,9 +733,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                     hint: _t('enter_discount'),
                                     icon: Icons.percent,
                                   ).copyWith(
-                                    fillColor: _isFree 
-                                        ? Colors.white.withOpacity(0.02)
-                                        : Colors.white.withOpacity(0.05),
+                                    fillColor: _isFree
+                                        ? AppColors.getGlassColor(context, opacity: 0.02)
+                                        : AppColors.getGlassColor(context, opacity: 0.05),
                                   ),
                                   style: TextStyle(
                                      color: _isFree ? AppColors.getTextColor(context, secondary: true) : AppColors.getTextColor(context),

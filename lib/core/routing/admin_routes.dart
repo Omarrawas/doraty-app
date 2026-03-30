@@ -11,6 +11,7 @@ import '../../screens/admin/admin_dashboard_screen.dart';
 import '../../screens/admin/users_management_screen.dart';
 import '../../screens/admin/categories_management_screen.dart';
 import '../../screens/admin/teachers_management_screen.dart';
+import '../../screens/admin/teacher_detail_screen.dart';
 import '../../screens/admin/teacher_requests_screen.dart';
 import '../../screens/admin/bundles_management_screen.dart';
 import '../../screens/admin/create_bundle_screen.dart';
@@ -54,6 +55,20 @@ List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
         GoRoute(
           path: 'teachers',
           builder: (context, state) => const TeachersManagementScreen(),
+          routes: [
+            GoRoute(
+              path: 'detail/:id',
+              builder: (context, state) {
+                final id = state.pathParameters['id'];
+                if (id == null) return const ErrorScreen();
+                final teacherData = state.extra as Map<String, dynamic>?;
+                return TeacherDetailAdminScreen(
+                  teacherId: id,
+                  teacherData: teacherData,
+                );
+              },
+            ),
+          ],
         ),
         GoRoute(
           path: 'teacher-requests',
