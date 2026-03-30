@@ -225,6 +225,7 @@ class AppTheme {
           focusedBorder: _inputBorder(palette.primary, width: 1.6),
         ),
       ),
+      extensions: [palette],
     );
   }
 

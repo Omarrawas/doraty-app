@@ -6,7 +6,7 @@ import 'package:flutter/services.dart';
 export 'color_utils.dart';
 
 @immutable
-class AppColorPalette {
+class AppColorPalette extends ThemeExtension<AppColorPalette> {
   final Brightness brightness;
   final Color primary;
   final Color secondary;
@@ -38,7 +38,6 @@ class AppColorPalette {
 
   const AppColorPalette({
     required this.brightness,
-
     required this.primary,
     required this.secondary,
     required this.background,
@@ -69,7 +68,109 @@ class AppColorPalette {
   });
 
   bool get isDark => brightness == Brightness.dark;
+
+  @override
+  AppColorPalette copyWith({
+    Brightness? brightness,
+    Color? primary,
+    Color? secondary,
+    Color? background,
+    Color? scaffoldBackground,
+    Color? surface,
+    Color? surfaceElevated,
+    Color? card,
+    Color? dialog,
+    Color? drawerBackground,
+    Color? inputFill,
+    Color? inputFillAlt,
+    Color? appBarBackground,
+    Color? appBarForeground,
+    Color? textPrimary,
+    Color? textSecondary,
+    Color? textMuted,
+    Color? iconPrimary,
+    Color? iconSecondary,
+    Color? border,
+    Color? borderStrong,
+    Color? glass,
+    Color? glassStrong,
+    Color? navBackground,
+    Color? shimmerBase,
+    Color? shimmerHighlight,
+    LinearGradient? backgroundGradient,
+    SystemUiOverlayStyle? overlayStyle,
+  }) {
+    return AppColorPalette(
+      brightness: brightness ?? this.brightness,
+      primary: primary ?? this.primary,
+      secondary: secondary ?? this.secondary,
+      background: background ?? this.background,
+      scaffoldBackground: scaffoldBackground ?? this.scaffoldBackground,
+      surface: surface ?? this.surface,
+      surfaceElevated: surfaceElevated ?? this.surfaceElevated,
+      card: card ?? this.card,
+      dialog: dialog ?? this.dialog,
+      drawerBackground: drawerBackground ?? this.drawerBackground,
+      inputFill: inputFill ?? this.inputFill,
+      inputFillAlt: inputFillAlt ?? this.inputFillAlt,
+      appBarBackground: appBarBackground ?? this.appBarBackground,
+      appBarForeground: appBarForeground ?? this.appBarForeground,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textSecondary: textSecondary ?? this.textSecondary,
+      textMuted: textMuted ?? this.textMuted,
+      iconPrimary: iconPrimary ?? this.iconPrimary,
+      iconSecondary: iconSecondary ?? this.iconSecondary,
+      border: border ?? this.border,
+      borderStrong: borderStrong ?? this.borderStrong,
+      glass: glass ?? this.glass,
+      glassStrong: glassStrong ?? this.glassStrong,
+      navBackground: navBackground ?? this.navBackground,
+      shimmerBase: shimmerBase ?? this.shimmerBase,
+      shimmerHighlight: shimmerHighlight ?? this.shimmerHighlight,
+      backgroundGradient: backgroundGradient ?? this.backgroundGradient,
+      overlayStyle: overlayStyle ?? this.overlayStyle,
+    );
+  }
+
+  @override
+  AppColorPalette lerp(ThemeExtension<AppColorPalette>? other, double t) {
+    if (other is! AppColorPalette) return this;
+    return AppColorPalette(
+      brightness: t < 0.5 ? brightness : other.brightness,
+      primary: Color.lerp(primary, other.primary, t)!,
+      secondary: Color.lerp(secondary, other.secondary, t)!,
+      background: Color.lerp(background, other.background, t)!,
+      scaffoldBackground:
+          Color.lerp(scaffoldBackground, other.scaffoldBackground, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      surfaceElevated: Color.lerp(surfaceElevated, other.surfaceElevated, t)!,
+      card: Color.lerp(card, other.card, t)!,
+      dialog: Color.lerp(dialog, other.dialog, t)!,
+      drawerBackground: Color.lerp(drawerBackground, other.drawerBackground, t)!,
+      inputFill: Color.lerp(inputFill, other.inputFill, t)!,
+      inputFillAlt: Color.lerp(inputFillAlt, other.inputFillAlt, t)!,
+      appBarBackground: Color.lerp(appBarBackground, other.appBarBackground, t)!,
+      appBarForeground: Color.lerp(appBarForeground, other.appBarForeground, t)!,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
+      textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
+      textMuted: Color.lerp(textMuted, other.textMuted, t)!,
+      iconPrimary: Color.lerp(iconPrimary, other.iconPrimary, t)!,
+      iconSecondary: Color.lerp(iconSecondary, other.iconSecondary, t)!,
+      border: Color.lerp(border, other.border, t)!,
+      borderStrong: Color.lerp(borderStrong, other.borderStrong, t)!,
+      glass: Color.lerp(glass, other.glass, t)!,
+      glassStrong: Color.lerp(glassStrong, other.glassStrong, t)!,
+      navBackground: Color.lerp(navBackground, other.navBackground, t)!,
+      shimmerBase: Color.lerp(shimmerBase, other.shimmerBase, t)!,
+      shimmerHighlight:
+          Color.lerp(shimmerHighlight, other.shimmerHighlight, t)!,
+      backgroundGradient:
+          LinearGradient.lerp(backgroundGradient, other.backgroundGradient, t)!,
+      overlayStyle: t < 0.5 ? overlayStyle : other.overlayStyle,
+    );
+  }
 }
+
 
 /// Single source of truth for app colors.
 class AppColors {
@@ -148,7 +249,8 @@ class AppColors {
   static const Color mtnCash = Color(0xFFFFCC00);
   static const Color bankTransferBlue = Color(0xFF2196F3);
 
-  static LinearGradient get backgroundGradient => darkBackgroundGradient;
+  static LinearGradient backgroundGradient(BuildContext context) =>
+      of(context).backgroundGradient;
 
   static const Color editorAccentLight = Color(0xFF0F6CBD);
   static const Color editorAccentDark = Color(0xFF8AB4F8);
@@ -199,27 +301,27 @@ class AppColors {
     brightness: Brightness.light,
     primary: primaryPurple,
     secondary: primaryBlue,
-    background: Color(0xFFF5F7FA), // Premium off-white/grey-blue
-    scaffoldBackground: Color(0xFFF5F7FA),
-    surface: Colors.white,
-    surfaceElevated: Colors.white,
-    card: Colors.white,
-    dialog: Colors.white,
-    drawerBackground: Colors.white,
+    background: background,
+    scaffoldBackground: background,
+    surface: lightSurface,
+    surfaceElevated: lightSurface,
+    card: cardBackground,
+    dialog: lightSurface,
+    drawerBackground: lightSurface,
     inputFill: Color(0xFFEDF2F7), // Softer grey for inputs
     inputFillAlt: Color(0xFFE2E8F0),
-    appBarBackground: Colors.white,
+    appBarBackground: lightSurface,
     appBarForeground: Color(0xFF1A1C1E), // Charcoal grey instead of black
-    textPrimary: Color(0xFF1F2937), // Rich dark grey for headers
-    textSecondary: Color(0xFF4B5563), // Muted blue-grey
-    textMuted: Color(0xFF718096), // Softer muted text
+    textPrimary: textPrimary,
+    textSecondary: textSecondary,
+    textMuted: textLight,
     iconPrimary: Color(0xFF2D3748),
     iconSecondary: Color(0xFF718096),
     border: Color(0xFFE2E8F0),
     borderStrong: Color(0xFFCBD5E0),
-    glass: Color(0xA6E2E8F0), // More visible glass (opacity ~65%)
+    glass: Color(0xA6E2E8F0),
     glassStrong: Color(0xF2F1F5F9),
-    navBackground: Colors.white,
+    navBackground: lightSurface,
     shimmerBase: Color(0xFFEDF2F7),
     shimmerHighlight: Color(0xFFE2E8F0),
     backgroundGradient: lightBackgroundGradient,
@@ -230,22 +332,20 @@ class AppColors {
     ),
   );
 
-
-
   static const AppColorPalette dark = AppColorPalette(
     brightness: Brightness.dark,
     primary: primaryPurple,
     secondary: primaryBlue,
     background: darkBackground,
     scaffoldBackground: darkScaffold,
-    surface: Color(0xFF171A2B),
+    surface: darkNavy,
     surfaceElevated: darkSurface2,
     card: darkCardSurface,
-    dialog: Color(0xFF171A2B),
+    dialog: darkNavy,
     drawerBackground: Color(0xFF131728),
     inputFill: darkInputFill,
     inputFillAlt: darkInputFillAlt,
-    appBarBackground: Color(0xFF171A2B),
+    appBarBackground: darkNavy,
     appBarForeground: textWhite,
     textPrimary: textWhite,
     textSecondary: Color(0xFFC4CCDA),
@@ -256,7 +356,7 @@ class AppColors {
     borderStrong: Color(0xFF39415C),
     glass: Color(0xD91B1F31),
     glassStrong: Color(0xF01D2135),
-    navBackground: Color(0xFF171A2B),
+    navBackground: darkNavy,
     shimmerBase: Color(0xFF1A2030),
     shimmerHighlight: Color(0xFF262E44),
     backgroundGradient: darkBackgroundGradient,
@@ -270,13 +370,11 @@ class AppColors {
 
 
   static AppColorPalette of(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return isDark ? dark : light;
+    return Theme.of(context).extension<AppColorPalette>() ?? (Theme.of(context).brightness == Brightness.dark ? dark : light);
   }
 
   static Color alpha(Color color, double opacity) {
-    final value = opacity.clamp(0.0, 1.0);
-    return color.withAlpha((value * 255).round());
+    return color.withOpacity(opacity.clamp(0.0, 1.0));
   }
 
   static List<BoxShadow> get cardShadow => [

@@ -317,7 +317,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
         body: Container(
           width: double.infinity,
           decoration: BoxDecoration(
-            gradient: AppColors.backgroundGradient,
+            gradient: AppColors.backgroundGradient(context),
           ),
           child: SafeArea(
             child: Column(
@@ -376,7 +376,7 @@ class _ExamTakingScreenState extends State<ExamTakingScreen> {
           width: double.infinity,
           height: double.infinity,
           decoration: BoxDecoration(
-            gradient: AppColors.backgroundGradient,
+            gradient: AppColors.backgroundGradient(context),
           ),
           child: SafeArea(
             child: Column(

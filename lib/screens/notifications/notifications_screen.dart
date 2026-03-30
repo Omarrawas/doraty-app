@@ -123,7 +123,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+          gradient: AppColors.backgroundGradient(context),
         ),
         child: SafeArea(
           child: Column(

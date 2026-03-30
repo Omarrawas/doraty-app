@@ -188,7 +188,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+          gradient: AppColors.backgroundGradient(context),
         ),
         child: SafeArea(
           child: Column(

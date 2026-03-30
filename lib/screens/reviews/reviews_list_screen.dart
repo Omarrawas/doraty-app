@@ -98,7 +98,7 @@ class _ReviewsListScreenState extends State<ReviewsListScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+          gradient: AppColors.backgroundGradient(context),
         ),
         child: SafeArea(
           child: Column(

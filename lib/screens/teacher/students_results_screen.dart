@@ -52,7 +52,9 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(
+          gradient: AppColors.backgroundGradient(context),
+        ),
         child: SafeArea(
           child: Column(
             children: [

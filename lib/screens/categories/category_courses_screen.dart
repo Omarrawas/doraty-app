@@ -122,7 +122,7 @@ class _CategoryCoursesScreenState extends State<CategoryCoursesScreen> {
               ),
               background: Container(
                 decoration: BoxDecoration(
-                  gradient: isDark ? AppColors.darkBackgroundGradient : AppColors.backgroundGradient,
+                  gradient: AppColors.backgroundGradient(context),
                 ),
                 child: Opacity(
                   opacity: 0.1,

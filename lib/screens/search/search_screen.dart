@@ -113,7 +113,7 @@ class _SearchScreenState extends State<SearchScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+          gradient: AppColors.backgroundGradient(context),
         ),
         child: SafeArea(
           child: Column(

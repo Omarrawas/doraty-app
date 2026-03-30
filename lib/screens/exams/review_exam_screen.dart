@@ -98,7 +98,7 @@ class _ReviewExamScreenState extends State<ReviewExamScreen> {
       extendBodyBehindAppBar: true,
       body: Container(
         decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+          gradient: AppColors.backgroundGradient(context),
         ),
         child: SafeArea(
           child: Column(
