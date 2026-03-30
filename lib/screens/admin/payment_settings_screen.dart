@@ -207,7 +207,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                     Container(
                       padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.getMutedTextColor(context),
+                        color: AppColors.getGlassColor(context, opacity: 0.15),
                         borderRadius: BorderRadius.circular(15),
                       ),
                       child: Icon(
@@ -409,7 +409,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
           return Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
-              backgroundColor: Color(0xFF1E1E2C),
+              backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
               title: Text(
@@ -429,7 +429,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                         labelStyle: TextStyle(
                             color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white30)),
+                            borderSide: BorderSide(color: AppColors.getBorderColor(context))),
                       ),
                     ),
                     SizedBox(height: 16),
@@ -442,7 +442,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                         labelStyle: TextStyle(
                             color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white30)),
+                            borderSide: BorderSide(color: AppColors.getBorderColor(context))),
                       ),
                     ),
                     SizedBox(height: 16),
@@ -456,7 +456,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                         labelStyle: TextStyle(
                             color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white30)),
+                            borderSide: BorderSide(color: AppColors.getBorderColor(context))),
                       ),
                     ),
                     SizedBox(height: 16),

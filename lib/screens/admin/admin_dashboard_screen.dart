@@ -536,7 +536,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'title': _t('admin_notifications_side'),
           'subtitle': _t('admin_notifications_desc'),
           'color': Colors.redAccent,
-          'onTap': () => context.push('/admin/notifications'),
+          'onTap': () => context.push('/admin/admin-notifications'),
         },
         {
           'icon': Icons.qr_code_2_rounded,

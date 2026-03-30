@@ -188,7 +188,7 @@ class AppColors {
 
   // Legacy base colors kept as const because many screens still use them in
   // const widgets such as BoxDecoration(...).
-  static const Color background = Color(0xFFF4F7FF);
+  static const Color background = Color(0xFFFBFCFF);
   static const Color darkBackground = Color(0xFF111320);
   static const Color darkNavy = Color(0xFF18233A);
   static const Color darkDeep = Color(0xFF0C0F1B);
@@ -292,8 +292,8 @@ class AppColors {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      Color(0xFFF8FAFF), // Very light blue-white
-      Color(0xFFF1F4F9), // Soft grey-blue
+      Color(0xFFFFFFFF), // Pure white
+      Color(0xFFF7F9FF), // Very soft lavender-white
     ],
   );
 
@@ -308,22 +308,22 @@ class AppColors {
     card: cardBackground,
     dialog: lightSurface,
     drawerBackground: lightSurface,
-    inputFill: Color(0xFFEDF2F7), // Softer grey for inputs
-    inputFillAlt: Color(0xFFE2E8F0),
+    inputFill: Color(0xFFF3F5F9), // Very light soft blue-grey
+    inputFillAlt: Color(0xFFECF0F5),
     appBarBackground: lightSurface,
-    appBarForeground: Color(0xFF1A1C1E), // Charcoal grey instead of black
+    appBarForeground: Color(0xFF111827), // Sharp Navy-Black
     textPrimary: textPrimary,
     textSecondary: textSecondary,
-    textMuted: textLight,
-    iconPrimary: Color(0xFF2D3748),
-    iconSecondary: Color(0xFF718096),
-    border: Color(0xFFE2E8F0),
-    borderStrong: Color(0xFFCBD5E0),
-    glass: Color(0xA6E2E8F0),
-    glassStrong: Color(0xF2F1F5F9),
+    textMuted: Color(0xFF9CA3AF), // Refined muted silver
+    iconPrimary: Color(0xFF111827),
+    iconSecondary: Color(0xFF6B7280),
+    border: Color(0xFFEDF2F7),
+    borderStrong: Color(0xFFE2E8F0),
+    glass: Color(0x99FFFFFF), // Pure White Glass (Frosty)
+    glassStrong: Color(0xCCFFFFFF), // Strong White Glass
     navBackground: lightSurface,
-    shimmerBase: Color(0xFFEDF2F7),
-    shimmerHighlight: Color(0xFFE2E8F0),
+    shimmerBase: Color(0xFFF3F4F6),
+    shimmerHighlight: Color(0xFFE5E7EB),
     backgroundGradient: lightBackgroundGradient,
     overlayStyle: SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

@@ -168,7 +168,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.getMutedTextColor(context),
+              color: AppColors.getGlassColor(context, opacity: 0.15),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -218,10 +218,10 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.getMutedTextColor(context),
+        color: AppColors.getGlassColor(context, opacity: 0.2),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: AppColors.getMutedTextColor(context),
+          color: AppColors.getBorderColor(context),
           width: 1,
         ),
       ),

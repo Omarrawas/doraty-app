@@ -41,11 +41,13 @@ void main() {
     
     // 2. Parallelize critical initializations
     try {
-      // 1. Critical Base Services
-      await Hive.initFlutter().timeout(Duration(seconds: 7));
-      await LocalDatabase().init().timeout(Duration(seconds: 7));
-      await SettingsService().init().timeout(Duration(seconds: 5));
-      debugPrint('✅ Storage/Settings initialized');
+      // 1. Critical Base Services (Parallelized)
+      await Future.wait([
+        Hive.initFlutter().timeout(Duration(seconds: 7)),
+        LocalDatabase().init().timeout(Duration(seconds: 7)),
+        SettingsService().init().timeout(Duration(seconds: 5)),
+      ]);
+      debugPrint('✅ Storage/Settings initialized (Parallel)');
     } catch (e) {
       debugPrint('🚨 [StorageError] Storage/Settings initialization failed: $e');
     }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart'; // Added for kIsWeb
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/screen_security_service.dart';
@@ -51,7 +52,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _checkAuthStatus() async {
     // Wait for minimum splash duration (animation)
-    await Future.delayed(Duration(milliseconds: 2000));
+    // On Web, we want even faster startup so users aren't stuck on the splash screen
+    await Future.delayed(Duration(milliseconds: kIsWeb ? 500 : 1500));
 
     if (!mounted) return;
 
@@ -60,7 +62,7 @@ class _SplashScreenState extends State<SplashScreen>
       // If something takes more than 10 seconds, we fallback to guest mode or MainScreen
       await Future.any([
         _performAuthCheck(),
-        Future.delayed(Duration(seconds: 15)).then((_) {
+        Future.delayed(Duration(seconds: kIsWeb ? 8 : 15)).then((_) {
           debugPrint('⚠️ SplashScreen: Init sequence TIMED OUT. Proceeding to main...');
           if (mounted) {
             context.go('/');

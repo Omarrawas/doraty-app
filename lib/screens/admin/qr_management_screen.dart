@@ -483,7 +483,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                   : null,
               border: InputBorder.none,
               filled: true,
-              fillColor: Colors.white.withOpacity(0.1),
+              fillColor: AppColors.getGlassColor(context, opacity: 0.1),
               contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               hintStyle: TextStyle(color: AppColors.getMutedTextColor(context)),
             ),
@@ -685,8 +685,8 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     return Container(
       padding: EdgeInsets.fromLTRB(16, 12, 16, 12),
       decoration: BoxDecoration(
-        color: AppColors.getMutedTextColor(context),
-        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
+        color: AppColors.getGlassColor(context, opacity: 0.3),
+        border: Border(bottom: BorderSide(color: AppColors.getBorderColor(context))),
       ),
       child: Row(
         children: [
@@ -747,9 +747,9 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: AppColors.getMutedTextColor(context),
+        color: AppColors.getGlassColor(context, opacity: 0.2),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: AppColors.getBorderColor(context)),
       ),
       child: ExpansionTile(
         tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
