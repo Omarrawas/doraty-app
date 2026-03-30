@@ -80,9 +80,15 @@ final GoRouter appRouter = GoRouter(
       }
 
       // 3- Admin Protection
-      if (isAdminRoute && role != 'admin' && role != 'owner') {
+      if (isAdminRoute && role != 'admin' && role != 'owner' && role != 'super_admin') {
         // Here we could throw them to an unauthorized error page, or home
         return AppRoutes.root; 
+      }
+
+      // 4- Teacher Dashboard Protection
+      if (path.startsWith(AppRoutes.teacherDashboard) && 
+          role != 'teacher' && role != 'admin' && role != 'super_admin' && role != 'owner') {
+        return AppRoutes.root;
       }
 
       return null;
