@@ -108,6 +108,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   @override
+  void didUpdateWidget(ExploreScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialFilter != oldWidget.initialFilter) {
+      setState(() {
+        _initialFilter = widget.initialFilter;
+        if (_initialFilter != null &&
+            _initialFilter != 'newest' &&
+            _initialFilter != 'popular' &&
+            _initialFilter != 'recorded') {
+          _selectedCategoryId = _initialFilter;
+        } else if (_initialFilter == null) {
+          _selectedCategoryId = null;
+        }
+        _applyFilters();
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _searchFocusNode.dispose();
     super.dispose();
@@ -223,6 +242,29 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
     // Default: return nothing for bubbles if no parent category selected in dropdown
     return [];
+  }
+
+  String? _getSelectedParentId() {
+    if (_selectedCategoryId == null || _categories.isEmpty) return null;
+    
+    // 1. Check if the current ID is actually a parent
+    final isParent = _categories.any((c) => 
+        c.id == _selectedCategoryId && 
+        (c.parentId == null || c.parentId!.isEmpty));
+    
+    if (isParent) return _selectedCategoryId;
+    
+    // 2. If it's a sub-category, find its parent
+    final currentCat = _categories.firstWhere(
+      (c) => c.id == _selectedCategoryId, 
+      orElse: () => CategoryModel(id: '', name: '', slug: '')
+    );
+    
+    if (currentCat.id.isNotEmpty && currentCat.parentId != null && currentCat.parentId!.isNotEmpty) {
+      return currentCat.parentId;
+    }
+    
+    return null;
   }
 
   void _onCategorySelected(String? categoryId) {
@@ -584,19 +626,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String?>(
-          value: (_selectedCategoryId != null &&
-                  (_categories
-                      .where((c) =>
-                          c.id == _selectedCategoryId &&
-                          (c.parentId == null || c.parentId!.isEmpty))
-                      .isNotEmpty))
-              ? _selectedCategoryId
-              : (_selectedCategoryId != null
-                  ? _categories
-                      .where((c) => c.id == _selectedCategoryId)
-                      .firstOrNull
-                      ?.parentId
-                  : null),
+          value: _getSelectedParentId(),
           isExpanded: true,
           dropdownColor: Theme.of(context).brightness == Brightness.dark
               ? AppColors.darkCardSurface

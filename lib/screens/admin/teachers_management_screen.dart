@@ -228,9 +228,9 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
             onRefresh: _loadData,
             child: GridView.builder(
               padding: EdgeInsets.all(20),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.8,
+              gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 175,
+                childAspectRatio: 0.72,
                 crossAxisSpacing: 15,
                 mainAxisSpacing: 20,
               ),
@@ -244,66 +244,131 @@ class _TeachersManagementScreenState extends State<TeachersManagementScreen>
     );
   }
 
-  Widget _buildTeacherGridItem(BuildContext context, Map<String, dynamic> teacher) {
-    final String teacherName = (teacher['full_name'] ?? teacher['name'] ?? _t('teacher')).toString();
+  Widget _buildTeacherGridItem(
+      BuildContext context, Map<String, dynamic> teacher) {
+    final String teacherName = StringUtils.cleanTeacherName(
+        (teacher['full_name'] ?? teacher['name'] ?? _t('teacher')).toString());
     final String? avatarUrl = teacher['avatar_url']?.toString();
+    final rawSubjects = teacher['subjects'] ?? teacher['specialization'];
+
+    String specialization = '';
+    if (rawSubjects is List) {
+      specialization = rawSubjects.join('، ');
+    } else if (rawSubjects is String) {
+      specialization = rawSubjects;
+    }
 
     return InkWell(
-      onTap: () => context.push('/admin/teachers/detail/${teacher['id']}', extra: teacher),
-      borderRadius: BorderRadius.circular(15),
-      child: Column(
-        children: [
-          Expanded(
-            child: Container(
+      onTap: () => context.push('/admin/teachers/detail/${teacher['id']}',
+          extra: teacher),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.getGlassColor(context, opacity: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppColors.getTextColor(context).withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Avatar
+            Container(
+              width: 85,
+              height: 85,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primaryPurple.withOpacity(0.3), width: 2),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryPurple.withOpacity(0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 10,
-                    spreadRadius: 1,
-                  )
+                    offset: Offset(0, 4),
+                  ),
                 ],
               ),
-              child: CircleAvatar(
-                backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
-                backgroundImage: avatarUrl != null && avatarUrl.startsWith('http')
-                    ? NetworkImage(avatarUrl)
-                    : null,
-                child: avatarUrl != null && avatarUrl.startsWith('data:')
-                   ? ClipOval(
-                        child: Image.memory(
-                          StringUtils.decodeBase64Image(avatarUrl),
-                          fit: BoxFit.cover,
-                          width: double.infinity,
-                          height: double.infinity,
-                        ),
-                      )
-                   : (avatarUrl == null ? Icon(Icons.person, color: AppColors.primaryPurple, size: 30) : null),
+              child: ClipOval(
+                child: avatarUrl != null && avatarUrl.isNotEmpty
+                    ? (avatarUrl.startsWith('data:')
+                        ? Image.memory(
+                            StringUtils.decodeBase64Image(avatarUrl),
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                              color: AppColors.primaryPurple.withOpacity(0.1),
+                              child: Icon(Icons.person,
+                                  color: AppColors.primaryPurple, size: 35),
+                            ),
+                          )
+                        : Image.network(
+                            avatarUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                              color: AppColors.primaryPurple.withOpacity(0.1),
+                              child: Icon(Icons.person,
+                                  color: AppColors.primaryPurple, size: 35),
+                            ),
+                          ))
+                    : Container(
+                        color: AppColors.primaryPurple.withOpacity(0.1),
+                        child: Icon(Icons.person,
+                            color: AppColors.primaryPurple, size: 35),
+                      ),
               ),
             ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            teacherName,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: AppColors.getTextColor(context),
+            SizedBox(height: 12),
+            // Name
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                teacherName,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.getTextColor(context),
+                  fontFamily: 'Cairo',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          Text(
-            (teacher['teacher_courses'] as List?)?.length.toString() ?? '0',
-            style: TextStyle(
-              fontSize: 10,
-              color: AppColors.primaryPurple.withOpacity(0.7),
+            // Specialization
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Text(
+                specialization,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: AppColors.getTextColor(context).withOpacity(0.6),
+                  fontFamily: 'Cairo',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 4),
+            // Courses count chip or text (Optional, preserved from original)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.primaryPurple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '${(teacher['teacher_courses'] as List?)?.length ?? 0} ${_t('courses_count_title')}',
+                style: TextStyle(
+                  fontSize: 9,
+                  color: AppColors.primaryPurple,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -176,12 +176,18 @@ class AppColorPalette extends ThemeExtension<AppColorPalette> {
 class AppColors {
   AppColors._();
 
-  // Brand
-  static const Color primaryPurple = Color(0xFF7C4DFF); // Vibrant Nocturne Purple
+  // Brand (New Premium Palette)
+  static const Color brandPrimary = Color(0xFF1978E5);
+  static const Color brandSecondary = Color(0xFF5F78A3);
+  static const Color brandTertiary = Color(0xFFC55800);
+  static const Color brandNeutral = Color(0xFF74777F);
+
+  // Brand (Legacy/Compatibility)
+  static const Color primaryPurple = brandPrimary; 
   static const Color primaryBlue = Color(0xFF00E5FF);   // Electric Neon Cyan
   static const Color deepPurple = Color(0xFF2E004F);    // Nocturne Dark Purple
-  static const Color professionalBlue = Color(0xFF2575FC);
-  static const Color mutedPurpleBlue = Color(0xFF434775);
+  static const Color professionalBlue = brandPrimary;
+  static const Color mutedPurpleBlue = brandSecondary;
   static const Color lightPurple = Color(0xFF9163FF);
   static const Color indigoBlue = Color(0xFF5A67D8);
   static const Color primaryDark = Color(0xFF1A1C2C);
@@ -259,7 +265,7 @@ class AppColors {
   static const Color editorTextSub = Color(0xFF5C5C5C);
 
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primaryPurple, primaryBlue],
+    colors: [brandPrimary, Color(0xFF4DA1FF)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -279,11 +285,11 @@ class AppColors {
   );
 
   static const LinearGradient actionButtonGradient = LinearGradient(
-    colors: [lightPurple, indigoBlue],
+    colors: [brandPrimary, Color(0xFF64B5F6)],
   );
 
   static const LinearGradient searchGradient = LinearGradient(
-    colors: [lightPurple, indigoBlue],
+    colors: [brandPrimary, Color(0xFF90CAF9)],
   );
 
 
@@ -292,15 +298,15 @@ class AppColors {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      Color(0xFFFFFFFF), // Pure white
-      Color(0xFFF7F9FF), // Very soft lavender-white
+      Color(0xFFFBFCFF), // Pure white
+      Color(0xFFF2F5FF), // Very soft airy blue
     ],
   );
 
   static const AppColorPalette light = AppColorPalette(
     brightness: Brightness.light,
-    primary: primaryPurple,
-    secondary: primaryBlue,
+    primary: brandPrimary,
+    secondary: brandSecondary,
     background: background,
     scaffoldBackground: background,
     surface: lightSurface,
@@ -308,22 +314,22 @@ class AppColors {
     card: cardBackground,
     dialog: lightSurface,
     drawerBackground: lightSurface,
-    inputFill: Color(0xFFF3F5F9), // Very light soft blue-grey
-    inputFillAlt: Color(0xFFECF0F5),
+    inputFill: Color(0xFFF1F4F9), // Light airy blue-grey
+    inputFillAlt: Color(0xFFE8EDF5),
     appBarBackground: lightSurface,
-    appBarForeground: Color(0xFF111827), // Sharp Navy-Black
-    textPrimary: textPrimary,
-    textSecondary: textSecondary,
-    textMuted: Color(0xFF9CA3AF), // Refined muted silver
-    iconPrimary: Color(0xFF111827),
-    iconSecondary: Color(0xFF6B7280),
-    border: Color(0xFFEDF2F7),
-    borderStrong: Color(0xFFE2E8F0),
-    glass: Color(0x99FFFFFF), // Pure White Glass (Frosty)
-    glassStrong: Color(0xCCFFFFFF), // Strong White Glass
+    appBarForeground: Color(0xFF1A1C1E), // Near black
+    textPrimary: Color(0xFF1A1C1E),
+    textSecondary: Color(0xFF42474E),
+    textMuted: brandNeutral,
+    iconPrimary: Color(0xFF1A1C1E),
+    iconSecondary: Color(0xFF42474E),
+    border: Color(0xFFDDE2EA),
+    borderStrong: Color(0xFFC1C7CE),
+    glass: Color(0xA6FFFFFF), // Frosty White Glass
+    glassStrong: Color(0xE6FFFFFF), 
     navBackground: lightSurface,
-    shimmerBase: Color(0xFFF3F4F6),
-    shimmerHighlight: Color(0xFFE5E7EB),
+    shimmerBase: Color(0xFFE1E2E5),
+    shimmerHighlight: Color(0xFFF1F0F4),
     backgroundGradient: lightBackgroundGradient,
     overlayStyle: SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

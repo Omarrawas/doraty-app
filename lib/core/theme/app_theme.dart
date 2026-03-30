@@ -19,13 +19,13 @@ class AppTheme {
         ? ThemeData.dark(useMaterial3: true)
         : ThemeData.light(useMaterial3: true);
     
-    // Choose font families based on the user's 'Nocturne Scholar' theme for dark mode
-    final headlineFont = isDark ? GoogleFonts.manrope : GoogleFonts.cairo;
-    final bodyFont = isDark ? GoogleFonts.plusJakartaSans : GoogleFonts.cairo;
+    // Choose font families based on the design update
+    final headlineFont = isDark ? GoogleFonts.manrope : GoogleFonts.inter;
+    final bodyFont = isDark ? GoogleFonts.plusJakartaSans : GoogleFonts.inter;
 
     final textTheme = (isDark 
         ? GoogleFonts.manropeTextTheme(baseTheme.textTheme)
-        : GoogleFonts.cairoTextTheme(baseTheme.textTheme)).copyWith(
+        : GoogleFonts.interTextTheme(baseTheme.textTheme)).copyWith(
       displayLarge: headlineFont(
           fontSize: 32,
           fontWeight: FontWeight.bold,
@@ -104,7 +104,7 @@ class AppTheme {
           : AppColors.alpha(AppColors.primaryPurple, 0.12),
       splashColor: AppColors.alpha(palette.primary, 0.10),
       highlightColor: AppColors.alpha(palette.primary, 0.06),
-      fontFamily: isDark ? 'Manrope' : 'Cairo',
+      fontFamily: isDark ? 'Manrope' : 'Inter',
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         elevation: 0,
@@ -130,14 +130,14 @@ class AppTheme {
             : AppColors.alpha(AppColors.primaryPurple, 0.10),
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           side: BorderSide(color: AppColors.alpha(palette.border, 0.65)),
         ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: palette.dialog,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         titleTextStyle: headlineFont(
           fontSize: 20,
           fontWeight: FontWeight.bold,
@@ -158,11 +158,11 @@ class AppTheme {
             bodyFont(color: palette.textSecondary, fontSize: 14),
         prefixIconColor: palette.iconSecondary,
         suffixIconColor: palette.iconSecondary,
-        border: _inputBorder(palette.border),
-        enabledBorder: _inputBorder(palette.border),
-        focusedBorder: _inputBorder(palette.primary, width: 1.6),
-        errorBorder: _inputBorder(AppColors.error),
-        focusedErrorBorder: _inputBorder(AppColors.error, width: 1.6),
+        border: _inputBorder(palette.border, radius: 20),
+        enabledBorder: _inputBorder(palette.border, radius: 20),
+        focusedBorder: _inputBorder(palette.primary, width: 1.6, radius: 20),
+        errorBorder: _inputBorder(AppColors.error, radius: 20),
+        focusedErrorBorder: _inputBorder(AppColors.error, width: 1.6, radius: 20),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -172,7 +172,7 @@ class AppTheme {
           shadowColor: Colors.transparent,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           textStyle:
               bodyFont(fontSize: 16, fontWeight: FontWeight.bold),
         ),
@@ -182,7 +182,7 @@ class AppTheme {
           foregroundColor: palette.textPrimary,
           side: BorderSide(color: palette.borderStrong),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           textStyle:
               bodyFont(fontSize: 14, fontWeight: FontWeight.normal),
         ),
@@ -211,7 +211,7 @@ class AppTheme {
             bodyFont(color: palette.textPrimary, fontSize: 12),
         brightness: palette.brightness,
         side: BorderSide(color: palette.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: palette.navBackground,
@@ -237,9 +237,10 @@ class AppTheme {
     );
   }
 
-  static OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
+  static OutlineInputBorder _inputBorder(Color color,
+      {double width = 1, double radius = 16}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(radius),
       borderSide: BorderSide(color: color, width: width),
     );
   }

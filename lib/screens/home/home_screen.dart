@@ -880,7 +880,7 @@ class _HomeScreenState extends State<HomeScreen> {
             context.push('/topics');
           }),
           SizedBox(
-            height: 120, // Height for a single row of cards
+            height: 180, // Increased height for larger, rounded cards + padding
             child: ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 20),
               scrollDirection: Axis.horizontal,
@@ -896,7 +896,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return CategoryCard(
                   category: category,
                   onTap: () {
-                    context.push('/courses');
+                    context.go('/courses?categoryId=${category.id}');
                   },
                 );
               },

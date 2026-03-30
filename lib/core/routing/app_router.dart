@@ -118,7 +118,14 @@ final GoRouter appRouter = GoRouter(
         ),
         GoRoute(
           path: AppRoutes.courses,
-          builder: (context, state) => const ExploreScreen(),
+          builder: (context, state) {
+            final categoryId = state.uri.queryParameters['categoryId'];
+            final filter = state.uri.queryParameters['filter'];
+            return ExploreScreen(
+              initialFilter: categoryId ?? filter,
+              showBackButton: categoryId != null || filter != null,
+            );
+          },
         ),
         GoRoute(
           path: AppRoutes.tips,

@@ -35,73 +35,79 @@ class CategoryCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final itemColor = _color;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: margin ?? const EdgeInsets.only(right: 12),
-        width: 130, // Fixed default width suitable for a rectangular card
-        decoration: BoxDecoration(
-          color: isSelected
-              ? itemColor.withOpacity(isDark ? 0.3 : 0.1)
-              : AppColors.getSurfaceColor(context),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          margin: margin ?? const EdgeInsets.symmetric(horizontal: 4),
+          width: 140, 
+          height: 140,
+          decoration: BoxDecoration(
             color: isSelected
-                ? itemColor
-                : (isDark ? Colors.white12 : Colors.grey.shade200),
-            width: isSelected ? 1.5 : 1.0,
+                ? itemColor.withOpacity(isDark ? 0.35 : 0.15)
+                : (isDark 
+                    ? AppColors.getSurfaceColor(context) 
+                    : Colors.white.withOpacity(0.08)),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: isSelected
+                  ? itemColor
+                  : (isDark ? Colors.white12 : Colors.grey.shade200.withOpacity(0.5)),
+              width: isSelected ? 2.0 : 1.0,
+            ),
+            boxShadow: isSelected && !isDark
+                ? [
+                    BoxShadow(
+                      color: itemColor.withOpacity(0.2),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    )
+                  ]
+                : [],
           ),
-          boxShadow: isDark
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Icon
+              if (category.iconUrl != null && category.iconUrl!.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: CachedNetworkImage(
+                    imageUrl: category.iconUrl!,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.contain,
+                    color: isSelected ? null : itemColor, 
+                    colorBlendMode: isSelected ? null : BlendMode.srcIn,
+                    errorWidget: (context, url, err) =>
+                        Icon(Icons.category_rounded, color: itemColor, size: 48),
                   ),
-                ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Icon
-            if (category.iconUrl != null && category.iconUrl!.isNotEmpty)
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: category.iconUrl!,
-                  width: 36,
-                  height: 36,
-                  fit: BoxFit.cover,
-                  color: itemColor, // Tint the image with our matched color if it's an outline, otherwise it falls back nicely
-                  colorBlendMode: BlendMode.srcIn,
-                  errorWidget: (context, url, err) =>
-                      Icon(Icons.category_rounded, color: itemColor, size: 36),
-                ),
-              )
-            else
-              Icon(Icons.category_rounded, color: itemColor, size: 36),
-
-            SizedBox(height: 12),
-
-            // Text
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(
-                category.name,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF2D2D3A),
-                  height: 1.2,
-                  fontFamily: 'Cairo',
+                )
+              else
+                Icon(Icons.category_rounded, color: itemColor, size: 48),
+  
+              SizedBox(height: 12),
+  
+              // Text
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  category.name,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : const Color(0xFF2D2D3A),
+                    height: 1.2,
+                    fontFamily: 'Cairo',
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

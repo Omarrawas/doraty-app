@@ -239,8 +239,7 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
     return _CardWrapper(
       color: color,
       onTap: () {
-        final identifier = category.slug.isNotEmpty ? category.slug : category.id;
-        context.push('/category/$identifier');
+        context.go('/courses?categoryId=${category.id}');
       },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
