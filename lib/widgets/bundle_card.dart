@@ -60,9 +60,7 @@ class _BundleCardState extends State<BundleCard>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Container(
-          width: 280,
-          height: 200, // Added fixed height to prevent unbounded height errors
-          margin: EdgeInsets.only(bottom: 20),
+          // Removed fixed width/height to be responsive to parent (e.g. Grids)
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             boxShadow: [

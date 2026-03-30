@@ -104,8 +104,14 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
                     ? Center(child: CircularProgressIndicator())
                     : _bundles.isEmpty
                         ? Center(child: Text(t('no_courses_found'), style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54))))
-                        : ListView.builder(
-                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        : GridView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: MediaQuery.of(context).size.width > 900 ? 3 : (MediaQuery.of(context).size.width > 600 ? 2 : 1),
+                              childAspectRatio: MediaQuery.of(context).size.width > 600 ? 1.4 : 2.0,
+                              crossAxisSpacing: 16,
+                              mainAxisSpacing: 20,
+                            ),
                             itemCount: _bundles.length,
                             itemBuilder: (context, index) {
                               return BundleCard(

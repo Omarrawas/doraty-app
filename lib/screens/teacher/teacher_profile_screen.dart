@@ -340,8 +340,20 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
     }
 
     final screenWidth = MediaQuery.of(context).size.width;
-    final int crossAxisCount = screenWidth > 600 ? 3 : 2;
-    final double childAspectRatio = screenWidth > 600 ? 0.75 : 0.62;
+    int crossAxisCount = 1;
+    double childAspectRatio = 2.4; // Matches horizontal card aspect ratio
+    bool isSmallScreen = screenWidth <= 550;
+
+    if (screenWidth > 1200) {
+      crossAxisCount = 4;
+      childAspectRatio = 0.72;
+    } else if (screenWidth > 800) {
+      crossAxisCount = 3;
+      childAspectRatio = 0.68;
+    } else if (screenWidth > 550) {
+      crossAxisCount = 2;
+      childAspectRatio = 0.65;
+    }
 
     return CustomScrollView(
       physics: const NeverScrollableScrollPhysics(), // Let NestedScrollView in parent handle scrolling
@@ -371,7 +383,10 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
                 mainAxisSpacing: 20,
               ),
               delegate: SliverChildBuilderDelegate(
-                (context, index) => CourseCard(course: _teacherCourses[index]),
+                (context, index) => CourseCard(
+                  course: _teacherCourses[index],
+                  isHorizontal: isSmallScreen,
+                ),
                 childCount: _teacherCourses.length,
               ),
             ),
@@ -393,14 +408,17 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
           ),
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList(
+            sliver: SliverGrid(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: isSmallScreen ? 1 : crossAxisCount,
+                childAspectRatio: isSmallScreen ? 2.0 : 1.4, // Making bundles less tall
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 20,
+              ),
               delegate: SliverChildBuilderDelegate(
-                (context, index) => Padding(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: BundleCard(
-                    bundle: _teacherBundles[index],
-                    heroTag: 'teacher_profile_bundle_${_teacherBundles[index].id}',
-                  ),
+                (context, index) => BundleCard(
+                  bundle: _teacherBundles[index],
+                  heroTag: 'teacher_profile_bundle_${_teacherBundles[index].id}',
                 ),
                 childCount: _teacherBundles.length,
               ),
