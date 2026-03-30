@@ -150,16 +150,18 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppColors.primaryPurple.withOpacity(0.8),
-            AppColors.primaryBlue.withOpacity(0.8),
+            AppColors.primaryPurple,
+            AppColors.primaryBlue,
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primaryPurple.withOpacity(0.3),
-            blurRadius: 15,
-            offset: Offset(0, 5),
+            color: AppColors.primaryPurple.withOpacity(0.4),
+            blurRadius: 20,
+            offset: Offset(0, 8),
           ),
         ],
       ),
@@ -168,8 +170,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           Container(
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.getGlassColor(context, opacity: 0.15),
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.alpha(Colors.white, 0.1),
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: AppColors.alpha(Colors.white, 0.1), width: 1),
             ),
             child: Icon(
               Icons.security,
@@ -218,11 +221,11 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     return Container(
       padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.getGlassColor(context, opacity: 0.2),
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.getGlassColor(context, opacity: 0.15),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: AppColors.getBorderColor(context),
-          width: 1,
+          width: 1.2,
         ),
       ),
       child: Column(
@@ -266,32 +269,33 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
             padding: EdgeInsets.all(12),
             decoration: BoxDecoration(
               color: value
-                  ? Colors.green.withOpacity(0.2)
-                  : Colors.orange.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
+                  ? Colors.green.withOpacity(0.12)
+                  : Colors.orange.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(15),
               border: Border.all(
                 color: value
-                    ? Colors.green.withOpacity(0.5)
-                    : Colors.orange.withOpacity(0.5),
+                    ? Colors.green.withOpacity(0.3)
+                    : Colors.orange.withOpacity(0.3),
               ),
             ),
             child: Row(
               children: [
                 Icon(
                   value ? Icons.lock : Icons.lock_open,
-                  color: value ? Colors.green : Colors.orange,
+                  color: value ? Colors.greenAccent : Colors.orangeAccent,
                   size: 20,
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     value
                         ? 'الحماية مفعلة - المستخدمون العاديون لا يمكنهم أخذ لقطات شاشة'
                         : 'الحماية معطلة - جميع المستخدمين يمكنهم أخذ لقطات شاشة',
                     style: TextStyle(
-                      color: value ? Colors.green : Colors.orange,
+                      color: value ? Colors.greenAccent : Colors.orangeAccent,
                       fontSize: 13,
                       fontFamily: 'Cairo',
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -305,23 +309,30 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
 
   Widget _buildInfoCard() {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.getGlassColor(context, opacity: 0.1),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Colors.blue.withOpacity(0.3),
+          color: AppColors.getBorderColor(context, strong: true),
         ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline,
-            color: Colors.blue.shade300,
-            size: 24,
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.blue.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.info_outline,
+              color: Colors.blueAccent,
+              size: 24,
+            ),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,7 +340,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                 Text(
                   'ملاحظات هامة:',
                   style: TextStyle(
-                    color: Colors.blue.shade200,
+                    color: AppColors.getTextColor(context),
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Cairo',
@@ -342,7 +353,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   '• التغييرات تطبق فوراً على المستخدمين الجدد\n'
                   '• المستخدمون الحاليون يحتاجون لإعادة تسجيل الدخول',
                   style: TextStyle(
-                    color: Colors.blue.shade100,
+                    color: AppColors.getTextColor(context).withOpacity(0.70),
                     fontSize: 13,
                     fontFamily: 'Cairo',
                     height: 1.6,
@@ -368,9 +379,23 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          elevation: 5,
+          elevation: 0,
         ),
-        child: _isSaving
+        child: Container(
+          width: double.infinity,
+          height: 56,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.accentPink.withOpacity(0.4),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: _isSaving
             ? SizedBox(
                 width: 24,
                 height: 24,
@@ -394,6 +419,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                   ),
                 ],
               ),
+        ),
       ),
     );
   }

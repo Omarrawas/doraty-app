@@ -177,29 +177,29 @@ class AppColors {
   AppColors._();
 
   // Brand
-  static const Color primaryPurple = Color(0xFF6B4CE6);
-  static const Color primaryBlue = Color(0xFF4E9FF5);
-  static const Color deepPurple = Color(0xFF6A11CB);
+  static const Color primaryPurple = Color(0xFF7C4DFF); // Vibrant Nocturne Purple
+  static const Color primaryBlue = Color(0xFF00E5FF);   // Electric Neon Cyan
+  static const Color deepPurple = Color(0xFF2E004F);    // Nocturne Dark Purple
   static const Color professionalBlue = Color(0xFF2575FC);
   static const Color mutedPurpleBlue = Color(0xFF434775);
-  static const Color lightPurple = Color(0xFF7B2CBF);
+  static const Color lightPurple = Color(0xFF9163FF);
   static const Color indigoBlue = Color(0xFF5A67D8);
-  static const Color primaryDark = Color(0xFF2D1B69);
+  static const Color primaryDark = Color(0xFF1A1C2C);
 
   // Legacy base colors kept as const because many screens still use them in
   // const widgets such as BoxDecoration(...).
   static const Color background = Color(0xFFFBFCFF);
-  static const Color darkBackground = Color(0xFF111320);
-  static const Color darkNavy = Color(0xFF18233A);
-  static const Color darkDeep = Color(0xFF0C0F1B);
-  static const Color darkScaffold = Color(0xFF111320);
+  static const Color darkBackground = Color(0xFF0B0C15); // Nocturne Black
+  static const Color darkNavy = Color(0xFF121422);       // Dark Surface
+  static const Color darkDeep = Color(0xFF080911);       // Deeper Shadow
+  static const Color darkScaffold = Color(0xFF0B0C15);
   static const Color cardBackground = Color(0xFFFFFFFF);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightInputFill = Color(0xFFF8FAFF);
-  static const Color darkCardSurface = Color(0xFF1B1F31);
-  static const Color darkInputFill = Color(0xFF1E2338);
-  static const Color darkInputFillAlt = Color(0xFF252B44);
-  static const Color darkSurface2 = Color(0xFF1D2135);
+  static const Color darkCardSurface = Color(0xFF171A2E);
+  static const Color darkInputFill = Color(0xFF131628);
+  static const Color darkInputFillAlt = Color(0xFF1C213A);
+  static const Color darkSurface2 = Color(0xFF14172C);
   static const Color editorDarkBg = Color(0xFF161922);
   static const Color textPrimary = Color(0xFF1F2937);
   static const Color textSecondary = Color(0xFF5B6474);
@@ -268,9 +268,9 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFF0C0F1B),
-      Color(0xFF141A2C),
-      Color(0xFF18233A),
+      Color(0xFF0B0C15), // Black
+      Color(0xFF121422), // Surface
+      Color(0xFF2E004F), // Nocturne Purple
     ],
   );
 
@@ -348,14 +348,14 @@ class AppColors {
     appBarBackground: darkNavy,
     appBarForeground: textWhite,
     textPrimary: textWhite,
-    textSecondary: Color(0xFFC4CCDA),
-    textMuted: Color(0xFF8E98AA),
+    textSecondary: Color(0xFFB4B9D6),
+    textMuted: Color(0xFF757BA3),
     iconPrimary: textWhite,
-    iconSecondary: Color(0xFFC4CCDA),
-    border: Color(0xFF2A3148),
-    borderStrong: Color(0xFF39415C),
-    glass: Color(0xD91B1F31),
-    glassStrong: Color(0xF01D2135),
+    iconSecondary: Color(0xFFB4B9D6),
+    border: Color(0xFF232842),
+    borderStrong: Color(0xFF2E3558),
+    glass: Color(0xBF131628), // Nocturne Translucency
+    glassStrong: Color(0xD9171A2E),
     navBackground: darkNavy,
     shimmerBase: Color(0xFF1A2030),
     shimmerHighlight: Color(0xFF262E44),

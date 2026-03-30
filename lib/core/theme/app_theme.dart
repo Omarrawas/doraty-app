@@ -14,57 +14,65 @@ class AppTheme {
   static ThemeData get darkTheme => _buildTheme(AppColors.dark);
 
   static ThemeData _buildTheme(AppColorPalette palette, {bool admin = false}) {
-    final baseTheme = palette.isDark
+    final isDark = palette.isDark;
+    final baseTheme = isDark
         ? ThemeData.dark(useMaterial3: true)
         : ThemeData.light(useMaterial3: true);
-    final textTheme = GoogleFonts.cairoTextTheme(baseTheme.textTheme).copyWith(
-      displayLarge: GoogleFonts.cairo(
+    
+    // Choose font families based on the user's 'Nocturne Scholar' theme for dark mode
+    final headlineFont = isDark ? GoogleFonts.manrope : GoogleFonts.cairo;
+    final bodyFont = isDark ? GoogleFonts.plusJakartaSans : GoogleFonts.cairo;
+
+    final textTheme = (isDark 
+        ? GoogleFonts.manropeTextTheme(baseTheme.textTheme)
+        : GoogleFonts.cairoTextTheme(baseTheme.textTheme)).copyWith(
+      displayLarge: headlineFont(
           fontSize: 32,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.bold,
           color: palette.textPrimary),
-      displayMedium: GoogleFonts.cairo(
+      displayMedium: headlineFont(
           fontSize: 28,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.bold,
           color: palette.textPrimary),
-      displaySmall: GoogleFonts.cairo(
+      displaySmall: headlineFont(
           fontSize: 24,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.bold,
           color: palette.textPrimary),
-      headlineMedium: GoogleFonts.cairo(
+      headlineMedium: headlineFont(
           fontSize: 20,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.w600,
           color: palette.textPrimary),
-      headlineSmall: GoogleFonts.cairo(
+      headlineSmall: headlineFont(
           fontSize: 18,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.w600,
           color: palette.textPrimary),
-      titleLarge: GoogleFonts.cairo(
+      titleLarge: bodyFont(
           fontSize: 16,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.w600,
           color: palette.textPrimary),
-      titleMedium: GoogleFonts.cairo(
+      titleMedium: bodyFont(
           fontSize: 16,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.w500,
           color: palette.textPrimary),
-      titleSmall: GoogleFonts.cairo(
+      titleSmall: bodyFont(
           fontSize: 14,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.w500,
           color: palette.textPrimary),
-      bodyLarge: GoogleFonts.cairo(
+      bodyLarge: bodyFont(
           fontSize: 16,
           fontWeight: FontWeight.normal,
           color: palette.textPrimary),
-      bodyMedium: GoogleFonts.cairo(
+      bodyMedium: bodyFont(
           fontSize: 14,
           fontWeight: FontWeight.normal,
           color: palette.textSecondary),
-      bodySmall: GoogleFonts.cairo(
+      bodySmall: bodyFont(
           fontSize: 12,
           fontWeight: FontWeight.normal,
           color: palette.textMuted),
-      labelLarge: GoogleFonts.cairo(
+      labelLarge: bodyFont(
           fontSize: 14,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.w600,
           color: palette.textPrimary),
     );
 
@@ -96,7 +104,7 @@ class AppTheme {
           : AppColors.alpha(AppColors.primaryPurple, 0.12),
       splashColor: AppColors.alpha(palette.primary, 0.10),
       highlightColor: AppColors.alpha(palette.primary, 0.06),
-      fontFamily: 'Cairo',
+      fontFamily: isDark ? 'Manrope' : 'Cairo',
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         elevation: 0,
@@ -105,9 +113,9 @@ class AppTheme {
         centerTitle: true,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: GoogleFonts.cairo(
+        titleTextStyle: headlineFont(
           fontSize: 20,
-          fontWeight: FontWeight.normal,
+          fontWeight: FontWeight.bold,
           color: palette.appBarForeground,
         ),
         iconTheme: IconThemeData(color: palette.iconPrimary),
@@ -122,20 +130,20 @@ class AppTheme {
             : AppColors.alpha(AppColors.primaryPurple, 0.10),
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           side: BorderSide(color: AppColors.alpha(palette.border, 0.65)),
         ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: palette.dialog,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        titleTextStyle: GoogleFonts.cairo(
-          fontSize: 18,
-          fontWeight: FontWeight.normal,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        titleTextStyle: headlineFont(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
           color: palette.textPrimary,
         ),
-        contentTextStyle: GoogleFonts.cairo(
+        contentTextStyle: bodyFont(
           fontSize: 14,
           color: palette.textSecondary,
         ),
@@ -145,9 +153,9 @@ class AppTheme {
         fillColor: palette.inputFill,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        hintStyle: GoogleFonts.cairo(color: palette.textMuted, fontSize: 14),
+        hintStyle: bodyFont(color: palette.textMuted, fontSize: 14),
         labelStyle:
-            GoogleFonts.cairo(color: palette.textSecondary, fontSize: 14),
+            bodyFont(color: palette.textSecondary, fontSize: 14),
         prefixIconColor: palette.iconSecondary,
         suffixIconColor: palette.iconSecondary,
         border: _inputBorder(palette.border),
@@ -164,9 +172,9 @@ class AppTheme {
           shadowColor: Colors.transparent,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           textStyle:
-              GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.normal),
+              bodyFont(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -174,16 +182,16 @@ class AppTheme {
           foregroundColor: palette.textPrimary,
           side: BorderSide(color: palette.borderStrong),
           shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           textStyle:
-              GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.normal),
+              bodyFont(fontSize: 14, fontWeight: FontWeight.normal),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: palette.primary,
           textStyle:
-              GoogleFonts.cairo(fontSize: 14, fontWeight: FontWeight.normal),
+              bodyFont(fontSize: 14, fontWeight: FontWeight.w600),
         ),
       ),
       iconTheme: IconThemeData(color: palette.iconPrimary),
@@ -198,25 +206,25 @@ class AppTheme {
         disabledColor: palette.inputFill,
         secondarySelectedColor: palette.primary,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        labelStyle: GoogleFonts.cairo(color: palette.textPrimary, fontSize: 12),
+        labelStyle: bodyFont(color: palette.textPrimary, fontSize: 12),
         secondaryLabelStyle:
-            GoogleFonts.cairo(color: palette.textPrimary, fontSize: 12),
+            bodyFont(color: palette.textPrimary, fontSize: 12),
         brightness: palette.brightness,
         side: BorderSide(color: palette.border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: palette.navBackground,
         selectedItemColor: palette.primary,
         unselectedItemColor: palette.textMuted,
         selectedLabelStyle:
-            GoogleFonts.cairo(fontSize: 12, fontWeight: FontWeight.normal),
-        unselectedLabelStyle: GoogleFonts.cairo(fontSize: 12),
+            bodyFont(fontSize: 12, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: bodyFont(fontSize: 12),
         type: BottomNavigationBarType.fixed,
         elevation: admin ? 8 : 0,
       ),
       dropdownMenuTheme: DropdownMenuThemeData(
-        textStyle: GoogleFonts.cairo(color: palette.textPrimary, fontSize: 14),
+        textStyle: bodyFont(color: palette.textPrimary, fontSize: 14),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: palette.inputFill,
@@ -231,7 +239,7 @@ class AppTheme {
 
   static OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       borderSide: BorderSide(color: color, width: width),
     );
   }
