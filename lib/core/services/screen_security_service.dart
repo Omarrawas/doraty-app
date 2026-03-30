@@ -81,6 +81,14 @@ class ScreenSecurityService {
   /// [role] is the role of the current user (admin, super_admin, teacher, student)
   /// Returns true if protection was applied, false otherwise
   Future<bool> applySecurityPolicy({required String? role}) async {
+    // Disable screen security for Web platforms as requested by user
+    // This also avoids the remote config fetch delay during app startup on Web
+    if (kIsWeb) {
+      _isSecured = false;
+      debugPrint('ℹ️ Screen security disabled for Web platform');
+      return false;
+    }
+
     // Admins and Super Admins always have screenshots allowed
     final isAdmin = role == 'admin' || role == 'super_admin';
     

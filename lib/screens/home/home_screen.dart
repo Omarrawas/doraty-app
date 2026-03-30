@@ -814,6 +814,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildSearchBar() {
+    final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return SliverToBoxAdapter(
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -831,10 +832,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding:
                     EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.getGlassColor(context, opacity: 0.1),
+                  color: isDark 
+                      ? AppColors.getGlassColor(context, opacity: 0.1)
+                      : AppColors.getSurfaceColor(context),
                   borderRadius: BorderRadius.circular(15),
                   border: Border.all(
-                      color: AppColors.getGlassColor(context, opacity: 0.2)),
+                      color: isDark
+                          ? AppColors.getGlassColor(context, opacity: 0.2)
+                          : AppColors.getBorderColor(context)),
+                  boxShadow: isDark ? null : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
+                    )
+                  ],
                 ),
                 child: Row(
                   children: [
@@ -1676,7 +1688,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Text(
                               item.title,
                               style: TextStyle(
-                                color: AppColors.getTextColor(context),
+                                color: Colors.white,
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
                                 shadows: [
@@ -1770,8 +1782,8 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
     final double currentOpacity =
         range <= 0 ? 1.0 : (shrinkOffset / range).clamp(0.0, 1.0);
     final Color headerBackgroundColor = isDark
-        ? AppColors.darkCardSurface.withOpacity(overlapsContent ? 0.96 : 0.9)
-        : Colors.white.withOpacity(overlapsContent ? 0.98 : 0.92);
+        ? AppColors.darkCardSurface.withOpacity(overlapsContent ? 0.98 : 0.92)
+        : Colors.white.withOpacity(overlapsContent ? 1.0 : 0.96);
 
     return Container(
       height: maxExtent,

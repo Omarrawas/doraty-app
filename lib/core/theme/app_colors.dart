@@ -190,8 +190,8 @@ class AppColors {
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
     colors: [
-      Color(0xFFF9FAFB), // Very light grey/white
-      Color(0xFFF3F4F6), // Slightly darker grey
+      Color(0xFFF8FAFF), // Very light blue-white
+      Color(0xFFF1F4F9), // Soft grey-blue
     ],
   );
 
@@ -199,29 +199,29 @@ class AppColors {
     brightness: Brightness.light,
     primary: primaryPurple,
     secondary: primaryBlue,
-    background: Color(0xFFF9FAFB),
-    scaffoldBackground: Color(0xFFFAFBFF),
+    background: Color(0xFFF5F7FA), // Premium off-white/grey-blue
+    scaffoldBackground: Color(0xFFF5F7FA),
     surface: Colors.white,
     surfaceElevated: Colors.white,
     card: Colors.white,
     dialog: Colors.white,
     drawerBackground: Colors.white,
-    inputFill: Color(0xFFF3F4F6),
-    inputFillAlt: Color(0xFFE5E7EB),
+    inputFill: Color(0xFFEDF2F7), // Softer grey for inputs
+    inputFillAlt: Color(0xFFE2E8F0),
     appBarBackground: Colors.white,
-    appBarForeground: Color(0xFF111827),
-    textPrimary: Color(0xFF111827),
-    textSecondary: Color(0xFF4B5563),
-    textMuted: Color(0xFF9CA3AF),
-    iconPrimary: Color(0xFF111827),
-    iconSecondary: Color(0xFF6B7280),
-    border: Color(0xFFE5E7EB),
-    borderStrong: Color(0xFFD1D5DB),
-    glass: Color(0x90E0E7FF),
+    appBarForeground: Color(0xFF1A1C1E), // Charcoal grey instead of black
+    textPrimary: Color(0xFF1F2937), // Rich dark grey for headers
+    textSecondary: Color(0xFF4B5563), // Muted blue-grey
+    textMuted: Color(0xFF718096), // Softer muted text
+    iconPrimary: Color(0xFF2D3748),
+    iconSecondary: Color(0xFF718096),
+    border: Color(0xFFE2E8F0),
+    borderStrong: Color(0xFFCBD5E0),
+    glass: Color(0xA6E2E8F0), // More visible glass (opacity ~65%)
     glassStrong: Color(0xF2F1F5F9),
     navBackground: Colors.white,
-    shimmerBase: Color(0xFFF3F4F6),
-    shimmerHighlight: Color(0xFFE5E7EB),
+    shimmerBase: Color(0xFFEDF2F7),
+    shimmerHighlight: Color(0xFFE2E8F0),
     backgroundGradient: lightBackgroundGradient,
     overlayStyle: SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

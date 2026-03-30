@@ -231,7 +231,7 @@ class _CourseCardState extends State<CourseCard>
                                 ? 'جديد'
                                 : AppStrings.get('new_badge', locale),
                             style: TextStyle(
-                              color: AppColors.getTextColor(context),
+                              color: Colors.white,
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
                             ),
@@ -260,7 +260,7 @@ class _CourseCardState extends State<CourseCard>
                                     .replaceAll('ساعات', 'س')
                                     .replaceAll('دقائق', 'د'),
                                 style: TextStyle(
-                                  color: AppColors.getTextColor(context),
+                                  color: Colors.white,
                                   fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                 ),
