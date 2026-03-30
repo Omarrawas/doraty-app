@@ -197,7 +197,7 @@ class _CreateBundleScreenState extends State<CreateBundleScreen> {
                           margin: EdgeInsets.only(bottom: 16),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12),
-                            border: BorderSide.none != true ? Border.all(color: AppColors.getBorderColor(context)) : null,
+                            border: Border.all(color: AppColors.getBorderColor(context)),
                             image: DecorationImage(
                               image: NetworkImage(_imageUrlController.text),
                               fit: BoxFit.cover,

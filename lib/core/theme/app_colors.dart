@@ -148,6 +148,8 @@ class AppColors {
   static const Color mtnCash = Color(0xFFFFCC00);
   static const Color bankTransferBlue = Color(0xFF2196F3);
 
+  static LinearGradient get backgroundGradient => darkBackgroundGradient;
+
   static const Color editorAccentLight = Color(0xFF0F6CBD);
   static const Color editorAccentDark = Color(0xFF8AB4F8);
   static const Color editorBorderLight = Color(0xFFD0D0D0);

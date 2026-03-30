@@ -270,7 +270,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(gradient: AppColors.backgroundGradient),
+        decoration: BoxDecoration(gradient: AppColors.getBackgroundGradient(context)),
         child: SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.all(24),
@@ -366,7 +366,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onTap: () => localeProvider.setLocale(isArabic ? 'en' : 'ar'),
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.white.withOpacity(0.3))),
+            decoration: BoxDecoration(color: AppColors.getGlassColor(context, opacity: 0.15), borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.getBorderColor(context))),
             child: Row(
               children: [
                 Icon(Icons.language_rounded, size: 18, color: AppColors.getTextColor(context, secondary: true)),
@@ -388,14 +388,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             Container(
               width: 100, height: 100,
-              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white.withOpacity(0.5), width: 2)),
+              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.getBorderColor(context), width: 2)),
               child: ClipOval(
                 child: _profileImage != null 
                   ? Image.file(_profileImage!, fit: BoxFit.cover) 
                   : Container(color: AppColors.getTextColor(context).withOpacity(0.10), child: Icon(Icons.person, size: 50, color: AppColors.getTextColor(context).withOpacity(0.60))),
               ),
             ),
-            Positioned(bottom: 0, right: 0, child: Container(padding: EdgeInsets.all(6), decoration: BoxDecoration(color: AppColors.primaryPurple, shape: BoxShape.circle), child: Icon(Icons.camera_alt, color: AppColors.getTextColor(context), size: 16))),
+            Positioned(bottom: 0, right: 0, child: Container(padding: EdgeInsets.all(6), decoration: BoxDecoration(color: AppColors.primaryPurple, shape: BoxShape.circle), child: Icon(Icons.camera_alt, color: Colors.white, size: 16))),
           ],
         ),
       ),
@@ -406,7 +406,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final isStudent = _selectedRole == 'student';
     return Container(
       padding: EdgeInsets.all(4),
-      decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(color: AppColors.getGlassColor(context, opacity: 0.2), borderRadius: BorderRadius.circular(16)),
       child: Row(
         children: [
           _buildRoleBtn(_t('student_role'), Icons.school_rounded, isStudent, () => setState(() => _selectedRole = 'student')),
@@ -424,9 +424,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
           padding: EdgeInsets.symmetric(vertical: 12),
           decoration: BoxDecoration(gradient: active ? AppColors.primaryGradient : null, borderRadius: BorderRadius.circular(12)),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(icon, color: active ? Colors.white : Colors.white60, size: 18),
+            Icon(icon, color: active ? Colors.white : AppColors.getTextColor(context, secondary: true), size: 18),
             SizedBox(width: 8),
-            Text(label, style: TextStyle(color: active ? Colors.white : Colors.white60, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+            Text(label, style: TextStyle(color: active ? Colors.white : AppColors.getTextColor(context, secondary: true), fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
           ]),
         ),
       ),
@@ -440,7 +440,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _buildHeader(_t('educational_info')),
         Container(
           padding: EdgeInsets.all(4),
-          decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(color: AppColors.getGlassColor(context, opacity: 0.1), borderRadius: BorderRadius.circular(12)),
           child: Row(children: [
             _buildTypeBtn(_t('school'), 'school'),
             _buildTypeBtn(_t('university'), 'university'),
@@ -496,13 +496,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Expanded(
       child: GestureDetector(
         onTap: () => setState(() { _educationLevel = value; _selectedGrade = null; _selectedUniversityYear = null; }),
-        child: Container(padding: EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: active ? AppColors.primaryPurple : Colors.transparent, borderRadius: BorderRadius.circular(10)), child: Center(child: Text(label, style: TextStyle(color: active ? Colors.white : Colors.white70, fontWeight: active ? FontWeight.bold : FontWeight.normal)))),
+        child: Container(padding: EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: active ? AppColors.primaryPurple : Colors.transparent, borderRadius: BorderRadius.circular(10)), child: Center(child: Text(label, style: TextStyle(color: active ? Colors.white : AppColors.getTextColor(context, secondary: true), fontWeight: active ? FontWeight.bold : FontWeight.normal)))),
       ),
     );
   }
 
   Widget _buildSubscriptionOption(String title, bool value, Function(bool?) onChanged) {
-    return CheckboxListTile(title: Text(title, style: TextStyle(color: Colors.white, fontSize: 14, fontFamily: 'Cairo')), value: value, onChanged: onChanged, activeColor: AppColors.primaryPurple, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading);
+    return CheckboxListTile(title: Text(title, style: TextStyle(color: AppColors.getTextColor(context), fontSize: 14, fontFamily: 'Cairo')), value: value, onChanged: onChanged, activeColor: AppColors.primaryPurple, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading);
   }
 
   Widget _buildFilePickerSection(String title, File? file, VoidCallback onTap) {
@@ -510,11 +510,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.all(12),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.05), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.1))),
+        decoration: BoxDecoration(color: AppColors.getGlassColor(context, opacity: 0.15), borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.getBorderColor(context))),
         child: Row(children: [
-          Icon(file != null ? Icons.check_circle_rounded : Icons.upload_file_rounded, color: file != null ? Colors.greenAccent : Colors.white70, size: 20),
+          Icon(file != null ? Icons.check_circle_rounded : Icons.upload_file_rounded, color: file != null ? Colors.greenAccent : AppColors.getTextColor(context, secondary: true), size: 20),
           SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold, fontSize: 13)), Text(file != null ? file.path.split('/').last : _t('no_file_selected'), style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.60), fontSize: 11), overflow: TextOverflow.ellipsis)])),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold, fontSize: 13)), Text(file != null ? file.path.split('/').last : _t('no_file_selected'), style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 11), overflow: TextOverflow.ellipsis)])),
           Text(file != null ? _t('change') : _t('choose'), style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12)),
         ]),
       ),
@@ -536,9 +536,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-          color: AppColors.getMutedTextColor(context),
+          color: AppColors.getGlassColor(context, opacity: 0.2),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.1))),
+          border: Border.all(color: AppColors.getBorderColor(context))),
       child: TextFormField(
         controller: controller,
         obscureText: obscureText,
@@ -548,7 +548,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         enabled: enabled,
         maxLength: maxLength,
         style: TextStyle(
-            color: enabled ? Colors.white : Colors.white38, fontSize: 15),
+            color: enabled ? AppColors.getTextColor(context) : AppColors.getTextColor(context, secondary: true), fontSize: 15),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70), fontSize: 14),
@@ -567,12 +567,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Widget _buildGlassDropdown({required String label, required IconData icon, required String? value, required List<String> items, required void Function(String?) onChanged}) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.08), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(0.1))),
+      decoration: BoxDecoration(color: AppColors.getGlassColor(context, opacity: 0.15), borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.getBorderColor(context))),
       child: DropdownButtonFormField<String>(
-        value: value, dropdownColor: AppColors.darkBackground, icon: Icon(Icons.arrow_drop_down, color: AppColors.getTextColor(context).withOpacity(0.60)),
+        value: value, 
+        dropdownColor: AppColors.getSurfaceColor(context), 
+        icon: Icon(Icons.arrow_drop_down, color: AppColors.getTextColor(context, secondary: true)),
         style: TextStyle(color: AppColors.getTextColor(context), fontSize: 15),
-        decoration: InputDecoration(labelText: label, labelStyle: TextStyle(color: Colors.white70, fontSize: 14), prefixIcon: Icon(icon, color: Colors.white60, size: 20), border: InputBorder.none),
+        decoration: InputDecoration(
+          labelText: label, 
+          labelStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 14), 
+          prefixIcon: Icon(icon, color: AppColors.getTextColor(context, secondary: true), size: 20), 
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(horizontal: 16),
+        ),
         items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
         onChanged: onChanged, validator: (v) => v == null ? _t('required_field') : null,
       ),

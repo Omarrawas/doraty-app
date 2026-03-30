@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient,
+          gradient: AppColors.getBackgroundGradient(context),
         ),
         child: SafeArea(
           child: Center(
@@ -122,17 +122,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Container(
                         padding: EdgeInsets.all(40),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.white.withOpacity(0.25),
-                              Colors.white.withOpacity(0.15),
-                            ],
-                          ),
+                          color: AppColors.getGlassColor(context, opacity: 0.25),
                           borderRadius: BorderRadius.circular(40),
                           border: Border.all(
-                            color: AppColors.getMutedTextColor(context),
+                            color: AppColors.getBorderColor(context),
                             width: 1.5,
                           ),
                         ),
@@ -738,10 +731,10 @@ class _LoginScreenState extends State<LoginScreen> {
           width: 60,
           height: 60,
           decoration: BoxDecoration(
-            color: AppColors.getMutedTextColor(context),
+            color: AppColors.getGlassColor(context, opacity: 0.1),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppColors.getMutedTextColor(context),
+              color: AppColors.getBorderColor(context),
               width: 1,
             ),
           ),
