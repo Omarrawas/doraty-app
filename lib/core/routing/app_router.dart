@@ -26,6 +26,7 @@ import '../../screens/help/faq_screen.dart';
 import '../../screens/settings/privacy_policy_screen.dart';
 import '../../screens/settings/terms_conditions_screen.dart';
 import '../../screens/favorites/favorites_screen.dart';
+import '../../screens/profile/order_history_screen.dart';
 import '../../screens/cart/cart_screen.dart';
 import '../../screens/notifications_screen.dart';
 import '../../screens/categories/category_courses_screen.dart';
@@ -63,6 +64,7 @@ final GoRouter appRouter = GoRouter(
           path.startsWith(AppRoutes.cart) ||
           path.startsWith(AppRoutes.favorites) ||
           path.startsWith(AppRoutes.myCourses) ||
+          path.startsWith(AppRoutes.orders) ||
           path.startsWith(AppRoutes.notifications);
 
       // 1- Prevent unauthenticated users from accessing protected sections
@@ -213,6 +215,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.favorites,
       parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) => FavoritesScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.orders,
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) => const OrderHistoryScreen(),
     ),
     GoRoute(
       path: AppRoutes.teacherDashboard,

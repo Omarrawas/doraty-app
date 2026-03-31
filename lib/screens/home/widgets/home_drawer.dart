@@ -8,6 +8,7 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../models/category_model.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/routing/routes_names.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class HomeDrawer extends StatelessWidget {
@@ -126,7 +127,7 @@ class HomeDrawer extends StatelessWidget {
                     title: _t(context, 'my_receipts'),
                     onTap: () {
                       Navigator.pop(context);
-                      context.push('/orders');
+                      context.push(AppRoutes.orders);
                     },
                   ),
                 ],
@@ -203,7 +204,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'faq'),
                   onTap: () {
                     Navigator.pop(context);
-                    context.push('/faq');
+                    context.push(AppRoutes.faq);
                   },
                 ),
 
@@ -213,7 +214,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'privacy_policy'),
                   onTap: () {
                     Navigator.pop(context);
-                    context.push('/privacy');
+                    context.push(AppRoutes.privacy);
                   },
                 ),
 
@@ -223,7 +224,7 @@ class HomeDrawer extends StatelessWidget {
                   title: _t(context, 'terms_conditions'),
                   onTap: () {
                     Navigator.pop(context);
-                    context.push('/terms');
+                    context.push(AppRoutes.terms);
                   },
                 ),
 

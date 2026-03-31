@@ -23,6 +23,7 @@ class AppRoutes {
   static const String terms = '/terms';
   static const String favorites = '/favorites';
   static const String myCourses = '/my_courses';
+  static const String orders = '/orders';
   static const String cart = '/cart';
   static const String notifications = '/notifications';
 
