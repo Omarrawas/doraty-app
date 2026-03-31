@@ -138,7 +138,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     child: ScaleTransition(
                       scale: _logoScale.drive(Tween<double>(begin: 1.0, end: pulseValue)),
                       child: Container(
-                        padding: const EdgeInsets.all(35),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: AppColors.getGlassColor(context, opacity: 0.2),
                           borderRadius: BorderRadius.circular(35),

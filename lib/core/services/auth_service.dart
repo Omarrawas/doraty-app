@@ -64,6 +64,15 @@ class AuthService extends ChangeNotifier {
         return;
       }
 
+      // Initial data from auth metadata as fallback to avoid "Guest" flicker
+      _userProfile = {
+        'full_name': currentUser!.userMetadata?['full_name'],
+        'avatar_url': currentUser!.userMetadata?['avatar_url'],
+        'email': currentUser!.email,
+        'role': 'student', // default
+      };
+      notifyListeners();
+
       // 1. Fetch base profile from the users table
       final response = await _client
           .from('users')
@@ -71,10 +80,12 @@ class AuthService extends ChangeNotifier {
           .eq('id', currentUser!.id)
           .maybeSingle();
 
-      if (response == null) {
-        _userProfile = null;
-        notifyListeners();
-        return;
+      if (response != null) {
+        // Merge with existing profile data
+        _userProfile = {
+          ..._userProfile!,
+          ...response,
+        };
       }
 
       // 2. Fetch the user's primary role from user_roles → roles
@@ -102,7 +113,7 @@ class AuthService extends ChangeNotifier {
 
       // 3. Merge profile + role into a single map
       _userProfile = {
-        ...response,
+        ..._userProfile!,
         'role': role,
       };
 

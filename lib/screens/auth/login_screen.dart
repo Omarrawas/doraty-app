@@ -108,199 +108,213 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: AppColors.getBackgroundGradient(context),
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Glassmorphism Card
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(40),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                      child: Container(
-                        padding: EdgeInsets.all(40),
-                        decoration: BoxDecoration(
-                          color: AppColors.getGlassColor(context, opacity: 0.25),
-                          borderRadius: BorderRadius.circular(40),
-                          border: Border.all(
-                            color: AppColors.getBorderColor(context),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Logo and Title
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
+            children: [
+              // Back Button
+              Positioned(
+                top: 10,
+                right: 10,
+                child: IconButton(
+                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
+                  onPressed: () => context.go('/'),
+                ),
+              ),
+              Center(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Glassmorphism Card
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(40),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                          child: Container(
+                            padding: EdgeInsets.all(40),
+                            decoration: BoxDecoration(
+                              color: AppColors.getGlassColor(context, opacity: 0.25),
+                              borderRadius: BorderRadius.circular(40),
+                              border: Border.all(
+                                color: AppColors.getBorderColor(context),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
+                                // Logo and Title
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      _t('platform_name'),
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.getTextColor(context),
+                                      ),
+                                    ),
+                                    SizedBox(width: 12),
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(15),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors.purple.withOpacity(0.3),
+                                              Colors.blue.withOpacity(0.3),
+                                            ],
+                                          ),
+                                        ),
+                                        child: Image.asset(
+                                          'assets/images/logo.png',
+                                          width: 48,
+                                          height: 48,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(height: 40),
+
+                                // Welcome Text
                                 Text(
-                                  _t('platform_name'),
+                                  _t('welcome_text'),
                                   style: TextStyle(
-                                    fontSize: 24,
+                                    fontSize: 36,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.getTextColor(context),
                                   ),
                                 ),
-                                SizedBox(width: 12),
-                                Container(
-                                  padding: EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      colors: [
-                                        Colors.purple.withOpacity(0.3),
-                                        Colors.blue.withOpacity(0.3),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  child: Image.asset(
-                                    'assets/images/logo.png',
-                                    width: 32,
-                                    height: 32,
-                                  ),
+
+                                SizedBox(height: 40),
+
+                                // Email Field
+                                _buildGlassTextField(
+                                  controller: _emailController,
+                                  hint: _t('email_label'),
+                                  icon: Icons.email_outlined,
+                                  keyboardType: TextInputType.emailAddress,
                                 ),
-                              ],
-                            ),
 
-                            SizedBox(height: 40),
+                                SizedBox(height: 20),
 
-                            // Welcome Text
-                            Text(
-                              _t('welcome_text'),
-                              style: TextStyle(
-                                fontSize: 36,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.getTextColor(context),
-                              ),
-                            ),
-
-                            SizedBox(height: 40),
-
-                            // Email Field
-                            _buildGlassTextField(
-                              controller: _emailController,
-                              hint: _t('email_label'),
-                              icon: Icons.email_outlined,
-                              keyboardType: TextInputType.emailAddress,
-                            ),
-
-                            SizedBox(height: 20),
-
-                            // Password Field
-                            _buildGlassTextField(
-                              controller: _passwordController,
-                              hint: _t('password_label'),
-                              icon: Icons.lock_outline,
-                              isPassword: true,
-                            ),
-
-                            SizedBox(height: 30),
-
-                            // Login Button
-                            _buildLoginButton(),
-
-                            SizedBox(height: 20),
-
-                            // Forgot Password
-                            TextButton(
-                              onPressed: _showForgotPasswordDialog,
-                              child: Text(
-                                _t('forgot_password'),
-                                style: TextStyle(
-                                  color: AppColors.getTextColor(context),
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
+                                // Password Field
+                                _buildGlassTextField(
+                                  controller: _passwordController,
+                                  hint: _t('password_label'),
+                                  icon: Icons.lock_outline,
+                                  isPassword: true,
                                 ),
-                              ),
-                            ),
 
-                            SizedBox(height: 20),
+                                SizedBox(height: 30),
 
-                            // Divider with "أو"
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    height: 1,
-                                    color: AppColors.getMutedTextColor(context),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 16),
-                                  child: Text(
-                                    _t('or'),
-                                    style: TextStyle(
-                                      color: AppColors.getTextColor(context),
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Container(
-                                    height: 1,
-                                    color: AppColors.getMutedTextColor(context),
-                                  ),
-                                ),
-                              ],
-                            ),
+                                // Login Button
+                                _buildLoginButton(),
 
-                            SizedBox(height: 30),
+                                SizedBox(height: 20),
 
-                            // Social Login Buttons
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _buildSocialButton(
-                                  icon: Icons.g_mobiledata,
-                                  onTap: _handleGoogleLogin,
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(height: 30),
-
-                            // Sign Up Link
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  _t('dont_have_account'),
-                                  style: TextStyle(
-                                    color: AppColors.getTextColor(context),
-                                    fontSize: 15,
-                                  ),
-                                ),
+                                // Forgot Password
                                 TextButton(
-                                  onPressed: () {
-                                    context.push('/register');
-                                  },
+                                  onPressed: _showForgotPasswordDialog,
                                   child: Text(
-                                    _t('register_now'),
+                                    _t('forgot_password'),
                                     style: TextStyle(
                                       color: AppColors.getTextColor(context),
                                       fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                      decoration: TextDecoration.underline,
-                                      decorationColor: Colors.white,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
+
+                                SizedBox(height: 20),
+
+                                // Divider with "أو"
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Container(
+                                        height: 1,
+                                        color: AppColors.getMutedTextColor(context),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 16),
+                                      child: Text(
+                                        _t('or'),
+                                        style: TextStyle(
+                                          color: AppColors.getTextColor(context),
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Container(
+                                        height: 1,
+                                        color: AppColors.getMutedTextColor(context),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(height: 30),
+
+                                // Social Login Buttons
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    _buildSocialButton(
+                                      icon: Icons.g_mobiledata,
+                                      onTap: _handleGoogleLogin,
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(height: 30),
+
+                                // Sign Up Link
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      _t('dont_have_account'),
+                                      style: TextStyle(
+                                        color: AppColors.getTextColor(context),
+                                        fontSize: 15,
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        context.push('/register');
+                                      },
+                                      child: Text(
+                                        _t('register_now'),
+                                        style: TextStyle(
+                                          color: AppColors.getTextColor(context),
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.underline,
+                                          decorationColor: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                SizedBox(height: 10),
                               ],
                             ),
-
-                            SizedBox(height: 10),
-
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

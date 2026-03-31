@@ -350,7 +350,15 @@ class _HomeScreenState extends State<HomeScreen> {
     // We add an ErrorWidget around any potentially risky areas.
     return Scaffold(
       key: _scaffoldKey,
-      drawer: HomeDrawer(categories: _categories),
+      drawer: Container(
+        width: MediaQuery.of(context).size.width * 0.8,
+        margin: EdgeInsets.only(
+          bottom: isWideScreen ? 0 : 100,
+          left: isWideScreen ? 0 : 10,
+          right: isWideScreen ? 0 : 10,
+        ),
+        child: HomeDrawer(categories: _categories),
+      ),
       body: RefreshIndicator(
         onRefresh: () => _refreshData(forceRefresh: true),
         color: AppColors.primaryPurple,

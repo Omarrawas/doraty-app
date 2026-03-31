@@ -27,7 +27,7 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
   }
 
   Future<void> _loadBundles() async {
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
     try {
       final data = await _databaseService.getBundles();
       if (mounted) {
@@ -47,11 +47,30 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
   @override
   Widget build(BuildContext context) {
     final locale = Provider.of<LocaleProvider>(context).locale;
+    final double screenWidth = MediaQuery.of(context).size.width;
     String t(String key) => AppStrings.get(key, locale);
+
+    // Responsive grid settings
+    int crossAxisCount = 1;
+    double childAspectRatio = 2.0;
+    
+    if (screenWidth > 1400) {
+      crossAxisCount = 4;
+      childAspectRatio = 1.35;
+    } else if (screenWidth > 1000) {
+      crossAxisCount = 3;
+      childAspectRatio = 1.4;
+    } else if (screenWidth > 650) {
+      crossAxisCount = 2;
+      childAspectRatio = 1.5;
+    } else {
+      crossAxisCount = 1;
+      childAspectRatio = 2.3;
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(t('all_bundles')),
+        title: Text(t('all_bundles'), style: const TextStyle(fontFamily: 'Cairo')),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -61,64 +80,86 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              // Search & Filter Bar
-              Padding(
-                padding: EdgeInsets.fromLTRB(20, 10, 20, 20),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: AppColors.getGlassColor(context, opacity: 0.1),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white10),
-                        ),
-                        child: TextField(
-                          style: TextStyle(color: AppColors.getTextColor(context)),
-                          decoration: InputDecoration(
-                            hintText: '${t('searching')}...',
-                            hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54), fontSize: 14),
-                            border: InputBorder.none,
-                            icon: Icon(Icons.search, color: AppColors.getTextColor(context).withOpacity(0.54)),
+              // Search & Filter Bar (Constrained)
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: AppColors.getGlassColor(context, opacity: 0.1),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Colors.white10),
+                            ),
+                            child: TextField(
+                              style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
+                              decoration: InputDecoration(
+                                hintText: '${t('searching')}...',
+                                hintStyle: TextStyle(
+                                  color: AppColors.getTextColor(context).withOpacity(0.54), 
+                                  fontSize: 14,
+                                  fontFamily: 'Cairo'
+                                ),
+                                border: InputBorder.none,
+                                icon: Icon(Icons.search, color: AppColors.getTextColor(context).withOpacity(0.54)),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryPurple,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primaryPurple.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              )
+                            ],
+                          ),
+                          child: Icon(Icons.filter_list, color: AppColors.getTextColor(context)),
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 12),
-                    Container(
-                      padding: EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryPurple,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(Icons.filter_list, color: AppColors.getTextColor(context)),
-                    ),
-                  ],
+                  ),
                 ),
               ),
               
-              // Packages List
+              // Packages List (Constrained Grid)
               Expanded(
                 child: _isLoading
-                    ? Center(child: CircularProgressIndicator())
+                    ? const Center(child: CircularProgressIndicator())
                     : _bundles.isEmpty
-                        ? Center(child: Text(t('no_courses_found'), style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54))))
-                        : GridView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: MediaQuery.of(context).size.width > 900 ? 3 : (MediaQuery.of(context).size.width > 600 ? 2 : 1),
-                              childAspectRatio: MediaQuery.of(context).size.width > 600 ? 1.4 : 2.0,
-                              crossAxisSpacing: 16,
-                              mainAxisSpacing: 20,
+                        ? Center(child: Text(t('no_courses_found'), style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54), fontFamily: 'Cairo')))
+                        : Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 1400),
+                              child: GridView.builder(
+                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                                physics: const BouncingScrollPhysics(),
+                                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: crossAxisCount,
+                                  childAspectRatio: childAspectRatio,
+                                  crossAxisSpacing: 20,
+                                  mainAxisSpacing: 24,
+                                ),
+                                itemCount: _bundles.length,
+                                itemBuilder: (context, index) {
+                                  return BundleCard(
+                                    bundle: _bundles[index],
+                                    heroTag: 'all_bundles_list_${_bundles[index].id}',
+                                  );
+                                },
+                              ),
                             ),
-                            itemCount: _bundles.length,
-                            itemBuilder: (context, index) {
-                              return BundleCard(
-                                bundle: _bundles[index],
-                                heroTag: 'all_bundles_list_${_bundles[index].id}',
-                              );
-                            },
                           ),
               ),
             ],

@@ -35,6 +35,14 @@ class HomeDrawer extends StatelessWidget {
 
     return Drawer(
       backgroundColor: AppColors.getDrawerBackground(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(40),
+          bottomRight: Radius.circular(40),
+          topLeft: Radius.circular(0),
+          topRight: Radius.circular(0),
+        ),
+      ),
       child: Column(
         children: [
           // Header

@@ -69,17 +69,41 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
 
   Future<void> _loadTeacherData({bool forceRefresh = false}) async {
     try {
-      final userData = await _databaseService.getUserById(widget.teacherId,
-          forceRefresh: forceRefresh);
+      final isUuid = RegExp(
+              r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+              caseSensitive: false)
+          .hasMatch(widget.teacherId);
+
+      Map<String, dynamic>? userData;
+      if (isUuid) {
+        userData = await _databaseService.getUserById(widget.teacherId,
+            forceRefresh: forceRefresh);
+      } else {
+        // If slug, find user by slug from users table
+        final response = await _databaseService.supabaseClient
+            .from('users')
+            .select('*')
+            .eq('slug', widget.teacherId)
+            .maybeSingle();
+        userData = response;
+      }
+
       if (mounted && userData != null) {
         setState(() {
           _teacherName = StringUtils.cleanTeacherName(
-              userData['full_name'] ?? userData['name'] ?? widget.teacherName);
+              userData!['full_name'] ?? userData['name'] ?? widget.teacherName);
           _teacherPhoto = userData['photo_url'] ??
               userData['avatar_url'] ??
               widget.teacherPhoto;
-          _teacherBio = userData['bio'];
-          _teacherPhone = userData['phone']?.toString();
+          
+          // Only update bio and phone if they are present in the response
+          if (userData['bio'] != null && userData['bio'].toString().isNotEmpty) {
+            _teacherBio = userData['bio'];
+          }
+          
+          if (userData['phone'] != null) {
+            _teacherPhone = userData['phone']?.toString();
+          }
         });
       }
     } catch (e) {
