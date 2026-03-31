@@ -31,65 +31,14 @@ import 'core/services/app_update_service.dart';
 import 'package:flutter_web_plugins/url_strategy.dart'; // Ensure proper URL strategy
 import 'core/routing/app_router.dart';
 import 'package:go_router/go_router.dart';
+import 'core/services/app_init_state.dart';
 
 void main() {
-  // Use runZonedGuarded for production safety
   runZonedGuarded(() async {
-    // 1. Minimum possible setup to reach runApp quickly
     WidgetsFlutterBinding.ensureInitialized();
-    usePathUrlStrategy(); // Use Path URL Strategy
-    
-    // 2. Parallelize critical initializations
-    try {
-      // 1. Critical Base Services (Parallelized)
-      await Future.wait([
-        Hive.initFlutter().timeout(Duration(seconds: 7)),
-        LocalDatabase().init().timeout(Duration(seconds: 7)),
-        SettingsService().init().timeout(Duration(seconds: 5)),
-      ]);
-      debugPrint('✅ Storage/Settings initialized (Parallel)');
-    } catch (e) {
-      debugPrint('🚨 [StorageError] Storage/Settings initialization failed: $e');
-    }
+    usePathUrlStrategy();
 
-    try {
-      // 2. Optional/Env Loading
-      await dotenv.load(fileName: ".env").timeout(Duration(seconds: 3));
-      debugPrint('✅ Environment loaded');
-    } catch (e) {
-      debugPrint('⚠️ [EnvError] Environment loading failed (expected if .env missing): $e');
-    }
-
-    // 3. Initialize Supabase with a timeout safeguard
-
-    const String ciUrl = String.fromEnvironment('SUPABASE_URL');
-    const String ciAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
-    final String url = (ciUrl.isNotEmpty ? ciUrl : Env.supabaseUrl).trim();
-    final String anonKey = (ciAnonKey.isNotEmpty ? ciAnonKey : Env.supabaseAnonKey).trim();
-
-    try {
-      await SupabaseService.initialize(
-        supabaseUrl: url,
-        supabaseAnonKey: anonKey,
-      ).timeout(Duration(seconds: 10));
-      debugPrint('✅ Supabase initialized');
-    } catch (e) {
-      debugPrint('⚠️ Supabase Init failed or timed out: $e');
-    }
-
-    // 4. Background Services (Non-blocking)
-    SyncService().init(skipInitialSync: kIsWeb);
-    if (!kIsWeb) {
-      NotificationService().init();
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.portraitUp,
-        DeviceOrientation.portraitDown,
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-    }
-
-    // 5. Start the App
+    // ✅ Launch app IMMEDIATELY — no waiting
     runApp(
       MultiProvider(
         providers: [
@@ -103,9 +52,63 @@ void main() {
         child: MyApp(),
       ),
     );
+
+    // 🔄 Initialize services in the background (non-blocking)
+    _initServicesInBackground();
   }, (error, stack) {
     debugPrint('🚨 [ZoneError] $error\n$stack');
   });
+}
+
+Future<void> _initServicesInBackground() async {
+  try {
+    await Future.wait([
+      Hive.initFlutter().timeout(Duration(seconds: 7)),
+      LocalDatabase().init().timeout(Duration(seconds: 7)),
+      SettingsService().init().timeout(Duration(seconds: 5)),
+    ]);
+    debugPrint('✅ Storage/Settings initialized');
+  } catch (e) {
+    debugPrint('🚨 [StorageError] $e');
+  }
+
+  try {
+    await dotenv.load(fileName: ".env").timeout(Duration(seconds: 3));
+    debugPrint('✅ Environment loaded');
+  } catch (e) {
+    debugPrint('⚠️ [EnvError] $e');
+  }
+
+  const String ciUrl = String.fromEnvironment('SUPABASE_URL');
+  const String ciAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  final String url = (ciUrl.isNotEmpty ? ciUrl : Env.supabaseUrl).trim();
+  final String anonKey =
+      (ciAnonKey.isNotEmpty ? ciAnonKey : Env.supabaseAnonKey).trim();
+
+  try {
+    await SupabaseService.initialize(
+      supabaseUrl: url,
+      supabaseAnonKey: anonKey,
+    ).timeout(Duration(seconds: 10));
+    debugPrint('✅ Supabase initialized');
+  } catch (e) {
+    debugPrint('⚠️ Supabase Init failed or timed out: $e');
+  }
+
+  AppInitState.servicesReady = true;
+
+  SyncService().init(skipInitialSync: kIsWeb);
+  if (!kIsWeb) {
+    NotificationService().init();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  debugPrint('✅ All services ready');
 }
 
 class MyApp extends StatelessWidget {

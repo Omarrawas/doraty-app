@@ -76,70 +76,6 @@
       padding: 0;
       position: fixed;
       background-color: #0b0114;
-      /* Dark purple background matching the theme */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: 'Cairo', sans-serif;
-    }
-  
-    #loading-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-    }
-  
-    .loader {
-      width: 48px;
-      height: 48px;
-      border: 5px solid #FFF;
-      border-bottom-color: #7B2CBF;
-      border-radius: 50%;
-      display: inline-block;
-      box-sizing: border-box;
-      animation: rotation 1s linear infinite;
-    }
-  
-    .logo-img {
-      width: 120px;
-      height: 120px;
-      margin-bottom: 24px;
-      animation: pulsate 2s ease-in-out infinite;
-    }
-  
-    @keyframes rotation {
-      0% {
-        transform: rotate(0deg);
-      }
-  
-      100% {
-        transform: rotate(360deg);
-      }
-    }
-  
-    @keyframes pulsate {
-      0% {
-        transform: scale(0.95);
-        opacity: 0.8;
-      }
-  
-      50% {
-        transform: scale(1.05);
-        opacity: 1;
-      }
-  
-      100% {
-        transform: scale(0.95);
-        opacity: 0.8;
-      }
-    }
-  
-    .loading-text {
-      color: white;
-      margin-top: 16px;
-      font-size: 18px;
-      font-weight: 500;
     }
   </style>
   <script src="https://unpkg.com/flutter-tex-core@5.2.6/flutter_tex.js" defer></script>
@@ -155,17 +91,6 @@
   </script>
 </head>
 <body>
-  <div id="loading-container">
-    <img src="icons/Icon-192.png" alt="Doraty Logo" class="logo-img">
-    <span class="loader"></span>
-    <div class="loading-text">جاري تحميل منصة دوراتي...</div>
-  </div>
   <script src="flutter_bootstrap.js" async></script>
-  <script>
-    window.addEventListener('load', function (ev) {
-      // The loader will be removed automatically by Flutter once initialized
-      // but we can also manually hide it once the first frame is rendered if needed.
-    });
-  </script>
 </body>
 </html>

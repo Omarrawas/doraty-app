@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/screen_security_service.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/app_init_state.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -66,14 +67,21 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   }
 
   Future<void> _checkAuthStatus() async {
-    // Shorter delay for Web as per user's preference for speed
-    await Future.delayed(Duration(milliseconds: kIsWeb ? 800 : 2000));
+    // On web: wait until background services finish (max 4s), then proceed
+    // On mobile: services initialize synchronously before runApp anyway
+    if (kIsWeb) {
+      final deadline = DateTime.now().add(const Duration(seconds: 4));
+      while (!AppInitState.servicesReady && DateTime.now().isBefore(deadline)) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+    }
+
     if (!mounted) return;
 
     try {
       await Future.any([
         _performAuthCheck(),
-        Future.delayed(Duration(seconds: kIsWeb ? 10 : 20)).then((_) {
+        Future.delayed(Duration(seconds: kIsWeb ? 5 : 20)).then((_) {
           if (mounted) context.go('/');
         }),
       ]);
