@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
-import '../../models/category.dart';
 import '../../models/category_model.dart';
 import '../../core/services/database_service.dart';
 import '../../core/localization/locale_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:doraty/core/constants/app_strings.dart';
+import '../explore/widgets/category_card.dart';
 
 class SubjectsScreen extends StatefulWidget {
   final bool showBackButton;
@@ -18,7 +17,6 @@ class SubjectsScreen extends StatefulWidget {
 }
 
 class _SubjectsScreenState extends State<SubjectsScreen> {
-  late List<Category> _fallbackCategories;
   List<CategoryModel> _categories = [];
   bool _isLoading = true;
   final DatabaseService _dbService = DatabaseService();
@@ -26,7 +24,6 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
   @override
   void initState() {
     super.initState();
-    _initializeFallbackCategories();
     _loadCategories();
   }
 
@@ -49,55 +46,6 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
     }
   }
 
-  void _initializeFallbackCategories() {
-    final scientificSubjects = [
-      'subject_math',
-      'subject_physics',
-      'subject_chemistry',
-      'subject_biology',
-      'subject_arabic',
-      'subject_english',
-      'subject_french',
-      'subject_religion',
-    ];
-    final literarySubjects = [
-      'subject_history',
-      'subject_geography',
-      'subject_philosophy',
-      'subject_sociology',
-    ];
-
-    final allSubjects = {...scientificSubjects, ...literarySubjects}.toList();
-
-    _fallbackCategories = allSubjects.asMap().entries.map((entry) {
-      return Category(
-        id: '${entry.key + 1}',
-        name: entry.value,
-        description: 'high_school_courses_desc',
-        icon: _getIconForSubject(entry.value),
-        coursesCount: (entry.key + 1) * 3,
-      );
-    }).toList();
-  }
-
-  String _getIconForSubject(String subject) {
-    return '📚';
-  }
-
-  Color _getColorForIndex(int index) {
-    final colors = [
-      Color(0xFF7B2CBF),
-      Color(0xFF5A67D8),
-      Color(0xFFE91E63),
-      Color(0xFFFF6B9D),
-      Color(0xFF00BCD4),
-      Color(0xFF4CAF50),
-      Color(0xFFFF9800),
-      Color(0xFF9C27B0),
-    ];
-    return colors[index % colors.length];
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,7 +62,8 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
               Expanded(
                 child: _isLoading
                     ? Center(
-                        child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
+                        child: CircularProgressIndicator(
+                            color: AppColors.getTextColor(context)))
                     : SingleChildScrollView(
                         padding: EdgeInsets.all(20),
                         child: Column(
@@ -150,35 +99,29 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
       padding: EdgeInsets.all(20),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.getMutedTextColor(context),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.getMutedTextColor(context),
-                    width: 1,
-                  ),
-                ),
-                child: widget.showBackButton
-                    ? IconButton(
-                        icon: Icon(
-                          Provider.of<LocaleProvider>(context, listen: false)
-                                      .locale ==
-                                  'ar'
-                              ? Icons.arrow_forward_ios_rounded
-                              : Icons.arrow_back_ios_new_rounded,
-                          color: AppColors.getTextColor(context),
-                          size: 20,
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      )
-                    : SizedBox(width: 48, height: 48),
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.getSurfaceColor(context),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppColors.getMutedTextColor(context).withOpacity(0.2),
+                width: 1,
               ),
             ),
+            child: widget.showBackButton
+                ? IconButton(
+                    icon: Icon(
+                      Provider.of<LocaleProvider>(context, listen: false)
+                                  .locale ==
+                              'ar'
+                          ? Icons.arrow_forward_ios_rounded
+                          : Icons.arrow_back_ios_new_rounded,
+                      color: AppColors.getTextColor(context),
+                      size: 20,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                  )
+                : SizedBox(width: 48, height: 48),
           ),
           Expanded(
             child: Consumer<LocaleProvider>(
@@ -201,19 +144,25 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
 
   Widget _buildGrid() {
     if (_categories.isEmpty && !_isLoading) {
-      // Show fallback if no real categories found
-      return GridView.builder(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 220,
-          mainAxisExtent: 160,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 60),
+          child: Column(
+            children: [
+              Icon(Icons.category_outlined,
+                  size: 64,
+                  color: AppColors.getTextColor(context).withOpacity(0.3)),
+              SizedBox(height: 16),
+              Text(
+                AppStrings.get('no_categories', 
+                    Provider.of<LocaleProvider>(context, listen: false).locale),
+                style: TextStyle(
+                  color: AppColors.getTextColor(context, secondary: true),
+                ),
+              ),
+            ],
+          ),
         ),
-        itemCount: _fallbackCategories.length,
-        itemBuilder: (context, index) =>
-            _buildFallbackCard(_fallbackCategories[index], index),
       );
     }
 
@@ -221,187 +170,21 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 220,
-        mainAxisExtent: 160,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        maxCrossAxisExtent: 180,
+        mainAxisExtent: 180,
+        crossAxisSpacing: 20,
+        mainAxisSpacing: 20,
       ),
       itemCount: _categories.length,
-      itemBuilder: (context, index) =>
-          _buildCategoryCard(_categories[index], index),
-    );
-  }
-
-  Widget _buildCategoryCard(CategoryModel category, int index) {
-    final color = _getColorForIndex(index);
-    final locale = Provider.of<LocaleProvider>(context).locale;
-
-    return _CardWrapper(
-      color: color,
-      onTap: () {
-        context.go('/courses?categoryId=${category.id}');
+      itemBuilder: (context, index) {
+        final category = _categories[index];
+        return CategoryCard(
+          category: category,
+          onTap: () {
+            context.go('/courses?categoryId=${category.id}');
+          },
+        );
       },
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _IconBox(category: category, color: color),
-          SizedBox(height: 16),
-          Text(
-            category.getLocalizedName(locale),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.getTextColor(context),
-              letterSpacing: 0.5,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
     );
-  }
-
-  Widget _buildFallbackCard(Category category, int index) {
-    final color = _getColorForIndex(index);
-
-    final locale = Provider.of<LocaleProvider>(context).locale;
-
-    return _CardWrapper(
-      color: color,
-      onTap: () {},
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              category.icon,
-              style: TextStyle(fontSize: 32),
-            ),
-          ),
-          SizedBox(height: 16),
-          Text(
-            AppStrings.get(category.name, locale),
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: AppColors.getTextColor(context),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CardWrapper extends StatelessWidget {
-  final Color color;
-  final VoidCallback onTap;
-  final Widget child;
-
-  const _CardWrapper(
-      {required this.color, required this.onTap, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Color(0xFF1E1E2C), // Dark surface like in image 2
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: onTap,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-            child: child,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _IconBox extends StatelessWidget {
-  final CategoryModel category;
-  final Color color;
-  const _IconBox({required this.category, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 60,
-      height: 60,
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Center(
-        child: _buildIcon(context),
-      ),
-    );
-  }
-
-  Widget _buildIcon(BuildContext context) {
-    // If iconUrl is a material icon name, use it
-    if (category.iconUrl != null && !category.iconUrl!.startsWith('http')) {
-      return Icon(_getMaterialIcon(category.iconUrl!), color: color, size: 32);
-    }
-
-    // Otherwise fallback to name-based mapping or generic
-    final mapping = {
-      'التعليم التربوي': Icons.menu_book,
-      'التصميم الداخلي': Icons.apartment,
-      'العلوم والتكنولوجيا': Icons.science,
-      'إدارة الأعمال': Icons.business_center,
-      'نمط الحياة': Icons.directions_run,
-      'الإبداع': Icons.palette,
-      'لغات': Icons.language,
-      'تعليم مدرسي': Icons.school,
-    };
-
-    IconData icon = mapping[category.name] ?? Icons.category_outlined;
-    return Icon(icon, color: color, size: 32);
-  }
-
-  IconData _getMaterialIcon(String name) {
-    switch (name.toLowerCase()) {
-      case 'book':
-        return Icons.menu_book;
-      case 'home':
-        return Icons.home;
-      case 'science':
-        return Icons.science;
-      case 'business':
-        return Icons.business;
-      case 'money':
-        return Icons.attach_money;
-      case 'palette':
-        return Icons.palette;
-      case 'fitness':
-        return Icons.fitness_center;
-      case 'school':
-        return Icons.school;
-      default:
-        return Icons.category;
-    }
   }
 }

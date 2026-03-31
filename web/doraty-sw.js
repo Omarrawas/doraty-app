@@ -3,7 +3,7 @@
  * ===================================
  * Strategy:
  *   1. CORE SHELL (Cache-First)   → Flutter app shell, fonts, icons
- *   2. API / Supabase  (Network-First, 5s timeout) → fresh data when possible
+ *   2. API / Supabase  (Network-First, 1s timeout) → fresh data when possible
  *   3. STATIC ASSETS  (Stale-While-Revalidate)     → images, manifests
  *   4. EVERYTHING ELSE (Network-Only)              → no offline fallback
  *
