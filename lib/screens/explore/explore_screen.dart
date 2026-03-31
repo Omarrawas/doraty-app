@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/services/database_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/category_model.dart';
@@ -367,7 +368,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                   color: primaryTextColor,
                                   size: 20,
                                 ),
-                                onPressed: () => Navigator.pop(context),
+                                onPressed: () => context.go('/topics'),
                               ),
                             ),
                           Text(
