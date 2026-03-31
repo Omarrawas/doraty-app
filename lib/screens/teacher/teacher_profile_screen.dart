@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/services/database_service.dart';
 import '../../models/course.dart';
 import '../../widgets/course_card.dart';
@@ -38,6 +39,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
   String? _teacherBio;
   String? _teacherPhoto;
   String _teacherName = '';
+  String? _teacherPhone;
   Map<String, dynamic> _stats = {};
   late TabController _tabController;
 
@@ -77,6 +79,7 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
               userData['avatar_url'] ??
               widget.teacherPhoto;
           _teacherBio = userData['bio'];
+          _teacherPhone = userData['phone']?.toString();
         });
       }
     } catch (e) {
@@ -259,6 +262,53 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
             style: TextStyle(fontSize: 14, color: AppColors.getTextColor(context, secondary: true), fontWeight: FontWeight.w500),
           ),
           
+          if (_teacherPhone != null && _teacherPhone!.trim().isNotEmpty) ...[
+            SizedBox(height: 16),
+            InkWell(
+              onTap: () async {
+                String phone = _teacherPhone!.trim();
+                // Syrian local numbers usually start with 09
+                if (phone.startsWith('09')) {
+                  phone = '963${phone.substring(1)}';
+                }
+                final uri = Uri.parse('whatsapp://send?phone=$phone');
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri);
+                } else {
+                  // Fallback to web link if WhatsApp client isn't installed
+                  final webUri = Uri.parse('https://wa.me/$phone');
+                  if (await canLaunchUrl(webUri)) {
+                    await launchUrl(webUri, mode: LaunchMode.externalApplication);
+                  }
+                }
+              },
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.green.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.chat, color: Colors.green, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'تواصل معي', // Contact me
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          
           SizedBox(height: 24),
           
           // Stats Row
@@ -310,20 +360,24 @@ class _TeacherProfileScreenState extends State<TeacherProfileScreen> with Single
   Widget _buildBioSection(bool isRTL) {
     return SingleChildScrollView(
       padding: EdgeInsets.symmetric(horizontal: 24, vertical: 30),
-      child: Column(
-        crossAxisAlignment: isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        children: [
-          Text(
-            _t('about_trainer'),
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
-          ),
-          SizedBox(height: 16),
-          Text(
-            _teacherBio ?? _t('no_bio_available'),
-            style: TextStyle(fontSize: 15, color: AppColors.getTextColor(context, secondary: true), height: 1.6),
-            textAlign: isRTL ? TextAlign.right : TextAlign.left,
-          ),
-        ],
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              _t('about_trainer'),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16),
+            Text(
+              _teacherBio ?? _t('no_bio_available'),
+              style: TextStyle(fontSize: 15, color: AppColors.getTextColor(context, secondary: true), height: 1.6),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

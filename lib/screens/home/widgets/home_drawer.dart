@@ -7,6 +7,8 @@ import '../../../core/localization/locale_provider.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../models/category_model.dart';
+import '../../../core/services/database_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeDrawer extends StatelessWidget {
   final List<CategoryModel> categories;
@@ -92,33 +94,34 @@ class HomeDrawer extends StatelessWidget {
                         style: TextStyle(color: isDark ? Colors.white70 : Colors.black87, fontSize: 14)),
                       onTap: () {
                         Navigator.pop(context);
-                        context.push('/courses');
-                        // Note: In a real app, we'd pass the category ID to ExploreScreen
+                        context.go('/courses?categoryId=${cat.id}');
                       },
                     )).toList(),
                   ),
                 ),
 
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.library_books_outlined,
-                  title: _t(context, 'my_courses'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/my_courses');
-                  },
-                ),
+                // Protected User Sections
+                if (authService.isAuthenticated) ...[
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.library_books_outlined,
+                    title: _t(context, 'my_courses'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/my_courses');
+                    },
+                  ),
 
-
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.receipt_long_outlined,
-                  title: _t(context, 'my_receipts'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/orders');
-                  },
-                ),
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.receipt_long_outlined,
+                    title: _t(context, 'my_receipts'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/orders');
+                    },
+                  ),
+                ],
 
                 _buildDrawerItem(
                   context,
@@ -130,15 +133,16 @@ class HomeDrawer extends StatelessWidget {
                   },
                 ),
 
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.favorite_border,
-                  title: _t(context, 'favorites'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/favorites');
-                  },
-                ),
+                if (authService.isAuthenticated)
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.favorite_border,
+                    title: _t(context, 'favorites'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/favorites');
+                    },
+                  ),
 
                 _buildDrawerItem(
                   context,
@@ -152,15 +156,16 @@ class HomeDrawer extends StatelessWidget {
 
                 Divider(color: AppColors.getTextColor(context).withOpacity(0.10)),
 
-                _buildDrawerItem(
-                  context,
-                  icon: Icons.settings_outlined,
-                  title: _t(context, 'settings'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/settings');
-                  },
-                ),
+                if (authService.isAuthenticated)
+                  _buildDrawerItem(
+                    context,
+                    icon: Icons.settings_outlined,
+                    title: _t(context, 'settings'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.push('/settings');
+                    },
+                  ),
 
                 _buildDrawerItem(
                   context,
@@ -234,17 +239,60 @@ class HomeDrawer extends StatelessWidget {
                 SizedBox(height: 20),
                 
                 // Social Media Icons
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildSocialIcon(Icons.facebook, Colors.blue),
-                      _buildSocialIcon(Icons.camera_alt, Colors.pink), // Instagram placeholder
-                      _buildSocialIcon(Icons.play_circle_filled, Colors.red), // YouTube placeholder
-                      _buildSocialIcon(Icons.message, Colors.lightBlue), // Twitter/X or Telegram
-                    ],
-                  ),
+                FutureBuilder<Map<String, String>>(
+                  future: DatabaseService().getSocialLinks(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 20),
+                        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                      );
+                    }
+                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+                    final links = snapshot.data!;
+                    final isDarkInner = Provider.of<ThemeProvider>(context).isDarkMode;
+                    
+                    final List<Widget> availablePlatforms = [];
+                    
+                    if (links['social_facebook']?.isNotEmpty == true) {
+                      availablePlatforms.add(_buildSocialIcon(Icons.facebook, Colors.blue, links['social_facebook']!));
+                    }
+                    if (links['social_instagram']?.isNotEmpty == true) {
+                      availablePlatforms.add(_buildSocialIcon(Icons.camera_alt, Colors.pink, links['social_instagram']!));
+                    }
+                    if (links['social_youtube']?.isNotEmpty == true) {
+                      availablePlatforms.add(_buildSocialIcon(Icons.play_circle_filled, Colors.red, links['social_youtube']!));
+                    }
+                    if (links['social_whatsapp']?.isNotEmpty == true) {
+                      availablePlatforms.add(_buildSocialIcon(Icons.chat, Colors.green, links['social_whatsapp']!));
+                    }
+                    if (links['social_x_twitter']?.isNotEmpty == true) {
+                      availablePlatforms.add(_buildSocialIcon(Icons.close, isDarkInner ? Colors.white : Colors.black87, links['social_x_twitter']!));
+                    }
+                    if (links['social_tiktok']?.isNotEmpty == true) {
+                      availablePlatforms.add(_buildSocialIcon(Icons.music_note, isDarkInner ? Colors.white : Colors.black87, links['social_tiktok']!));
+                    }
+                    if (links['social_telegram']?.isNotEmpty == true) {
+                      availablePlatforms.add(_buildSocialIcon(Icons.send, Colors.blueAccent, links['social_telegram']!));
+                    }
+                    if (links['social_linkedin']?.isNotEmpty == true) {
+                      availablePlatforms.add(_buildSocialIcon(Icons.work, Colors.blue[800] ?? Colors.blue, links['social_linkedin']!));
+                    }
+
+                    if (availablePlatforms.isEmpty) return const SizedBox.shrink();
+
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child: Wrap(
+                        alignment: WrapAlignment.spaceEvenly,
+                        spacing: 20,
+                        runSpacing: 15,
+                        children: availablePlatforms,
+                      ),
+                    );
+                  },
                 ),
 
                 SizedBox(height: 20),
@@ -273,7 +321,7 @@ class HomeDrawer extends StatelessWidget {
                           context.push('/login');
                         },
                         icon: Icon(Icons.login),
-                        label: Text(_t(context, 'login_title')),
+                        label: Text('تسجيل الدخول / إنشاء حساب'), // explicit text
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryPurple.withOpacity(0.1),
                           foregroundColor: AppColors.primaryPurple,
@@ -325,7 +373,7 @@ class HomeDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  userName != null ? '${_t(context, 'welcome_with_name')} $userName 👋' : '${_t(context, 'welcome')} 👋',
+                  userName != null ? '${_t(context, 'welcome_with_name')} $userName 👋' : 'أهلاً بك يا زائر 👋',
                   style: TextStyle(
                     color: AppColors.getTextColor(context),
                     fontSize: 18,
@@ -373,14 +421,23 @@ class HomeDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildSocialIcon(IconData icon, Color color) {
-    return Container(
-      padding: EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        shape: BoxShape.circle,
+  Widget _buildSocialIcon(IconData icon, Color color, String url) {
+    return InkWell(
+      onTap: () async {
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        }
+      },
+      borderRadius: BorderRadius.circular(25),
+      child: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: color, size: 28),
       ),
-      child: Icon(icon, color: color, size: 24),
     );
   }
 

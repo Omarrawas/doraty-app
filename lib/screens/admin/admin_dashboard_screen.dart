@@ -504,6 +504,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => context.push('/admin/banners'),
         },
         {
+          'icon': Icons.connect_without_contact_rounded,
+          'title': _t('admin_social_links_side'),
+          'subtitle': _t('admin_social_links_desc'),
+          'color': Colors.blue,
+          'onTap': () => context.push('/admin/social-links'),
+        },
+        {
           'icon': Icons.card_membership_rounded,
           'title': _t('admin_subscriptions_side'),
           'subtitle': _t('admin_subscriptions_desc'),

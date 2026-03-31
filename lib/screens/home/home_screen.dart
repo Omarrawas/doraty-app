@@ -382,6 +382,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   // 1. Unified Banner Carousel (Ads & Featured)
                   _buildUnifiedBannerCarousel(),
 
+                  // Guest Call-to-Action Banner
+                  if (!authService.isAuthenticated)
+                    _buildGuestBanner(isWideScreen),
+
+
                   // 2. Search Bar
                   _buildSearchBar(),
 
@@ -408,46 +413,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   // 8.5 Bottom Ad Banners
                   _buildBottomAdBanners(),
 
-                  // 10. Top Teachers (Moved here per user request)
-                  if (_filteredTeachers.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildSectionHeaderBox(_t('top_teachers'), () {
-                            context.push('/teachers');
-                          }),
-                          isWideScreen
-                              ? Padding(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 20),
-                                  child: Wrap(
-                                    spacing: 20,
-                                    runSpacing: 20,
-                                    children: _filteredTeachers
-                                        .take(isWideScreen ? 12 : 6)
-                                        .map((t) => _buildTeacherItem(t))
-                                        .toList(),
-                                  ),
-                                )
-                              : SizedBox(
-                                  height: 220,
-                                  child: ListView.builder(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 20),
-                                    scrollDirection: Axis.horizontal,
-                                    itemCount: _filteredTeachers.length,
-                                    itemBuilder: (context, index) =>
-                                        _buildTeacherItem(
-                                            _filteredTeachers[index]),
-                                  ),
-                                ),
-                        ],
-                      ),
-                    ),
-
-                  // 10.5 Become a Teacher CTA (Shows for students/guests only)
-                  _buildBecomeTeacherCTA(),
+                  // 10. Top Teachers + Become a Trainer — unified card
+                  _buildTeachersAndTrainerSection(isWideScreen),
 
                   // 9. Recorded Courses
                   if (_allCourses.isNotEmpty)
@@ -493,162 +460,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildTeacherItem(Map<String, dynamic> teacher) {
-    final dynamic usersRaw = teacher['users'];
-    final Map<String, dynamic>? userData =
-        usersRaw is Map ? SafeParser.safeMap(usersRaw) : null;
-    final name = StringUtils.cleanTeacherName(
-        userData?['full_name'] ?? userData?['name'] ?? teacher['full_name'] ?? teacher['name'] ?? _t('teacher'));
-    final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'] ?? teacher['photo_url'] ?? teacher['avatar_url'];
-    final rawSubjects = userData?['subjects'] ?? teacher['subjects'] ?? teacher['specialization'];
-    String specialization = '';
-    if (rawSubjects is List) {
-      specialization = rawSubjects.join('، ');
-    } else if (rawSubjects is String) {
-      specialization = rawSubjects;
-    }
-
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(end: 16),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TeacherProfileScreen(
-                teacherId: teacher['user_id'] ?? '',
-                teacherName: name,
-                teacherPhoto: avatarUrl,
-                bio: userData?['bio'],
-              ),
-            ),
-          );
-        },
-        child: Container(
-          width: 150,
-          decoration: BoxDecoration(
-            color: AppColors.getGlassColor(context, opacity: 0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: AppColors.getTextColor(context).withOpacity(0.1),
-              width: 1,
-            ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Avatar
-              Container(
-                width: 85,
-                height: 85,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: avatarUrl != null && avatarUrl.toString().isNotEmpty
-                      ? (avatarUrl.toString().startsWith('data:')
-                          ? Image.memory(
-                              StringUtils.decodeBase64Image(avatarUrl.toString()),
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(
-                                color: Colors.grey.shade900,
-                                child: Icon(Icons.person,
-                                    color: AppColors.getTextColor(context)
-                                        .withOpacity(0.24),
-                                    size: 40),
-                              ),
-                            )
-                          : CachedNetworkImage(
-                              imageUrl: avatarUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) =>
-                                  ShimmerLoader.circular(height: 85, width: 85),
-                              errorWidget: (context, url, e) => Container(
-                                color: Colors.grey.shade900,
-                                child: Icon(Icons.person,
-                                    color: AppColors.getTextColor(context)
-                                        .withOpacity(0.24),
-                                    size: 40),
-                              ),
-                            ))
-                      : Container(
-                          color: Colors.grey.shade900,
-                          child: Icon(Icons.person,
-                              color: AppColors.getTextColor(context)
-                                  .withOpacity(0.24),
-                              size: 40),
-                        ),
-                ),
-              ),
-              SizedBox(height: 12),
-              // Name
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                  name,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.getTextColor(context),
-                    fontFamily: 'Cairo',
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              SizedBox(height: 4),
-              // Specialization
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10),
-                child: Text(
-                  specialization,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.getTextColor(context).withOpacity(0.5),
-                    fontFamily: 'Cairo',
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              SizedBox(height: 12),
-              // Label "مدرب"
-              Container(
-                padding:
-                    EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                    color: AppColors.primaryPurple.withOpacity(0.4),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  _t('teacher_role'),
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: AppColors.primaryPurple,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Cairo',
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildContinueLearning() {
     // Show only if there are enrolled courses
@@ -813,6 +624,118 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildGuestBanner(bool isWideScreen) {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF9D50BB), Color(0xFF6E48AA)],
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+            ),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF6E48AA).withOpacity(0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Decorative elements inside the banner
+              Positioned(
+                right: -30,
+                top: -30,
+                child: Container(
+                  width: 120, height: 120,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.08)),
+                ),
+              ),
+              Positioned(
+                left: -20,
+                bottom: -40,
+                child: Container(
+                  width: 140, height: 140,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05)),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 28),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'انضم إلى مجتمع دوراتي!',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'سجل الآن كطالب لتتعلم مهارات جديدة، أو كمدرب لتنشر دوراتك.',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: ElevatedButton(
+                            onPressed: () => context.push('/register'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFF6E48AA),
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: const Text('إنشاء حساب', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: OutlinedButton(
+                            onPressed: () => context.push('/login'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: const BorderSide(color: Colors.white, width: 1.5),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            child: const Text('تسجيل دخول'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSearchBar() {
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
     return SliverToBoxAdapter(
@@ -826,6 +749,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: () {
                 Provider.of<NavigationProvider>(context, listen: false)
                     .setIndex(1, focusSearch: true);
+                context.go('/courses');
               },
               borderRadius: BorderRadius.circular(15),
               child: Container(
@@ -1024,110 +948,312 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBecomeTeacherCTA() {
+  // ─── Unified: Top Teachers + Become a Trainer ───────────────────────────
+  Widget _buildTeachersAndTrainerSection(bool isWideScreen) {
     final authService = Provider.of<AuthService>(context, listen: false);
     final userProfile = authService.userProfile;
     final String? role = userProfile?['role'];
+    final bool showCTA = userProfile == null ||
+        (role != 'teacher' && role != 'admin' && role != 'super_admin');
+    final bool hasTeachers = _filteredTeachers.isNotEmpty;
 
-    // Only show for guests (no profile) or students
-    if (userProfile != null &&
-        (role == 'teacher' || role == 'admin' || role == 'super_admin')) {
-      return SliverToBoxAdapter(child: SizedBox.shrink());
-    }
+    if (!hasTeachers && !showCTA) return SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            children: [
-              // Background Gradient & Pattern
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.deepPurple, // Deep Purple
-                      AppColors.professionalBlue, // Professional Blue
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+          borderRadius: BorderRadius.circular(28),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.deepPurple,
+                  AppColors.professionalBlue,
+                ],
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+              ),
+              borderRadius: BorderRadius.circular(28),
+            ),
+            child: Stack(
+              children: [
+                // Decorative background circles
+                Positioned(
+                  right: -40,
+                  top: -40,
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.05),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
-
-              // Decorative circles for premium feel
-              Positioned(
-                right: -30,
-                top: -30,
-                child: Container(
-                  width: 120,
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: AppColors.getMutedTextColor(context),
-                    shape: BoxShape.circle,
+                Positioned(
+                  left: -20,
+                  bottom: -30,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.04),
+                      shape: BoxShape.circle,
+                    ),
                   ),
                 ),
-              ),
 
-              // Content
-              Padding(
-                padding: EdgeInsets.all(24),
-                child: Column(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.school_outlined,
-                        color: AppColors.getTextColor(context), size: 45),
-                    SizedBox(height: 16),
-                    Text(
-                      'كن مدرباً وانضم إلينا في رحلة نمو دوراتي',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.getTextColor(context),
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Cairo',
-                        height: 1.4,
-                      ),
-                    ),
-                    SizedBox(height: 12),
-                    Text(
-                      'شارك خبرتك وساعد آلاف الطلاب على تحقيق أهدافهم وكن جزءاً من منصتنا التعليمية الكبرى',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.getTextColor(context).withOpacity(0.70),
-                        fontSize: 13,
-                        fontFamily: 'Cairo',
-                        height: 1.6,
-                      ),
-                    ),
-                    SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.push('/register');
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppColors.deepPurple,
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 32, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        elevation: 5,
-                        shadowColor: Colors.black.withOpacity(0.3),
-                      ),
-                      child: Text(
-                        'سجل الآن',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          fontFamily: 'Cairo',
+                    // ── Teachers Section ──
+                    if (hasTeachers) ...[
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              _t('top_teachers'),
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontFamily: 'Cairo',
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () => context.push('/teachers'),
+                              child: Text(
+                                _t('explore_more'),
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white70,
+                                  fontFamily: 'Cairo',
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      isWideScreen
+                          ? Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 20),
+                              child: Wrap(
+                                spacing: 16,
+                                runSpacing: 16,
+                                children: _filteredTeachers
+                                    .take(12)
+                                    .map((t) => _buildTeacherItemLight(t))
+                                    .toList(),
+                              ),
+                            )
+                          : SizedBox(
+                              height: 220,
+                              child: ListView.builder(
+                                padding: EdgeInsets.symmetric(horizontal: 16),
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _filteredTeachers.length,
+                                itemBuilder: (context, index) =>
+                                    _buildTeacherItemLight(_filteredTeachers[index]),
+                              ),
+                            ),
+                    ],
+
+                    // ── Divider ──
+                    if (hasTeachers && showCTA)
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        child: Divider(
+                          color: Colors.white.withOpacity(0.15),
+                          thickness: 1,
+                        ),
+                      ),
+
+                    // ── Become a Trainer CTA ──
+                    if (showCTA)
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(24, hasTeachers ? 0 : 24, 24, 28),
+                        child: Column(
+                          children: [
+                            Icon(Icons.school_outlined,
+                                color: Colors.white, size: 42),
+                            SizedBox(height: 14),
+                            Text(
+                              'كن مدرباً وانضم إلينا في رحلة نمو دوراتي',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Cairo',
+                                height: 1.4,
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            Text(
+                              'شارك خبرتك وساعد آلاف الطلاب على تحقيق أهدافهم وكن جزءاً من منصتنا التعليمية الكبرى',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 13,
+                                fontFamily: 'Cairo',
+                                height: 1.6,
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                            ElevatedButton(
+                              onPressed: () => context.push('/register'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: AppColors.deepPurple,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 36, vertical: 13),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                elevation: 6,
+                                shadowColor: Colors.black38,
+                              ),
+                              child: Text(
+                                'سجل الآن',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  fontFamily: 'Cairo',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Light-themed teacher card for use inside the gradient container
+  Widget _buildTeacherItemLight(Map<String, dynamic> teacher) {
+    final dynamic usersRaw = teacher['users'];
+    final Map<String, dynamic>? userData =
+        usersRaw is Map ? SafeParser.safeMap(usersRaw) : null;
+    final name = StringUtils.cleanTeacherName(
+        userData?['full_name'] ?? userData?['name'] ?? teacher['full_name'] ?? teacher['name'] ?? _t('teacher'));
+    final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'] ?? teacher['photo_url'] ?? teacher['avatar_url'];
+    final rawSubjects = userData?['subjects'] ?? teacher['subjects'] ?? teacher['specialization'];
+    String specialization = '';
+    if (rawSubjects is List) {
+      specialization = rawSubjects.join('، ');
+    } else if (rawSubjects is String) {
+      specialization = rawSubjects;
+    }
+
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 12),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TeacherProfileScreen(
+                teacherId: teacher['user_id'] ?? '',
+                teacherName: name,
+                teacherPhoto: avatarUrl,
+                bio: userData?['bio'],
+              ),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: 140,
+          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.15)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 10,
+                      offset: Offset(0, 4),
                     ),
                   ],
+                ),
+                child: ClipOval(
+                  child: avatarUrl != null && avatarUrl.toString().isNotEmpty
+                      ? (avatarUrl.toString().startsWith('data:')
+                          ? Image.memory(
+                              StringUtils.decodeBase64Image(avatarUrl.toString()),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _defaultAvatarLight(),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: avatarUrl.toString(),
+                              fit: BoxFit.cover,
+                              placeholder: (_, __) => _defaultAvatarLight(),
+                              errorWidget: (_, __, ___) => _defaultAvatarLight(),
+                            ))
+                      : _defaultAvatarLight(),
+                ),
+              ),
+              SizedBox(height: 10),
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontFamily: 'Cairo',
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (specialization.isNotEmpty) ...[
+                SizedBox(height: 3),
+                Text(
+                  specialization,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.white60,
+                    fontFamily: 'Cairo',
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+              SizedBox(height: 10),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white30),
+                ),
+                child: Text(
+                  _t('teacher_role'),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white70,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Cairo',
+                  ),
                 ),
               ),
             ],
@@ -1136,6 +1262,14 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  Widget _defaultAvatarLight() {
+    return Container(
+      color: Colors.white12,
+      child: Icon(Icons.person, color: Colors.white54, size: 40),
+    );
+  }
+
 
   Widget _buildTipsSection() {
     if (_tips.isEmpty) {

@@ -6032,4 +6032,60 @@ class DatabaseService {
     await LocalDatabase().clear();
     debugPrint('✅ Global cache cleared');
   }
+
+  // ==================== APP SETTINGS & SOCIAL LINKS ====================
+
+  /// Get Social Media Links from app_settings
+  Future<Map<String, String>> getSocialLinks() async {
+    try {
+      final response = await _client
+          .from('app_settings')
+          .select('setting_key, setting_value')
+          .like('setting_key', 'social_%');
+          
+      final List rows = response as List;
+      Map<String, String> links = {};
+      for (var row in rows) {
+        if (row['setting_value'] != null && row['setting_value'].toString().isNotEmpty) {
+          links[row['setting_key'] as String] = row['setting_value'] as String;
+        }
+      }
+      return links;
+    } catch (e) {
+      debugPrint('Error fetching social links: $e');
+      return {};
+    }
+  }
+
+  /// Save Social Media Links to app_settings
+  Future<void> saveSocialLinks(Map<String, String> links) async {
+    try {
+      for (var entry in links.entries) {
+        final existing = await _client
+            .from('app_settings')
+            .select('id')
+            .eq('setting_key', entry.key)
+            .maybeSingle();
+
+        if (existing != null) {
+          await _client
+              .from('app_settings')
+              .update({
+                'setting_value': entry.value,
+                'updated_at': DateTime.now().toUtc().toIso8601String(),
+              })
+              .eq('id', existing['id']);
+        } else {
+          await _client.from('app_settings').insert({
+            'setting_key': entry.key,
+            'setting_value': entry.value,
+            'description': 'Social link for ${entry.key}',
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error saving social links: $e');
+      rethrow;
+    }
+  }
 }
