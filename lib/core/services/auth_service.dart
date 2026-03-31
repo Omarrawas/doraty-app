@@ -66,8 +66,11 @@ class AuthService extends ChangeNotifier {
 
       // Initial data from auth metadata as fallback to avoid "Guest" flicker
       _userProfile = {
-        'full_name': currentUser!.userMetadata?['full_name'],
-        'avatar_url': currentUser!.userMetadata?['avatar_url'],
+        'full_name': currentUser!.userMetadata?['full_name'] ?? 
+                     currentUser!.userMetadata?['name'] ?? 
+                     currentUser!.email?.split('@').first,
+        'avatar_url': currentUser!.userMetadata?['avatar_url'] ?? 
+                      currentUser!.userMetadata?['picture'],
         'email': currentUser!.email,
         'role': 'student', // default
       };

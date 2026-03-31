@@ -352,8 +352,10 @@ class HomeDrawer extends StatelessWidget {
   }
 
   Widget _buildHeader(BuildContext context, Map<String, dynamic>? profile, bool isDark) {
-    final userName = profile?['full_name'] ?? profile?['name'];
-    final photoUrl = profile?['photo_url'] ?? profile?['avatar_url'];
+    // If profile is null, we show the Guest UI
+    final userName = profile?['full_name'] ?? profile?['name'] ?? profile?['email']?.split('@').first;
+    final photoUrl = profile?['avatar_url'] ?? profile?['photo_url'];
+    final isGuest = profile == null;
 
     return Container(
       padding: EdgeInsets.fromLTRB(20, 60, 20, 20),
@@ -381,7 +383,7 @@ class HomeDrawer extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  userName != null ? '${_t(context, 'welcome_with_name')} $userName 👋' : 'أهلاً بك يا زائر 👋',
+                  !isGuest ? '${_t(context, 'welcome_with_name')} ${userName ?? ''} 👋' : 'أهلاً بك يا زائر 👋',
                   style: TextStyle(
                     color: AppColors.getTextColor(context),
                     fontSize: 18,
