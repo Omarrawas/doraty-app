@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-// No import needed here
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
@@ -43,7 +42,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _selectedUniversityYear;
   final TextEditingController _studentSpecializationController = TextEditingController();
   bool _termsAccepted = true;
-  File? _profileImage;
+  Uint8List? _profileImageBytes;
+  String? _profileImageName;
 
   // Teacher Specific Fields
   final TextEditingController _teacherPhoneController = TextEditingController();
@@ -52,8 +52,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _teacherBioController = TextEditingController();
   bool _giveFullCourses = false;
   bool _teachPrivateHours = false;
-  File? _cvFile;
-  File? _certificateFile;
+  Uint8List? _cvFileBytes;
+  String? _cvFileName;
+  Uint8List? _certificateFileBytes;
+  String? _certificateFileName;
 
   // Lists for Grade/Year
   final List<String> _schoolGrades = [
@@ -105,9 +107,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // --- Image/File Picking ---
   Future<void> _pickProfileImage() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
-    if (result != null && result.files.single.path != null) {
-      setState(() => _profileImage = File(result.files.single.path!));
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
+    if (result != null && result.files.single.bytes != null) {
+      setState(() {
+        _profileImageBytes = result.files.single.bytes;
+        _profileImageName = result.files.single.name;
+      });
     }
   }
 
@@ -115,13 +123,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx', 'jpg', 'png'],
+      withData: true,
     );
-    if (result != null && result.files.single.path != null) {
+    if (result != null && result.files.single.bytes != null) {
       setState(() {
         if (isCV) {
-          _cvFile = File(result.files.single.path!);
+          _cvFileBytes = result.files.single.bytes;
+          _cvFileName = result.files.single.name;
         } else {
-          _certificateFile = File(result.files.single.path!);
+          _certificateFileBytes = result.files.single.bytes;
+          _certificateFileName = result.files.single.name;
         }
       });
     }
@@ -189,19 +200,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String? cvUrl;
       String? certUrl;
 
-      if (_profileImage != null) {
-        final path = '${_selectedRole}s/$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.${_profileImage!.path.split('.').last}';
-        avatarUrl = await GitHubStorageService.uploadFile(file: _profileImage!, path: path, commitMessage: 'Avatar for $userId');
+      if (_profileImageBytes != null && _profileImageName != null) {
+        final ext = _profileImageName!.split('.').last;
+        final path = '${_selectedRole}s/$userId/avatar_${DateTime.now().millisecondsSinceEpoch}.$ext';
+        avatarUrl = await GitHubStorageService.uploadFile(
+          bytes: _profileImageBytes!, 
+          path: path, 
+          commitMessage: 'Avatar for $userId'
+        );
       }
 
       if (_selectedRole == 'teacher') {
-        if (_cvFile != null) {
-          final path = 'teachers/$userId/cv_${DateTime.now().millisecondsSinceEpoch}.${_cvFile!.path.split('.').last}';
-          cvUrl = await GitHubStorageService.uploadFile(file: _cvFile!, path: path, commitMessage: 'CV for $userId');
+        if (_cvFileBytes != null && _cvFileName != null) {
+          final ext = _cvFileName!.split('.').last;
+          final path = 'teachers/$userId/cv_${DateTime.now().millisecondsSinceEpoch}.$ext';
+          cvUrl = await GitHubStorageService.uploadFile(
+            bytes: _cvFileBytes!, 
+            path: path, 
+            commitMessage: 'CV for $userId'
+          );
         }
-        if (_certificateFile != null) {
-          final path = 'teachers/$userId/cert_${DateTime.now().millisecondsSinceEpoch}.${_certificateFile!.path.split('.').last}';
-          certUrl = await GitHubStorageService.uploadFile(file: _certificateFile!, path: path, commitMessage: 'Cert for $userId');
+        if (_certificateFileBytes != null && _certificateFileName != null) {
+          final ext = _certificateFileName!.split('.').last;
+          final path = 'teachers/$userId/cert_${DateTime.now().millisecondsSinceEpoch}.$ext';
+          certUrl = await GitHubStorageService.uploadFile(
+            bytes: _certificateFileBytes!, 
+            path: path, 
+            commitMessage: 'Cert for $userId'
+          );
         }
       }
 
@@ -390,8 +416,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               width: 100, height: 100,
               decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.getBorderColor(context), width: 2)),
               child: ClipOval(
-                child: _profileImage != null 
-                  ? Image.file(_profileImage!, fit: BoxFit.cover) 
+                child: _profileImageBytes != null 
+                  ? Image.memory(_profileImageBytes!, fit: BoxFit.cover) 
                   : Container(color: AppColors.getTextColor(context).withOpacity(0.10), child: Icon(Icons.person, size: 50, color: AppColors.getTextColor(context).withOpacity(0.60))),
               ),
             ),
@@ -478,9 +504,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         _buildSubscriptionOption(_t('give_full_courses_label'), _giveFullCourses, (v) => setState(() => _giveFullCourses = v!)),
         _buildSubscriptionOption(_t('teach_private_hours_label'), _teachPrivateHours, (v) => setState(() => _teachPrivateHours = v!)),
         SizedBox(height: 16),
-        _buildFilePickerSection(_t('cv_label'), _cvFile, () => _pickFile(true)),
+        _buildFilePickerSection(_t('cv_label'), _cvFileBytes, _cvFileName, () => _pickFile(true)),
         SizedBox(height: 12),
-        _buildFilePickerSection(_t('certificates_label'), _certificateFile, () => _pickFile(false)),
+        _buildFilePickerSection(_t('certificates_label'), _certificateFileBytes, _certificateFileName, () => _pickFile(false)),
         SizedBox(height: 16),
         _buildGlassField(controller: _teacherBioController, label: _t('short_bio_hint'), icon: Icons.description_outlined, maxLines: 3),
       ],
@@ -505,17 +531,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return CheckboxListTile(title: Text(title, style: TextStyle(color: AppColors.getTextColor(context), fontSize: 14, fontFamily: 'Cairo')), value: value, onChanged: onChanged, activeColor: AppColors.primaryPurple, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading);
   }
 
-  Widget _buildFilePickerSection(String title, File? file, VoidCallback onTap) {
+  Widget _buildFilePickerSection(String title, Uint8List? bytes, String? fileName, VoidCallback onTap) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.all(12),
         decoration: BoxDecoration(color: AppColors.getGlassColor(context, opacity: 0.15), borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.getBorderColor(context))),
         child: Row(children: [
-          Icon(file != null ? Icons.check_circle_rounded : Icons.upload_file_rounded, color: file != null ? Colors.greenAccent : AppColors.getTextColor(context, secondary: true), size: 20),
+          Icon(bytes != null ? Icons.check_circle_rounded : Icons.upload_file_rounded, color: bytes != null ? Colors.greenAccent : AppColors.getTextColor(context, secondary: true), size: 20),
           SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold, fontSize: 13)), Text(file != null ? file.path.split('/').last : _t('no_file_selected'), style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 11), overflow: TextOverflow.ellipsis)])),
-          Text(file != null ? _t('change') : _t('choose'), style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12)),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold, fontSize: 13)), Text(fileName ?? _t('no_file_selected'), style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 11), overflow: TextOverflow.ellipsis)])),
+          Text(bytes != null ? _t('change') : _t('choose'), style: TextStyle(color: AppColors.primaryBlue, fontWeight: FontWeight.bold, fontSize: 12)),
         ]),
       ),
     );

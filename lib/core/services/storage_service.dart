@@ -1,20 +1,20 @@
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'github_storage_service.dart';
 import 'supabase_service.dart';
 
 class StorageService {
-  /// Upload avatar image to GitHub
-  Future<String> uploadAvatar(File file) async {
+  /// Upload avatar image to GitHub (Web-friendly)
+  Future<String> uploadAvatar(Uint8List bytes, String fileName) async {
     try {
       final userId = SupabaseService.instance.currentUserId;
       if (userId == null) throw Exception('User not authenticated');
 
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '$timestamp.jpg';
-      final path = 'avatars/$userId/$fileName';
+      final extension = fileName.split('.').last;
+      final path = 'avatars/$userId/$timestamp.$extension';
 
       return await GitHubStorageService.uploadFile(
-        file: file,
+        bytes: bytes,
         path: path,
         commitMessage: 'Upload avatar for user $userId',
       );
@@ -23,15 +23,15 @@ class StorageService {
     }
   }
 
-  /// Upload course thumbnail to GitHub
-  Future<String> uploadCourseThumbnail(File file, String courseId) async {
+  /// Upload course thumbnail to GitHub (Web-friendly)
+  Future<String> uploadCourseThumbnail(Uint8List bytes, String fileName, String courseId) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final fileName = '$timestamp.jpg';
-      final path = 'course-thumbnails/$courseId/$fileName';
+      final extension = fileName.split('.').last;
+      final path = 'course-thumbnails/$courseId/$timestamp.$extension';
 
       return await GitHubStorageService.uploadFile(
-        file: file,
+        bytes: bytes,
         path: path,
         commitMessage: 'Upload course thumbnail for course $courseId',
       );
@@ -40,16 +40,15 @@ class StorageService {
     }
   }
 
-  /// Upload teacher document (CV or Certificate) to GitHub
-  Future<String> uploadTeacherDocument(File file, String userId, String type) async {
+  /// Upload teacher document (Web-friendly)
+  Future<String> uploadTeacherDocument(Uint8List bytes, String fileName, String userId, String type) async {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final extension = file.path.split('.').last;
-      final fileName = '${type}_$timestamp.$extension';
-      final path = 'teacher-documents/$userId/$fileName';
+      final extension = fileName.split('.').last;
+      final path = 'teacher-documents/$userId/${type}_$timestamp.$extension';
 
       return await GitHubStorageService.uploadFile(
-        file: file,
+        bytes: bytes,
         path: path,
         commitMessage: 'Upload $type for teacher $userId',
       );

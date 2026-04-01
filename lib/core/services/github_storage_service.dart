@@ -1,7 +1,5 @@
-import 'dart:convert';
-import 'dart:io';
-import 'package:http/http.dart' as http;
-import '../env/multi_env.dart';
+import 'package:flutter/foundation.dart';
+import 'github_api_service.dart';
 
 /// Service for handling GitHub-based file storage
 /// Converts GitHub URLs to raw content URLs and manages file references
@@ -12,38 +10,37 @@ class GitHubStorageService {
   static const String repoOwner = 'Omarrawas';
   static const String repoName = 'doraty-files';
 
-  /// Upload a file to GitHub repository
+  /// Upload a file to GitHub repository (Web compliant)
   static Future<String> uploadFile({
-    required File file,
-    required String path,
+    Uint8List? bytes,
+    String? path,
     String? commitMessage,
+    // Backward compatibility for mobile:
+    dynamic file, 
   }) async {
     try {
-      final bytes = await file.readAsBytes();
-      final base64Content = base64Encode(bytes);
+      Uint8List? fileBytes = bytes;
       
-      final url = 'https://api.github.com/repos/$repoOwner/$repoName/contents/$path';
-      
-      final response = await http.put(
-        Uri.parse(url),
-        headers: {
-          'Authorization': 'token ${Env.githubToken}',
-          'Accept': 'application/vnd.github.v3+json',
-        },
-        body: jsonEncode({
-          'message': commitMessage ?? 'Upload file: $path',
-          'content': base64Content,
-          'branch': 'main',
-        }),
-      );
-
-      if (response.statusCode == 201 || response.statusCode == 200) {
-        return buildRawUrl(path);
-      } else {
-        final error = jsonDecode(response.body);
-        throw 'فشل الرفع إلى GitHub: ${error['message'] ?? response.statusCode}';
+      // If file is provided (legacy mobile support), read its bytes
+      if (fileBytes == null && file != null) {
+        // We use dynamic and check if it's a File to avoid breaking things, 
+        // but we should eventually move everything to bytes.
+        fileBytes = await file.readAsBytes();
       }
+
+      if (fileBytes == null || path == null) {
+        throw 'بيانات الملف أو المسار غير صالحة';
+      }
+
+      final githubService = GitHubApiService();
+      return await githubService.uploadFile(
+        bytes: fileBytes,
+        fileName: path.split('/').last,
+        remotePath: path,
+        commitMessage: commitMessage,
+      );
     } catch (e) {
+      debugPrint('Error in GitHubStorageService.uploadFile: $e');
       rethrow;
     }
   }

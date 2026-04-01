@@ -2,10 +2,12 @@
 // Allows changing name, profile picture, and theme (dark/light)
 
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/theme_provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/services/supabase_service.dart';
 
 import '../../core/utils/error_utils.dart';
@@ -22,7 +24,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final ImagePicker _picker = ImagePicker();
 
   String? _name;
-  XFile? _imageFile;
+  Uint8List? _imageBytes;
 
   @override
   void initState() {
@@ -40,10 +42,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _pickImage() async {
-    final XFile? picked = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 512,
+      maxHeight: 512,
+    );
     if (picked != null) {
+      final bytes = await picked.readAsBytes();
       setState(() {
-        _imageFile = picked;
+        _imageBytes = bytes;
       });
     }
   }
@@ -98,10 +105,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: _pickImage,
                 child: CircleAvatar(
                   radius: 60,
-                  backgroundImage: _imageFile != null
-                      ? FileImage(File(_imageFile!.path))
+                  backgroundColor: AppColors.getGlassColor(context, opacity: 0.1),
+                  backgroundImage: _imageBytes != null
+                      ? MemoryImage(_imageBytes!)
                       : null,
-                  child: _imageFile == null
+                  child: _imageBytes == null
                       ? const Icon(Icons.camera_alt, size: 40)
                       : null,
                 ),

@@ -1,5 +1,5 @@
 import 'package:go_router/go_router.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -38,7 +38,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   // Profile editing data
   String? _userRole;
   Map<String, dynamic>? _specializedProfile;
-  File? _selectedImage;
+  Uint8List? _selectedImageBytes;
   final ImagePicker _imagePicker = ImagePicker();
   String? _currentAvatarUrl;
 
@@ -147,15 +147,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
 
       if (image != null) {
+        final bytes = await image.readAsBytes();
         setState(() {
-          _selectedImage = File(image.path);
+          _selectedImageBytes = bytes;
         });
         
         // Upload image
         final userId = _userProfile?['id'];
         if (userId != null) {
           final imageUrl = await StorageService().uploadAvatar(
-            _selectedImage!,
+            bytes,
+            image.name,
           );
           await _updateUserProfile({'avatar_url': imageUrl});
         }
@@ -462,8 +464,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Stack(
           children: [
             ClipOval(
-              child: _selectedImage != null
-                  ? Image.file(_selectedImage!, fit: BoxFit.cover)
+              child: _selectedImageBytes != null
+                  ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover)
                   : (_currentAvatarUrl != null && _currentAvatarUrl!.isNotEmpty)
                       ? Image.network(
                           _currentAvatarUrl!,

@@ -6036,25 +6036,32 @@ class DatabaseService {
   // ==================== APP SETTINGS & SOCIAL LINKS ====================
 
   /// Get Social Media Links from app_settings
-  Future<Map<String, String>> getSocialLinks() async {
-    try {
-      final response = await _client
-          .from('app_settings')
-          .select('setting_key, setting_value')
-          .like('setting_key', 'social_%');
-          
-      final List rows = response as List;
-      Map<String, String> links = {};
-      for (var row in rows) {
-        if (row['setting_value'] != null && row['setting_value'].toString().isNotEmpty) {
-          links[row['setting_key'] as String] = row['setting_value'] as String;
+  Future<Map<String, String>> getSocialLinks({bool forceRefresh = false}) async {
+    return fetchWithCache(
+      key: CacheKeys.socialLinks,
+      forceRefresh: forceRefresh,
+      duration: const Duration(hours: 12),
+      fetcher: () async {
+        try {
+          final response = await _client
+              .from('app_settings')
+              .select('setting_key, setting_value')
+              .like('setting_key', 'social_%');
+              
+          final List rows = response as List;
+          Map<String, String> links = {};
+          for (var row in rows) {
+            if (row['setting_value'] != null && row['setting_value'].toString().isNotEmpty) {
+              links[row['setting_key'] as String] = row['setting_value'] as String;
+            }
+          }
+          return links;
+        } catch (e) {
+          debugPrint('Error fetching social links: $e');
+          return {};
         }
-      }
-      return links;
-    } catch (e) {
-      debugPrint('Error fetching social links: $e');
-      return {};
-    }
+      },
+    );
   }
 
   /// Save Social Media Links to app_settings
@@ -6083,6 +6090,8 @@ class DatabaseService {
           });
         }
       }
+      // Clear cache after update
+      await LocalDatabase().remove(CacheKeys.socialLinks);
     } catch (e) {
       debugPrint('Error saving social links: $e');
       rethrow;
