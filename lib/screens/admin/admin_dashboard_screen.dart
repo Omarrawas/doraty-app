@@ -111,16 +111,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                               final double width = constraints.maxWidth;
                               int statsCrossAxisCount = 2;
                               int actionsCrossAxisCount = 2;
-                              double actionsAspectRatio = 1.3;
+                              double actionsAspectRatio = 1.55;
 
                               if (width > 1200) {
                                 statsCrossAxisCount = 4;
                                 actionsCrossAxisCount = 4;
-                                actionsAspectRatio = 1.5;
+                                actionsAspectRatio = 1.8;
                               } else if (width > 800) {
                                 statsCrossAxisCount = 3;
                                 actionsCrossAxisCount = 3;
-                                actionsAspectRatio = 1.4;
+                                actionsAspectRatio = 1.7;
                               }
 
                               return SingleChildScrollView(
@@ -161,7 +161,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       padding: EdgeInsets.all(20),
       child: Row(
         children: [
-          // Back Button
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: BackdropFilter(
@@ -239,88 +238,98 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildPerformanceSummary(double screenWidth) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8),
-          child: Text(
-            'ملخص الأداء والنمو',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.normal,
-              color: AppColors.getTextColor(context),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.getGlassColor(context, opacity: 0.2),
+              width: 1,
             ),
           ),
-        ),
-        SizedBox(height: 16),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.getGlassColor(context, opacity: 0.15),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: AppColors.getGlassColor(context, opacity: 0.2),
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      _buildSummaryItem('إجمالي الطلاب', '${_stats['total_users'] ?? 0}', Icons.trending_up, Colors.greenAccent),
-                      _buildSummaryItem('الدورات النشطة', '${_stats['total_courses'] ?? 0}', Icons.school_outlined, Colors.blueAccent),
-                      _buildSummaryItem('محاولات ناجحة', '${_stats['total_attempts'] ?? 0}', Icons.check_circle_outline, Colors.orangeAccent),
+                      Text(
+                        'ملخص الأداء والنمو',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.getTextColor(context),
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Row(
+                        children: [
+                          _buildSummaryMiniItem('${_stats['total_users'] ?? 0}', 'طالب', Colors.greenAccent),
+                          SizedBox(width: 16),
+                          _buildSummaryMiniItem('${_stats['total_courses'] ?? 0}', 'دورة', Colors.blueAccent),
+                          SizedBox(width: 16),
+                          _buildSummaryMiniItem('${_stats['total_attempts'] ?? 0}', 'محاولة', Colors.orangeAccent),
+                        ],
+                      ),
                     ],
                   ),
-                  SizedBox(height: 30),
-                  // Visual Indicator / Simple Chart
-                  SizedBox(
-                    height: 100,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(7, (index) {
-                        double heightFactor = (index + 1) * 0.14; // Mock growth visualization
-                        return _buildChartBar(heightFactor, index == 6);
-                      }),
-                    ),
+                ),
+                VerticalDivider(color: AppColors.getTextColor(context).withOpacity(0.1), width: 32),
+                Expanded(
+                  flex: 2,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        height: 50,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: List.generate(7, (index) {
+                            double heightFactor = (index + 2) * 0.12; 
+                            return _buildChartBar(heightFactor, index == 6);
+                          }),
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'نمو أسبوعي +12%',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: AppColors.getTextColor(context).withOpacity(0.5),
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 12),
-                  Text(
-                    'معدل نمو المنصة خلال الأسبوع الأخير +12%',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.getTextColor(context).withOpacity(0.5),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildSummaryItem(String label, String value, IconData icon, Color color) {
+  Widget _buildSummaryMiniItem(String value, String label, Color color) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: color, size: 20),
-        SizedBox(height: 8),
         Text(
           value,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
         ),
         Text(
           label,
-          style: TextStyle(fontSize: 10, color: AppColors.getTextColor(context).withOpacity(0.5)),
+          style: TextStyle(fontSize: 9, color: AppColors.getTextColor(context).withOpacity(0.5)),
         ),
       ],
     );
@@ -328,17 +337,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildChartBar(double heightFactor, bool isLast) {
     return Container(
-      width: 25,
-      height: 100 * heightFactor,
+      width: 12,
+      height: 50 * heightFactor,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.bottomCenter,
-          end: Alignment.topCenter,
-          colors: isLast 
-            ? [AppColors.primaryPurple, AppColors.primaryPurple.withOpacity(0.5)]
-            : [AppColors.getTextColor(context).withOpacity(0.1), AppColors.getTextColor(context).withOpacity(0.2)],
-        ),
-        borderRadius: BorderRadius.circular(6),
+        color: isLast 
+            ? AppColors.primaryPurple 
+            : AppColors.getTextColor(context).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
       ),
     );
   }
@@ -347,10 +352,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return GridView.count(
       crossAxisCount: crossAxisCount,
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
-      childAspectRatio: 1.5,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 8,
+      crossAxisSpacing: 8,
+      childAspectRatio: 2.5,
       children: [
         _buildStatCard(
           icon: Icons.people,
@@ -387,54 +392,51 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required Color color,
   }) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.getGlassColor(context, opacity: 0.15),
-            borderRadius: BorderRadius.circular(20),
+            color: AppColors.getGlassColor(context, opacity: 0.1),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: AppColors.getGlassColor(context, opacity: 0.2),
-              width: 1.5,
+              width: 1,
             ),
           ),
-          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
             children: [
               Container(
-                padding: EdgeInsets.all(8),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
                   color: color.withOpacity(0.15),
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: color.withOpacity(0.1),
-                      blurRadius: 6,
-                      offset: Offset(0, 2),
-                    )
+                ),
+                child: Icon(icon, color: color, size: 15),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.getTextColor(context),
+                      ),
+                    ),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: AppColors.getTextColor(context).withOpacity(0.6),
+                      ),
+                    ),
                   ],
-                ),
-                child: Icon(icon, color: color, size: 20),
-              ),
-              SizedBox(height: 8),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.normal,
-                  color: AppColors.getTextColor(context),
-                  letterSpacing: 0.5,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AppColors.getTextColor(context).withOpacity(0.6),
-                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -574,7 +576,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Text(
             _t('admin_quick_actions'),
             style: TextStyle(
@@ -584,10 +586,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         GridView.builder(
           shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           itemCount: actions.length,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
@@ -632,36 +634,36 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           child: InkWell(
             onTap: onTap,
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Container(
-                    padding: EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(7),
                     decoration: BoxDecoration(
                       color: color.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(icon, color: color, size: 22),
+                    child: Icon(icon, color: color, size: 20),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Text(
                     title,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppColors.getTextColor(context),
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
                     subtitle,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 9,
                       color: AppColors.getTextColor(context).withOpacity(0.5),
                     ),
                     maxLines: 1,
@@ -681,7 +683,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -703,14 +705,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
         ),
-        SizedBox(height: 16),
+        const SizedBox(height: 16),
         if (_recentAttempts.isEmpty)
           ClipRRect(
             borderRadius: BorderRadius.circular(16),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
-                padding: EdgeInsets.all(30),
+                padding: const EdgeInsets.all(30),
                 decoration: BoxDecoration(
                   color: AppColors.getGlassColor(context, opacity: 0.1),
                   borderRadius: BorderRadius.circular(16),
@@ -732,9 +734,9 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         else
           ListView.separated(
             shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
+            physics: const NeverScrollableScrollPhysics(),
             itemCount: _recentAttempts.length,
-            separatorBuilder: (context, index) => SizedBox(height: 12),
+            separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final attempt = _recentAttempts[index];
               final user = attempt['users'] as Map<String, dynamic>?;
@@ -757,7 +759,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                     ),
                     child: ListTile(
-                      contentPadding: EdgeInsets.symmetric(
+                      contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
                       leading: CircleAvatar(
                         radius: 24,
@@ -777,7 +779,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(height: 4),
+                          const SizedBox(height: 4),
                           Text(
                             exam?['title'] ?? _t('admin_unknown_exam'),
                             style: TextStyle(
@@ -786,7 +788,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   .withOpacity(0.6),
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             '${date.day}/${date.month} - ${date.hour}:${date.minute.toString().padLeft(2, '0')}',
                             style: TextStyle(
@@ -798,7 +800,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         ],
                       ),
                       trailing: Container(
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
                           color:

@@ -763,6 +763,9 @@ class AppStrings {
       'transaction_number': 'رقم العملية *',
       'transaction_hint': 'أدخل رقم عملية التحويل',
       'transfer_complete_tip': 'بعد إتمام التحويل، أدخل رقم العملية الذي حصلت عليه من التطبيق',
+      'social_links_saved_success': 'تم حفظ الحسابات بنجاح!',
+      'error_loading_links': 'خطأ في جلب الروابط',
+      'error_saving_links': 'حدث خطأ أثناء الحفظ',
     },
     'en': {
       'cart_title': 'Shopping Cart',
@@ -1538,6 +1541,9 @@ class AppStrings {
       'transfer_complete_tip': 'After completing the transfer, enter the transaction number you received from the app',
       'bundles_label': 'Related Packages',
       'no_bundles_available': 'No packages available at the moment',
+      'social_links_saved_success': 'Social links saved successfully!',
+      'error_loading_links': 'Error loading social links',
+      'error_saving_links': 'Error saving social links',
     },
   };
 
