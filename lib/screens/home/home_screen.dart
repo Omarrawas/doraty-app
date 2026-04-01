@@ -6,10 +6,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_provider.dart';
 import '../../models/course.dart';
 import '../../core/services/database_service.dart';
-import '../../widgets/dynamic_gradient_background.dart';
 import '../teacher/teacher_profile_screen.dart';
 import '../../models/category_model.dart';
-import '../explore/widgets/category_card.dart';
 import '../../core/providers/navigation_provider.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../core/services/app_init_state.dart';
@@ -31,6 +29,219 @@ import '../../core/utils/safe_parser.dart';
 import '../../models/banner_ad.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:lottie/lottie.dart';
+
+// ─── Windows 2000 Design System ─────────────────────────────────────────────
+
+class Win2K {
+  // Classic Win2K color palette
+  static const Color silver = Color(0xFFD4D0C8);
+  static const Color silverLight = Color(0xFFECE9D8);
+  static const Color silverDark = Color(0xFF808080);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color shadow = Color(0xFF808080);
+  static const Color darkShadow = Color(0xFF404040);
+  static const Color titleBarStart = Color(0xFF0A246A);
+  static const Color titleBarEnd = Color(0xFF3A6EA5);
+  static const Color titleBarText = Color(0xFFFFFFFF);
+  static const Color windowBg = Color(0xFFECE9D8);
+  static const Color desktopTeal = Color(0xFF3A6EA5);
+  static const Color accent = Color(0xFF000080);
+  static const Color accentBlue = Color(0xFF0000FF);
+  static const Color linkBlue = Color(0xFF0000FF);
+  static const Color selectedBg = Color(0xFF316AC5);
+  static const Color selectedText = Color(0xFFFFFFFF);
+  static const Color textDark = Color(0xFF000000);
+  static const Color textGray = Color(0xFF555555);
+  static const Color buttonFace = Color(0xFFD4D0C8);
+  static const Color menuBg = Color(0xFFFFFFFF);
+  static const Color tooltipBg = Color(0xFFFFFFE1);
+  static const Color progressBar = Color(0xFF00009C);
+  static const Color greenSuccess = Color(0xFF008000);
+
+  // Raised (button) border
+  static BoxDecoration raised({Color bg = Win2K.buttonFace}) => BoxDecoration(
+        color: bg,
+        border: Border(
+          top: BorderSide(color: Win2K.white, width: 1.5),
+          left: BorderSide(color: Win2K.white, width: 1.5),
+          bottom: BorderSide(color: Win2K.darkShadow, width: 1.5),
+          right: BorderSide(color: Win2K.darkShadow, width: 1.5),
+        ),
+      );
+
+  // Sunken (input/inset) border
+  static BoxDecoration sunken({Color bg = Win2K.white}) => BoxDecoration(
+        color: bg,
+        border: Border(
+          top: BorderSide(color: Win2K.darkShadow, width: 1.5),
+          left: BorderSide(color: Win2K.darkShadow, width: 1.5),
+          bottom: BorderSide(color: Win2K.white, width: 1.5),
+          right: BorderSide(color: Win2K.white, width: 1.5),
+        ),
+      );
+
+  // Group box border (like a dialog section)
+  static BoxDecoration groupBox() => BoxDecoration(
+        color: Win2K.silverLight,
+        border: Border(
+          top: BorderSide(color: Win2K.shadow, width: 1),
+          left: BorderSide(color: Win2K.shadow, width: 1),
+          bottom: BorderSide(color: Win2K.white, width: 1),
+          right: BorderSide(color: Win2K.white, width: 1),
+        ),
+      );
+
+  // Classic title bar gradient
+  static BoxDecoration titleBar() => const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [titleBarStart, titleBarEnd],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+      );
+
+  static TextStyle get sysFont => const TextStyle(
+        fontFamily: 'Cairo',
+        fontSize: 12,
+        color: textDark,
+        letterSpacing: 0,
+      );
+
+  static TextStyle get titleFont => const TextStyle(
+        fontFamily: 'Cairo',
+        fontSize: 13,
+        fontWeight: FontWeight.bold,
+        color: titleBarText,
+        letterSpacing: 0,
+      );
+}
+
+// ─── Win2K Raised Button Widget ─────────────────────────────────────────────
+
+class Win2KButton extends StatefulWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final double? width;
+  final Color? color;
+  final Color? textColor;
+  final IconData? icon;
+
+  const Win2KButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.width,
+    this.color,
+    this.textColor,
+    this.icon,
+  });
+
+  @override
+  State<Win2KButton> createState() => _Win2KButtonState();
+}
+
+class _Win2KButtonState extends State<Win2KButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onPressed?.call();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: Container(
+        width: widget.width,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: _pressed
+            ? Win2K.sunken(bg: widget.color ?? Win2K.buttonFace)
+            : Win2K.raised(bg: widget.color ?? Win2K.buttonFace),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (widget.icon != null) ...[
+              Icon(widget.icon,
+                  size: 14, color: widget.textColor ?? Win2K.textDark),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              widget.label,
+              style: Win2K.sysFont.copyWith(
+                  color: widget.textColor ?? Win2K.textDark,
+                  fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Win2K Section Group Box ─────────────────────────────────────────────────
+
+class Win2KGroupBox extends StatelessWidget {
+  final String title;
+  final Widget child;
+  final VoidCallback? onSeeAll;
+  final String? seeAllLabel;
+
+  const Win2KGroupBox({
+    super.key,
+    required this.title,
+    required this.child,
+    this.onSeeAll,
+    this.seeAllLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title bar row
+          Container(
+            decoration: Win2K.titleBar(),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Row(
+              children: [
+                const Icon(Icons.folder_open,
+                    size: 14, color: Win2K.titleBarText),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(title, style: Win2K.titleFont),
+                ),
+                if (onSeeAll != null)
+                  GestureDetector(
+                    onTap: onSeeAll,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: Win2K.raised(),
+                      child: Text(
+                        seeAllLabel ?? 'See All',
+                        style: Win2K.sysFont,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Container(
+            decoration: Win2K.groupBox(),
+            child: child,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Main Home Screen ────────────────────────────────────────────────────────
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -57,8 +268,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Set<String> _enrolledCourseIds = {};
   Set<String> _accessibleCourseIds = {};
-  final Map<String, double> _enrollmentProgress = {}; // courseId -> progress %
-  final Map<String, String> _enrollmentIds = {}; // courseId -> enrollmentId
+  final Map<String, double> _enrollmentProgress = {};
+  final Map<String, String> _enrollmentIds = {};
 
   late PageController _bannerController;
   late PageController _bottomBannerController;
@@ -75,33 +286,25 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Use a dynamic viewport fraction based on screen size (estimated at init)
-    _bannerController = PageController(viewportFraction: 0.85);
-    _bottomBannerController =
-        PageController(viewportFraction: 1.0); // Full width for bottom banner
+    _bannerController = PageController(viewportFraction: 1.0);
+    _bottomBannerController = PageController(viewportFraction: 1.0);
     _startBannerAutoPlay();
     _refreshData();
-
-    // Listen to sync completion
     SyncService().addListener(_onSyncUpdate);
   }
 
   void _onSyncUpdate() {
     if (mounted && !SyncService().isSyncing) {
-      debugPrint('🔄 Sync completed, refreshing UI...');
-      _refreshData(forceRefresh: false); // Reload from now-updated cache
+      _refreshData(forceRefresh: false);
     }
   }
 
   Future<void> _refreshData({bool forceRefresh = false}) async {
     if (_isRefreshing) return;
-    
-    // 1. Wait for services to be ready if they aren't yet
+
     if (!AppInitState.servicesReady) {
-      debugPrint('⏳ HomeScreen: Services not ready, waiting...');
       int attempts = 0;
       while (!AppInitState.servicesReady && attempts < 50) {
-        // 5s max wait
         await Future.delayed(const Duration(milliseconds: 100));
         attempts++;
       }
@@ -110,23 +313,16 @@ class _HomeScreenState extends State<HomeScreen> {
     if (mounted) setState(() => _isRefreshing = true);
 
     try {
-      debugPrint('🔄 HomeScreen: Refreshing data (force: $forceRefresh)...');
-
-      // Load essential UI data first to show content ASAP
-      // We don't await Future.wait at once to allow individual setState calls to render UI partially
       final essentialTasks = [
         _loadBanners(forceRefresh: forceRefresh),
         _loadCategories(forceRefresh: forceRefresh),
       ];
-
       await Future.wait(essentialTasks);
 
-      // Once essential data is ready (banners/categories), stop showing global loading if they have data
       if (mounted && (_banners.isNotEmpty || _categories.isNotEmpty)) {
         setState(() => _isLoading = false);
       }
 
-      // Load main content in background/parallel
       final contentTasks = [
         _loadCourses(forceRefresh: forceRefresh),
         _loadBundles(forceRefresh: forceRefresh),
@@ -134,16 +330,12 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadTeachers(forceRefresh: forceRefresh),
       ];
 
-      // Load user-specific data
       final userTasks = [
         _loadEnrolledCourses(),
         _checkUnreadNotifications(),
       ];
 
-      // Run everything else
       await Future.wait([...contentTasks, ...userTasks]);
-
-      debugPrint('✅ HomeScreen: Data refresh complete');
     } catch (e) {
       debugPrint('🚨 HomeScreen: Critical error in _refreshData: $e');
     } finally {
@@ -165,38 +357,30 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _startBannerAutoPlay() {
-    Future.delayed(Duration(seconds: 4), () {
+    Future.delayed(const Duration(seconds: 4), () {
       if (!mounted) return;
-
       final bannerCount = _banners.isNotEmpty
           ? _banners.length
           : _allCourses.where((c) => c.isFeatured).length;
 
       if (bannerCount > 0) {
-        // Top Banner
         if (_bannerController.hasClients) {
           final nextPage = (_currentBannerPage + 1) % bannerCount;
           _bannerController
-              .animateToPage(
-            nextPage,
-            duration: Duration(milliseconds: 800),
-            curve: Curves.fastOutSlowIn,
-          )
+              .animateToPage(nextPage,
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.linear)
               .then((_) {
             if (mounted) setState(() => _currentBannerPage = nextPage);
           });
         }
-
-        // Bottom Banner
         if (_bottomBannerController.hasClients && _banners.isNotEmpty) {
           final nextBottomPage =
               (_currentBottomBannerPage + 1) % _banners.length;
           _bottomBannerController
-              .animateToPage(
-            nextBottomPage,
-            duration: Duration(milliseconds: 800),
-            curve: Curves.fastOutSlowIn,
-          )
+              .animateToPage(nextBottomPage,
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.linear)
               .then((_) {
             if (mounted) {
               setState(() => _currentBottomBannerPage = nextBottomPage);
@@ -220,7 +404,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      debugPrint('❌ HomeScreen: Error loading teachers: $e');
+      debugPrint('❌ Error loading teachers: $e');
     }
   }
 
@@ -280,7 +464,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _accessibleCourseIds = accessibleIds.toSet();
         });
       }
-      // Load progress data for enrolled courses
       await _loadEnrollmentProgress();
     } catch (e) {
       debugPrint('Error loading enrolled courses: $e');
@@ -292,7 +475,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final coursesData =
           await _databaseService.getCourses(forceRefresh: forceRefresh);
       final normalized = _normalizeMapList(coursesData);
-
       if (mounted) {
         setState(() {
           _allCourses =
@@ -310,9 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
           await _databaseService.getBanners(forceRefresh: forceRefresh);
       if (mounted) {
         setState(() {
-          final allBanners =
-              bannersData.map((e) => BannerAd.fromJson(e)).toList();
-          _banners = allBanners; // Keep the full list if needed elsewhere
+          _banners = bannersData.map((e) => BannerAd.fromJson(e)).toList();
         });
       }
     } catch (e) {
@@ -348,14 +528,8 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      debugPrint('❌ HomeScreen: Error loading enrollment progress: $e');
+      debugPrint('❌ Error loading enrollment progress: $e');
     }
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Profile is managed by provider, no need for manual local state updates here
   }
 
   Future<void> _checkUnreadNotifications() async {
@@ -377,1231 +551,382 @@ class _HomeScreenState extends State<HomeScreen> {
     final bool isWideScreen = screenWidth > 900;
     final authService = Provider.of<AuthService>(context);
 
-    // If we're on the white screen, it might be because the scaffold's body crashed.
-    // We add an ErrorWidget around any potentially risky areas.
     return Scaffold(
       key: _scaffoldKey,
       drawer: HomeDrawer(categories: _categories),
-      body: RefreshIndicator(
-        onRefresh: () => _refreshData(forceRefresh: true),
-        color: AppColors.primaryPurple,
-        backgroundColor: AppColors.getGlassColor(context),
-        child: DynamicGradientBackground(
-          child: SafeArea(
-            child: CustomScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              slivers: [
-                // Premium Sticky Header
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _HomeHeaderDelegate(
-                    userName: (authService.userProfile?['full_name'] ??
-                            authService.userProfile?['name'])
-                        ?.toString(),
-                    hasUnreadNotifications: _hasUnreadNotifications,
-                    t: _t,
-                    isAuthenticated: authService.isAuthenticated,
-                    isLoadingProfile: authService.isLoadingProfile,
-                    onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-                    onNotificationTap: () => context.push('/notifications'),
-                  ),
-                ),
+      backgroundColor: Win2K.windowBg,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Win2K Title Bar ──────────────────────────────────────
+            _buildWin2KTitleBar(authService),
 
-                // Loading State (Shimmer)
-                if (_isLoading && _allCourses.isEmpty)
-                  SliverToBoxAdapter(child: _buildShimmerLoading()),
+            // ── Win2K Toolbar ────────────────────────────────────────
+            _buildWin2KToolbar(authService),
 
-                if (!_isLoading || _allCourses.isNotEmpty) ...[
-                  // 1. Unified Banner Carousel (Ads & Featured)
-                  _buildUnifiedBannerCarousel(),
+            // ── Status Bar (address bar style) ───────────────────────
+            _buildAddressBar(),
 
-                  // Guest Call-to-Action Banner
-                  if (!authService.isAuthenticated)
-                    _buildGuestBanner(isWideScreen),
+            // ── Content ──────────────────────────────────────────────
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => _refreshData(forceRefresh: true),
+                color: Win2K.accent,
+                backgroundColor: Win2K.silver,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    if (_isLoading && _allCourses.isEmpty)
+                      SliverToBoxAdapter(child: _buildWin2KLoading()),
 
+                    if (!_isLoading || _allCourses.isNotEmpty) ...[
+                      // Banner Carousel
+                      _buildBannerCarousel(),
 
-                  // 2. Search Bar
-                  _buildSearchBar(),
+                      // Guest CTA
+                      if (!authService.isAuthenticated)
+                        _buildGuestBanner(isWideScreen),
 
-                  // Continue Learning
-                  SliverToBoxAdapter(child: _buildContinueLearning()),
+                      // Continue Learning
+                      SliverToBoxAdapter(child: _buildContinueLearning()),
 
-                  // 4. Categories
-                  if (_categories.isNotEmpty) _buildCategoriesSection(),
+                      // Categories
+                      if (_categories.isNotEmpty) _buildCategoriesSection(),
 
-                  // 5. New Courses
-                  if (_allCourses.isNotEmpty)
-                    _buildNewCoursesSection(isWideScreen),
+                      // New Courses
+                      if (_allCourses.isNotEmpty)
+                        _buildNewCoursesSection(isWideScreen),
 
-                  // 6. Most Watched
-                  if (_allCourses.isNotEmpty)
-                    _buildMostWatchedSection(isWideScreen),
+                      // Most Watched
+                      if (_allCourses.isNotEmpty)
+                        _buildMostWatchedSection(isWideScreen),
 
-                  // 7. Tips Section
-                  _buildTipsSection(),
+                      // Tips
+                      _buildTipsSection(),
 
-                  // 8. Featured Packages
-                  _buildPackagesSection(isWideScreen),
+                      // Packages
+                      _buildPackagesSection(isWideScreen),
 
-                  // 8.5 Bottom Ad Banners
-                  _buildBottomAdBanners(),
+                      // Bottom Banners
+                      _buildBottomAdBanners(),
 
-                  // 10. Top Teachers + Become a Trainer — unified card
-                  _buildTeachersAndTrainerSection(isWideScreen),
+                      // Teachers
+                      _buildTeachersSection(isWideScreen),
 
-                  // 9. Recorded Courses
-                  if (_allCourses.isNotEmpty)
-                    _buildRecordedCoursesSection(isWideScreen),
-                ],
-                // Add padding at bottom
-                SliverPadding(padding: EdgeInsets.only(bottom: 100)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionHeaderBox(String title, VoidCallback onSeeAll) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.normal,
-              color: AppColors.getTextColor(context),
-            ),
-          ),
-          GestureDetector(
-            onTap: onSeeAll,
-            child: Text(
-              _t('explore_more'),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.normal,
-                color: AppColors.primaryPurple.withOpacity(0.9),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-  Widget _buildContinueLearning() {
-    // Show only if there are enrolled courses
-    final enrolledCourses =
-        _allCourses.where((c) => _enrolledCourseIds.contains(c.id)).toList();
-    if (enrolledCourses.isEmpty) return SizedBox.shrink();
-
-    final lastCourse =
-        enrolledCourses.first; // For now, just show the first enrolled
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            _t('continue_learning'),
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.normal,
-              color: AppColors.getTextColor(context),
-            ),
-          ),
-          SizedBox(height: 12),
-          Container(
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primaryPurple.withOpacity(0.4),
-                  Colors.blue.withOpacity(0.2),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                  color: AppColors.getGlassColor(context, opacity: 0.1)),
-            ),
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: CachedNetworkImage(
-                    imageUrl: lastCourse.imageUrl ?? '',
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        lastCourse.getLocalizedTitle(
-                            Provider.of<LocaleProvider>(context).locale),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: AppColors.getTextColor(context),
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        '${_t('completed')} ${(_enrollmentProgress[lastCourse.id] ?? 0.0).toStringAsFixed(0)}%', // Replaced hardcoded string
-                        style: TextStyle(
-                          color:
-                              AppColors.getTextColor(context, secondary: true),
-                          fontSize: 12,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value:
-                              (_enrollmentProgress[lastCourse.id] ?? 0.0) / 100,
-                          minHeight: 4,
-                          backgroundColor:
-                              AppColors.getGlassColor(context, opacity: 0.1),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                              Colors.cyanAccent),
-                        ),
-                      ),
+                      // Recorded Courses
+                      if (_allCourses.isNotEmpty)
+                        _buildRecordedCoursesSection(isWideScreen),
                     ],
-                  ),
-                ),
-                SizedBox(width: 8),
-                IconButton(
-                  onPressed: () {
-                    final identifier = lastCourse.slug.isNotEmpty ? lastCourse.slug : lastCourse.id;
-                    context.push('/course/$identifier');
-                  },
-                  icon: Icon(Icons.play_circle_fill,
-                      color: AppColors.primaryPurple.withOpacity(0.9),
-                      size: 40),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 20),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildShimmerLoading() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Banner Shimmer
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          child: ShimmerLoader.rectangular(
-            height: 180,
-            shapeBorder: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(20)),
-            ),
-          ),
-        ),
-        SizedBox(height: 20),
-        // Section Title Shimmer
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: ShimmerLoader.rectangular(height: 20, width: 150),
-        ),
-        SizedBox(height: 15),
-        // Teacher Avatars Shimmer
-        SizedBox(
-          height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 20),
-            itemCount: 5,
-            itemBuilder: (context, index) => Padding(
-              padding: EdgeInsetsDirectional.only(start: 16),
-              child: Column(
-                children: [
-                  ShimmerLoader.circular(height: 65, width: 65),
-                  SizedBox(height: 8),
-                  ShimmerLoader.rectangular(height: 12, width: 50),
-                ],
-              ),
-            ),
-          ),
-        ),
-        SizedBox(height: 30),
-        // Courses Shimmer
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: ShimmerLoader.rectangular(height: 24, width: 120),
-        ),
-        SizedBox(height: 16),
-        ...List.generate(
-            3,
-            (index) => Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: CourseCardShimmer(),
-                )),
-      ],
-    );
-  }
-
-  Widget _buildGuestBanner(bool isWideScreen) {
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF9D50BB), Color(0xFF6E48AA)],
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF6E48AA).withOpacity(0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              // Decorative elements inside the banner
-              Positioned(
-                right: -30,
-                top: -30,
-                child: Container(
-                  width: 120, height: 120,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.08)),
-                ),
-              ),
-              Positioned(
-                left: -20,
-                bottom: -40,
-                child: Container(
-                  width: 140, height: 140,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.05)),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 28),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'انضم إلى مجتمع دوراتي!',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'سجل الآن كطالب لتتعلم مهارات جديدة، أو كمدرب لتنشر دوراتك.',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.9),
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: ElevatedButton(
-                            onPressed: () => context.push('/register'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF6E48AA),
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            child: const Text('إنشاء حساب', style: TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 2,
-                          child: OutlinedButton(
-                            onPressed: () => context.push('/login'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: const BorderSide(color: Colors.white, width: 1.5),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                            ),
-                            child: const Text('تسجيل دخول'),
-                          ),
-                        ),
-                      ],
-                    ),
+                    const SliverPadding(padding: EdgeInsets.only(bottom: 80)),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+
+            // ── Win2K Status Bar ─────────────────────────────────────
+            _buildStatusBar(),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildSearchBar() {
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-    return SliverToBoxAdapter(
+  // ─── Win2K Title Bar ────────────────────────────────────────────────────────
+
+  Widget _buildWin2KTitleBar(AuthService authService) {
+    return Container(
+      height: 28,
+      decoration: Win2K.titleBar(),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          // App icon
+          Container(
+            width: 16,
+            height: 16,
+            color: Win2K.accent,
+            child: const Icon(Icons.school, size: 12, color: Win2K.titleBarText),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'دوراتي - Doraty Learning Platform',
+            style: Win2K.titleFont,
+          ),
+          const Spacer(),
+          // Window control buttons
+          _win2KWindowButton(Icons.minimize, onTap: () {}),
+          const SizedBox(width: 2),
+          _win2KWindowButton(Icons.crop_square, onTap: () {}),
+          const SizedBox(width: 2),
+          _win2KWindowButton(Icons.close, onTap: () {}, isClose: true),
+        ],
+      ),
+    );
+  }
+
+  Widget _win2KWindowButton(IconData icon,
+      {required VoidCallback onTap, bool isClose = false}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 18,
+        height: 18,
+        decoration: isClose
+            ? Win2K.raised(bg: const Color(0xFFD44040))
+            : Win2K.raised(),
+        child: Icon(icon, size: 10, color: Win2K.textDark),
+      ),
+    );
+  }
+
+  // ─── Win2K Menu Bar / Toolbar ────────────────────────────────────────────────
+
+  Widget _buildWin2KToolbar(AuthService authService) {
+    return Container(
+      height: 26,
+      decoration: const BoxDecoration(
+        color: Win2K.silver,
+        border: Border(
+          bottom: BorderSide(color: Win2K.shadow, width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          _menuBarItem('File'),
+          _menuBarItem('View'),
+          _menuBarItem('Favorites'),
+          _menuBarItem('Tools'),
+          _menuBarItem('Help'),
+          const VerticalDivider(width: 1, color: Win2K.shadow),
+          const SizedBox(width: 6),
+          // Toolbar icons
+          _toolbarIconBtn(Icons.arrow_back,
+              onTap: () => Navigator.maybePop(context)),
+          _toolbarIconBtn(Icons.refresh,
+              onTap: () => _refreshData(forceRefresh: true)),
+          _toolbarIconBtn(Icons.home_outlined,
+              onTap: () => context.go('/courses')),
+          const SizedBox(width: 4),
+          Container(
+            width: 1,
+            height: 20,
+            color: Win2K.shadow,
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: () {
+              _scaffoldKey.currentState?.openDrawer();
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: Win2K.raised(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.menu, size: 13, color: Win2K.textDark),
+                  const SizedBox(width: 4),
+                  Text('Menu', style: Win2K.sysFont),
+                  const Icon(Icons.arrow_drop_down,
+                      size: 14, color: Win2K.textDark),
+                ],
+              ),
+            ),
+          ),
+          const Spacer(),
+          if (!authService.isAuthenticated) ...[
+            GestureDetector(
+              onTap: () => context.push('/login'),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
+                decoration: Win2K.raised(bg: Win2K.accent),
+                child: Text(
+                  _t('login_title'),
+                  style:
+                      Win2K.sysFont.copyWith(color: Win2K.titleBarText),
+                ),
+              ),
+            ),
+          ] else ...[
+            _toolbarIconBtn(Icons.shopping_cart_outlined,
+                onTap: () => context.push('/cart')),
+            Stack(
+              children: [
+                _toolbarIconBtn(Icons.notifications_outlined,
+                    onTap: () => context.push('/notifications')),
+                if (_hasUnreadNotifications)
+                  Positioned(
+                    top: 2,
+                    right: 2,
+                    child: Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFF0000),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            _toolbarIconBtn(
+                Provider.of<ThemeProvider>(context).isDarkMode
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+                onTap: () {
+              Provider.of<ThemeProvider>(context, listen: false).toggleTheme();
+            }),
+          ],
+          const SizedBox(width: 4),
+        ],
+      ),
+    );
+  }
+
+  Widget _menuBarItem(String label) {
+    return GestureDetector(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Hero(
-          tag: 'search_bar',
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Text(label, style: Win2K.sysFont),
+      ),
+    );
+  }
+
+  Widget _toolbarIconBtn(IconData icon, {required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 24,
+        height: 22,
+        margin: const EdgeInsets.symmetric(horizontal: 1),
+        decoration: Win2K.raised(),
+        child: Icon(icon, size: 14, color: Win2K.textDark),
+      ),
+    );
+  }
+
+  // ─── Address Bar ─────────────────────────────────────────────────────────────
+
+  Widget _buildAddressBar() {
+    return Container(
+      height: 26,
+      color: Win2K.silver,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      child: Row(
+        children: [
+          Text('Address:', style: Win2K.sysFont),
+          const SizedBox(width: 6),
+          Expanded(
+            child: GestureDetector(
               onTap: () {
                 Provider.of<NavigationProvider>(context, listen: false)
                     .setIndex(1, focusSearch: true);
                 context.go('/courses');
               },
-              borderRadius: BorderRadius.circular(15),
               child: Container(
-                padding:
-                    EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: isDark 
-                      ? AppColors.getGlassColor(context, opacity: 0.1)
-                      : AppColors.getSurfaceColor(context),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                      color: isDark
-                          ? AppColors.getGlassColor(context, opacity: 0.2)
-                          : AppColors.getBorderColor(context)),
-                  boxShadow: isDark ? null : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    )
-                  ],
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: Win2K.sunken(),
                 child: Row(
                   children: [
-                    Icon(Icons.search,
-                        color:
-                            AppColors.getTextColor(context, secondary: true)),
-                    SizedBox(width: 12),
-                    Text(
-                      _t('search_hint'),
-                      style: TextStyle(
-                          color:
-                              AppColors.getTextColor(context, secondary: true),
-                          fontSize: 16),
+                    const Icon(Icons.search, size: 12, color: Win2K.textGray),
+                    const SizedBox(width: 4),
+                    Hero(
+                      tag: 'search_bar',
+                      child: Text(
+                        _t('search_hint'),
+                        style: Win2K.sysFont.copyWith(color: Win2K.textGray),
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoriesSection() {
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeaderBox(_t('categories_title'), () {
-            context.push('/topics');
-          }),
-          SizedBox(
-            height: 180, // Increased height for larger, rounded cards + padding
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 20),
-              scrollDirection: Axis.horizontal,
-              physics: BouncingScrollPhysics(),
-              itemCount: _categories
-                  .where((c) => c.parentId == null || c.parentId!.isEmpty)
-                  .length,
-              itemBuilder: (context, index) {
-                final parentCategories = _categories
-                    .where((c) => c.parentId == null || c.parentId!.isEmpty)
-                    .toList();
-                final category = parentCategories[index];
-                return CategoryCard(
-                  category: category,
-                  onTap: () {
-                    context.go('/courses?categoryId=${category.id}');
-                  },
-                );
-              },
-            ),
+          const SizedBox(width: 4),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: Win2K.raised(),
+            child: Text('Go', style: Win2K.sysFont),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildNewCoursesSection(bool isWideScreen) {
-    // Sort by created_at descending
-    final newCourses = List<Course>.from(_allCourses);
-    newCourses.sort((a, b) {
-      if (a.createdAt == null) return 1;
-      if (b.createdAt == null) return -1;
-      return b.createdAt!.compareTo(a.createdAt!);
-    });
+  // ─── Loading State ───────────────────────────────────────────────────────────
 
-    return SliverToBoxAdapter(
-      child: Column(
-        children: [
-          _buildSectionHeaderBox(_t('new_courses'), () {
-            context.push('/courses');
-          }),
-          SizedBox(
-            height: isWideScreen ? 380 : 340,
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 15),
-              scrollDirection: Axis.horizontal,
-              itemCount: newCourses.take(10).length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 5),
-                  child: SizedBox(
-                    width: isWideScreen ? 320 : 280,
-                    child: CourseCard(
-                        course: newCourses[index],
-                        heroTag: 'new_${newCourses[index].id}'),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMostWatchedSection(bool isWideScreen) {
-    // Sort by student count descending
-    final mostWatched = List<Course>.from(_allCourses);
-    mostWatched.sort((a, b) => b.studentsCount.compareTo(a.studentsCount));
-
-    return SliverToBoxAdapter(
-      child: Column(
-        children: [
-          _buildSectionHeaderBox(_t('most_watched'), () {
-            context.push('/courses');
-          }),
-          SizedBox(
-            height: isWideScreen ? 380 : 340,
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 15),
-              scrollDirection: Axis.horizontal,
-              itemCount: mostWatched.take(10).length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 5),
-                  child: SizedBox(
-                    width: isWideScreen ? 320 : 280,
-                    child: CourseCard(
-                        course: mostWatched[index],
-                        heroTag: 'watched_${mostWatched[index].id}'),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecordedCoursesSection(bool isWideScreen) {
-    var recordedCourses = List<Course>.from(_allCourses);
-    
-    if (recordedCourses.isEmpty) {
-      return SliverToBoxAdapter(child: SizedBox.shrink());
-    }
-
-    int rowsCount = recordedCourses.length > 5 ? 2 : 1;
-    double cardHeight = isWideScreen ? 380 : 340;
-    double cardWidth = isWideScreen ? 320 : 280;
-    double containerHeight = (cardHeight * rowsCount) + ((rowsCount - 1) * 15.0);
-
-    return SliverToBoxAdapter(
-      child: Column(
-        children: [
-          _buildSectionHeaderBox(_t('recorded_courses'), () {
-            context.push('/courses');
-          }),
-          SizedBox(
-            height: containerHeight,
-            child: GridView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 15),
-              scrollDirection: Axis.horizontal,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: rowsCount,
-                childAspectRatio: cardHeight / cardWidth,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 15,
-              ),
-              itemCount: recordedCourses.length,
-              itemBuilder: (context, index) {
-                return CourseCard(
-                  course: recordedCourses[index],
-                  heroTag: 'recorded_${recordedCourses[index].id}',
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── Unified: Top Teachers + Become a Trainer ───────────────────────────
-  Widget _buildTeachersAndTrainerSection(bool isWideScreen) {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    final userProfile = authService.userProfile;
-    final String? role = userProfile?['role'];
-    final bool showCTA = userProfile == null ||
-        (role != 'teacher' && role != 'admin' && role != 'super_admin');
-    final bool hasTeachers = _filteredTeachers.isNotEmpty;
-
-    if (!hasTeachers && !showCTA) return SliverToBoxAdapter(child: SizedBox.shrink());
-
-    return SliverToBoxAdapter(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.deepPurple,
-                  AppColors.professionalBlue,
-                ],
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-              ),
-              borderRadius: BorderRadius.circular(28),
-            ),
-            child: Stack(
-              children: [
-                // Decorative background circles
-                Positioned(
-                  right: -40,
-                  top: -40,
-                  child: Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: -20,
-                  bottom: -30,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.04),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Teachers Section ──
-                    if (hasTeachers) ...[
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(20, 20, 20, 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              _t('top_teachers'),
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                                fontFamily: 'Cairo',
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () => context.push('/teachers'),
-                              child: Text(
-                                _t('explore_more'),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.white70,
-                                  fontFamily: 'Cairo',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      isWideScreen
-                          ? Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20),
-                              child: Wrap(
-                                spacing: 16,
-                                runSpacing: 16,
-                                children: _filteredTeachers
-                                    .take(12)
-                                    .map((t) => _buildTeacherItemLight(t))
-                                    .toList(),
-                              ),
-                            )
-                          : SizedBox(
-                              height: 220,
-                              child: ListView.builder(
-                                padding: EdgeInsets.symmetric(horizontal: 16),
-                                scrollDirection: Axis.horizontal,
-                                itemCount: _filteredTeachers.length,
-                                itemBuilder: (context, index) =>
-                                    _buildTeacherItemLight(_filteredTeachers[index]),
-                              ),
-                            ),
-                    ],
-
-                    // ── Divider ──
-                    if (hasTeachers && showCTA)
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        child: Divider(
-                          color: Colors.white.withOpacity(0.15),
-                          thickness: 1,
-                        ),
-                      ),
-
-                    // ── Become a Trainer CTA ──
-                    if (showCTA)
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(24, hasTeachers ? 0 : 24, 24, 28),
-                        child: Column(
-                          children: [
-                            Icon(Icons.school_outlined,
-                                color: Colors.white, size: 42),
-                            SizedBox(height: 14),
-                            Text(
-                              'كن مدرباً وانضم إلينا في رحلة نمو دوراتي',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Cairo',
-                                height: 1.4,
-                              ),
-                            ),
-                            SizedBox(height: 10),
-                            Text(
-                              'شارك خبرتك وساعد آلاف الطلاب على تحقيق أهدافهم وكن جزءاً من منصتنا التعليمية الكبرى',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 13,
-                                fontFamily: 'Cairo',
-                                height: 1.6,
-                              ),
-                            ),
-                            SizedBox(height: 20),
-                            ElevatedButton(
-                              onPressed: () => context.push('/register'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: AppColors.deepPurple,
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 36, vertical: 13),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                elevation: 6,
-                                shadowColor: Colors.black38,
-                              ),
-                              child: Text(
-                                'سجل الآن',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  fontFamily: 'Cairo',
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Light-themed teacher card for use inside the gradient container
-  Widget _buildTeacherItemLight(Map<String, dynamic> teacher) {
-    final dynamic usersRaw = teacher['users'];
-    final Map<String, dynamic>? userData =
-        usersRaw is Map ? SafeParser.safeMap(usersRaw) : null;
-    final name = StringUtils.cleanTeacherName(
-        userData?['full_name'] ?? userData?['name'] ?? teacher['full_name'] ?? teacher['name'] ?? _t('teacher'));
-    final avatarUrl = userData?['photo_url'] ?? userData?['avatar_url'] ?? teacher['photo_url'] ?? teacher['avatar_url'];
-    final rawSubjects = userData?['subjects'] ?? teacher['subjects'] ?? teacher['specialization'];
-    String specialization = '';
-    if (rawSubjects is List) {
-      specialization = rawSubjects.join('، ');
-    } else if (rawSubjects is String) {
-      specialization = rawSubjects;
-    }
-
+  Widget _buildWin2KLoading() {
     return Padding(
-      padding: const EdgeInsetsDirectional.only(end: 12),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TeacherProfileScreen(
-                teacherId: teacher['user_id'] ?? '',
-                teacherName: name,
-                teacherPhoto: avatarUrl,
-                bio: userData?['bio'],
-              ),
-            ),
-          );
-        },
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          width: 140,
-          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.15)),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 10,
-                      offset: Offset(0, 4),
-                    ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: Win2K.sunken(),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.hourglass_empty,
+                        size: 16, color: Win2K.textDark),
+                    const SizedBox(width: 8),
+                    Text('Loading content, please wait...',
+                        style: Win2K.sysFont),
                   ],
                 ),
-                child: ClipOval(
-                  child: avatarUrl != null && avatarUrl.toString().isNotEmpty
-                      ? (avatarUrl.toString().startsWith('data:')
-                          ? Image.memory(
-                              StringUtils.decodeBase64Image(avatarUrl.toString()),
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => _defaultAvatarLight(),
-                            )
-                          : CachedNetworkImage(
-                              imageUrl: avatarUrl.toString(),
-                              fit: BoxFit.cover,
-                              placeholder: (_, __) => _defaultAvatarLight(),
-                              errorWidget: (_, __, ___) => _defaultAvatarLight(),
-                            ))
-                      : _defaultAvatarLight(),
-                ),
-              ),
-              SizedBox(height: 10),
-              Text(
-                name,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontFamily: 'Cairo',
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (specialization.isNotEmpty) ...[
-                SizedBox(height: 3),
-                Text(
-                  specialization,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.white60,
-                    fontFamily: 'Cairo',
+                const SizedBox(height: 10),
+                Container(
+                  height: 16,
+                  decoration: Win2K.sunken(bg: Win2K.white),
+                  child: const LinearProgressIndicator(
+                    backgroundColor: Win2K.white,
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Win2K.progressBar),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
-              SizedBox(height: 10),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.white30),
-                ),
-                child: Text(
-                  _t('teacher_role'),
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: Colors.white70,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Cairo',
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _defaultAvatarLight() {
-    return Container(
-      color: Colors.white12,
-      child: Icon(Icons.person, color: Colors.white54, size: 40),
-    );
-  }
-
-
-  Widget _buildTipsSection() {
-    if (_tips.isEmpty) {
-      return SliverToBoxAdapter(child: SizedBox.shrink());
-    }
-
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeaderBox(_t('learning_tips_title'), () {
-            context.push('/tips');
-          }),
-          SizedBox(
-            height: 200,
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 15),
-              scrollDirection: Axis.horizontal,
-              itemCount: _tips.length,
-              itemBuilder: (context, index) {
-                final tip = _tips[index];
-                return TipPreviewCard(
-                  tip: tip,
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            VerticalTipPlayer(tips: _tips, initialIndex: index),
-                      ),
-                    );
-                  },
-                );
-              },
             ),
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 12),
+          ShimmerLoader.rectangular(height: 140),
+          const SizedBox(height: 12),
+          ShimmerLoader.rectangular(height: 24, width: 150),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 80,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: 5,
+              itemBuilder: (context, i) => Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Column(
+                  children: [
+                    ShimmerLoader.circular(height: 55, width: 55),
+                    const SizedBox(height: 6),
+                    ShimmerLoader.rectangular(height: 10, width: 50),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...List.generate(
+            2,
+            (_) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: CourseCardShimmer(),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPackagesSection(bool isWideScreen) {
-    if (_bundles.isEmpty) {
-      return SliverToBoxAdapter(child: SizedBox.shrink());
-    }
+  // ─── Banner Carousel ─────────────────────────────────────────────────────────
 
-    final locale = Provider.of<LocaleProvider>(context, listen: false).locale;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return SliverToBoxAdapter(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildSectionHeaderBox(_t('bundles_title'), () {
-            context.push('/packages');
-          }),
-
-          // Cards List
-          SizedBox(
-            height:
-                290, // Adjusted height to accommodate image, text, divider, price and subscribe button
-            child: ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 15),
-              scrollDirection: Axis.horizontal,
-              itemCount: _bundles.length,
-              itemBuilder: (context, index) {
-                final bundle = _bundles[index];
-                final bundleCourseIds =
-                    bundle.courses.map((course) => course.id).toList();
-                final bool hasBundleAccess = bundleCourseIds.isNotEmpty &&
-                    bundleCourseIds.every(_accessibleCourseIds.contains);
-                return Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6),
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PackageScreen(
-                            packageTitle: bundle.title,
-                            courses: bundle.courses,
-                            bundle: bundle,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      width: 175, // Horizontal card width
-                      decoration: BoxDecoration(
-                        color: AppColors.getSurfaceColor(context),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDark ? Colors.white12 : Colors.grey.shade200,
-                        ),
-                        boxShadow: isDark
-                            ? []
-                            : [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 8,
-                                  offset: Offset(0, 4),
-                                )
-                              ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // 1. Image
-                          ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(11)),
-                            child: AspectRatio(
-                              aspectRatio: 1.4,
-                              child: bundle.imageUrl != null &&
-                                      bundle.imageUrl!.isNotEmpty
-                                  ? CachedNetworkImage(
-                                      imageUrl: bundle.imageUrl!,
-                                      fit: BoxFit.cover,
-                                      placeholder: (context, url) =>
-                                          Container(color: Colors.black12),
-                                      errorWidget: (context, url, err) =>
-                                          Container(
-                                              color: Colors.black12,
-                                              child: Icon(
-                                                  Icons.broken_image)),
-                                    )
-                                  : Container(
-                                      color: Colors.black12,
-                                      child: Icon(Icons.image)),
-                            ),
-                          ),
-
-                          // 2. Content
-                          Expanded(
-                            child: Padding(
-                              padding:
-                                  EdgeInsets.fromLTRB(10, 10, 10, 10),
-                              child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  // Title and Courses Count
-                                  Column(
-                                    children: [
-                                      Text(
-                                        bundle.title,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color:
-                                              AppColors.getTextColor(context),
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily:
-                                              'Cairo', // Standard smooth font
-                                        ),
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text(
-                                        '${bundle.courses.length} ${AppStrings.get('courses_count_bundle', locale) == 'courses_count_bundle' ? 'دورات' : AppStrings.get('courses_count_bundle', locale)}',
-                                        style: TextStyle(
-                                          color: AppColors.getTextColor(context,
-                                              secondary: true),
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-
-                                  // Divider
-                                  Divider(
-                                    color: isDark
-                                        ? Colors.white12
-                                        : Colors.grey.shade200,
-                                    height: 10,
-                                    thickness: 1,
-                                  ),
-
-                                  // Missing price line added per user request
-                                  if (bundle.price > 0)
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        if (bundle.hasDiscount) ...[
-                                          Text(
-                                            bundle.getOriginalPrice(locale),
-                                            style: TextStyle(
-                                              decoration:
-                                                  TextDecoration.lineThrough,
-                                              fontSize: 11,
-                                              color: AppColors.getTextColor(
-                                                      context,
-                                                      secondary: true)
-                                                  .withOpacity(0.6),
-                                            ),
-                                          ),
-                                          SizedBox(width: 4),
-                                        ],
-                                        Text(
-                                          bundle.getFormattedPrice(locale),
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13,
-                                            color:
-                                                AppColors.getTextColor(context),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-
-                                  // Subscribe Button
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            AppColors.mutedPurpleBlue,
-                                        foregroundColor: Colors.white,
-                                        elevation: 0,
-                                        shape: RoundedRectangleBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(8)),
-                                        padding: EdgeInsets.symmetric(
-                                            vertical: 6),
-                                        minimumSize: Size.zero,
-                                      ),
-                                      onPressed: () {
-                                        if (hasBundleAccess &&
-                                            bundle.courses.isNotEmpty) {
-                                          final identifier = bundle.courses.first.slug.isNotEmpty ? bundle.courses.first.slug : bundle.courses.first.id;
-                                          context.push('/course/$identifier');
-                                          return;
-                                        }
-                                        final identifier = bundle.slug.isNotEmpty ? bundle.slug : bundle.id;
-                                        context.push('/package/$identifier');
-                                      },
-                                      child: Text(
-                                        hasBundleAccess ? 'أكمل' : 'اشترك',
-                                        style: TextStyle(
-                                            fontFamily: 'Cairo',
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 13),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // "See More" full-width button
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-            child: SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () {
-                  context.push('/packages');
-                },
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(
-                      color: AppColors.primaryPurple.withOpacity(0.5)),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: Text(
-                  AppStrings.get('view_plans_button', locale) ==
-                          'view_plans_button'
-                      ? 'المزيد'
-                      : 'المزيد',
-                  style: TextStyle(
-                    color: AppColors.primaryPurple,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Cairo',
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: 10),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUnifiedBannerCarousel() {
+  Widget _buildBannerCarousel() {
     final topBanners = _banners.where((b) => b.location == 'top').toList();
     final bannerItems = topBanners.isNotEmpty
         ? topBanners
@@ -1619,276 +944,113 @@ class _HomeScreenState extends State<HomeScreen> {
                 ))
             .toList();
 
-    if (bannerItems.isEmpty) {
-      return SliverToBoxAdapter(child: SizedBox.shrink());
-    }
+    if (bannerItems.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
-      child: Column(
-        children: [
-          SizedBox(
-            height: 200,
-            child: PageView.builder(
-              controller: _bannerController,
-              onPageChanged: (index) {
-                setState(() => _currentBannerPage = index);
-              },
-              itemCount: bannerItems.length,
-              itemBuilder: (context, index) {
-                final item = bannerItems[index];
-                return _buildBannerItem(item);
-              },
-            ),
-          ),
-          SizedBox(height: 12),
-          // Page Indicators
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              bannerItems.length,
-              (index) => Container(
-                width: 8,
-                height: 8,
-                margin: EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _currentBannerPage == index
-                      ? AppColors.primaryPurple
-                      : AppColors.getTextColor(context).withOpacity(0.3),
-                ),
+      child: Win2KGroupBox(
+        title: 'Featured',
+        child: Column(
+          children: [
+            // Banner window chrome
+            Container(
+              decoration: Win2K.sunken(),
+              height: 175,
+              child: PageView.builder(
+                controller: _bannerController,
+                onPageChanged: (i) => setState(() => _currentBannerPage = i),
+                itemCount: bannerItems.length,
+                itemBuilder: (ctx, i) => _buildBannerItem(bannerItems[i]),
               ),
             ),
-          ),
-          SizedBox(height: 10),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomAdBanners() {
-    // Determine which banners to show at the bottom
-    final bottomBanners =
-        _banners.where((b) => b.location == 'bottom').toList();
-    if (bottomBanners.isEmpty) {
-      return SliverToBoxAdapter(child: SizedBox.shrink());
-    }
-
-    return SliverToBoxAdapter(
-      child: Column(
-        children: [
-          SizedBox(
-            height: 180, // Responsive height for horizontal landscape banners
-            child: PageView.builder(
-              controller: _bottomBannerController,
-              onPageChanged: (index) {
-                if (mounted) setState(() => _currentBottomBannerPage = index);
-              },
-              itemCount: bottomBanners.length,
-              itemBuilder: (context, index) {
-                final item = bottomBanners[index];
-                final isLottie =
-                    item.imageUrl.toLowerCase().endsWith('.json') ||
-                        item.imageUrl.toLowerCase().endsWith('.lottie');
-
-                // Determine button text
-                String? buttonText = item.subtitle;
-                if ((buttonText == null || buttonText.isEmpty) &&
-                    item.type == 'external') {
-                  buttonText = 'زيارة الرابط';
-                }
-
-                return InkWell(
-                  onTap: () => _handleBannerTap(item),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Media Background
-                      isLottie
-                          ? Lottie.network(
-                              item.imageUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(color: Colors.black12),
+            // Navigation dots styled as Win2K tabs
+            Container(
+              color: Win2K.silver,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  bannerItems.length,
+                  (i) => GestureDetector(
+                    onTap: () {
+                      _bannerController.animateToPage(
+                        i,
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.linear,
+                      );
+                    },
+                    child: Container(
+                      width: 16,
+                      height: 8,
+                      margin: const EdgeInsets.symmetric(horizontal: 2),
+                      decoration: _currentBannerPage == i
+                          ? BoxDecoration(
+                              color: Win2K.accent,
+                              border: Border.all(color: Win2K.shadow),
                             )
-                          : CachedNetworkImage(
-                              imageUrl: item.imageUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) =>
-                                  Container(color: Colors.black12),
-                              errorWidget: (context, url, err) =>
-                                  Container(color: Colors.black12),
-                            ),
-
-                      // Action Button Overlay
-                      if (buttonText != null && buttonText.isNotEmpty)
-                        Positioned(
-                          bottom: 20,
-                          left: 20, // Bottom-left by default
-                          child: Directionality(
-                            textDirection: TextDirection
-                                .rtl, // Ensure Arabic text rendering is correct
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryPurple,
-                                foregroundColor: Colors.white,
-                                elevation: 8,
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                              onPressed: () => _handleBannerTap(item),
-                              child: Text(
-                                buttonText,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  fontFamily: 'Cairo',
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                          : Win2K.raised(),
+                    ),
                   ),
-                );
-              },
-            ),
-          ),
-          SizedBox(height: 10),
-          // Page Indicators
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              bottomBanners.length,
-              (index) => Container(
-                width: 6,
-                height: 6,
-                margin: EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: _currentBottomBannerPage == index
-                      ? AppColors.primaryPurple
-                      : AppColors.getTextColor(context).withOpacity(0.3),
                 ),
               ),
             ),
-          ),
-          SizedBox(height: 20),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildBannerItem(BannerAd item) {
-    return InkWell(
+    return GestureDetector(
       onTap: () => _handleBannerTap(item),
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 10.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 10,
-              offset: Offset(0, 5),
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          CachedNetworkImage(
+            imageUrl: item.imageUrl,
+            fit: BoxFit.cover,
+            placeholder: (ctx, url) =>
+                Container(color: Win2K.silver),
+            errorWidget: (ctx, url, e) => Container(
+              color: Win2K.silver,
+              child: const Center(
+                child: Icon(Icons.broken_image, color: Win2K.shadow),
+              ),
             ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: Stack(
-            children: [
-              CachedNetworkImage(
-                imageUrl: item.imageUrl,
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => Container(color: AppColors.getTextColor(context).withOpacity(0.10)),
-                errorWidget: (context, url, e) =>
-                    Container(color: Colors.grey.shade900),
-              ),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.transparent,
-                      Colors.black.withOpacity(0.7),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  padding: EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (item.subtitle != null && item.subtitle!.isNotEmpty)
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryPurple.withOpacity(0.8),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white24),
-                          ),
-                          child: Text(
-                            item.subtitle!,
-                            style: TextStyle(
-                                color: AppColors.getTextColor(context),
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      SizedBox(height: 10),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              item.title,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                shadows: [
-                                  Shadow(
-                                      color: Colors.black26,
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2)),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (item.type == 'external' ||
-                              (item.subtitle != null &&
-                                  item.subtitle!.isNotEmpty))
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: AppColors.getTextColor(context).withOpacity(0.24),
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white24),
-                              ),
-                              child: Icon(Icons.arrow_forward_rounded,
-                                  color: AppColors.getTextColor(context), size: 20),
-                            ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
           ),
-        ),
+          // Classic Win2K overlay with banner title
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              color: Win2K.titleBarStart.withOpacity(0.85),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.title,
+                      style: Win2K.titleFont.copyWith(fontSize: 13),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: Win2K.raised(),
+                    child: Text(
+                      item.subtitle?.isNotEmpty == true
+                          ? item.subtitle!
+                          : 'Open',
+                      style: Win2K.sysFont,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1906,7 +1068,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 lessonsCount: 0,
                 subject: '',
               ));
-      final identifier = course.slug.isNotEmpty ? course.slug : course.id;
+      final identifier =
+          course.slug.isNotEmpty ? course.slug : course.id;
       context.push('/course/$identifier');
     } else if (item.type == 'package' && item.targetId != null) {
       final bundle = _bundles.firstWhere((b) => b.id == item.targetId,
@@ -1920,223 +1083,141 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
   }
-}
 
-class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
-  final String? userName;
-  final bool hasUnreadNotifications;
-  final String Function(String) t;
-  final VoidCallback onMenuTap;
-  final VoidCallback onNotificationTap;
+  // ─── Guest Banner ────────────────────────────────────────────────────────────
 
-  final bool isAuthenticated;
-  final bool isLoadingProfile;
-
-  _HomeHeaderDelegate({
-    required this.userName,
-    required this.hasUnreadNotifications,
-    required this.t,
-    required this.onMenuTap,
-    required this.onNotificationTap,
-    required this.isAuthenticated,
-    required this.isLoadingProfile,
-  });
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    final double topPadding = MediaQuery.of(context).padding.top;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
-
-    // Safety check to avoid division by zero if maxExtent equals minExtent
-    final double range = maxExtent - minExtent;
-    final double currentOpacity =
-        range <= 0 ? 1.0 : (shrinkOffset / range).clamp(0.0, 1.0);
-    final Color headerBackgroundColor = isDark
-        ? AppColors.darkCardSurface.withOpacity(overlapsContent ? 0.98 : 0.92)
-        : Colors.white.withOpacity(overlapsContent ? 1.0 : 0.96);
-
-    return Container(
-      height: maxExtent,
-      decoration: BoxDecoration(
-        color: Color.lerp(
-            Colors.transparent, headerBackgroundColor, currentOpacity),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-        boxShadow: shrinkOffset > 20
-            ? [
-                BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: Offset(0, 5))
-              ]
-            : [],
-      ),
+  Widget _buildGuestBanner(bool isWideScreen) {
+    return SliverToBoxAdapter(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(20, topPadding + 10, 20, 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // --- Right (Leading): Drawer Menu ---
-            GestureDetector(
-              onTap: onMenuTap,
-              child: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.07),
-                  borderRadius: BorderRadius.circular(12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Container(
+          decoration: Win2K.raised(bg: Win2K.silverLight),
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: Win2K.sunken(),
+                child: const Icon(Icons.info_outline,
+                    size: 28, color: Win2K.accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'انضم إلى مجتمع دوراتي!',
+                      style:
+                          Win2K.sysFont.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'سجل الآن كطالب لتتعلم مهارات جديدة، أو كمدرب لتنشر دوراتك.',
+                      style: Win2K.sysFont,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Win2KButton(
+                          label: 'إنشاء حساب',
+                          onPressed: () => context.push('/register'),
+                          color: Win2K.accent,
+                          textColor: Win2K.titleBarText,
+                        ),
+                        const SizedBox(width: 8),
+                        Win2KButton(
+                          label: 'تسجيل دخول',
+                          onPressed: () => context.push('/login'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                child: Icon(Icons.menu,
-                    color: AppColors.getTextColor(context), size: 24),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Continue Learning ────────────────────────────────────────────────────────
+
+  Widget _buildContinueLearning() {
+    final enrolledCourses =
+        _allCourses.where((c) => _enrolledCourseIds.contains(c.id)).toList();
+    if (enrolledCourses.isEmpty) return const SizedBox.shrink();
+
+    final lastCourse = enrolledCourses.first;
+    final progress = (_enrollmentProgress[lastCourse.id] ?? 0.0) / 100;
+
+    return Win2KGroupBox(
+      title: _t('continue_learning'),
+      child: Container(
+        color: Win2K.white,
+        padding: const EdgeInsets.all(10),
+        child: Row(
+          children: [
+            Container(
+              decoration: Win2K.sunken(),
+              child: CachedNetworkImage(
+                imageUrl: lastCourse.imageUrl ?? '',
+                width: 56,
+                height: 56,
+                fit: BoxFit.cover,
+                errorWidget: (_, __, ___) => const SizedBox(
+                  width: 56,
+                  height: 56,
+                  child: Icon(Icons.school, color: Win2K.shadow),
+                ),
               ),
             ),
-
-            // --- Center: App Logo and Name ---
+            const SizedBox(width: 10),
             Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.school_rounded,
-                    color: AppColors.primaryPurple,
-                    size: 28,
-                    shadows: [
-                      Shadow(
-                          color: AppColors.primaryPurple.withOpacity(0.5),
-                          blurRadius: 10)
-                    ],
-                  ),
-                  SizedBox(width: 8),
                   Text(
-                    t('app_name') == 'app_name'
-                        ? 'دوراتي'
-                        : t('app_name'), // Simple fallback
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.getTextColor(context),
-                      fontFamily: 'Cairo', // Preferred custom font if available
+                    lastCourse.getLocalizedTitle(
+                        Provider.of<LocaleProvider>(context).locale),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Win2K.sysFont.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${_t('completed')} ${(_enrollmentProgress[lastCourse.id] ?? 0.0).toStringAsFixed(0)}%',
+                    style: Win2K.sysFont.copyWith(color: Win2K.textGray),
+                  ),
+                  const SizedBox(height: 6),
+                  // Classic Win2K progress bar
+                  Container(
+                    height: 14,
+                    decoration: Win2K.sunken(),
+                    child: FractionallySizedBox(
+                      widthFactor: progress,
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        color: Win2K.progressBar,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-
-            // --- Left (Trailing): Icons (Cart, Theme Toggle, Notifications, Login) ---
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (!isAuthenticated) ...[
-                  // If not logged in, we can either hide or show icons limit. Let's show theme and login.
-                  IconButton(
-                    icon: Icon(
-                        Provider.of<ThemeProvider>(context).isDarkMode
-                            ? Icons.light_mode_rounded
-                            : Icons.dark_mode_rounded,
-                        color: AppColors.getTextColor(context),
-                        size: 22),
-                    onPressed: () {
-                      Provider.of<ThemeProvider>(context, listen: false)
-                          .toggleTheme();
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
-                  ),
-                  SizedBox(width: 12),
-                  TextButton(
-                    onPressed: () {
-                      context.push('/login');
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: AppColors.primaryPurple.withOpacity(0.3),
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: Text(t('login_title')),
-                  ),
-                ] else ...[
-                  // Cart Icon
-                  GestureDetector(
-                    onTap: () {
-                      context.push('/cart');
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.07),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.shopping_cart_outlined,
-                          color: AppColors.getTextColor(context), size: 22),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  // Theme Toggle
-                  GestureDetector(
-                    onTap: () {
-                      Provider.of<ThemeProvider>(context, listen: false)
-                          .toggleTheme();
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.07),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                          Provider.of<ThemeProvider>(context).isDarkMode
-                              ? Icons.light_mode_rounded
-                              : Icons.dark_mode_rounded,
-                          color: AppColors.getTextColor(context),
-                          size: 22),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  // Notifications
-                  GestureDetector(
-                    onTap: onNotificationTap,
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.07),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Stack(
-                        children: [
-                          Icon(Icons.notifications_outlined,
-                              color: AppColors.getTextColor(context), size: 22),
-                          if (hasUnreadNotifications)
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: AppColors.getSurfaceColor(context),
-                                      width: 1.5),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+            const SizedBox(width: 8),
+            Win2KButton(
+              label: 'Resume',
+              icon: Icons.play_arrow,
+              onPressed: () {
+                final identifier = lastCourse.slug.isNotEmpty
+                    ? lastCourse.slug
+                    : lastCourse.id;
+                context.push('/course/$identifier');
+              },
             ),
           ],
         ),
@@ -2144,17 +1225,573 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
     );
   }
 
-  @override
-  double get maxExtent => 90.0;
+  // ─── Categories Section ───────────────────────────────────────────────────────
 
-  @override
-  double get minExtent => 90.0;
+  Widget _buildCategoriesSection() {
+    final parentCats =
+        _categories.where((c) => c.parentId == null || c.parentId!.isEmpty).toList();
 
-  @override
-  bool shouldRebuild(covariant _HomeHeaderDelegate oldDelegate) {
-    return oldDelegate.userName != userName ||
-        oldDelegate.isAuthenticated != isAuthenticated ||
-        oldDelegate.isLoadingProfile != isLoadingProfile ||
-        oldDelegate.hasUnreadNotifications != hasUnreadNotifications;
+    return SliverToBoxAdapter(
+      child: Win2KGroupBox(
+        title: _t('categories_title'),
+        onSeeAll: () => context.push('/topics'),
+        seeAllLabel: _t('explore_more'),
+        child: Container(
+          color: Win2K.white,
+          height: 80,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+            itemCount: parentCats.length,
+            itemBuilder: (context, index) {
+              final cat = parentCats[index];
+              final colors = AppColors.categoryCardColors;
+              final color = colors[index % colors.length];
+              return GestureDetector(
+                onTap: () => context.go('/courses?categoryId=${cat.id}'),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: Win2K.raised(bg: Win2K.silver),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        color: color,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        cat.name,
+                        style:
+                            Win2K.sysFont.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Courses Sections ─────────────────────────────────────────────────────────
+
+  Widget _buildNewCoursesSection(bool isWideScreen) {
+    final newCourses = List<Course>.from(_allCourses);
+    newCourses.sort((a, b) {
+      if (a.createdAt == null) return 1;
+      if (b.createdAt == null) return -1;
+      return b.createdAt!.compareTo(a.createdAt!);
+    });
+
+    return SliverToBoxAdapter(
+      child: Win2KGroupBox(
+        title: _t('new_courses'),
+        onSeeAll: () => context.push('/courses'),
+        seeAllLabel: _t('explore_more'),
+        child: SizedBox(
+          height: isWideScreen ? 350 : 310,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.all(6),
+            itemCount: newCourses.take(10).length,
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: SizedBox(
+                width: isWideScreen ? 300 : 260,
+                child: _wrapCourseCard(CourseCard(
+                    course: newCourses[index],
+                    heroTag: 'new_${newCourses[index].id}')),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMostWatchedSection(bool isWideScreen) {
+    final mostWatched = List<Course>.from(_allCourses);
+    mostWatched.sort((a, b) => b.studentsCount.compareTo(a.studentsCount));
+
+    return SliverToBoxAdapter(
+      child: Win2KGroupBox(
+        title: _t('most_watched'),
+        onSeeAll: () => context.push('/courses'),
+        seeAllLabel: _t('explore_more'),
+        child: SizedBox(
+          height: isWideScreen ? 350 : 310,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.all(6),
+            itemCount: mostWatched.take(10).length,
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: SizedBox(
+                width: isWideScreen ? 300 : 260,
+                child: _wrapCourseCard(CourseCard(
+                    course: mostWatched[index],
+                    heroTag: 'watched_${mostWatched[index].id}')),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecordedCoursesSection(bool isWideScreen) {
+    final recordedCourses = List<Course>.from(_allCourses);
+    if (recordedCourses.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: Win2KGroupBox(
+        title: _t('recorded_courses'),
+        onSeeAll: () => context.push('/courses'),
+        seeAllLabel: _t('explore_more'),
+        child: SizedBox(
+          height: isWideScreen ? 350 : 310,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.all(6),
+            itemCount: recordedCourses.length,
+            itemBuilder: (context, index) => Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: SizedBox(
+                width: isWideScreen ? 300 : 260,
+                child: _wrapCourseCard(CourseCard(
+                    course: recordedCourses[index],
+                    heroTag: 'recorded_${recordedCourses[index].id}')),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Wraps a course card in Win2K styling (raised border)
+  Widget _wrapCourseCard(Widget card) {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border(
+          top: const BorderSide(color: Win2K.white, width: 1),
+          left: const BorderSide(color: Win2K.white, width: 1),
+          bottom: const BorderSide(color: Win2K.darkShadow, width: 1),
+          right: const BorderSide(color: Win2K.darkShadow, width: 1),
+        ),
+      ),
+      child: card,
+    );
+  }
+
+  // ─── Tips Section ─────────────────────────────────────────────────────────────
+
+  Widget _buildTipsSection() {
+    if (_tips.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+    return SliverToBoxAdapter(
+      child: Win2KGroupBox(
+        title: _t('learning_tips_title'),
+        onSeeAll: () => context.push('/tips'),
+        seeAllLabel: _t('explore_more'),
+        child: SizedBox(
+          height: 180,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.all(6),
+            itemCount: _tips.length,
+            itemBuilder: (context, index) {
+              final tip = _tips[index];
+              return Container(
+                margin: const EdgeInsets.only(right: 6),
+                decoration: Win2K.raised(),
+                child: TipPreviewCard(
+                  tip: tip,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            VerticalTipPlayer(tips: _tips, initialIndex: index),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Packages Section ────────────────────────────────────────────────────────
+
+  Widget _buildPackagesSection(bool isWideScreen) {
+    if (_bundles.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+
+    final locale =
+        Provider.of<LocaleProvider>(context, listen: false).locale;
+
+    return SliverToBoxAdapter(
+      child: Win2KGroupBox(
+        title: _t('bundles_title'),
+        onSeeAll: () => context.push('/packages'),
+        seeAllLabel: _t('explore_more'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 260,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.all(6),
+                itemCount: _bundles.length,
+                itemBuilder: (context, index) {
+                  final bundle = _bundles[index];
+                  final bundleCourseIds =
+                      bundle.courses.map((c) => c.id).toList();
+                  final bool hasBundleAccess =
+                      bundleCourseIds.isNotEmpty &&
+                          bundleCourseIds.every(_accessibleCourseIds.contains);
+
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => PackageScreen(
+                            packageTitle: bundle.title,
+                            courses: bundle.courses,
+                            bundle: bundle,
+                          ),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      width: 160,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: Win2K.raised(bg: Win2K.white),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Bundle icon header (Win2K style)
+                          Container(
+                            height: 40,
+                            decoration: Win2K.titleBar(),
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.library_books,
+                                    size: 14, color: Win2K.titleBarText),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    bundle.title,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Win2K.sysFont.copyWith(
+                                        color: Win2K.titleBarText,
+                                        fontSize: 11),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Image
+                          if (bundle.imageUrl != null &&
+                              bundle.imageUrl!.isNotEmpty)
+                            Container(
+                              height: 80,
+                              decoration: Win2K.sunken(),
+                              child: CachedNetworkImage(
+                                imageUrl: bundle.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, __, ___) => const Center(
+                                  child: Icon(Icons.image,
+                                      color: Win2K.shadow),
+                                ),
+                              ),
+                            ),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(6),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    '${bundle.courses.length} courses',
+                                    style: Win2K.sysFont
+                                        .copyWith(color: Win2K.textGray),
+                                  ),
+                                  if (bundle.price > 0)
+                                    Text(
+                                      bundle.getFormattedPrice(locale),
+                                      style: Win2K.sysFont.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: Win2K.accent),
+                                    ),
+                                  Container(
+                                    width: double.infinity,
+                                    decoration: Win2K.raised(
+                                        bg: hasBundleAccess
+                                            ? Win2K.greenSuccess
+                                            : Win2K.accent),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 4),
+                                    child: Text(
+                                      hasBundleAccess ? 'أكمل' : 'اشترك',
+                                      textAlign: TextAlign.center,
+                                      style: Win2K.sysFont.copyWith(
+                                          color: Win2K.titleBarText,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            // See All button in classic Win2K style
+            Container(
+              color: Win2K.silver,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Win2KButton(
+                    label: 'View All Packages...',
+                    onPressed: () => context.push('/packages'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Bottom Ad Banners ────────────────────────────────────────────────────────
+
+  Widget _buildBottomAdBanners() {
+    final bottomBanners =
+        _banners.where((b) => b.location == 'bottom').toList();
+    if (bottomBanners.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: Win2KGroupBox(
+        title: 'Advertisements',
+        child: Container(
+          decoration: Win2K.sunken(),
+          height: 150,
+          child: PageView.builder(
+            controller: _bottomBannerController,
+            onPageChanged: (i) =>
+                setState(() => _currentBottomBannerPage = i),
+            itemCount: bottomBanners.length,
+            itemBuilder: (context, index) {
+              final item = bottomBanners[index];
+              final isLottie =
+                  item.imageUrl.toLowerCase().endsWith('.json') ||
+                      item.imageUrl.toLowerCase().endsWith('.lottie');
+              return GestureDetector(
+                onTap: () => _handleBannerTap(item),
+                child: isLottie
+                    ? Lottie.network(item.imageUrl, fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            Container(color: Win2K.silver))
+                    : CachedNetworkImage(
+                        imageUrl: item.imageUrl,
+                        fit: BoxFit.cover,
+                        placeholder: (_, __) =>
+                            Container(color: Win2K.silver),
+                        errorWidget: (_, __, ___) =>
+                            Container(color: Win2K.silver),
+                      ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─── Teachers Section ─────────────────────────────────────────────────────────
+
+  Widget _buildTeachersSection(bool isWideScreen) {
+    if (_filteredTeachers.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    return SliverToBoxAdapter(
+      child: Win2KGroupBox(
+        title: _t('top_teachers'),
+        onSeeAll: () => context.push('/teachers'),
+        seeAllLabel: _t('explore_more'),
+        child: SizedBox(
+          height: 120,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.all(8),
+            itemCount: _filteredTeachers.take(12).length,
+            itemBuilder: (context, index) =>
+                _buildTeacherItem(_filteredTeachers[index]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTeacherItem(Map<String, dynamic> teacher) {
+    final dynamic usersRaw = teacher['users'];
+    final Map<String, dynamic>? userData =
+        usersRaw is Map ? SafeParser.safeMap(usersRaw) : null;
+    final name = StringUtils.cleanTeacherName(
+        userData?['full_name'] ??
+            userData?['name'] ??
+            teacher['full_name'] ??
+            teacher['name'] ??
+            _t('teacher'));
+    final avatarUrl = userData?['photo_url'] ??
+        userData?['avatar_url'] ??
+        teacher['photo_url'] ??
+        teacher['avatar_url'];
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TeacherProfileScreen(
+              teacherId: teacher['user_id'] ?? '',
+              teacherName: name,
+              teacherPhoto: avatarUrl,
+              bio: userData?['bio'],
+            ),
+          ),
+        );
+      },
+      child: Container(
+        width: 90,
+        margin: const EdgeInsets.only(right: 8),
+        decoration: Win2K.raised(bg: Win2K.white),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              decoration: Win2K.sunken(),
+              child: ClipOval(
+                child: avatarUrl != null && avatarUrl.toString().isNotEmpty
+                    ? (avatarUrl.toString().startsWith('data:')
+                        ? Image.memory(
+                            StringUtils.decodeBase64Image(avatarUrl.toString()),
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _defaultAvatar(),
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: avatarUrl.toString(),
+                            width: 52,
+                            height: 52,
+                            fit: BoxFit.cover,
+                            placeholder: (_, __) => _defaultAvatar(),
+                            errorWidget: (_, __, ___) => _defaultAvatar(),
+                          ))
+                    : _defaultAvatar(),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                name,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Win2K.sysFont.copyWith(fontSize: 10),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _defaultAvatar() {
+    return Container(
+      width: 52,
+      height: 52,
+      color: Win2K.silver,
+      child: const Icon(Icons.person, color: Win2K.shadow, size: 28),
+    );
+  }
+
+  // ─── Status Bar ──────────────────────────────────────────────────────────────
+
+  Widget _buildStatusBar() {
+    return Container(
+      height: 20,
+      decoration: const BoxDecoration(
+        color: Win2K.silver,
+        border: Border(top: BorderSide(color: Win2K.shadow, width: 1)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 1,
+            height: 14,
+            color: Win2K.shadow,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            _isRefreshing ? 'Refreshing...' : 'Done',
+            style: Win2K.sysFont.copyWith(fontSize: 11),
+          ),
+          const Spacer(),
+          Container(
+            width: 1,
+            height: 14,
+            color: Win2K.shadow,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '${_allCourses.length} courses',
+            style: Win2K.sysFont.copyWith(fontSize: 11),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            width: 1,
+            height: 14,
+            color: Win2K.shadow,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            'دوراتي™ v2.0',
+            style: Win2K.sysFont.copyWith(fontSize: 11),
+          ),
+        ],
+      ),
+    );
   }
 }
