@@ -27,19 +27,33 @@ class AuthService extends ChangeNotifier {
   bool get isOffline => _isOffline;
 
   AuthService() {
+    _initAuth();
+  }
+
+  Future<void> _initAuth() async {
+    // Wait for Supabase to be ready if it isn't yet (up to 5 seconds)
+    int attempts = 0;
+    while (!_isSupabaseReady && attempts < 50) {
+      await Future.delayed(const Duration(milliseconds: 100));
+      attempts++;
+    }
+
     if (!_isSupabaseReady) {
-      debugPrint('⚠️ AuthService: Supabase not initialized, delaying listener setup.');
+      debugPrint('🚨 AuthService: Supabase initialization FAILED or TIMED OUT.');
       return;
     }
     
+    debugPrint('✅ AuthService: Supabase ready, setting up auth...');
+    
     // Initial load if authenticated
     if (isAuthenticated) {
-      loadUserProfile();
+      await loadUserProfile();
     } else {
       ScreenSecurityService().applySecurityPolicy(role: null);
     }
 
     _setupListeners();
+    notifyListeners(); // Ensure UI reflects the initial state
   }
 
   void _setupListeners() {
@@ -136,21 +150,23 @@ class AuthService extends ChangeNotifier {
       // 4. CACHE: Save profile for offline use
       await LocalDatabase().set(CacheKeys.userProfile(currentUser!.id), _userProfile);
 
-      _isOffline = false;
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error loading user profile: $e');
-      _isOffline = true;
-      
-      // Try to load from cache if network fails
-      if (currentUser != null) {
-        final cached = LocalDatabase().get<Map<String, dynamic>>(CacheKeys.userProfile(currentUser!.id));
-        if (cached != null) {
-          _userProfile = SafeParser.safeMap(cached);
-          notifyListeners();
+        _isOffline = false;
+      } catch (e) {
+        debugPrint('Error loading user profile: $e');
+        _isOffline = true;
+        
+        // Try to load from cache if network fails
+        if (currentUser != null) {
+          final cached = LocalDatabase().get<Map<String, dynamic>>(CacheKeys.userProfile(currentUser!.id));
+          if (cached != null) {
+            _userProfile = SafeParser.safeMap(cached);
+            _userRole = _userProfile?['role'] ?? 'student';
+          }
         }
+      } finally {
+        _isLoadingProfile = false;
+        notifyListeners();
       }
-    }
   }
 
   /// Sign in with email and password

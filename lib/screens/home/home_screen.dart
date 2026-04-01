@@ -400,6 +400,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ?.toString(),
                     hasUnreadNotifications: _hasUnreadNotifications,
                     t: _t,
+                    isAuthenticated: authService.isAuthenticated,
+                    isLoadingProfile: authService.isLoadingProfile,
                     onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
                     onNotificationTap: () => context.push('/notifications'),
                   ),
@@ -1927,19 +1929,23 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   final VoidCallback onMenuTap;
   final VoidCallback onNotificationTap;
 
+  final bool isAuthenticated;
+  final bool isLoadingProfile;
+
   _HomeHeaderDelegate({
     required this.userName,
     required this.hasUnreadNotifications,
     required this.t,
     required this.onMenuTap,
     required this.onNotificationTap,
+    required this.isAuthenticated,
+    required this.isLoadingProfile,
   });
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     final double topPadding = MediaQuery.of(context).padding.top;
-    final authService = Provider.of<AuthService>(context);
     final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Safety check to avoid division by zero if maxExtent equals minExtent
@@ -2022,7 +2028,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (!authService.isAuthenticated) ...[
+                if (!isAuthenticated) ...[
                   // If not logged in, we can either hide or show icons limit. Let's show theme and login.
                   IconButton(
                     icon: Icon(
@@ -2147,6 +2153,8 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(covariant _HomeHeaderDelegate oldDelegate) {
     return oldDelegate.userName != userName ||
+        oldDelegate.isAuthenticated != isAuthenticated ||
+        oldDelegate.isLoadingProfile != isLoadingProfile ||
         oldDelegate.hasUnreadNotifications != hasUnreadNotifications;
   }
 }
