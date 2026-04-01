@@ -41,7 +41,12 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final DatabaseService _databaseService = DatabaseService();
-  List<Course> _allCourses = [];
+  List<Course> _allCourses = []; // Keep as fallback/dummy if needed
+  List<Course> _featuredCourses = [];
+  List<Course> _newCourses = [];
+  List<Course> _popularCourses = [];
+  List<Course> _recordedCourses = [];
+  List<Course> _enrolledCourses = [];
   List<Map<String, dynamic>> _allTeachers = [];
   List<Map<String, dynamic>> _filteredTeachers = [];
   List<CategoryModel> _categories = [];
@@ -55,7 +60,6 @@ class _HomeScreenState extends State<HomeScreen> {
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
 
-  Set<String> _enrolledCourseIds = {};
   Set<String> _accessibleCourseIds = {};
   final Map<String, double> _enrollmentProgress = {}; // courseId -> progress %
   final Map<String, String> _enrollmentIds = {}; // courseId -> enrollmentId
@@ -128,7 +132,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Load main content in background/parallel
       final contentTasks = [
-        _loadCourses(forceRefresh: forceRefresh),
+        _loadNewCourses(forceRefresh: forceRefresh),
+        _loadFeaturedCourses(forceRefresh: forceRefresh),
+        _loadPopularCourses(forceRefresh: forceRefresh),
         _loadBundles(forceRefresh: forceRefresh),
         _loadTips(forceRefresh: forceRefresh),
         _loadTeachers(forceRefresh: forceRefresh),
@@ -170,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final bannerCount = _banners.isNotEmpty
           ? _banners.length
-          : _allCourses.where((c) => c.isFeatured).length;
+          : _featuredCourses.length;
 
       if (bannerCount > 0) {
         // Top Banner
@@ -274,12 +280,52 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final enrolledIds = await _databaseService.getEnrolledCourseIds();
       final accessibleIds = await _databaseService.getAccessibleCourseIds();
+      
       if (mounted) {
         setState(() {
-          _enrolledCourseIds = enrolledIds;
           _accessibleCourseIds = accessibleIds.toSet();
         });
       }
+
+      // Batch fetch the actual course objects for enrolled IDs (Lite versions)
+      if (enrolledIds.isNotEmpty) {
+        final List<Course> finalEnrolledCourses = [];
+        final List<String> missingIds = [];
+
+        for (final id in enrolledIds) {
+          try {
+            // Priority 1: Check if already in memory (fastest)
+            final existing = [_newCourses, _featuredCourses, _popularCourses]
+                .expand((x) => x)
+                .firstWhere((c) => c.id == id);
+            finalEnrolledCourses.add(existing);
+          } catch (_) {
+            missingIds.add(id);
+          }
+        }
+
+        // Priority 2: Batch fetch all missing IDs from DB/Cache (1 request vs N)
+        if (missingIds.isNotEmpty) {
+          try {
+            final missingCoursesData = await _databaseService.getLiteCourses(
+              ids: missingIds,
+              limit: missingIds.length,
+            );
+            finalEnrolledCourses.addAll(
+              missingCoursesData.map((data) => Course.fromJson(data)).toList()
+            );
+          } catch (e) {
+            debugPrint('Error batch fetching missing enrolled courses: $e');
+          }
+        }
+        
+        if (mounted) {
+          setState(() {
+            _enrolledCourses = finalEnrolledCourses;
+          });
+        }
+      }
+
       // Load progress data for enrolled courses
       await _loadEnrollmentProgress();
     } catch (e) {
@@ -287,22 +333,59 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  Future<void> _loadCourses({bool forceRefresh = false}) async {
+  Future<void> _loadNewCourses({bool forceRefresh = false}) async {
     try {
-      final coursesData =
-          await _databaseService.getCourses(forceRefresh: forceRefresh);
+      final coursesData = await _databaseService.getLiteCourses(
+        limit: 10,
+        forceRefresh: forceRefresh,
+      );
       final normalized = _normalizeMapList(coursesData);
-
       if (mounted) {
         setState(() {
-          _allCourses =
-              normalized.map((data) => Course.fromJson(data)).toList();
+          _newCourses = normalized.map((data) => Course.fromJson(data)).toList();
+          if (_allCourses.isEmpty) _allCourses = _newCourses;
         });
       }
     } catch (e) {
-      debugPrint('Error loading courses: $e');
+      debugPrint('Error loading new courses: $e');
     }
   }
+
+  Future<void> _loadFeaturedCourses({bool forceRefresh = false}) async {
+    try {
+      final coursesData = await _databaseService.getLiteCourses(
+        limit: 8,
+        forceRefresh: forceRefresh,
+      );
+      final normalized = _normalizeMapList(coursesData);
+      if (mounted) {
+        setState(() {
+          _featuredCourses = normalized.map((data) => Course.fromJson(data)).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading featured courses: $e');
+    }
+  }
+
+  Future<void> _loadPopularCourses({bool forceRefresh = false}) async {
+    try {
+      final coursesData = await _databaseService.getLiteCourses(
+        limit: 10,
+        forceRefresh: forceRefresh,
+      );
+      final normalized = _normalizeMapList(coursesData);
+      if (mounted) {
+        setState(() {
+          _popularCourses = normalized.map((data) => Course.fromJson(data)).toList();
+          _recordedCourses = _popularCourses;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading popular courses: $e');
+    }
+  }
+
 
   Future<void> _loadBanners({bool forceRefresh = false}) async {
     try {
@@ -496,9 +579,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildContinueLearning() {
     // Show only if there are enrolled courses
-    final enrolledCourses =
-        _allCourses.where((c) => _enrolledCourseIds.contains(c.id)).toList();
-    if (enrolledCourses.isEmpty) return SizedBox.shrink();
+    if (_enrolledCourses.isEmpty) return SizedBox.shrink();
+
+    final enrolledCourses = _enrolledCourses;
 
     final lastCourse =
         enrolledCourses.first; // For now, just show the first enrolled
@@ -865,13 +948,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNewCoursesSection(bool isWideScreen) {
-    // Sort by created_at descending
-    final newCourses = List<Course>.from(_allCourses);
-    newCourses.sort((a, b) {
-      if (a.createdAt == null) return 1;
-      if (b.createdAt == null) return -1;
-      return b.createdAt!.compareTo(a.createdAt!);
-    });
+    if (_newCourses.isEmpty) return SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: Column(
@@ -884,15 +961,15 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
-              itemCount: newCourses.take(10).length,
+              itemCount: _newCourses.length,
               itemBuilder: (context, index) {
                 return Padding(
                   padding: EdgeInsets.symmetric(horizontal: 5),
                   child: SizedBox(
                     width: isWideScreen ? 320 : 280,
                     child: CourseCard(
-                        course: newCourses[index],
-                        heroTag: 'new_${newCourses[index].id}'),
+                        course: _newCourses[index],
+                        heroTag: 'new_${_newCourses[index].id}'),
                   ),
                 );
               },
@@ -904,9 +981,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildMostWatchedSection(bool isWideScreen) {
-    // Sort by student count descending
-    final mostWatched = List<Course>.from(_allCourses);
-    mostWatched.sort((a, b) => b.studentsCount.compareTo(a.studentsCount));
+    if (_popularCourses.isEmpty) return SliverToBoxAdapter(child: SizedBox.shrink());
 
     return SliverToBoxAdapter(
       child: Column(
@@ -919,15 +994,15 @@ class _HomeScreenState extends State<HomeScreen> {
             child: ListView.builder(
               padding: EdgeInsets.symmetric(horizontal: 15),
               scrollDirection: Axis.horizontal,
-              itemCount: mostWatched.take(10).length,
+              itemCount: _popularCourses.length,
               itemBuilder: (context, index) {
                 return Padding(
                   padding: EdgeInsets.symmetric(horizontal: 5),
                   child: SizedBox(
                     width: isWideScreen ? 320 : 280,
                     child: CourseCard(
-                        course: mostWatched[index],
-                        heroTag: 'watched_${mostWatched[index].id}'),
+                        course: _popularCourses[index],
+                        heroTag: 'watched_${_popularCourses[index].id}'),
                   ),
                 );
               },
@@ -939,13 +1014,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildRecordedCoursesSection(bool isWideScreen) {
-    var recordedCourses = List<Course>.from(_allCourses);
-    
-    if (recordedCourses.isEmpty) {
+    if (_recordedCourses.isEmpty) {
       return SliverToBoxAdapter(child: SizedBox.shrink());
     }
 
-    int rowsCount = recordedCourses.length > 5 ? 2 : 1;
+    int rowsCount = _recordedCourses.length > 5 ? 2 : 1;
     double cardHeight = isWideScreen ? 380 : 340;
     double cardWidth = isWideScreen ? 320 : 280;
     double containerHeight = (cardHeight * rowsCount) + ((rowsCount - 1) * 15.0);
@@ -967,11 +1040,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisSpacing: 10,
                 crossAxisSpacing: 15,
               ),
-              itemCount: recordedCourses.length,
+              itemCount: _recordedCourses.length,
               itemBuilder: (context, index) {
                 return CourseCard(
-                  course: recordedCourses[index],
-                  heroTag: 'recorded_${recordedCourses[index].id}',
+                  course: _recordedCourses[index],
+                  heroTag: 'recorded_${_recordedCourses[index].id}',
                 );
               },
             ),
@@ -1605,8 +1678,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final topBanners = _banners.where((b) => b.location == 'top').toList();
     final bannerItems = topBanners.isNotEmpty
         ? topBanners
-        : _allCourses
-            .where((c) => c.isFeatured)
+        : _featuredCourses
             .map((c) => BannerAd(
                   id: c.id,
                   title: c.getLocalizedTitle(
@@ -1895,18 +1967,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _handleBannerTap(BannerAd item) {
     if (item.type == 'course' && item.targetId != null) {
-      final course = _allCourses.firstWhere((c) => c.id == item.targetId,
-          orElse: () => Course(
-                id: item.targetId!,
-                title: item.title,
-                instructorName: '',
-                price: 0,
-                rating: 0,
-                studentsCount: 0,
-                lessonsCount: 0,
-                subject: '',
-              ));
-      final identifier = course.slug.isNotEmpty ? course.slug : course.id;
+      // Look in all our optimized lists
+      Course? course;
+      try {
+        course = [_newCourses, _featuredCourses, _popularCourses, _enrolledCourses]
+            .expand((x) => x)
+            .firstWhere((c) => c.id == item.targetId);
+      } catch (_) {
+        // Not found in memory, navigate by ID (Screen will fetch data)
+      }
+      
+      final identifier = (course != null && course.slug.isNotEmpty) 
+          ? course.slug 
+          : item.targetId!;
       context.push('/course/$identifier');
     } else if (item.type == 'package' && item.targetId != null) {
       final bundle = _bundles.firstWhere((b) => b.id == item.targetId,

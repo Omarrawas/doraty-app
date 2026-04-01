@@ -24,10 +24,15 @@ class CacheKeys {
     String? categoryId,
     String? teacherId,
     String? level,
+    String? subject,
     String? query,
     bool? isFree,
+    int? limit,
+    int? offset,
+    List<String>? ids,
   }) {
-    return 'courses_v2_${categoryId ?? "all"}_${teacherId ?? "all"}_${level ?? "all"}_${query ?? "all"}_${isFree ?? "false"}';
+    final idsKey = ids != null ? ids.join(',') : 'all';
+    return 'courses_v4_${categoryId ?? "all"}_${teacherId ?? "all"}_${level ?? "all"}_${subject ?? "all"}_${query ?? "all"}_${isFree ?? "false"}_${limit ?? "none"}_${offset ?? "none"}_$idsKey';
   }
   static String userEnrolledIds(String userId) => 'user_${userId}_enrolled_ids';
   static String userEnrollments(String userId) => 'user_${userId}_enrollments_v2';

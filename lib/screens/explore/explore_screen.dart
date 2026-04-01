@@ -27,7 +27,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final DatabaseService _databaseService = DatabaseService();
 
   List<CategoryModel> _categories = [];
-  List<Course> _allCourses = [];
   List<Course> _filteredCourses = [];
   bool _isLoading = true;
   String? _selectedCategoryId;
@@ -36,6 +35,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String _selectedLevel = 'all'; // all, beginner, intermediate, advanced
   String? _initialFilter;
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
+  
+  // Pagination State
+  int _offset = 0;
+  final int _limit = 10;
+  bool _hasMore = true;
+  bool _isMoreLoading = false;
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -51,46 +57,98 @@ class _ExploreScreenState extends State<ExploreScreen> {
       _selectedCategoryId = _initialFilter;
     }
     _loadData();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 200 &&
+        !_isMoreLoading &&
+        _hasMore &&
+        !_isLoading) {
+      _loadMore();
+    }
   }
 
   Future<void> _loadData({bool forceRefresh = false}) async {
-    if (!forceRefresh) {
-      setState(() => _isLoading = true);
+    if (mounted) {
+      setState(() {
+        if (!forceRefresh) _isLoading = true;
+        _offset = 0;
+        _hasMore = true;
+        _filteredCourses = [];
+      });
     }
+
     try {
-      // Load Categories and Courses in parallel
-      final results = await Future.wait([
-        _databaseService.getCategories(forceRefresh: forceRefresh),
-        _databaseService.getCourses(
-            includeDrafts: false, forceRefresh: forceRefresh),
-      ]);
-
-      final categoriesData = results[0];
-      final coursesData = results[1];
-
-      final categories =
-          categoriesData.map((e) => CategoryModel.fromJson(e)).toList();
-      final courses = coursesData.map((c) => Course.fromJson(c)).toList();
-
-      // If cache returned empty courses and this was not a forced refresh,
-      // retry with forceRefresh to get fresh data from the server
-      if (courses.isEmpty && !forceRefresh) {
-        debugPrint('⚠️ Cache returned empty courses, forcing refresh...');
-        await _loadData(forceRefresh: true);
-        return;
+      // Load Categories (Only once or on force refresh)
+      if (_categories.isEmpty || forceRefresh) {
+        final categoriesData = await _databaseService.getCategories(forceRefresh: forceRefresh);
+        if (mounted) {
+          setState(() {
+            _categories = categoriesData.map((e) => CategoryModel.fromJson(e)).toList();
+          });
+        }
       }
+
+      // Load Courses with server-side filters
+      final coursesData = await _databaseService.getCourses(
+        categoryId: _selectedCategoryId,
+        level: _selectedLevel == 'all' ? null : _selectedLevel,
+        query: _searchQuery,
+        limit: _limit,
+        offset: _offset,
+        includeDrafts: false,
+        forceRefresh: forceRefresh,
+      );
+
+      final courses = coursesData.map((c) => Course.fromJson(c)).toList();
 
       if (mounted) {
         setState(() {
-          _categories = categories;
-          _allCourses = courses;
-          _applyFilters();
+          _filteredCourses = courses;
+          _hasMore = courses.length >= _limit;
           _isLoading = false;
         });
       }
     } catch (e) {
       debugPrint('Error loading explore data: $e');
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isMoreLoading || !_hasMore) return;
+
+    if (mounted) setState(() => _isMoreLoading = true);
+
+    try {
+      _offset += _limit;
+      final coursesData = await _databaseService.getCourses(
+        categoryId: _selectedCategoryId,
+        level: _selectedLevel == 'all' ? null : _selectedLevel,
+        query: _searchQuery,
+        limit: _limit,
+        offset: _offset,
+        includeDrafts: false,
+      );
+
+      final newCourses = coursesData.map((c) => Course.fromJson(c)).toList();
+
+      if (mounted) {
+        setState(() {
+          // Avoid duplicates
+          final existingIds = _filteredCourses.map((c) => c.id).toSet();
+          final uniqueNewCourses = newCourses.where((c) => !existingIds.contains(c.id)).toList();
+          
+          _filteredCourses.addAll(uniqueNewCourses);
+          _hasMore = newCourses.length >= _limit;
+          _isMoreLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading more courses: $e');
+      if (mounted) setState(() => _isMoreLoading = false);
     }
   }
 
@@ -130,92 +188,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
   @override
   void dispose() {
     _searchFocusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
   void _applyFilters() {
-    List<Course> filtered = _allCourses;
-
-    // Filter by category
-    if (_selectedCategoryId != null) {
-      // Find all subcategories for the selected category
-      final subCatIds = _categories
-          .where((c) => c.parentId == _selectedCategoryId)
-          .map((c) => c.id)
-          .toList();
-
-      filtered = filtered.where((course) {
-        // Check if the course belongs to this category or its subcategories via category IDs
-        if (course.categoryIds.contains(_selectedCategoryId)) return true;
-
-        // Also check if the course belongs to any subcategory of the selected one
-        if (course.categoryIds.any((cid) => subCatIds.contains(cid))) {
-          return true;
-        }
-
-        // Also check the category names against the selected category model (fallback)
-        final selectedCat =
-            _categories.where((c) => c.id == _selectedCategoryId).firstOrNull;
-        if (selectedCat != null) {
-          final catName = selectedCat.name.toLowerCase();
-          final catNameEn = selectedCat.nameEn?.toLowerCase() ?? '';
-          return course.categories.any((c) =>
-                  c.toLowerCase() == catName || c.toLowerCase() == catNameEn) ||
-              course.subject.toLowerCase() == catName ||
-              course.subject.toLowerCase() == catNameEn;
-        }
-        return false;
-      }).toList();
-    }
-
-    // Filter by search query
-    if (_searchQuery.isNotEmpty) {
-      final query = _searchQuery.toLowerCase();
-      filtered = filtered.where((course) {
-        return course.title.toLowerCase().contains(query) ||
-            (course.description ?? '').toLowerCase().contains(query) ||
-            course.subject.toLowerCase().contains(query) ||
-            course.instructorName.toLowerCase().contains(query);
-      }).toList();
-    }
-
-    // Filter by Type
-    if (_selectedType != 'all') {
-      final typeMatch = _getTypeLabel(_selectedType);
-      filtered = filtered.where((course) {
-        return course.tags.contains(typeMatch) || course.tags.isEmpty;
-      }).toList();
-    }
-
-    // Filter by Level
-    if (_selectedLevel != 'all') {
-      final levelMatch = _getLevelLabel(_selectedLevel);
-      filtered = filtered.where((course) {
-        return course.level == levelMatch || course.level == null;
-      }).toList();
-    }
-
-    // Handle initialFilter (if not already handled by categorical filters above)
-    if (_initialFilter != null) {
-      if (_initialFilter == 'newest') {
-        filtered.sort((a, b) {
-          if (a.createdAt == null) return 1;
-          if (b.createdAt == null) return -1;
-          return b.createdAt!.compareTo(a.createdAt!);
-        });
-      } else if (_initialFilter == 'popular') {
-        filtered.sort((a, b) => b.studentsCount.compareTo(a.studentsCount));
-      } else if (_initialFilter == 'recorded') {
-        filtered =
-            filtered.toList(); // Since all courses are VOD uploaded courses
-      }
-      // Reset after first apply to allow user navigation to change it?
-      // Or keep it. Usually initial means start state.
-    }
-
-    // Ensure unique courses by ID
-    final seenIds = <String>{};
-    _filteredCourses = filtered.where((c) => seenIds.add(c.id)).toList();
+    _loadData();
   }
 
   List<CategoryModel> get _displayCategories {
@@ -336,10 +314,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
             color: AppColors.primaryPurple,
             backgroundColor: surfaceColor,
             child: Scrollbar(
+              controller: _scrollController,
               thickness: 6,
               radius: const Radius.circular(10),
               interactive: true,
               child: CustomScrollView(
+                controller: _scrollController,
                 physics: AlwaysScrollableScrollPhysics(),
                 slivers: [
                   // Header
@@ -607,6 +587,21 @@ class _ExploreScreenState extends State<ExploreScreen> {
                               ),
                   ),
 
+                  if (_hasMore || _isMoreLoading)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 32.0),
+                        child: Center(
+                          child: _isMoreLoading
+                              ? CircularProgressIndicator(
+                                  color: AppColors.primaryPurple,
+                                  strokeWidth: 2,
+                                )
+                              : SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
+
                   SliverToBoxAdapter(
                       child: SizedBox(height: 100)), // Space for BottomNav
                 ],
@@ -815,32 +810,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
         return _t('advanced');
       default:
         return opt;
-    }
-  }
-
-  String _getTypeLabel(String key) {
-    switch (key) {
-      case 'recorded':
-        return 'محملة';
-      case 'live':
-        return 'بث مباشر';
-      case 'in_person':
-        return 'حضورية';
-      default:
-        return 'الكل';
-    }
-  }
-
-  String _getLevelLabel(String key) {
-    switch (key) {
-      case 'beginner':
-        return 'مبتدئ';
-      case 'intermediate':
-        return 'متوسط';
-      case 'advanced':
-        return 'متقدم';
-      default:
-        return 'الكل';
     }
   }
 }

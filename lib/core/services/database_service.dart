@@ -894,16 +894,42 @@ class DatabaseService {
   }
 
   /// Get all courses
+  /// Selective columns for listing to reduce data transfer
+  static const String liteCourseColumns = '''
+    id, title, slug, image_url, price, discount_percentage, 
+    rating, students_count, lessons_count, instructor_id, instructor_name, 
+    instructor_photo, subject, subject_en, level, is_published, is_featured,
+    featured_order, created_at,
+    users!instructor_id(full_name, avatar_url),
+    course_category_junction(category:categories(id, name, name_en)),
+    course_tags(tag)
+  ''';
+
+  /// Get courses with advanced filtering and pagination
   Future<List<Map<String, dynamic>>> getCourses({
     String? category,
-    String? categoryId, // Added
+    String? categoryId,
     String? subject,
-    String? instructorId, // Added
+    String? instructorId,
+    String? level,
+    String? query,
+    int? limit,
+    int? offset,
+    List<String>? ids,
     bool includeDrafts = false,
     bool forceRefresh = false,
+    bool liteMode = true,
   }) async {
-    final String cacheKey =
-        'courses_v2_${category ?? "all"}_${categoryId ?? "all"}_${subject ?? "all"}_${instructorId ?? "all"}_$includeDrafts';
+    final String cacheKey = CacheKeys.coursesV2(
+      categoryId: categoryId,
+      teacherId: instructorId,
+      level: level,
+      subject: subject,
+      query: query,
+      limit: limit,
+      offset: offset,
+      ids: ids,
+    );
 
     return fetchWithCache(
       key: cacheKey,
@@ -911,162 +937,127 @@ class DatabaseService {
       duration: const Duration(minutes: 5),
       fetcher: () async {
         try {
-          // Join with users to get correct instructor details
-          // Join with junction table to get categories
-          var query = _client.from('courses').select('''
-                *, 
-                users!instructor_id(full_name, avatar_url),
-                course_category_junction(category:categories(id, name, name_en)),
-                course_tags(tag)
-              ''');
+          var filterQuery = _client.from('courses').select(liteMode ? liteCourseColumns : '*');
 
           if (instructorId != null) {
-            query = query.eq('instructor_id', instructorId);
+            filterQuery = filterQuery.eq('instructor_id', instructorId);
+          }
+
+          if (ids != null && ids.isNotEmpty) {
+            filterQuery = filterQuery.filter('id', 'in', ids);
+          }
+
+          if (level != null && level != 'all' && level != 'الكل') {
+            filterQuery = filterQuery.eq('level', level);
           }
 
           if (categoryId != null) {
             final subCatIds = await getSubCategoryIds(categoryId);
             if (subCatIds.isNotEmpty) {
-              query = query.inFilter('course_category_junction.category_id',
+              filterQuery = filterQuery.filter('course_category_junction.category_id', 'in',
                   [categoryId, ...subCatIds]);
             } else {
-              query = query.filter(
+              filterQuery = filterQuery.filter(
                   'course_category_junction.category_id', 'eq', categoryId);
             }
-          } else if (category != null) {
-            query = query.eq('category', category);
+          } else if (category != null && category != 'الكل') {
+            filterQuery = filterQuery.eq('category', category);
           }
 
-          if (subject != null) {
-            query = query.eq('subject', subject);
+          if (subject != null && subject != 'الكل') {
+            filterQuery = filterQuery.eq('subject', subject);
+          }
+
+          if (query != null && query.isNotEmpty) {
+             filterQuery = filterQuery.or('title.ilike.%$query%,description.ilike.%$query%');
           }
 
           if (!includeDrafts) {
-            query = query.eq('is_published', true);
+            filterQuery = filterQuery.eq('is_published', true);
           }
 
-          final response = await query;
+          // 2. TRANSFORMING (Order, Limit, Range)
+          var finalQuery = filterQuery.order('created_at', ascending: false);
+
+          if (limit != null) {
+            finalQuery = finalQuery.limit(limit);
+          }
+          if (offset != null) {
+            finalQuery = finalQuery.range(offset, offset + (limit ?? 10) - 1);
+          }
+
+          final response = await finalQuery;
           final data = SafeParser.safeMapList(response);
 
           // Map joined data to flat structure expected by UI
-          final coursesMapList = data
-              .map((course) {
-                final user = course['users'];
-                if (user != null) {
-                  course['instructor_name'] =
-                      user['full_name'] ?? course['instructor_name'];
-                  course['instructor_photo'] =
-                      user['avatar_url'] ?? course['instructor_photo'];
+          return data.map((course) {
+            final user = course['users'];
+            if (user != null) {
+              course['instructor_name'] = user['full_name'] ?? course['instructor_name'];
+              course['instructor_photo'] = user['avatar_url'] ?? course['instructor_photo'];
+            }
+
+            // Map categories from junction
+            final rawJunction = course['course_category_junction'];
+            if (rawJunction is List) {
+              final categories = <String>[];
+              final categoriesEn = <String>[];
+              final categoryIds = <String>[];
+
+              for (var j in rawJunction) {
+                if (j is Map && j['category'] is Map) {
+                  final cat = j['category'] as Map;
+                  if (cat['name'] != null) categories.add(cat['name']);
+                  if (cat['name_en'] != null) categoriesEn.add(cat['name_en']);
+                  if (cat['id'] != null) categoryIds.add(cat['id']);
                 }
+              }
 
-                // Map categories from junction
-                final rawJunction = course['course_category_junction'];
-                final junction = rawJunction is List ? rawJunction : null;
-                if (junction != null) {
-                  final categories = junction
-                      .map((j) {
-                        final cat = j is Map && j['category'] is Map
-                            ? j['category']
-                            : null;
-                        return cat?['name'] as String? ?? '';
-                      })
-                      .where((name) => name.isNotEmpty)
-                      .toList();
+              course['categories_names'] = categories;
+              course['categories_names_en'] = categoriesEn;
+              course['category_ids'] = categoryIds;
+              if (categories.isNotEmpty) course['category'] = categories.first;
+            }
 
-                  final categoriesEn = junction
-                      .map((j) {
-                        final cat = j is Map && j['category'] is Map
-                            ? j['category']
-                            : null;
-                        return cat?['name_en'] as String? ?? '';
-                      })
-                      .where((name) => name.isNotEmpty)
-                      .toList();
+            // Map tags
+            final rawTags = course['course_tags'];
+            if (rawTags is List) {
+              course['tags'] = rawTags
+                  .map((t) => t is Map ? t['tag']?.toString() : null)
+                  .whereType<String>()
+                  .toList();
+            }
 
-                  final categoryIds = junction
-                      .map((j) {
-                        final cat = j is Map && j['category'] is Map
-                            ? j['category']
-                            : null;
-                        return cat?['id'] as String? ?? '';
-                      })
-                      .where((id) => id.isNotEmpty)
-                      .toList();
+            return course;
+          }).toList().cast<Map<String, dynamic>>();
 
-                  course['categories_names'] = categories;
-                  course['categories_names_en'] = categoriesEn;
-                  course['category_ids'] = categoryIds;
-
-                  // Fallback for single category field
-                  if (categories.isNotEmpty) {
-                    course['category'] = categories.first;
-                  }
-                }
-
-                // Map tags
-                final rawTags = course['course_tags'];
-                final tagsList = rawTags is List ? rawTags : null;
-                if (tagsList != null) {
-                  course['tags'] = tagsList
-                      .map((t) => t is Map && t['tag'] is String
-                          ? t['tag'] as String
-                          : null)
-                      .whereType<String>()
-                      .toList();
-                }
-
-                return course;
-              })
-              .toList()
-              .cast<Map<String, dynamic>>();
-
-          return coursesMapList;
         } catch (e) {
-          debugPrint('Error getting courses with join: $e');
-          // Fallback to simple select if join fails
-          return _getCoursesSimple(
-            category: category,
-            categoryId: categoryId,
-            subject: subject,
-            instructorId: instructorId,
-            includeDrafts: includeDrafts,
-          );
+          debugPrint('Error getting courses: $e');
+          return [];
         }
       },
     );
   }
 
-  Future<List<Map<String, dynamic>>> _getCoursesSimple({
-    String? category,
+  /// Helper to get a small chunk of courses for UI lists
+  Future<List<Map<String, dynamic>>> getLiteCourses({
+    int limit = 10,
+    int offset = 0,
     String? categoryId,
-    String? subject,
-    String? instructorId,
-    bool includeDrafts = false,
+    List<String>? ids,
+    bool forceRefresh = false,
   }) async {
-    try {
-      var query = _client.from('courses').select();
-      if (instructorId != null) {
-        query = query.eq('instructor_id', instructorId);
-      }
-      if (categoryId != null) {
-        query = query.eq('category_id', categoryId);
-      } else if (category != null) {
-        query = query.eq('category', category);
-      }
-      if (subject != null) {
-        query = query.eq('subject', subject);
-      }
-      if (!includeDrafts) {
-        query = query.eq('is_published', true);
-      }
-
-      final response = await query.order('created_at', ascending: false);
-      return SafeParser.safeMapList(response);
-    } catch (e) {
-      debugPrint('Error in _getCoursesSimple: $e');
-      return [];
-    }
+    return getCourses(
+      limit: limit,
+      offset: offset,
+      categoryId: categoryId,
+      ids: ids,
+      forceRefresh: forceRefresh,
+      liteMode: true,
+    );
   }
+
+
 
   /// Get course by ID with join
   Future<Map<String, dynamic>?> getCourseById(String courseId,
