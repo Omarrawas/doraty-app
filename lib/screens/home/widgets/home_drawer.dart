@@ -35,17 +35,17 @@ class HomeDrawer extends StatelessWidget {
     final isDark = themeProvider.isDarkMode;
     final isAuthenticated = authService.isAuthenticated;
 
-    return Drawer(
-      width: MediaQuery.of(context).size.width * 0.8,
-      backgroundColor: AppColors.getDrawerBackground(context),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(40),
-          bottomRight: Radius.circular(40),
-          topLeft: Radius.circular(0),
-          topRight: Radius.circular(0),
+    return Container(
+      margin: const EdgeInsetsDirectional.only(bottom: 80, top: 0),
+      child: Drawer(
+        width: MediaQuery.of(context).size.width * 0.8,
+        backgroundColor: AppColors.getDrawerBackground(context),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadiusDirectional.only(
+            bottomEnd: Radius.circular(40),
+            topEnd: Radius.circular(0),
+          ),
         ),
-      ),
       child: Column(
         children: [
           // Header
@@ -141,6 +141,16 @@ class HomeDrawer extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     context.push('/teachers');
+                  },
+                ),
+
+                _buildDrawerItem(
+                  context,
+                  icon: Icons.card_giftcard_outlined,
+                  title: _t(context, 'all_bundles'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    context.push('/packages');
                   },
                 ),
 
@@ -345,12 +355,12 @@ class HomeDrawer extends StatelessWidget {
                       ),
                 ),
                 
-                SizedBox(height: 20),
               ],
             ),
           ),
         ],
       ),
+    ),
     );
   }
 
@@ -367,7 +377,7 @@ class HomeDrawer extends StatelessWidget {
     }
     
     final photoUrl = profile?['avatar_url'] ?? profile?['photo_url'] ?? currentUser?.userMetadata?['avatar_url'];
-    final isGuest = !isAuthenticated;
+    // isGuest removed
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 50, 10, 20),
@@ -406,13 +416,14 @@ class HomeDrawer extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      !isGuest
+                      isAuthenticated
                           ? '${_t(context, 'welcome_with_name')} ${userName ?? ''} 👋'
-                          : 'أهلاً بك يا زائر 👋',
+                          : '${_t(context, 'welcome')} 👋', // Used localized key "welcome"
                       style: TextStyle(
                         color: AppColors.getTextColor(context),
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
+                        fontFamily: 'Cairo',
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -420,8 +431,9 @@ class HomeDrawer extends StatelessWidget {
                     Text(
                       _t(context, 'ready_to_learn'),
                       style: TextStyle(
-                        color: AppColors.getTextColor(context, secondary: true),
+                         color: Colors.white70,
                         fontSize: 12,
+                        fontFamily: 'Cairo',
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

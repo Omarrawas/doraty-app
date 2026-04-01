@@ -50,22 +50,25 @@ class _AllPackagesScreenState extends State<AllPackagesScreen> {
     final double screenWidth = MediaQuery.of(context).size.width;
     String t(String key) => AppStrings.get(key, locale);
 
-    // Responsive grid settings
-    int crossAxisCount = 1;
-    double childAspectRatio = 2.0;
-    
+    int crossAxisCount;
+    double childAspectRatio;
+
+    // Responsive grid settings (Optimized for premium look and avoiding oversized cards)
     if (screenWidth > 1400) {
-      crossAxisCount = 4;
+      crossAxisCount = 5;
       childAspectRatio = 1.35;
-    } else if (screenWidth > 1000) {
+    } else if (screenWidth > 1100) {
+      crossAxisCount = 4;
+      childAspectRatio = 1.3;
+    } else if (screenWidth > 850) {
       crossAxisCount = 3;
-      childAspectRatio = 1.4;
-    } else if (screenWidth > 650) {
+      childAspectRatio = 1.25;
+    } else if (screenWidth > 600) {
       crossAxisCount = 2;
-      childAspectRatio = 1.5;
+      childAspectRatio = 1.45;
     } else {
       crossAxisCount = 1;
-      childAspectRatio = 2.3;
+      childAspectRatio = 2.4; 
     }
 
     return Scaffold(

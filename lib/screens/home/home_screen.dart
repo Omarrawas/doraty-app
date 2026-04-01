@@ -11,13 +11,13 @@ import '../teacher/teacher_profile_screen.dart';
 import '../../models/category_model.dart';
 import '../explore/widgets/category_card.dart';
 import '../../core/providers/navigation_provider.dart';
-import '../packages/package_screen.dart';
 import '../../widgets/shimmer_loader.dart';
+import '../../core/services/app_init_state.dart';
 import '../../core/services/sync_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../widgets/course_card.dart';
 import 'widgets/home_drawer.dart';
-
+import '../packages/package_screen.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
@@ -29,7 +29,7 @@ import '../../widgets/vertical_tip_player.dart';
 import '../../widgets/tip_preview_card.dart';
 import '../../core/utils/safe_parser.dart';
 import '../../models/banner_ad.dart';
-import 'package:url_launcher/url_launcher.dart'; // Added
+import 'package:url_launcher/url_launcher.dart';
 import 'package:lottie/lottie.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -95,22 +95,53 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _refreshData({bool forceRefresh = false}) async {
     if (_isRefreshing) return;
+    
+    // 1. Wait for services to be ready if they aren't yet
+    if (!AppInitState.servicesReady) {
+      debugPrint('⏳ HomeScreen: Services not ready, waiting...');
+      int attempts = 0;
+      while (!AppInitState.servicesReady && attempts < 50) {
+        // 5s max wait
+        await Future.delayed(const Duration(milliseconds: 100));
+        attempts++;
+      }
+    }
+
     if (mounted) setState(() => _isRefreshing = true);
 
     try {
       debugPrint('🔄 HomeScreen: Refreshing data (force: $forceRefresh)...');
 
-      // Load all data points in parallel with individual error catching
-      await Future.wait([
-        _loadTeachers(forceRefresh: forceRefresh),
-        _loadCategories(forceRefresh: forceRefresh),
-        _loadCourses(forceRefresh: forceRefresh),
-        _loadEnrolledCourses(),
+      // Load essential UI data first to show content ASAP
+      // We don't await Future.wait at once to allow individual setState calls to render UI partially
+      final essentialTasks = [
         _loadBanners(forceRefresh: forceRefresh),
-        _loadTips(forceRefresh: forceRefresh),
+        _loadCategories(forceRefresh: forceRefresh),
+      ];
+
+      await Future.wait(essentialTasks);
+
+      // Once essential data is ready (banners/categories), stop showing global loading if they have data
+      if (mounted && (_banners.isNotEmpty || _categories.isNotEmpty)) {
+        setState(() => _isLoading = false);
+      }
+
+      // Load main content in background/parallel
+      final contentTasks = [
+        _loadCourses(forceRefresh: forceRefresh),
         _loadBundles(forceRefresh: forceRefresh),
+        _loadTips(forceRefresh: forceRefresh),
+        _loadTeachers(forceRefresh: forceRefresh),
+      ];
+
+      // Load user-specific data
+      final userTasks = [
+        _loadEnrolledCourses(),
         _checkUnreadNotifications(),
-      ]);
+      ];
+
+      // Run everything else
+      await Future.wait([...contentTasks, ...userTasks]);
 
       debugPrint('✅ HomeScreen: Data refresh complete');
     } catch (e) {
