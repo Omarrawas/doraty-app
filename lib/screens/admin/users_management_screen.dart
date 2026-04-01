@@ -97,15 +97,18 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                           ? _buildEmptyState(context)
                           : RefreshIndicator(
                               onRefresh: _loadData,
-                              child: ListView.builder(
+                              child: GridView.builder(
                                 padding: EdgeInsets.all(20),
+                                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                                  maxCrossAxisExtent: 220,
+                                  childAspectRatio: 0.72,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                ),
                                 itemCount: _filteredUsers.length,
                                 itemBuilder: (context, index) {
-                                  return Padding(
-                                    padding: EdgeInsets.only(bottom: 12),
-                                    child: _buildUserCard(
-                                        context, _filteredUsers[index]),
-                                  );
+                                  return _buildUserCard(
+                                      context, _filteredUsers[index]);
                                 },
                               ),
                             ),
@@ -224,99 +227,93 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
                 color: AppColors.getGlassColor(context, opacity: 0.3),
                 width: 1.5),
           ),
-          child: Padding(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          child: Stack(
+            children: [
+              Padding(
+                padding: EdgeInsets.all(12),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircleAvatar(
                       backgroundColor: AppColors.primaryPurple.withOpacity(0.3),
-                      radius: 24,
+                      radius: 30,
                       child: Text(
                         (user['full_name']?.toString()[0] ?? 'U').toUpperCase(),
                         style: TextStyle(
                           color: AppColors.getTextColor(context),
-                          fontSize: 20,
+                          fontSize: 24,
                           fontWeight: FontWeight.normal,
                         ),
                       ),
                     ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            StringUtils.cleanTeacherName(
-                                user['full_name'] ?? _t('user')),
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.normal,
-                              color: AppColors.getTextColor(context),
-                            ),
-                          ),
-                          Text(
-                            user['email'] ?? '',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.getTextColor(context)
-                                  .withOpacity(0.7),
-                            ),
-                          ),
-                        ],
+                    SizedBox(height: 12),
+                    Text(
+                      StringUtils.cleanTeacherName(
+                          user['full_name'] ?? _t('user')),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.getTextColor(context),
                       ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: _getRoleColor(roleName).withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                            color: _getRoleColor(roleName), width: 1),
+                    SizedBox(height: 4),
+                    Text(
+                      user['email'] ?? '',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.getTextColor(context)
+                            .withOpacity(0.7),
                       ),
-                      child: Text(
-                        roleName,
-                        style: TextStyle(
-                          color: _getRoleColor(roleName),
-                          fontSize: 12,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ],
-                ),
-                SizedBox(height: 16),
-                Row(
-                  children: [
-                    if (_canManageRole(user)) // Added condition
-                      Expanded(
-                        child: _buildActionButton(
-                          context: context,
-                          icon: Icons.admin_panel_settings,
-                          label: _t('assign_role'),
-                          onTap: () => _showRoleDialog(user),
-                        ),
+                    SizedBox(height: 12),
+                    if (_canManageRole(user))
+                      _buildActionButton(
+                        context: context,
+                        icon: Icons.admin_panel_settings,
+                        label: _t('assign_role'),
+                        onTap: () => _showRoleDialog(user),
                       )
                     else
-                      Expanded(
-                        child: Text(
-                          _t('cannot_edit_admin_roles'),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: AppColors.getTextColor(context,
-                                secondary: true),
-                            fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                          ),
+                      Text(
+                        _t('cannot_edit_admin_roles'),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.getTextColor(context,
+                              secondary: true),
+                          fontSize: 10,
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _getRoleColor(roleName).withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: _getRoleColor(roleName).withOpacity(0.5), width: 1),
+                  ),
+                  child: Text(
+                    roleName,
+                    style: TextStyle(
+                      color: _getRoleColor(roleName),
+                      fontSize: 9,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

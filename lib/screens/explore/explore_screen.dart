@@ -381,13 +381,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           ),
                           Spacer(),
                           Container(
-                            padding: EdgeInsets.all(8),
                             decoration: BoxDecoration(
                               color: subtleSurfaceColor,
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            child: Icon(Icons.auto_awesome,
-                                color: Colors.amber, size: 20),
+                            child: IconButton(
+                              icon: Icon(
+                                Provider.of<LocaleProvider>(context, listen: false).locale == 'ar'
+                                    ? Icons.arrow_back_ios_new_rounded // Use backward for left button in RTL
+                                    : Icons.arrow_forward_ios_rounded,
+                                color: primaryTextColor,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                if (Navigator.canPop(context)) {
+                                  Navigator.pop(context);
+                                } else {
+                                  context.go('/');
+                                }
+                              },
+                            ),
                           ),
                         ],
                       ),

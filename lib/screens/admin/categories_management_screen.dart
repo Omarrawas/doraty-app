@@ -147,53 +147,53 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
 
   Widget _buildCategoryGroup(CategoryModel parent, List<CategoryModel> children) {
     return Card(
-      margin: EdgeInsets.only(bottom: 24),
+      margin: EdgeInsets.only(bottom: 16),
       elevation: 0,
       color: Colors.transparent,
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
               color: AppColors.getGlassColor(context, opacity: 0.1),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: AppColors.getGlassColor(context, opacity: 0.3),
-                width: 1.5,
+                width: 1,
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Parent Header
+                // Parent Header - More Compact
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryPurple.withOpacity(0.15),
+                    color: AppColors.primaryPurple.withOpacity(0.12),
                     border: Border(
                       bottom: BorderSide(
-                        color: AppColors.getGlassColor(context, opacity: 0.2),
+                        color: AppColors.getGlassColor(context, opacity: 0.15),
                       ),
                     ),
                   ),
                   child: Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.all(8),
+                        padding: EdgeInsets.all(6),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryPurple.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(10),
+                          color: AppColors.primaryPurple.withOpacity(0.25),
+                          borderRadius: BorderRadius.circular(8),
                         ),
                         child: parent.iconUrl != null && parent.iconUrl!.isNotEmpty
                             ? Image.network(parent.iconUrl!,
-                                width: 24,
-                                height: 24,
+                                width: 20,
+                                height: 20,
                                 errorBuilder: (_, __, ___) =>
-                                    Icon(Icons.category, color: AppColors.getTextColor(context)))
-                            : Icon(Icons.category, color: AppColors.getTextColor(context)),
+                                    Icon(Icons.category, size: 20, color: AppColors.getTextColor(context)))
+                            : Icon(Icons.category, size: 20, color: AppColors.getTextColor(context)),
                       ),
-                      SizedBox(width: 16),
+                      SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,25 +203,29 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.getTextColor(context),
-                                fontSize: 18,
+                                fontSize: 16,
                               ),
                             ),
                             Text(
                               '${_t('base_category')} (${parent.slug})',
                               style: TextStyle(
-                                color: AppColors.getTextColor(context).withOpacity(0.6),
-                                fontSize: 12,
+                                color: AppColors.getTextColor(context).withOpacity(0.5),
+                                fontSize: 11,
                               ),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.edit_rounded, color: Colors.blueAccent),
+                        constraints: BoxConstraints(),
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        icon: Icon(Icons.edit_rounded, size: 18, color: Colors.blueAccent),
                         onPressed: () => _showAddEditDialog(category: parent),
                       ),
                       IconButton(
-                        icon: Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                        constraints: BoxConstraints(),
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        icon: Icon(Icons.delete_outline_rounded, size: 18, color: Colors.redAccent),
                         onPressed: () => _deleteCategory(parent.id),
                       ),
                     ],
@@ -231,7 +235,7 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                 // Children Categories Grid
                 if (children.isNotEmpty)
                   Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: EdgeInsets.all(12.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -239,14 +243,14 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                           '${_t('sub_categories')}:',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            color: AppColors.getTextColor(context).withOpacity(0.8),
-                            fontSize: 14,
+                            color: AppColors.getTextColor(context).withOpacity(0.7),
+                            fontSize: 13,
                           ),
                         ),
-                        SizedBox(height: 12),
+                        SizedBox(height: 8),
                         Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
+                          spacing: 8,
+                          runSpacing: 8,
                           children: children.map((child) => _buildChildChip(child)).toList(),
                         ),
                       ],
@@ -254,10 +258,11 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                   )
                 else
                   Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Text(
                       _t('no_sub_categories'),
                       style: TextStyle(
+                        fontSize: 12,
                         color: AppColors.getTextColor(context).withOpacity(0.5),
                         fontStyle: FontStyle.italic,
                       ),
@@ -273,28 +278,28 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
 
   Widget _buildChildChip(CategoryModel child) {
     return Container(
-      width: MediaQuery.of(context).size.width > 600 ? 250 : double.infinity,
+      width: MediaQuery.of(context).size.width > 600 ? 180 : (MediaQuery.of(context).size.width - 64) / 2,
       decoration: BoxDecoration(
         color: AppColors.getGlassColor(context, opacity: 0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: AppColors.getGlassColor(context, opacity: 0.2),
+          color: AppColors.getGlassColor(context, opacity: 0.15),
         ),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(6),
+            padding: EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: AppColors.primaryPurple.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: child.iconUrl != null && child.iconUrl!.isNotEmpty
-                ? Image.network(child.iconUrl!, width: 16, height: 16, errorBuilder: (_, __, ___) => Icon(Icons.subdirectory_arrow_right, size: 16, color: AppColors.getTextColor(context)))
-                : Icon(Icons.subdirectory_arrow_right, size: 16, color: AppColors.getTextColor(context)),
+                ? Image.network(child.iconUrl!, width: 14, height: 14, errorBuilder: (_, __, ___) => Icon(Icons.subdirectory_arrow_right, size: 14, color: AppColors.getTextColor(context)))
+                : Icon(Icons.subdirectory_arrow_right, size: 14, color: AppColors.getTextColor(context)),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,14 +309,19 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
                   style: TextStyle(
                     color: AppColors.getTextColor(context),
                     fontWeight: FontWeight.w600,
+                    fontSize: 13,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   child.slug,
                   style: TextStyle(
-                    color: AppColors.getTextColor(context).withOpacity(0.6),
-                    fontSize: 11,
+                    color: AppColors.getTextColor(context).withOpacity(0.5),
+                    fontSize: 10,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -322,14 +332,14 @@ class _CategoriesManagementScreenState extends State<CategoriesManagementScreen>
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: BoxConstraints(),
-                icon: Icon(Icons.edit, size: 18, color: Colors.blueAccent),
+                icon: Icon(Icons.edit, size: 16, color: Colors.blueAccent),
                 onPressed: () => _showAddEditDialog(category: child),
               ),
-              SizedBox(width: 8),
+              SizedBox(width: 4),
               IconButton(
                 padding: EdgeInsets.zero,
                 constraints: BoxConstraints(),
-                icon: Icon(Icons.delete, size: 18, color: Colors.redAccent),
+                icon: Icon(Icons.delete, size: 16, color: Colors.redAccent),
                 onPressed: () => _deleteCategory(child.id),
               ),
             ],

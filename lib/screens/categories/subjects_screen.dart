@@ -7,6 +7,7 @@ import '../../core/localization/locale_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:doraty/core/constants/app_strings.dart';
 import '../explore/widgets/category_card.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class SubjectsScreen extends StatefulWidget {
   final bool showBackButton;
@@ -95,10 +96,13 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
   }
 
   Widget _buildHeader() {
+    final canGoBack = Navigator.canPop(context) || kIsWeb;
+    
     return Padding(
       padding: EdgeInsets.all(20),
       child: Row(
         children: [
+          if (canGoBack || widget.showBackButton)
           Container(
             decoration: BoxDecoration(
               color: AppColors.getSurfaceColor(context),
@@ -108,21 +112,25 @@ class _SubjectsScreenState extends State<SubjectsScreen> {
                 width: 1,
               ),
             ),
-            child: widget.showBackButton
-                ? IconButton(
-                    icon: Icon(
-                      Provider.of<LocaleProvider>(context, listen: false)
-                                  .locale ==
-                              'ar'
-                          ? Icons.arrow_forward_ios_rounded
-                          : Icons.arrow_back_ios_new_rounded,
-                      color: AppColors.getTextColor(context),
-                      size: 20,
-                    ),
-                    onPressed: () => Navigator.pop(context),
-                  )
-                : SizedBox(width: 48, height: 48),
-          ),
+            child: IconButton(
+              icon: Icon(
+                Provider.of<LocaleProvider>(context, listen: false).locale == 'ar'
+                    ? Icons.arrow_forward_ios_rounded
+                    : Icons.arrow_back_ios_new_rounded,
+                color: AppColors.getTextColor(context),
+                size: 20,
+              ),
+              onPressed: () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else if (kIsWeb) {
+                  context.go('/');
+                }
+              },
+            ),
+          )
+          else
+            SizedBox(width: 48, height: 48), // Balanced placeholder
           Expanded(
             child: Consumer<LocaleProvider>(
               builder: (context, localeProvider, _) => Text(

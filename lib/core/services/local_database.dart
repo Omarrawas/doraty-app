@@ -20,7 +20,8 @@ class LocalDatabase {
   // Standard boxes
   static const String boxGeneral = 'app_local_database';
   static const String boxMetadata = 'app_metadata_box';
-  static const String boxVersions = 'app_versions_box'; // New: Version-based invalidation
+  static const String boxVersions = 'app_versions_box'; 
+  static const String boxSyncQueue = 'sync_queue'; // ELITE: Ensure this is always available
 
   /// Initialize Hive and open all required boxes
   Future<void> init() async {
@@ -31,7 +32,7 @@ class LocalDatabase {
     }
 
     _initFuture = () async {
-      final boxes = <String>[boxGeneral, boxMetadata, boxVersions];
+      final boxes = <String>[boxGeneral, boxMetadata, boxVersions, boxSyncQueue];
 
       for (final name in boxes) {
         await _openBox(name);
@@ -174,39 +175,46 @@ class LocalDatabase {
     }
   }
 
-  /// Shared parsing logic — uses runtime data-type checks to survive Flutter Web minification.
-  /// NOTE: T== comparisons for generic types (`List<Map<String,dynamic>>`) fail on minified builds.
+  /// Shared parsing logic — specifically optimized for Flutter Web minification to survive
+  /// "type X is not a subtype of Y" errors during casts.
   T? _parseData<T>(dynamic data, String key) {
     try {
       if (data == null) return null;
 
-      // Use data-instance checks instead of T== (T== breaks on minified Flutter Web)
+      // 1. Handle Iterable/List (The most common error source on Web)
       if (data is Iterable && data is! String) {
         final rawList = data.toList();
 
-        // 1. First try a direct cast — handles List<String>, List<int>, etc.
+        // Check the intended type T's string representation as a last resort
+        final String typeStr = T.toString();
+
+        // ELITE FIX: Handle List<String> which frequently fails on minified builds
+        if (typeStr.contains('String')) {
+          return SafeParser.toStringList(rawList) as T;
+        }
+
+        // ELITE FIX: Handle List<Map<...>> which frequently fails
+        if (typeStr.contains('Map')) {
+          return SafeParser.safeMapList(rawList) as T;
+        }
+
+        // Try direct cast
         try { return rawList as T; } catch (_) {}
-
-        // 2. Try as List<String> (e.g. enrolled_ids)
-        try {
-          final asStrings = rawList.map((e) => e?.toString() ?? '').toList();
-          return asStrings as T;
-        } catch (_) {}
-
-        // 3. Try as List<Map<String,dynamic>> (e.g. courses, lessons)
-        try {
-          final asMaps = SafeParser.safeMapList(rawList);
-          return asMaps as T;
-        } catch (_) {}
-
-        // 4. Final fallback: raw dynamic list
-        try { return rawList as T; } catch (_) {}
+        
+        // Final list effort: try to match raw list to T directly
+        return rawList as T?;
       }
+
+      // 2. Handle Map
       if (data is Map) {
-        final asMap = SafeParser.safeMap(data);
-        try { return asMap as T; } catch (_) {}
+        final String typeStr = T.toString();
+        if (typeStr.contains('Map')) {
+           return SafeParser.safeMap(data) as T;
+        }
         try { return data as T; } catch (_) {}
       }
+
+      // 3. Primitive types (Use SafeParser for cross-platform stability)
 
       // Primitive types
       if (data is int)    { try { return data as T; } catch (_) { return SafeParser.toInt(data) as T?; } }
@@ -236,7 +244,6 @@ class LocalDatabase {
     }
   }
 
-  /// Clear all boxes.
   Future<void> clearAll() async {
     try {
       await init();

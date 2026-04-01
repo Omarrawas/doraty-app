@@ -62,11 +62,11 @@ void main() {
 
 Future<void> _initServicesInBackground() async {
   try {
-    await Future.wait([
-      Hive.initFlutter().timeout(Duration(seconds: 7)),
-      LocalDatabase().init().timeout(Duration(seconds: 7)),
-      SettingsService().init().timeout(Duration(seconds: 5)),
-    ]);
+    // 1. Core Storage & Prep (Wait sequentially to avoid Hive race conditions)
+    await Hive.initFlutter().timeout(Duration(seconds: 10));
+    await LocalDatabase().init().timeout(Duration(seconds: 10));
+    await SettingsService().init().timeout(Duration(seconds: 5));
+    
     debugPrint('✅ Storage/Settings initialized');
   } catch (e) {
     debugPrint('🚨 [StorageError] $e');
