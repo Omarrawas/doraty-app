@@ -25,7 +25,8 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   List<Map<String, dynamic>> _roles = [];
   bool _isLoading = true;
   String _searchQuery = '';
-  String? _currentUserRole; // Added
+  String? _currentUserRole;
+  String _selectedRoleFilter = 'all'; // Added
 
   @override
   void initState() {
@@ -63,13 +64,61 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
   }
 
   List<Map<String, dynamic>> get _filteredUsers {
-    if (_searchQuery.isEmpty) return _users;
-    return _users.where((user) {
-      final name = user['full_name']?.toString().toLowerCase() ?? '';
-      final email = user['email']?.toString().toLowerCase() ?? '';
+    List<Map<String, dynamic>> filtered = _users;
+
+    // Filter by search query
+    if (_searchQuery.isNotEmpty) {
       final query = _searchQuery.toLowerCase();
-      return name.contains(query) || email.contains(query);
-    }).toList();
+      filtered = filtered.where((user) {
+        final name = user['full_name']?.toString().toLowerCase() ?? '';
+        final email = user['email']?.toString().toLowerCase() ?? '';
+        final phone = user['phone_number']?.toString().toLowerCase() ?? '';
+        return name.contains(query) || email.contains(query) || phone.contains(query);
+      }).toList();
+    }
+
+    // Filter by role
+    if (_selectedRoleFilter != 'all') {
+      filtered = filtered.where((user) {
+        final userRoles = user['user_roles'] as List? ?? [];
+        final roleName = userRoles.isNotEmpty
+            ? (userRoles.first['roles']?['name']?.toString() ?? 'student')
+            : 'student';
+
+        if (_selectedRoleFilter == 'admin') {
+          return roleName == 'admin' || roleName == 'super_admin';
+        }
+        return roleName == _selectedRoleFilter;
+      }).toList();
+    }
+
+    return filtered;
+  }
+
+  int _getRoleCount(String role) {
+    if (role == 'all') return _users.length;
+    if (role == 'admin') {
+      return _users.where((u) {
+        final roles = u['user_roles'] as List? ?? [];
+        return roles.any((r) =>
+            r['roles']?['name'] == 'admin' || r['roles']?['name'] == 'super_admin');
+      }).length;
+    }
+    if (role == 'teacher') {
+      return _users.where((u) {
+        final roles = u['user_roles'] as List? ?? [];
+        return roles.any((r) => r['roles']?['name'] == 'teacher');
+      }).length;
+    }
+    if (role == 'student') {
+      return _users.where((u) {
+        final roles = u['user_roles'] as List? ?? [];
+        return roles.isEmpty ||
+            roles.any((r) =>
+                r['roles']?['name'] == 'student' || r['roles']?['name'] == null);
+      }).length;
+    }
+    return 0;
   }
 
   @override
@@ -85,6 +134,7 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               children: [
                 _buildHeader(context),
                 _buildSearchBar(context),
+                _buildFilterChips(context),
                 Expanded(
                   child: _isLoading
                       ? Center(
@@ -157,17 +207,36 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
             ),
           ),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: AppColors.getGlassColor(context, opacity: 0.2),
               borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              _t('admin_users_count').replaceAll('{count}', _users.length.toString()),
-              style: TextStyle(
-                color: AppColors.getTextColor(context),
-                fontWeight: FontWeight.normal,
+              border: Border.all(
+                color: AppColors.getGlassColor(context, opacity: 0.3),
+                width: 1,
               ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '${_t('all')}: ${_users.length} | ${_t('admin_role_label')}: ${_getRoleCount('admin')}',
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context),
+                    fontSize: 10,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+                Text(
+                  '${_t('teacher_role_label')}: ${_getRoleCount('teacher')} | ${_t('student_role_label')}: ${_getRoleCount('student')}',
+                  style: TextStyle(
+                    color: AppColors.getTextColor(context),
+                    fontSize: 10,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -204,6 +273,55 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChips(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Row(
+        children: [
+          _buildRoleChip('all', _t('all')),
+          SizedBox(width: 8),
+          _buildRoleChip('admin', _t('admin_role_label')),
+          SizedBox(width: 8),
+          _buildRoleChip('teacher', _t('teacher_role_label')),
+          SizedBox(width: 8),
+          _buildRoleChip('student', _t('student_role_label')),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRoleChip(String role, String label) {
+    final isSelected = _selectedRoleFilter == role;
+    final color = _getRoleColor(role);
+
+    return FilterChip(
+      selected: isSelected,
+      label: Text('$label (${_getRoleCount(role)})'),
+      onSelected: (selected) {
+        setState(() => _selectedRoleFilter = role);
+      },
+      selectedColor: color.withOpacity(0.2),
+      checkmarkColor: color,
+      labelStyle: TextStyle(
+        color: isSelected ? color : AppColors.getTextColor(context).withOpacity(0.7),
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        fontSize: 12,
+      ),
+      backgroundColor: Colors.transparent,
+      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isSelected
+              ? color
+              : AppColors.getGlassColor(context, opacity: 0.3),
+          width: isSelected ? 1.5 : 1,
         ),
       ),
     );
@@ -322,6 +440,8 @@ class _UsersManagementScreenState extends State<UsersManagementScreen> {
 
   Color _getRoleColor(String role) {
     switch (role.toLowerCase()) {
+      case 'all':
+        return AppColors.primaryPurple;
       case 'مدير عام':
       case 'super_admin':
         return Colors.red;

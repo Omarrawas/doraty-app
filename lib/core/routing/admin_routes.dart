@@ -36,6 +36,7 @@ import '../../screens/admin/security_settings_screen.dart';
 import '../../screens/admin/financial_reports_screen.dart';
 import '../../screens/teacher/create_exam_screen.dart';
 import '../../screens/teacher/manage_questions_screen.dart';
+import '../../screens/admin/admin_social_links_screen.dart';
 
 List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
   return [
@@ -255,6 +256,10 @@ List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
         GoRoute(
           path: 'security',
           builder: (context, state) => const SecuritySettingsScreen(),
+        ),
+        GoRoute(
+          path: 'social-links',
+          builder: (context, state) => const AdminSocialLinksScreen(),
         ),
         GoRoute(
           path: 'reports/financial',
