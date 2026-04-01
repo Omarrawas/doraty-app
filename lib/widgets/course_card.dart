@@ -238,6 +238,31 @@ class _CourseCardState extends State<CourseCard>
                           ),
                         ),
                       ),
+                    // Level Badge (Top Left, below New if exists)
+                    if (widget.course.level != null && widget.course.level!.isNotEmpty)
+                      Positioned(
+                        top: widget.course.isNew ? 40 : 12,
+                        left: 12,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.white24),
+                          ),
+                          child: Text(
+                            AppStrings.get(widget.course.level!.toLowerCase(), locale) != widget.course.level!.toLowerCase()
+                                ? AppStrings.get(widget.course.level!.toLowerCase(), locale)
+                                : widget.course.level!,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Cairo',
+                            ),
+                          ),
+                        ),
+                      ),
                     // Duration Badge (Bottom Right matching image layout)
                     if (widget.course.durationHours != null &&
                         widget.course.durationHours!.isNotEmpty)
@@ -500,9 +525,36 @@ class _CourseCardState extends State<CourseCard>
                           ? 'جديد'
                           : AppStrings.get('new_badge', locale),
                       style: TextStyle(
-                        color: AppColors.getTextColor(context),
+                        color: Colors.white,
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
+                        fontFamily: 'Cairo',
+                      ),
+                    ),
+                  ),
+                ),
+              // Level Badge (Top Left, below New if exists)
+              if (widget.course.level != null && widget.course.level!.isNotEmpty)
+                Positioned(
+                  top: widget.course.isNew ? 32 : 8,
+                  left: 8,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Text(
+                      AppStrings.get(widget.course.level!.toLowerCase(), locale) !=
+                              widget.course.level!.toLowerCase()
+                          ? AppStrings.get(widget.course.level!.toLowerCase(), locale)
+                          : widget.course.level!,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: 'Cairo',
                       ),
                     ),
                   ),
@@ -527,7 +579,7 @@ class _CourseCardState extends State<CourseCard>
                               .replaceAll('ساعات', 'س')
                               .replaceAll('دقائق', 'د'),
                           style: TextStyle(
-                            color: AppColors.getTextColor(context),
+                            color: Colors.white,
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),

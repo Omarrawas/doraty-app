@@ -33,8 +33,10 @@ class HomeDrawer extends StatelessWidget {
     final localeProvider = Provider.of<LocaleProvider>(context);
     final userProfile = authService.userProfile;
     final isDark = themeProvider.isDarkMode;
+    final isAuthenticated = authService.isAuthenticated;
 
     return Drawer(
+      width: MediaQuery.of(context).size.width * 0.8,
       backgroundColor: AppColors.getDrawerBackground(context),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
@@ -47,7 +49,7 @@ class HomeDrawer extends StatelessWidget {
       child: Column(
         children: [
           // Header
-          _buildHeader(context, userProfile, isDark),
+          _buildHeader(context, userProfile, isDark, isAuthenticated),
 
           // Content
           Expanded(
@@ -352,14 +354,23 @@ class HomeDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, Map<String, dynamic>? profile, bool isDark) {
-    // If profile is null, we show the Guest UI
-    final userName = profile?['full_name'] ?? profile?['name'] ?? profile?['email']?.split('@').first;
-    final photoUrl = profile?['avatar_url'] ?? profile?['photo_url'];
-    final isGuest = profile == null;
+  Widget _buildHeader(BuildContext context, Map<String, dynamic>? profile, bool isDark, bool isAuthenticated) {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final currentUser = authService.currentUser;
+    
+    // Better name extraction with multiple fallbacks
+    String? userName = profile?['full_name'] ?? profile?['name'];
+    if (userName == null && currentUser != null) {
+      userName = currentUser.userMetadata?['full_name'] ?? 
+                 currentUser.userMetadata?['name'] ?? 
+                 currentUser.email?.split('@').first;
+    }
+    
+    final photoUrl = profile?['avatar_url'] ?? profile?['photo_url'] ?? currentUser?.userMetadata?['avatar_url'];
+    final isGuest = !isAuthenticated;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 60, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 50, 10, 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -370,40 +381,55 @@ class HomeDrawer extends StatelessWidget {
           ],
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: Colors.white,
-            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-            child: photoUrl == null ? Icon(Icons.person, size: 35, color: AppColors.primaryPurple) : null,
-          ),
-          SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  !isGuest ? '${_t(context, 'welcome_with_name')} ${userName ?? ''} 👋' : 'أهلاً بك يا زائر 👋',
-                  style: TextStyle(
-                    color: AppColors.getTextColor(context),
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  _t(context, 'ready_to_learn'),
-                  style: TextStyle(
-                    color: AppColors.getTextColor(context, secondary: true),
-                    fontSize: 12,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+          Align(
+            alignment: AlignmentDirectional.topEnd,
+            child: IconButton(
+              icon: const Icon(Icons.close, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
             ),
+          ),
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: Colors.white,
+                backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                child: photoUrl == null
+                    ? Icon(Icons.person, size: 35, color: AppColors.primaryPurple)
+                    : null,
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      !isGuest
+                          ? '${_t(context, 'welcome_with_name')} ${userName ?? ''} 👋'
+                          : 'أهلاً بك يا زائر 👋',
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      _t(context, 'ready_to_learn'),
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context, secondary: true),
+                        fontSize: 12,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
