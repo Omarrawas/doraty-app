@@ -35,11 +35,11 @@ class HomeDrawer extends StatelessWidget {
     final isDark = themeProvider.isDarkMode;
     final isAuthenticated = authService.isAuthenticated;
 
-    return Container(
-      margin: const EdgeInsetsDirectional.only(bottom: 80, top: 0),
-      child: Drawer(
-        width: MediaQuery.of(context).size.width * 0.8,
-        backgroundColor: AppColors.getDrawerBackground(context),
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    return Drawer(
+      width: screenWidth > 438 ? 350 : screenWidth * 0.8,
+      backgroundColor: AppColors.getDrawerBackground(context),
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadiusDirectional.only(
             bottomEnd: Radius.circular(40),
@@ -67,10 +67,9 @@ class HomeDrawer extends StatelessWidget {
                 ),
 
                 // Dashboard for Admin/Teacher
-                if (userProfile?['role'] == 'admin' || 
-                    userProfile?['role'] == 'super_admin' || 
-                    userProfile?['role'] == 'teacher' ||
-                    userProfile?['is_admin'] == true)
+                if (authService.userRole == 'admin' || 
+                    authService.userRole == 'super_admin' || 
+                    authService.userRole == 'teacher')
                   _buildDrawerItem(
                     context,
                     icon: Icons.dashboard_outlined,
@@ -360,7 +359,6 @@ class HomeDrawer extends StatelessWidget {
           ),
         ],
       ),
-    ),
     );
   }
 

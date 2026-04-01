@@ -16,11 +16,15 @@ class AuthService extends ChangeNotifier {
   User? get currentUser => _isSupabaseReady ? _client.auth.currentUser : null;
   bool get isAuthenticated => currentUser != null;
 
+  Map<String, dynamic>? _userProfile = {};
+  String _userRole = 'student';
+  bool _isLoadingProfile = false;
   bool _isOffline = false;
-  bool get isOffline => _isOffline;
 
-  Map<String, dynamic>? _userProfile;
   Map<String, dynamic>? get userProfile => _userProfile;
+  String get userRole => _userRole;
+  bool get isLoadingProfile => _isLoadingProfile;
+  bool get isOffline => _isOffline;
 
   AuthService() {
     if (!_isSupabaseReady) {
@@ -48,6 +52,7 @@ class AuthService extends ChangeNotifier {
         loadUserProfile();
       } else if (event == AuthChangeEvent.signedOut) {
         _userProfile = null;
+        _userRole = 'student';
         ScreenSecurityService().applySecurityPolicy(role: null);
         notifyListeners();
       }
@@ -63,6 +68,9 @@ class AuthService extends ChangeNotifier {
         notifyListeners();
         return;
       }
+
+      _isLoadingProfile = true;
+      notifyListeners();
 
       // Initial data from auth metadata as fallback to avoid "Guest" flicker
       _userProfile = {
@@ -94,16 +102,16 @@ class AuthService extends ChangeNotifier {
       // 2. Fetch the user's primary role from user_roles → roles
       String role = 'student'; // default
       try {
-        final roleResponse = await _client
+        final dynamic roleResponse = await _client
             .from('user_roles')
-            .select('roles(name)')
-            .eq('user_id', currentUser!.id)
-            .maybeSingle();
+            .select('roles:role_id(name)')
+            .eq('user_id', currentUser!.id);
 
-        if (roleResponse != null &&
-            roleResponse['roles'] != null &&
-            roleResponse['roles']['name'] != null) {
-          role = roleResponse['roles']['name'] as String;
+        if (roleResponse != null && roleResponse is List && roleResponse.isNotEmpty) {
+          final firstMatch = roleResponse[0];
+          if (firstMatch['roles'] != null && firstMatch['roles']['name'] != null) {
+            role = firstMatch['roles']['name'] as String;
+          }
         }
       } catch (roleErr) {
         debugPrint('Could not fetch role, attempting to use cached role: $roleErr');
@@ -113,6 +121,8 @@ class AuthService extends ChangeNotifier {
           role = cached['role'];
         }
       }
+
+      _userRole = role;
 
       // 3. Merge profile + role into a single map
       _userProfile = {
