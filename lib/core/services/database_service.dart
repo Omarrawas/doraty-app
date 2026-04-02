@@ -921,6 +921,7 @@ class DatabaseService {
     bool liteMode = true,
     String orderBy = 'created_at',
     bool ascending = false,
+    String? deliveryMode,
   }) async {
     final String cacheKey = CacheKeys.coursesV2(
       categoryId: categoryId,
@@ -934,6 +935,7 @@ class DatabaseService {
       includeDrafts: includeDrafts,
       orderBy: orderBy,
       ascending: ascending,
+      deliveryMode: deliveryMode,
     );
 
     return fetchWithCache(
@@ -982,7 +984,11 @@ class DatabaseService {
           }
 
           if (query != null && query.isNotEmpty) {
-             filterQuery = filterQuery.or('title.ilike.%$query%,description.ilike.%$query%');
+              filterQuery = filterQuery.or('title.ilike.%$query%,description.ilike.%$query%');
+          }
+          
+          if (deliveryMode != null && deliveryMode != 'all') {
+            filterQuery = filterQuery.eq('delivery_mode', deliveryMode);
           }
 
           if (!includeDrafts) {
@@ -1061,6 +1067,7 @@ class DatabaseService {
     bool forceRefresh = false,
     String orderBy = 'created_at',
     bool ascending = false,
+    String? deliveryMode,
   }) async {
     return getCourses(
       limit: limit,
@@ -1071,6 +1078,7 @@ class DatabaseService {
       liteMode: true,
       orderBy: orderBy,
       ascending: ascending,
+      deliveryMode: deliveryMode,
     );
   }
 

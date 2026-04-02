@@ -33,9 +33,10 @@ class CacheKeys {
     bool? includeDrafts,
     String? orderBy,
     bool? ascending,
+    String? deliveryMode,
   }) {
     final idsKey = ids != null ? ids.join(',') : 'all';
-    return 'courses_v6_${categoryId ?? "all"}_${teacherId ?? "all"}_${level ?? "all"}_${subject ?? "all"}_${query ?? "all"}_${isFree ?? "false"}_${limit ?? "none"}_${offset ?? "none"}_${includeDrafts ?? "false"}_${orderBy ?? "created_at"}_${ascending ?? "false"}_$idsKey';
+    return 'courses_v7_${categoryId ?? "all"}_${teacherId ?? "all"}_${level ?? "all"}_${subject ?? "all"}_${query ?? "all"}_${isFree ?? "false"}_${limit ?? "none"}_${offset ?? "none"}_${includeDrafts ?? "false"}_${orderBy ?? "created_at"}_${ascending ?? "false"}_${deliveryMode ?? "all"}_$idsKey';
   }
   static String userEnrolledIds(String userId) => 'user_${userId}_enrolled_ids';
   static String userEnrollments(String userId) => 'user_${userId}_enrollments_v2';

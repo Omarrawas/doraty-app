@@ -99,6 +99,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         limit: _limit,
         offset: _offset,
         includeDrafts: false,
+        deliveryMode: _selectedType == 'all' ? null : _selectedType,
         forceRefresh: forceRefresh,
       );
 
@@ -131,6 +132,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         limit: _limit,
         offset: _offset,
         includeDrafts: false,
+        deliveryMode: _selectedType == 'all' ? null : _selectedType,
       );
 
       final newCourses = coursesData.map((c) => Course.fromJson(c)).toList();
