@@ -76,6 +76,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     'all_levels',
     'beginner',
     'intermediate',
+    'advanced',
     'expert'
   ];
   List<String> _selectedTags = [];
