@@ -398,6 +398,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final coursesData = await _databaseService.getLiteCourses(
         limit: 10,
         forceRefresh: forceRefresh,
+        orderBy: 'students_count',
+        ascending: false,
       );
       final normalized = _normalizeMapList(coursesData);
       if (mounted) {
@@ -413,14 +415,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadRecordedCourses({bool forceRefresh = false}) async {
     try {
-      // Use getCourses instead of getLiteCourses for more flexible filtering if needed, 
-      // but getLiteCourses with a larger limit is fine.
+      // Fetch recorded courses sorted by the latest update (e.g. when a lesson is added)
       final response = await _databaseService.supabaseClient
           .from('courses')
           .select(DatabaseService.liteCourseColumns)
           .eq('delivery_mode', 'recorded')
           .eq('is_published', true)
-          .order('created_at', ascending: false)
+          .order('updated_at', ascending: false)
           .limit(20);
       
       final normalized = _normalizeMapList(response);

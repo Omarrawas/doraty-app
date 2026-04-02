@@ -919,6 +919,8 @@ class DatabaseService {
     bool includeDrafts = false,
     bool forceRefresh = false,
     bool liteMode = true,
+    String orderBy = 'created_at',
+    bool ascending = false,
   }) async {
     final String cacheKey = CacheKeys.coursesV2(
       categoryId: categoryId,
@@ -930,6 +932,8 @@ class DatabaseService {
       offset: offset,
       ids: ids,
       includeDrafts: includeDrafts,
+      orderBy: orderBy,
+      ascending: ascending,
     );
 
     return fetchWithCache(
@@ -938,7 +942,15 @@ class DatabaseService {
       duration: const Duration(minutes: 5),
       fetcher: () async {
         try {
-          var filterQuery = _client.from('courses').select(liteMode ? liteCourseColumns : '*');
+          String columns = liteMode ? liteCourseColumns : '*';
+          
+          // ELITE FIX: To filter by joined table (categories), we MUST use !inner
+          // otherwise it performs a LEFT JOIN and returns all courses.
+          if (categoryId != null) {
+            columns = columns.replaceFirst('course_category_junction', 'course_category_junction!inner');
+          }
+          
+          var filterQuery = _client.from('courses').select(columns);
 
           if (instructorId != null) {
             filterQuery = filterQuery.eq('instructor_id', instructorId);
@@ -978,7 +990,7 @@ class DatabaseService {
           }
 
           // 2. TRANSFORMING (Order, Limit, Range)
-          var finalQuery = filterQuery.order('created_at', ascending: false);
+          var finalQuery = filterQuery.order(orderBy, ascending: ascending);
 
           if (limit != null) {
             finalQuery = finalQuery.limit(limit);
@@ -1047,6 +1059,8 @@ class DatabaseService {
     String? categoryId,
     List<String>? ids,
     bool forceRefresh = false,
+    String orderBy = 'created_at',
+    bool ascending = false,
   }) async {
     return getCourses(
       limit: limit,
@@ -1055,6 +1069,8 @@ class DatabaseService {
       ids: ids,
       forceRefresh: forceRefresh,
       liteMode: true,
+      orderBy: orderBy,
+      ascending: ascending,
     );
   }
 
