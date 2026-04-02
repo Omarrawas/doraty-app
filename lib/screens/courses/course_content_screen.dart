@@ -13,6 +13,9 @@ import '../../widgets/empty_state.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/utils/safe_parser.dart';
 import '../../core/providers/cart_provider.dart';
+import '../../models/session.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 
 class CourseContentScreen extends StatefulWidget {
   final Course course;
@@ -73,10 +76,16 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
   Widget _buildContentList(bool isRTL) {
     if (widget.lessonsData.isEmpty) {
       return ProfessionalEmptyState(
-        title: _t('no_lessons_yet'),
+        title: (widget.course.deliveryMode == 'live' || widget.course.deliveryMode == 'in_person') 
+            ? _t('no_sessions_yet') 
+            : _t('no_lessons_yet'),
         message: _t('course_content_working'),
         icon: Icons.auto_stories_rounded,
       );
+    }
+
+    if (widget.course.deliveryMode == 'live' || widget.course.deliveryMode == 'in_person') {
+      return _buildSessionsList(isRTL);
     }
 
     // Group lessons by chapters
@@ -390,6 +399,148 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
             child: Text(_t('login_now'), style: TextStyle(fontFamily: 'Cairo')),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSessionsList(bool isRTL) {
+    if (widget.lessonsData.isEmpty) {
+      return ProfessionalEmptyState(
+        title: _t('no_sessions_yet'),
+        message: _t('course_content_working'),
+        icon: Icons.calendar_month_rounded,
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          child: Text(
+            _t('live_sessions'),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(context),
+            ),
+            textAlign: isRTL ? TextAlign.right : TextAlign.left,
+          ),
+        ),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          padding: EdgeInsets.zero,
+          itemCount: widget.lessonsData.length,
+          separatorBuilder: (context, index) => SizedBox(height: 12),
+          itemBuilder: (context, index) {
+            final sessionMap = widget.lessonsData[index];
+            final session = Session.fromJson(sessionMap);
+            return _buildSessionItem(session, isRTL);
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSessionItem(Session session, bool isRTL) {
+    final statusColor = session.status == SessionStatus.upcoming 
+        ? Colors.orange 
+        : session.status == SessionStatus.liveNow || session.shouldBeLiveNow
+            ? Colors.red 
+            : session.status == SessionStatus.completed 
+                ? Colors.green 
+                : Colors.grey;
+
+    final isLiveOrUpcoming = session.status == SessionStatus.liveNow || session.shouldBeLiveNow || session.status == SessionStatus.upcoming;
+    final hasRecording = session.status == SessionStatus.completed && session.recordingUrl != null && session.recordingUrl!.isNotEmpty;
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
+      ),
+      child: ListTile(
+        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        leading: Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: statusColor.withOpacity(0.15),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            session.platform == SessionPlatform.zoom ? Icons.videocam : Icons.computer,
+            color: statusColor,
+            size: 24,
+          ),
+        ),
+        title: Text(
+          session.title,
+          style: TextStyle(
+            color: AppColors.getTextColor(context),
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(Icons.calendar_today, size: 12, color: Colors.grey),
+                SizedBox(width: 4),
+                Text(
+                  DateFormat('yyyy-MM-dd HH:mm').format(session.scheduledAt.toLocal()),
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                session.statusLabel,
+                style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        trailing: (isLiveOrUpcoming || hasRecording)
+            ? ElevatedButton(
+                onPressed: () {
+                  final authService = Provider.of<AuthService>(context, listen: false);
+                  
+                  if (!authService.isAuthenticated) {
+                    _showLoginRequiredDialog(context);
+                    return;
+                  }
+
+                  if (!widget.isEnrolled) {
+                    _showSubscriptionRequiredDialog(context);
+                    return;
+                  }
+
+                  if (hasRecording) {
+                    launchUrl(Uri.parse(session.recordingUrl!), mode: LaunchMode.externalApplication);
+                  } else if (session.joinUrl != null && session.joinUrl!.isNotEmpty) {
+                    launchUrl(Uri.parse(session.joinUrl!), mode: LaunchMode.externalApplication);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: hasRecording ? AppColors.primaryPurple : statusColor,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(hasRecording ? _t('watch_recording') : _t('join')),
+              )
+            : null,
       ),
     );
   }

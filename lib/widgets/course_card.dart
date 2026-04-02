@@ -214,8 +214,38 @@ class _CourseCardState extends State<CourseCard>
                         ),
                       ),
                     ),
-                    // "New" Badge (Top Left)
-                    if (widget.course.isNew)
+                    // Live Badge (Top Right, next to Wishlist)
+                    if (widget.course.deliveryMode == 'live' || widget.course.deliveryMode == 'in_person')
+                      Positioned(
+                        top: 12,
+                        right: 48,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 4)],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.sensors, color: Colors.white, size: 12),
+                              SizedBox(width: 4),
+                              Text(
+                                'مباشر',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Cairo',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    // Lessons Count Badge (Top Left)
+                    if (widget.course.deliveryMode == 'recorded' && widget.course.lessonsCount > 0)
                       Positioned(
                         top: 12,
                         left: 12,
@@ -223,25 +253,31 @@ class _CourseCardState extends State<CourseCard>
                           padding: EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: Colors.redAccent,
+                            color: Color(0xFF434775).withOpacity(0.9),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(
-                            AppStrings.get('new_badge', locale) == 'new_badge'
-                                ? 'جديد'
-                                : AppStrings.get('new_badge', locale),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.video_library_rounded, color: Colors.white, size: 12),
+                              SizedBox(width: 4),
+                              Text(
+                                '${widget.course.lessonsCount} درس',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Cairo',
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                    // Level Badge (Top Left, below New if exists)
+                    // Level Badge (Top Left, below Lessons Count if exists)
                     if (widget.course.level != null && widget.course.level!.isNotEmpty)
                       Positioned(
-                        top: widget.course.isNew ? 40 : 12,
+                        top: (widget.course.deliveryMode == 'recorded' && widget.course.lessonsCount > 0) ? 40 : 12,
                         left: 12,
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -509,34 +545,69 @@ class _CourseCardState extends State<CourseCard>
                   ),
                 ),
               ),
-              // "New" Badge (Top Left)
-              if (widget.course.isNew)
+              // Live Badge
+              if (widget.course.deliveryMode == 'live' || widget.course.deliveryMode == 'in_person')
+                Positioned(
+                  top: 8,
+                  right: 36,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(6),
+                      boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 4)],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.sensors, color: Colors.white, size: 10),
+                        SizedBox(width: 3),
+                        Text(
+                          'مباشر',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              // Lessons Count Badge (Top Left)
+              if (widget.course.deliveryMode == 'recorded' && widget.course.lessonsCount > 0)
                 Positioned(
                   top: 8,
                   left: 8,
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.redAccent,
+                      color: Color(0xFF434775).withOpacity(0.9),
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Text(
-                      AppStrings.get('new_badge', locale) == 'new_badge'
-                          ? 'جديد'
-                          : AppStrings.get('new_badge', locale),
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Cairo',
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.video_library_rounded, color: Colors.white, size: 10),
+                        SizedBox(width: 3),
+                        Text(
+                          '${widget.course.lessonsCount} درس',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              // Level Badge (Top Left, below New if exists)
+              // Level Badge (Top Left, below Lessons count if exists)
               if (widget.course.level != null && widget.course.level!.isNotEmpty)
                 Positioned(
-                  top: widget.course.isNew ? 32 : 8,
+                  top: (widget.course.deliveryMode == 'recorded' && widget.course.lessonsCount > 0) ? 32 : 8,
                   left: 8,
                   child: Container(
                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),

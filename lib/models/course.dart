@@ -40,6 +40,7 @@ class Course {
   final DateTime? createdAt;
   final List<Lesson> lessons;
   final double progress;
+  final String deliveryMode; // 'recorded' | 'live' | 'in_person'
 
   Course({
     required this.id,
@@ -76,6 +77,7 @@ class Course {
     this.createdAt,
     this.lessons = const [],
     this.progress = 0.0,
+    this.deliveryMode = 'recorded',
   });
 
   factory Course.fromJson(Map<String, dynamic> json) {
@@ -125,6 +127,7 @@ class Course {
         createdAt: SafeParser.toDateTime(json['created_at']),
         lessons: parsedLessons,
         progress: SafeParser.toDouble(json['progress']),
+        deliveryMode: SafeParser.toStringSafe(json['delivery_mode'], fallback: 'recorded'),
       );
     } catch (e) {
       debugPrint('❌ Course.fromJson error: $e. Data: $json');
@@ -176,6 +179,7 @@ class Course {
       'tags': tags,
       'status': status,
       'created_at': createdAt?.toIso8601String(),
+      'delivery_mode': deliveryMode,
     };
   }
 
@@ -222,4 +226,8 @@ class Course {
   }
 
   bool get hasDiscount => discountPercentage > 0;
+
+  bool get isLive => deliveryMode == 'live';
+  bool get isInPerson => deliveryMode == 'in_person';
+  bool get isLiveOrInPerson => isLive || isInPerson;
 }

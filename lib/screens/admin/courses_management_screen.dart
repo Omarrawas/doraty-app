@@ -11,6 +11,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'sessions_management_screen.dart';
 
 class CoursesManagementScreen extends StatefulWidget {
   final String? instructorId; // Added
@@ -499,8 +500,36 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                             onSelected: (value) {
                               if (value == 'delete') _deleteCourse(course);
                               if (value == 'stats') _showStatistics(course);
+                              if (value == 'sessions') {
+                                final mode = course['delivery_mode'] ?? 'recorded';
+                                if (mode == 'live' || mode == 'in_person') {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => SessionsManagementScreen(
+                                        courseId: course['id'],
+                                        courseTitle: course['title'] ?? '',
+                                      ),
+                                    ),
+                                  );
+                                }
+                              }
                             },
                             itemBuilder: (context) => [
+                              // Show sessions option only for live/in_person courses
+                              if ((course['delivery_mode'] ?? 'recorded') != 'recorded')
+                                const PopupMenuItem(
+                                  value: 'sessions',
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.live_tv_outlined,
+                                          size: 20, color: Color(0xFFEF4444)),
+                                      SizedBox(width: 8),
+                                      Text('إدارة الجلسات',
+                                          style: TextStyle(color: Color(0xFFEF4444))),
+                                    ],
+                                  ),
+                                ),
                               PopupMenuItem(
                                 value: 'stats',
                                 child: Row(

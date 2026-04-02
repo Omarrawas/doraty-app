@@ -27,6 +27,7 @@ import '../../models/tip.dart';
 import '../../models/bundle.dart';
 import '../../widgets/vertical_tip_player.dart';
 import '../../widgets/tip_preview_card.dart';
+import '../../widgets/live_course_card.dart';
 import '../../core/utils/safe_parser.dart';
 import '../../models/banner_ad.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -53,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Tip> _tips = [];
   List<Bundle> _bundles = [];
   List<BannerAd> _banners = [];
+  List<Course> _liveCourses = [];
   bool _isLoading = true;
   bool _isRefreshing = false;
   bool _hasUnreadNotifications = false;
@@ -148,6 +150,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       // Run everything else
       await Future.wait([...contentTasks, ...userTasks]);
+
+      // Load live/in-person courses (separate, non-blocking)
+      _loadLiveCourses(forceRefresh: forceRefresh);
 
       debugPrint('✅ HomeScreen: Data refresh complete');
     } catch (e) {
@@ -330,6 +335,25 @@ class _HomeScreenState extends State<HomeScreen> {
       await _loadEnrollmentProgress();
     } catch (e) {
       debugPrint('Error loading enrolled courses: $e');
+    }
+  }
+
+  Future<void> _loadLiveCourses({bool forceRefresh = false}) async {
+    try {
+      final response = await _databaseService.supabaseClient
+          .from('courses')
+          .select()
+          .inFilter('delivery_mode', ['live', 'in_person'])
+          .eq('is_published', true)
+          .limit(10);
+      final normalized = _normalizeMapList(response);
+      if (mounted) {
+        setState(() {
+          _liveCourses = normalized.map((e) => Course.fromJson(e)).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading live courses: $e');
     }
   }
 
@@ -523,6 +547,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   // 7. Tips Section
                   _buildTipsSection(),
 
+                  // 7.5 Live & In-person Courses
+                  if (_liveCourses.isNotEmpty)
+                    _buildLiveCoursesSection(),
+
                   // 8. Featured Packages
                   _buildPackagesSection(isWideScreen),
 
@@ -679,6 +707,79 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           SizedBox(height: 20),
         ],
+      ),
+    );
+  }
+
+  // ─── Live / In-Person Courses Section ───────────────────────────
+  SliverToBoxAdapter _buildLiveCoursesSection() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Section header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        margin: const EdgeInsetsDirectional.only(end: 8),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFFEF4444),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFEF4444).withOpacity(0.5),
+                              blurRadius: 8,
+                              spreadRadius: 2,
+                            )
+                          ],
+                        ),
+                      ),
+                      Text(
+                        'دورات مباشرة وحضورية',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.getTextColor(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () => context.push('/explore?filter=live'),
+                    child: Text(
+                      'عرض الكل',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.primaryPurple.withOpacity(0.9),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Horizontal scroll
+            SizedBox(
+              height: 270,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                itemCount: _liveCourses.length,
+                itemBuilder: (context, index) =>
+                    LiveCourseCard(course: _liveCourses[index]),
+              ),
+            ),
+            const SizedBox(height: 10),
+          ],
+        ),
       ),
     );
   }

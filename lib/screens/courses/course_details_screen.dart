@@ -257,15 +257,23 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Future<void> _loadLessons() async {
     if (_course == null) return;
     try {
-      final lessons = await _databaseService.getLessons(_course!.id);
-
-      if (mounted) {
-        setState(() {
-          _lessons = lessons;
-        });
+      if (_course!.deliveryMode == 'live' || _course!.deliveryMode == 'in_person') {
+        final sessions = await _databaseService.getCourseSessions(_course!.id);
+        if (mounted) {
+          setState(() {
+            _lessons = sessions;
+          });
+        }
+      } else {
+        final lessons = await _databaseService.getLessons(_course!.id);
+        if (mounted) {
+          setState(() {
+            _lessons = lessons;
+          });
+        }
       }
     } catch (e) {
-      debugPrint('Error loading lessons or chapters: $e');
+      debugPrint('Error loading lessons or sessions: $e');
     }
   }
 

@@ -6088,4 +6088,18 @@ class DatabaseService {
       rethrow;
     }
   }
+
+  Future<List<Map<String, dynamic>>> getCourseSessions(String courseId) async {
+    try {
+      final response = await _client
+          .from('sessions')
+          .select()
+          .eq('course_id', courseId)
+          .order('scheduled_at', ascending: true);
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      debugPrint('Error getting course sessions: $e');
+      rethrow;
+    }
+  }
 }
