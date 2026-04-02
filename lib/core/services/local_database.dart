@@ -188,20 +188,22 @@ class LocalDatabase {
         // Check the intended type T's string representation as a last resort
         final String typeStr = T.toString();
 
-        // ELITE FIX: Handle List<String> which frequently fails on minified builds
-        if (typeStr.contains('String')) {
-          return SafeParser.toStringList(rawList) as T;
+        // ELITE FIX: Robust type detection for minified builds
+        if (rawList is List<String> || typeStr.contains('String') || (rawList.isNotEmpty && rawList.first is String)) {
+          final stringList = SafeParser.toStringList(rawList);
+          if (stringList is T) return stringList as T;
         }
 
-        // ELITE FIX: Handle List<Map<...>> which frequently fails
-        if (typeStr.contains('Map')) {
-          return SafeParser.safeMapList(rawList) as T;
+        if (rawList is List<Map> || typeStr.contains('Map') || (rawList.isNotEmpty && rawList.first is Map)) {
+          final mapList = SafeParser.safeMapList(rawList);
+          if (mapList is T) return mapList as T;
         }
 
-        // Try direct cast
-        try { return rawList as T; } catch (_) {}
+        // Try direct cast with catch-all
+        try {
+          if (data is T) return data as T;
+        } catch (_) {}
         
-        // Final list effort: try to match raw list to T directly
         return rawList as T?;
       }
 

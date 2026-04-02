@@ -898,7 +898,7 @@ class DatabaseService {
   static const String liteCourseColumns = '''
     id, title, slug, image_url, price, discount_percentage, 
     rating, students_count, lessons_count, instructor_id, instructor_name, 
-    instructor_photo, subject, subject_en, level, is_published, is_featured,
+    instructor_photo, subject, level, is_published, is_featured,
     featured_order, created_at, delivery_mode,
     users!instructor_id(full_name, avatar_url),
     course_category_junction(category:categories(id, name, name_en)),
@@ -2570,10 +2570,8 @@ class DatabaseService {
       duration: const Duration(hours: 1),
       fetcher: () async {
         try {
-          final response = await _client
-              .from('enrollments')
-              .select('*, courses(*)')
-              .eq('user_id', userId);
+          final response =
+              await _client.from('enrollments').select('*, courses(*)').eq('user_id', userId);
 
           return SafeParser.safeMapList(response);
         } catch (e) {
