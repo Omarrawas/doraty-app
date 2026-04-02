@@ -899,7 +899,7 @@ class DatabaseService {
     id, title, slug, image_url, price, discount_percentage, 
     rating, students_count, lessons_count, instructor_id, instructor_name, 
     instructor_photo, subject, subject_en, level, is_published, is_featured,
-    featured_order, created_at,
+    featured_order, created_at, delivery_mode,
     users!instructor_id(full_name, avatar_url),
     course_category_junction(category:categories(id, name, name_en)),
     course_tags(tag)

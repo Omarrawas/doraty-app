@@ -137,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _loadNewCourses(forceRefresh: forceRefresh),
         _loadFeaturedCourses(forceRefresh: forceRefresh),
         _loadPopularCourses(forceRefresh: forceRefresh),
+        _loadRecordedCourses(forceRefresh: forceRefresh),
         _loadBundles(forceRefresh: forceRefresh),
         _loadTips(forceRefresh: forceRefresh),
         _loadTeachers(forceRefresh: forceRefresh),
@@ -401,12 +402,35 @@ class _HomeScreenState extends State<HomeScreen> {
       final normalized = _normalizeMapList(coursesData);
       if (mounted) {
         setState(() {
-          _popularCourses = normalized.map((data) => Course.fromJson(data)).toList();
-          _recordedCourses = _popularCourses;
+          _popularCourses =
+              normalized.map((data) => Course.fromJson(data)).toList();
         });
       }
     } catch (e) {
       debugPrint('Error loading popular courses: $e');
+    }
+  }
+
+  Future<void> _loadRecordedCourses({bool forceRefresh = false}) async {
+    try {
+      // Use getCourses instead of getLiteCourses for more flexible filtering if needed, 
+      // but getLiteCourses with a larger limit is fine.
+      final response = await _databaseService.supabaseClient
+          .from('courses')
+          .select(DatabaseService.liteCourseColumns)
+          .eq('delivery_mode', 'recorded')
+          .eq('is_published', true)
+          .order('created_at', ascending: false)
+          .limit(20);
+      
+      final normalized = _normalizeMapList(response);
+      if (mounted) {
+        setState(() {
+          _recordedCourses = normalized.map((e) => Course.fromJson(e)).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading recorded courses: $e');
     }
   }
 

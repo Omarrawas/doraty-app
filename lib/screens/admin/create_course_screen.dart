@@ -81,6 +81,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   List<String> _selectedTags = [];
   bool _isFree = false;
   bool _isLoadingTags = false;
+  String _selectedDeliveryMode = 'recorded';
   
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -132,6 +133,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     _isPublished = widget.courseData?['is_published'] ?? false;
     _selectedCurrency = widget.courseData?['currency'] ?? 'ل.س';
+    _selectedDeliveryMode = widget.courseData?['delivery_mode'] ?? 'recorded';
     
     // Calculate _isFree based on price
     final priceValue = double.tryParse(_priceController.text) ?? 0.0;
@@ -582,6 +584,27 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                         style: TextStyle(color: AppColors.getTextColor(context)),
                                       ),
                                       SizedBox(height: 16),
+                                  DropdownButtonFormField<String>(
+                                    value: _selectedDeliveryMode,
+                                    isExpanded: true,
+                                    decoration: _inputDecoration(
+                                      label: 'نوع الدورة (طريقة التقديم)',
+                                      icon: Icons.delivery_dining,
+                                    ),
+                                    dropdownColor: AppColors.getSurfaceColor(context),
+                                    style: TextStyle(color: AppColors.getTextColor(context)),
+                                    items: [
+                                      DropdownMenuItem(value: 'recorded', child: Text('مسجلة (أونلاين)')),
+                                      DropdownMenuItem(value: 'live', child: Text('بث مباشر (أونلاين)')),
+                                      DropdownMenuItem(value: 'in_person', child: Text('حضورية (في المركز)')),
+                                    ],
+                                    onChanged: (v) {
+                                      if (v != null) {
+                                        setState(() => _selectedDeliveryMode = v);
+                                      }
+                                    },
+                                  ),
+                                  SizedBox(height: 16),
                                       TextFormField(
                                         controller: _videoUrlController,
                                         decoration: _inputDecoration(
@@ -1215,6 +1238,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         'is_published': _isPublished,
         'currency': _selectedCurrency,
         'discount_percentage': int.tryParse(_discountController.text) ?? 0,
+        'delivery_mode': _selectedDeliveryMode,
         'updated_at': DateTime.now().toIso8601String(),
       };
 
