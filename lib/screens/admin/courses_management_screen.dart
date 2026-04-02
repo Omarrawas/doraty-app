@@ -9,6 +9,7 @@ import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
+import '../../core/utils/safe_parser.dart'; // Add this import
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'sessions_management_screen.dart';
@@ -40,12 +41,13 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
     _loadCourses();
   }
 
-  Future<void> _loadCourses() async {
+  Future<void> _loadCourses({bool forceRefresh = false}) async {
     setState(() => _isLoading = true);
     try {
       final courses = await _db.getCourses(
         includeDrafts: true,
         instructorId: widget.instructorId,
+        forceRefresh: forceRefresh,
       );
 
       for (var course in courses) {
@@ -89,9 +91,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
     }
 
     if (_filter == 'published') {
-      filtered = filtered.where((c) => c['is_published'] == true).toList();
+      filtered = filtered.where((c) => SafeParser.toBool(c['is_published'])).toList();
     } else if (_filter == 'draft') {
-      filtered = filtered.where((c) => c['is_published'] == false).toList();
+      filtered = filtered.where((c) => !SafeParser.toBool(c['is_published'])).toList();
     }
 
     return filtered;
@@ -119,7 +121,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       : _filteredCourses.isEmpty
                           ? _buildEmptyState(context)
                           : RefreshIndicator(
-                              onRefresh: _loadCourses,
+                              onRefresh: () => _loadCourses(forceRefresh: true),
                               displacement: 20,
                               color: AppColors.primaryPurple,
                               child: ListView.builder(
@@ -145,7 +147,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             final instructorParam =
                 widget.instructorId != null ? '?instructorId=${widget.instructorId}' : '';
             final result = await context.push('/admin/courses/create$instructorParam');
-            if (result == true) _loadCourses();
+            if (result == true) _loadCourses(forceRefresh: true);
           },
           backgroundColor: AppColors.primaryPurple,
           foregroundColor: Colors.white,
@@ -347,7 +349,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                 final result = await context.push(
                   '/admin/courses/${course['id']}/lessons?title=${Uri.encodeComponent(course['title'] ?? '')}',
                 );
-                if (result == true) _loadCourses();
+                if (result == true) _loadCourses(forceRefresh: true);
               },
               child: IntrinsicHeight(
                 child: Row(
@@ -481,7 +483,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                                 '/admin/courses/edit/${course['id']}',
                                 extra: course,
                               );
-                              if (result == true) _loadCourses();
+                              if (result == true) _loadCourses(forceRefresh: true);
                             },
                           ),
                           IconButton(
@@ -646,7 +648,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
         );
       }
 
-      _loadCourses();
+      _loadCourses(forceRefresh: true);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -929,6 +929,7 @@ class DatabaseService {
       limit: limit,
       offset: offset,
       ids: ids,
+      includeDrafts: includeDrafts,
     );
 
     return fetchWithCache(
