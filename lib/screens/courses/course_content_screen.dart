@@ -497,6 +497,19 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                   DateFormat('yyyy-MM-dd HH:mm').format(session.scheduledAt.toLocal()),
                   style: TextStyle(color: Colors.grey, fontSize: 12),
                 ),
+                if (session.location != null && session.location!.isNotEmpty) ...[
+                  SizedBox(width: 12),
+                  Icon(Icons.location_on_outlined, size: 12, color: Colors.grey),
+                  SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      session.location!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
+                    ),
+                  ),
+                ],
               ],
             ),
             SizedBox(height: 8),

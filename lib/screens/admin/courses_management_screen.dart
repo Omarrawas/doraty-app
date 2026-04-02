@@ -31,6 +31,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
   bool _isLoading = true;
   String _searchQuery = '';
   String _filter = 'published'; // all, published, draft
+  String _typeFilter = 'all'; // all, recorded, live, in_person
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -96,6 +97,10 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
       filtered = filtered.where((c) => !SafeParser.toBool(c['is_published'])).toList();
     }
 
+    if (_typeFilter != 'all') {
+      filtered = filtered.where((c) => c['delivery_mode'] == _typeFilter).toList();
+    }
+
     return filtered;
   }
 
@@ -113,6 +118,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                 _buildHeader(context),
                 _buildSearchBar(context),
                 _buildFilterTabs(context),
+                _buildTypeFilterTabs(context),
                 Expanded(
                   child: _isLoading
                       ? Center(
@@ -257,7 +263,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
 
   Widget _buildFilterTabs(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
       child: Row(
         children: [
           _buildFilterTab(context, _t('all'), 'all'),
@@ -266,6 +272,61 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
           const SizedBox(width: 10),
           _buildFilterTab(context, _t('draft'), 'draft'),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTypeFilterTabs(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Row(
+        children: [
+          _buildTypeFilterTab(context, _t('all'), 'all'),
+          const SizedBox(width: 8),
+          _buildTypeFilterTab(context, _t('recorded'), 'recorded'),
+          const SizedBox(width: 8),
+          _buildTypeFilterTab(context, _t('live'), 'live'),
+          const SizedBox(width: 8),
+          _buildTypeFilterTab(context, _t('in_person'), 'in_person'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTypeFilterTab(BuildContext context, String label, String value) {
+    final isSelected = _typeFilter == value;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _typeFilter = value),
+        borderRadius: BorderRadius.circular(10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primaryPurple.withOpacity(0.15)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected
+                  ? AppColors.primaryPurple.withOpacity(0.4)
+                  : AppColors.getGlassColor(context, opacity: 0.1),
+              width: 1,
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              color: isSelected
+                  ? AppColors.primaryPurple
+                  : AppColors.getTextColor(context, secondary: true),
+              fontWeight: isSelected ? FontWeight.normal : FontWeight.normal,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -346,10 +407,26 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             color: Colors.transparent,
             child: InkWell(
               onTap: () async {
-                final result = await context.push(
-                  '/admin/courses/${course['id']}/lessons?title=${Uri.encodeComponent(course['title'] ?? '')}',
-                );
-                if (result == true) _loadCourses(forceRefresh: true);
+                final deliveryMode = course['delivery_mode']?.toString() ?? 'recorded';
+                
+                if (deliveryMode == 'recorded') {
+                  // Recorded courses manage lessons
+                  final title = Uri.encodeComponent(course['title'] ?? '');
+                  final result = await context.push('/admin/courses/${course['id']}/lessons?title=$title');
+                  if (result == true) _loadCourses(forceRefresh: true);
+                } else {
+                  // Live and In-Person courses manage sessions
+                  final result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SessionsManagementScreen(
+                        courseId: course['id'],
+                        courseTitle: course['title'] ?? '',
+                      ),
+                    ),
+                  );
+                  if (result == true) _loadCourses(forceRefresh: true);
+                }
               },
               child: IntrinsicHeight(
                 child: Row(
@@ -443,7 +520,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                if (course['category'] != null)
+                                _buildCourseTypeTag(context, course['delivery_mode']?.toString() ?? 'recorded'),
+                                if (course['category'] != null) ...[
+                                  const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       course['category'],
@@ -455,6 +534,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                                       ),
                                     ),
                                   ),
+                                ],
                               ],
                             ),
                           ],
@@ -568,6 +648,59 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
       ),
     );
   }
+
+
+
+  Widget _buildCourseTypeTag(BuildContext context, String mode) {
+    Color color;
+    String label;
+    IconData icon;
+
+    switch (mode) {
+      case 'live':
+        color = Colors.blueAccent;
+        label = _t('live');
+        icon = Icons.sensors_rounded;
+        break;
+      case 'in_person':
+        color = Colors.orangeAccent;
+        label = _t('in_person');
+        icon = Icons.location_on_rounded;
+        break;
+      case 'recorded':
+      default:
+        color = AppColors.primaryPurple;
+        label = _t('recorded');
+        icon = Icons.play_circle_fill_rounded;
+        break;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withOpacity(0.3), width: 0.5),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
 
   Widget _buildEmptyState(BuildContext context) {
     return Center(

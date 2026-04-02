@@ -650,9 +650,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         _buildStatBadge(Icons.grid_view_rounded,
             '${_chapters.isNotEmpty ? _chapters.length : 0} ${_t("chapters")}'),
         SizedBox(width: 12),
-        // عداد الدروس
-        _buildStatBadge(Icons.play_circle_outline_rounded,
-            '${_lessons.isNotEmpty ? _lessons.length : _course!.lessonsCount} ${_t("lessons")}'),
+        // عداد الدروس أو الجلسات
+        _buildStatBadge(
+            (_course!.deliveryMode == 'recorded') ? Icons.play_circle_outline_rounded : Icons.calendar_today_outlined,
+            '${_lessons.isNotEmpty ? _lessons.length : _course!.lessonsCount} ${_t((_course!.deliveryMode == 'recorded') ? "lessons" : "live_sessions")}'),
       ],
     );
   }
@@ -747,26 +748,32 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Widget _buildEnrollmentSection(bool isRTL) {
+    final isEnrolled = _isEnrolled;
+    final isRecorded = _course!.deliveryMode == 'recorded';
+    final buttonLabel = isEnrolled 
+        ? (isRecorded ? _t('start_course_now') : _t('sessions_tab'))
+        : '${_t("course_subscribe_now_prefix")}${_course!.getLocalizedPrice(Provider.of<LocaleProvider>(context).locale)}';
+
     return Column(
       crossAxisAlignment:
           isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         Text(
-          _t('course_register_and_get'),
+          _t('register_and_get'),
           style: TextStyle(
               color: AppColors.getTextColor(context), fontWeight: FontWeight.bold, fontSize: 16),
         ),
         SizedBox(height: 12),
         _buildBenefitItem(
-            Icons.all_inclusive_rounded, _t('course_unending_views')),
+            Icons.all_inclusive_rounded, _t(isRecorded ? 'unending_views' : 'live_desc')),
         _buildBenefitItem(Icons.workspace_premium_rounded,
-            _t('course_completion_certificate')),
+            _t('completion_certificate')),
         _buildBenefitItem(
-            Icons.chat_bubble_outline_rounded, _t('course_contact_coach')),
+            Icons.chat_bubble_outline_rounded, _t('contact_coach')),
 
         SizedBox(height: 30),
 
-        // Main Subscribe Button
+        // Main Subscribe/Start Button
         ElevatedButton(
           onPressed: _handleEnrollment,
           style: ElevatedButton.styleFrom(
@@ -779,7 +786,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             shadowColor: AppColors.primaryPurple.withOpacity(0.5),
           ),
           child: Text(
-            '${_t("course_subscribe_now_prefix")}${_course!.getLocalizedPrice(Provider.of<LocaleProvider>(context).locale)}',
+            buttonLabel,
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
@@ -1261,8 +1268,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                 'isEnrolled': _isEnrolled,
               });
             },
-            icon: Icon(Icons.list_alt_rounded),
-            label: Text(_t('course_content')),
+            icon: Icon((_course!.deliveryMode == 'recorded') ? Icons.list_alt_rounded : Icons.calendar_month_rounded),
+            label: Text(_t((_course!.deliveryMode == 'recorded') ? 'course_content' : 'sessions_tab')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
               foregroundColor: Colors.white,
@@ -1318,10 +1325,20 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Future<void> _handleEnrollment() async {
     if (!_checkAuthAndShowDialog()) return;
 
-    // Check if enrolled first to jump to lessons
-    if (_isEnrolled && _lessons.isNotEmpty) {
-      final firstLesson = Lesson.fromJson(_lessons.first);
-      context.push('/course/${_course?.slug ?? _course?.id}/lesson/${firstLesson.slug ?? firstLesson.id}');
+    // Check if enrolled first to jump to lessons or sessions
+    if (_isEnrolled) {
+      if (_course!.deliveryMode == 'recorded' && _lessons.isNotEmpty) {
+        final firstLesson = Lesson.fromJson(_lessons.first);
+        context.push('/course/${_course?.slug ?? _course?.id}/lesson/${firstLesson.slug ?? firstLesson.id}');
+      } else {
+        // For Live or In-Person, go to content overview to see sessions list
+        context.push('/course/${_course?.slug ?? _course?.id}/content', extra: {
+          'course': _course,
+          'lessonsData': _lessons,
+          'chapters': _chapters,
+          'isEnrolled': _isEnrolled,
+        });
+      }
       return;
     }
 
