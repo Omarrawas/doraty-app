@@ -32,7 +32,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String? _selectedCategoryId;
   String _searchQuery = '';
   String _selectedType = 'all'; // all, recorded, live, in_person
-  String _selectedLevel = 'all'; // all, beginner, intermediate, advanced
+  String _selectedLevel = 'all'; // all, beginner, intermediate, advanced,expert
   String? _initialFilter;
   final FocusNode _searchFocusNode = FocusNode();
   final ScrollController _scrollController = ScrollController();
@@ -449,7 +449,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                                     'all',
                                     'beginner',
                                     'intermediate',
-                                    'advanced'
+                                    'advanced',
+                                    'expert'
                                   ],
                                   (val) {
                                     setState(() {
@@ -810,6 +811,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
         return _t('intermediate');
       case 'advanced':
         return _t('advanced');
+      case 'expert':
+        return _t('expert');
       default:
         return opt;
     }
