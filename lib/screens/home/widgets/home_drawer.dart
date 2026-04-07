@@ -10,14 +10,29 @@ import '../../../models/category_model.dart';
 import '../../../core/services/database_service.dart';
 import '../../../core/routing/routes_names.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class HomeDrawer extends StatelessWidget {
+class HomeDrawer extends StatefulWidget {
   final List<CategoryModel> categories;
 
   const HomeDrawer({
     super.key,
     required this.categories,
   });
+
+  @override
+  State<HomeDrawer> createState() => _HomeDrawerState();
+}
+
+class _HomeDrawerState extends State<HomeDrawer> {
+  Future<Map<String, String>>? _socialLinksFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // Cache the future so it doesn't keep refreshing on every build
+    _socialLinksFuture = DatabaseService().getSocialLinks();
+  }
 
   String _t(BuildContext context, String key) {
     return AppStrings.get(
@@ -100,7 +115,7 @@ class HomeDrawer extends StatelessWidget {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-                        children: categories
+                        children: widget.categories
                             .map((cat) => ListTile(
                                   contentPadding:
                                       const EdgeInsetsDirectional.only(
@@ -277,7 +292,7 @@ class HomeDrawer extends StatelessWidget {
 
                     // Social Media Icons
                     FutureBuilder<Map<String, String>>(
-                      future: DatabaseService().getSocialLinks(),
+                      future: _socialLinksFuture,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
@@ -299,47 +314,47 @@ class HomeDrawer extends StatelessWidget {
 
                         if (links['social_facebook']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              Icons.facebook,
+                              FontAwesomeIcons.facebook,
                               Colors.blue,
                               links['social_facebook']!));
                         }
                         if (links['social_instagram']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              Icons.camera_alt,
+                              FontAwesomeIcons.instagram,
                               Colors.pink,
                               links['social_instagram']!));
                         }
                         if (links['social_youtube']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              Icons.play_circle_filled,
+                              FontAwesomeIcons.youtube,
                               Colors.red,
                               links['social_youtube']!));
                         }
                         if (links['social_whatsapp']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              Icons.chat, Colors.green, links['social_whatsapp']!));
+                              FontAwesomeIcons.whatsapp, Colors.green, links['social_whatsapp']!));
                         }
                         if (links['social_x_twitter']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              Icons.close,
+                              FontAwesomeIcons.xTwitter,
                               isDarkInner ? Colors.white : Colors.black87,
                               links['social_x_twitter']!));
                         }
                         if (links['social_tiktok']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              Icons.music_note,
+                              FontAwesomeIcons.tiktok,
                               isDarkInner ? Colors.white : Colors.black87,
                               links['social_tiktok']!));
                         }
                         if (links['social_telegram']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              Icons.send,
+                              FontAwesomeIcons.telegram,
                               Colors.blueAccent,
                               links['social_telegram']!));
                         }
                         if (links['social_linkedin']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              Icons.work,
+                              FontAwesomeIcons.linkedin,
                               Colors.blue[800] ?? Colors.blue,
                               links['social_linkedin']!));
                         }
@@ -558,7 +573,7 @@ class HomeDrawer extends StatelessWidget {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.chat, color: Colors.green),
+              leading: const Icon(FontAwesomeIcons.whatsapp, color: Colors.green),
               title: Text(_t(context, 'whatsapp_us')),
               onTap: () {
                 // WhatsApp logic

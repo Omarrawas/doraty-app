@@ -83,10 +83,10 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   bool _isFree = false;
   bool _isLoadingTags = false;
   String _selectedDeliveryMode = 'recorded';
-  
+
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
-@override
+  @override
   void initState() {
     super.initState();
     _selectedTeacherId =
@@ -135,11 +135,11 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     _isPublished = widget.courseData?['is_published'] ?? false;
     _selectedCurrency = widget.courseData?['currency'] ?? 'ل.س';
     _selectedDeliveryMode = widget.courseData?['delivery_mode'] ?? 'recorded';
-    
+
     // Calculate _isFree based on price
     final priceValue = double.tryParse(_priceController.text) ?? 0.0;
     _isFree = priceValue == 0;
-    
+
     // Multi-category support
     final categoryIds = widget.courseData?['category_ids'] as List?;
     if (categoryIds != null) {
@@ -150,7 +150,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         _selectedCategoryIds = [singleId];
       }
     }
-    
+
     _loadTeachers();
     _loadCategories();
     _loadCourseTags();
@@ -158,7 +158,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   Future<void> _loadCourseTags() async {
     if (widget.courseId == null) return;
-    
+
     setState(() => _isLoadingTags = true);
     try {
       final tags = await _db.getCourseTags(widget.courseId!);
@@ -191,13 +191,15 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     try {
       // Load all users to allow admin to pick any user as an instructor
       final users = await _db.getAllUsers();
-      
+
       // Transform users list to match the structure expected by the teacher picker
       // The picker expects: List<Map<String, dynamic>> where each map has 'user_id' and 'users' map
-      final teachers = users.map((u) => {
-        'user_id': u['id'],
-        'users': u,
-      }).toList();
+      final teachers = users
+          .map((u) => {
+                'user_id': u['id'],
+                'users': u,
+              })
+          .toList();
 
       // If editing, get the assigned teacher from teacher_courses
       if (widget.courseId != null && widget.courseId!.trim().isNotEmpty) {
@@ -279,17 +281,18 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   Future<void> _pickAndUploadToYoutube() async {
     final ImagePicker picker = ImagePicker();
     final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
-    
+
     if (video == null) return;
 
     setState(() => _isUploadingToYoutube = true);
     try {
       final String? ytUrl = await _youtubeService.uploadUnlistedVideo(
-        video, 
-        _titleController.text.isEmpty ? "New Course Video" : "${_titleController.text} Preview",
-        "Course preview uploaded from Doraty App"
-      );
-      
+          video,
+          _titleController.text.isEmpty
+              ? "New Course Video"
+              : "${_titleController.text} Preview",
+          "Course preview uploaded from Doraty App");
+
       if (ytUrl != null) {
         setState(() {
           _videoUrlController.text = ytUrl;
@@ -327,505 +330,594 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             child: SafeArea(
               child: Column(
                 children: [
-                _buildHeader(context, isEditing),
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 10),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildGlassContainer(
-                            title: _t('basic_info_label'),
-                            child: Column(
-                              children: [
-                                TextFormField(
-                                  controller: _titleController,
-                                  decoration: _inputDecoration(
-                                    label: _t('course_title_label'),
-                                    hint: _t('course_title_hint'),
-                                    icon: Icons.title,
-                                  ),
-                                  style: TextStyle(color: AppColors.getTextColor(context)),
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return _t('error_enter_title');
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _slugController,
-                                  decoration: _inputDecoration(
-                                    label: 'الرابط المخصص (Slug)',
-                                    hint: 'مثال: flutter-course-2024',
-                                    icon: Icons.link,
-                                  ).copyWith(
-                                    helperText: 'اتركه فارغاً ليتم توليده تلقائياً من الاسم (بحروف انجليزية أو أرقام فقط).',
-                                    helperStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 11),
-                                  ),
-                                  style: TextStyle(color: AppColors.getTextColor(context)),
-                                  validator: (value) {
-                                    if (value != null && value.isNotEmpty && !RegExp(r'^[a-z0-9-]+$').hasMatch(value)) {
-                                      return 'يجب أن يحتوي الرابط على أحرف إنجليزية صغيرة، أرقام وشرطات ( - ) فقط';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                                SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _descriptionController,
-                                  decoration: _inputDecoration(
-                                    label: _t('course_description'),
-                                    hint: _t('course_description_hint'),
-                                    icon: Icons.description,
-                                  ),
-                                  style: TextStyle(color: AppColors.getTextColor(context)),
-                                  maxLines: 4,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) {
-                                      return 'الرجاء إدخال وصف الدورة';
-                                    }
-                                    return null;
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          _buildGlassContainer(
-                            title: 'التصنيفات والبيانات الضمنية',
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'اختر التصنيفات المناسبة (يمكن اختيار أكثر من واحد):',
-                                  style: TextStyle(
-                                    color: AppColors.getTextColor(context, secondary: true),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                SizedBox(height: 12),
-                                _isLoadingCategories
-                                    ? Center(
-                                        child: CircularProgressIndicator())
-                                    : Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: _categories.map((cat) {
-                                          final isSelected =
-                                              _selectedCategoryIds
-                                                  .contains(cat.id);
-                                          return FilterChip(
-                                            label: Text(cat.name),
-                                            selected: isSelected,
-                                            onSelected: (selected) {
-                                              setState(() {
-                                                if (selected) {
-                                                  _selectedCategoryIds
-                                                      .add(cat.id);
-                                                } else {
-                                                  _selectedCategoryIds
-                                                      .remove(cat.id);
-                                                }
-                                              });
-                                            },
-                                            selectedColor: AppColors
-                                                .primaryPurple
-                                                .withOpacity(0.5),
-                                            checkmarkColor: AppColors.getTextColor(context),
-                                            labelStyle: TextStyle(
-                                              color: isSelected
-                                                  ? Colors.white
-                                                  : AppColors.getTextColor(context),
-                                              fontSize: 13,
-                                            ),
-                                            backgroundColor: AppColors.getGlassColor(context, opacity: 0.1),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              side: BorderSide(
-                                                color: isSelected
-                                                    ? AppColors.primaryPurple
-                                                    : AppColors.getBorderColor(context),
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                SizedBox(height: 20),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextFormField(
-                                        controller: _subjectController,
-                                        decoration: _inputDecoration(
-                                          label: _t('subject_label'),
-                                          hint: _t('subject_hint'),
-                                          icon: Icons.book,
-                                        ),
-                                        style: TextStyle(color: AppColors.getTextColor(context)),
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return _t('error_enter_subject');
-                                          }
-                                          return null;
-                                        },
-                                      ),
-                                    ),
-                                    SizedBox(width: 12),
-                                    Expanded(
-                                      child: DropdownButtonFormField<String>(
-                                        value: _levelController.text.isNotEmpty
-                                            ? _levelController.text
-                                            : 'beginner',
-                                        decoration: _inputDecoration(
-                                          label: _t('level_label'),
-                                          icon: Icons.signal_cellular_alt,
-                                        ),
-                                        dropdownColor: AppColors.getSurfaceColor(context),
-                                        style: TextStyle(color: AppColors.getTextColor(context)),
-                                        items: _availableLevels.map((item) {
-                                          return DropdownMenuItem(
-                                            value: item,
-                                            child: Text(_t(item)),
-                                          );
-                                        }).toList(),
-                                        validator: (value) {
-                                          if (value == null || value.isEmpty) {
-                                            return _t('error_select_level');
-                                          }
-                                          return null;
-                                        },
-                                        onChanged: (value) {
-                                          if (value != null) {
-                                            setState(() {
-                                              _levelController.text = value;
-                                            });
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 20),
-                                Text(
-                                  _t('tags_optional_label'),
-                                  style: TextStyle(
-                                    color: AppColors.getTextColor(context, secondary: true),
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                SizedBox(height: 12),
-                                _isLoadingTags
-                                    ? Center(
-                                        child: CircularProgressIndicator())
-                                    : Wrap(
-                                        spacing: 8,
-                                        runSpacing: 8,
-                                        children: _availableTags.map((tag) {
-                                          final isSelected =
-                                              _selectedTags.contains(tag);
-                                          return FilterChip(
-                                            label: Text(_t(tag)),
-                                            selected: isSelected,
-                                            onSelected: (selected) {
-                                              setState(() {
-                                                if (selected) {
-                                                  _selectedTags.add(tag);
-                                                } else {
-                                                  _selectedTags.remove(tag);
-                                                }
-                                              });
-                                            },
-                                            selectedColor: AppColors
-                                                .primaryPurple
-                                                .withOpacity(0.5),
-                                            checkmarkColor: AppColors.getTextColor(context),
-                                            labelStyle: TextStyle(
-                                              color: isSelected
-                                                  ? Colors.white
-                                                  : Colors.white70,
-                                              fontSize: 12,
-                                            ),
-                                            backgroundColor: AppColors.getGlassColor(context, opacity: 0.1),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                              side: BorderSide(
-                                                color: isSelected
-                                                    ? AppColors.primaryPurple
-                                                    : AppColors.getBorderColor(context),
-                                              ),
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          _buildGlassContainer(
-                            title: 'الصور والهوية البصرية',
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Column(
-                                    children: [
-                                      TextFormField(
-                                        controller: _imageUrlController,
-                                        decoration: _inputDecoration(
-                                          label: _t('course_image_url'),
-                                          hint: _t('image_url_hint'),
-                                          icon: Icons.image_rounded,
-                                        ),
-                                        style: TextStyle(color: AppColors.getTextColor(context)),
-                                      ),
-                                      SizedBox(height: 16),
-                                  DropdownButtonFormField<String>(
-                                    value: _selectedDeliveryMode,
-                                    isExpanded: true,
+                  _buildHeader(context, isEditing),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildGlassContainer(
+                              title: _t('basic_info_label'),
+                              child: Column(
+                                children: [
+                                  TextFormField(
+                                    controller: _titleController,
                                     decoration: _inputDecoration(
-                                      label: 'نوع الدورة (طريقة التقديم)',
-                                      icon: Icons.delivery_dining,
+                                      label: _t('course_title_label'),
+                                      hint: _t('course_title_hint'),
+                                      icon: Icons.title,
                                     ),
-                                    dropdownColor: AppColors.getSurfaceColor(context),
-                                    style: TextStyle(color: AppColors.getTextColor(context)),
-                                    items: [
-                                      DropdownMenuItem(value: 'recorded', child: Text('مسجلة (أونلاين)')),
-                                      DropdownMenuItem(value: 'live', child: Text('بث مباشر (أونلاين)')),
-                                      DropdownMenuItem(value: 'in_person', child: Text('حضورية (في المركز)')),
-                                    ],
-                                    onChanged: (v) {
-                                      if (v != null) {
-                                        setState(() => _selectedDeliveryMode = v);
+                                    style: TextStyle(
+                                        color: AppColors.getTextColor(context)),
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return _t('error_enter_title');
                                       }
+                                      return null;
                                     },
                                   ),
                                   SizedBox(height: 16),
-                                      TextFormField(
-                                        controller: _videoUrlController,
-                                        decoration: _inputDecoration(
-                                          label: _t('video_url_label'),
-                                          hint: _t('video_url_hint'),
-                                          icon: Icons.video_collection_rounded,
-                                          suffix: _isUploadingToYoutube 
-                                            ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                            : IconButton(
-                                                icon: Icon(Icons.cloud_upload, color: Colors.redAccent),
-                                                onPressed: _pickAndUploadToYoutube,
-                                                tooltip: 'رفع إلى يوتيوب (غير مدرج)',
+                                  TextFormField(
+                                    controller: _slugController,
+                                    decoration: _inputDecoration(
+                                      label: 'الرابط المخصص (Slug)',
+                                      hint: 'مثال: flutter-course-2024',
+                                      icon: Icons.link,
+                                    ).copyWith(
+                                      helperText:
+                                          'اتركه فارغاً ليتم توليده تلقائياً من الاسم (بحروف انجليزية أو أرقام فقط).',
+                                      helperStyle: TextStyle(
+                                          color: AppColors.getTextColor(context,
+                                              secondary: true),
+                                          fontSize: 11),
+                                    ),
+                                    style: TextStyle(
+                                        color: AppColors.getTextColor(context)),
+                                    validator: (value) {
+                                      if (value != null &&
+                                          value.isNotEmpty &&
+                                          !RegExp(r'^[a-z0-9-]+$')
+                                              .hasMatch(value)) {
+                                        return 'يجب أن يحتوي الرابط على أحرف إنجليزية صغيرة، أرقام وشرطات ( - ) فقط';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                  SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _descriptionController,
+                                    decoration: _inputDecoration(
+                                      label: _t('course_description'),
+                                      hint: _t('course_description_hint'),
+                                      icon: Icons.description,
+                                    ),
+                                    style: TextStyle(
+                                        color: AppColors.getTextColor(context)),
+                                    maxLines: 4,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'الرجاء إدخال وصف الدورة';
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                            _buildGlassContainer(
+                              title: 'التصنيفات والبيانات الضمنية',
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'اختر التصنيفات المناسبة (يمكن اختيار أكثر من واحد):',
+                                    style: TextStyle(
+                                      color: AppColors.getTextColor(context,
+                                          secondary: true),
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  SizedBox(height: 12),
+                                  _isLoadingCategories
+                                      ? Center(
+                                          child: CircularProgressIndicator())
+                                      : Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: _categories.map((cat) {
+                                            final isSelected =
+                                                _selectedCategoryIds
+                                                    .contains(cat.id);
+                                            return FilterChip(
+                                              label: Text(cat.name),
+                                              selected: isSelected,
+                                              onSelected: (selected) {
+                                                setState(() {
+                                                  if (selected) {
+                                                    _selectedCategoryIds
+                                                        .add(cat.id);
+                                                  } else {
+                                                    _selectedCategoryIds
+                                                        .remove(cat.id);
+                                                  }
+                                                });
+                                              },
+                                              selectedColor: AppColors.primaryPurple.withOpacity(0.15),
+                                              checkmarkColor: AppColors.primaryPurple,
+                                              labelStyle: TextStyle(
+                                                color: isSelected
+                                                    ? AppColors.primaryPurple
+                                                    : AppColors.getTextColor(context),
+                                                fontSize: 13,
+                                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                                               ),
+                                              backgroundColor: AppColors.getGlassColor(context, opacity: 0.05),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                side: BorderSide(
+                                                  color: isSelected
+                                                      ? AppColors.primaryPurple.withOpacity(0.5)
+                                                      : AppColors.getBorderColor(context),
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
                                         ),
-                                        style: TextStyle(color: AppColors.getTextColor(context)),
+                                  SizedBox(height: 20),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextFormField(
+                                          controller: _subjectController,
+                                          decoration: _inputDecoration(
+                                            label: _t('subject_label'),
+                                            hint: _t('subject_hint'),
+                                            icon: Icons.book,
+                                          ),
+                                          style: TextStyle(
+                                              color: AppColors.getTextColor(
+                                                  context)),
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return _t('error_enter_subject');
+                                            }
+                                            return null;
+                                          },
+                                        ),
+                                      ),
+                                      SizedBox(width: 12),
+                                      Expanded(
+                                        child: DropdownButtonFormField<String>(
+                                          isExpanded: true,
+                                          value:
+                                              _levelController.text.isNotEmpty
+                                                  ? _levelController.text
+                                                  : 'beginner',
+                                          decoration: _inputDecoration(
+                                            label: _t('level_label'),
+                                            icon: Icons.signal_cellular_alt,
+                                          ),
+                                          dropdownColor:
+                                              AppColors.getSurfaceColor(
+                                                  context),
+                                          style: TextStyle(
+                                              color: AppColors.getTextColor(
+                                                  context)),
+                                          items: _availableLevels.map((item) {
+                                            return DropdownMenuItem(
+                                              value: item,
+                                              child: Text(_t(item)),
+                                            );
+                                          }).toList(),
+                                          validator: (value) {
+                                            if (value == null ||
+                                                value.isEmpty) {
+                                              return _t('error_select_level');
+                                            }
+                                            return null;
+                                          },
+                                          onChanged: (value) {
+                                            if (value != null) {
+                                              setState(() {
+                                                _levelController.text = value;
+                                              });
+                                            }
+                                          },
+                                        ),
                                       ),
                                     ],
                                   ),
-                                ),
-                                SizedBox(width: 8),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    height: 56,
-                                    width: 56,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          AppColors.primaryPurple,
-                                          Colors.blueAccent
-                                        ],
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
+                                  SizedBox(height: 20),
+                                  Text(
+                                    _t('tags_optional_label'),
+                                    style: TextStyle(
+                                      color: AppColors.getTextColor(context,
+                                          secondary: true),
+                                      fontSize: 14,
                                     ),
-                                    child: IconButton(
-                                      onPressed:
-                                          _isUploadingImage ? null : _uploadImage,
-                                      icon: _isUploadingImage
-                                          ? SizedBox(
-                                              width: 24,
-                                              height: 24,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: AppColors.getTextColor(context),
+                                  ),
+                                  SizedBox(height: 12),
+                                  _isLoadingTags
+                                      ? Center(
+                                          child: CircularProgressIndicator())
+                                      : Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: _availableTags.map((tag) {
+                                            final isSelected =
+                                                _selectedTags.contains(tag);
+                                            return FilterChip(
+                                              label: Text(_t(tag)),
+                                              selected: isSelected,
+                                              onSelected: (selected) {
+                                                setState(() {
+                                                  if (selected) {
+                                                    _selectedTags.add(tag);
+                                                  } else {
+                                                    _selectedTags.remove(tag);
+                                                  }
+                                                });
+                                              },
+                                              selectedColor: AppColors.primaryPurple.withOpacity(0.15),
+                                              checkmarkColor: AppColors.primaryPurple,
+                                              labelStyle: TextStyle(
+                                                color: isSelected
+                                                    ? AppColors.primaryPurple
+                                                    : AppColors.getTextColor(context),
+                                                fontSize: 13,
+                                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                                               ),
-                                            )
-                                          : Icon(
-                                              Icons.add_photo_alternate,
-                                              color: AppColors.getTextColor(context)),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                              backgroundColor: AppColors.getGlassColor(context, opacity: 0.05),
+                                              shape: RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                side: BorderSide(
+                                                  color: isSelected
+                                                      ? AppColors.primaryPurple.withOpacity(0.5)
+                                                      : AppColors.getBorderColor(context),
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        ),
+                                ],
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 20),
-                          _buildGlassContainer(
-                            title: _t('pricing_time_data'),
-                            child: Column(
-                              children: [
-                                _buildSwitchTile(
-                                  title: _t('free_course'),
-                                  subtitle: _t('free_course_desc'),
-                                  value: _isFree,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _isFree = value;
-                                      if (value) {
-                                        _priceController.text = '0';
-                                      }
-                                    });
-                                  },
-                                  icon: Icons.money_off,
-                                  activeColor: Colors.blueAccent,
-                                ),
-                                SizedBox(height: 16),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      flex: 3,
-                                      child: TextFormField(
-                                        controller: _priceController,
-                                        enabled: !_isFree,
-                                        decoration: _inputDecoration(
-                                          label: _t('price'),
-                                          hint: _t('price_hint'),
-                                          icon: Icons.attach_money,
-                                        ).copyWith(
-                                          fillColor: _isFree 
-                                              ? AppColors.getGlassColor(context, opacity: 0.02)
-                                              : AppColors.getGlassColor(context, opacity: 0.05),
+                            SizedBox(height: 20),
+                            _buildGlassContainer(
+                              title: 'الصور والهوية البصرية',
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        TextFormField(
+                                          controller: _imageUrlController,
+                                          decoration: _inputDecoration(
+                                            label: _t('course_image_url'),
+                                            hint: _t('image_url_hint'),
+                                            icon: Icons.image_rounded,
+                                          ),
+                                          style: TextStyle(
+                                              color: AppColors.getTextColor(
+                                                  context)),
                                         ),
-                                        style: TextStyle(
-                                          color: _isFree ? AppColors.getTextColor(context, secondary: true) : AppColors.getTextColor(context),
+                                        SizedBox(height: 16),
+                                        DropdownButtonFormField<String>(
+                                          value: _selectedDeliveryMode,
+                                          isExpanded: true,
+                                          decoration: _inputDecoration(
+                                            label: 'نوع الدورة (طريقة التقديم)',
+                                            icon: Icons.delivery_dining,
+                                          ),
+                                          dropdownColor:
+                                              AppColors.getSurfaceColor(
+                                                  context),
+                                          style: TextStyle(
+                                              color: AppColors.getTextColor(
+                                                  context)),
+                                          items: [
+                                            DropdownMenuItem(
+                                                value: 'recorded',
+                                                child: Text('مسجلة (أونلاين)')),
+                                            DropdownMenuItem(
+                                                value: 'live',
+                                                child:
+                                                    Text('بث مباشر (أونلاين)')),
+                                            DropdownMenuItem(
+                                                value: 'in_person',
+                                                child:
+                                                    Text('حضورية (في المركز)')),
+                                          ],
+                                          onChanged: (v) {
+                                            if (v != null) {
+                                              setState(() =>
+                                                  _selectedDeliveryMode = v);
+                                            }
+                                          },
                                         ),
-                                        keyboardType: TextInputType.number,
-                                      ),
+                                        SizedBox(height: 16),
+                                        TextFormField(
+                                          controller: _videoUrlController,
+                                          decoration: _inputDecoration(
+                                            label: _t('video_url_label'),
+                                            hint: _t('video_url_hint'),
+                                            icon:
+                                                Icons.video_collection_rounded,
+                                            suffix: _isUploadingToYoutube
+                                                ? SizedBox(
+                                                    width: 20,
+                                                    height: 20,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                            strokeWidth: 2))
+                                                : IconButton(
+                                                    icon: Icon(
+                                                        Icons.cloud_upload,
+                                                        color:
+                                                            Colors.redAccent),
+                                                    onPressed:
+                                                        _pickAndUploadToYoutube,
+                                                    tooltip:
+                                                        'رفع إلى يوتيوب (غير مدرج)',
+                                                  ),
+                                          ),
+                                          style: TextStyle(
+                                              color: AppColors.getTextColor(
+                                                  context)),
+                                        ),
+                                      ],
                                     ),
-                                    SizedBox(width: 6),
-                                    Expanded(
-                                      flex: 2,
-                                      child: DropdownButtonFormField<String>(
-                                        value: _selectedCurrency,
-                                        isExpanded: true,
-                                        decoration: _inputDecoration(
-                                          label: _t('currency'),
-                                          icon: Icons.payments_outlined,
-                                        ),
-                                        dropdownColor: AppColors.getSurfaceColor(context),
-                                        style: TextStyle(color: AppColors.getTextColor(context)),
-                                        items: [
-                                          DropdownMenuItem(
-                                              value: 'ل.س', child: Text('ل.س')),
-                                          DropdownMenuItem(
-                                              value: r'$', child: Text(r'$')),
-                                        ],
-                                        onChanged: (v) {
-                                          if (v != null) {
-                                            setState(() => _selectedCurrency = v);
-                                          }
-                                        },
-                                      ),
-                                    ),
-                                    SizedBox(width: 6),
-                                    Expanded(
-                                      flex: 3,
-                                      child: TextFormField(
-                                        controller: _durationController,
-                                        readOnly: true,
-                                        decoration: _inputDecoration(
-                                          label: _t('duration_label'),
-                                          hint: 'تلقائي',
-                                          icon: Icons.auto_awesome,
-                                        ).copyWith(
-                                          helperText: 'يُحسب تلقائياً من الدروس',
-                                          helperStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 10),
-                                        ),
-                                         style: TextStyle(color: AppColors.getTextColor(context, secondary: true)),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 16),
-                                TextFormField(
-                                  controller: _discountController,
-                                  enabled: !_isFree,
-                                  decoration: _inputDecoration(
-                                    label: _t('discount_percentage'),
-                                    hint: _t('enter_discount'),
-                                    icon: Icons.percent,
-                                  ).copyWith(
-                                    fillColor: _isFree
-                                        ? AppColors.getGlassColor(context, opacity: 0.02)
-                                        : AppColors.getGlassColor(context, opacity: 0.05),
                                   ),
-                                  style: TextStyle(
-                                     color: _isFree ? AppColors.getTextColor(context, secondary: true) : AppColors.getTextColor(context),
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) return null;
-                                    final discount = int.tryParse(value);
-                                    if (discount == null) return _t('error_label');
-                                    if (discount < 0 || discount > 100) return _t('discount_range_error');
-                                    return null;
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(height: 20),
-                          _buildGlassContainer(
-                            title: _t('instructor_and_visibility'),
-                            child: Column(
-                              children: [
-                                _isLoadingTeachers
-                                    ? Center(
-                                        child: CircularProgressIndicator())
-                                    : TextFormField(
-                                        key: ValueKey(_selectedTeacherId),
-                                        readOnly: true,
-                                        onTap: widget.preselectedInstructorId !=
-                                                null
+                                  SizedBox(width: 8),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      height: 56,
+                                      width: 56,
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            AppColors.primaryPurple,
+                                            Colors.blueAccent
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: IconButton(
+                                        onPressed: _isUploadingImage
                                             ? null
-                                            : _showTeacherPicker,
-                                        controller:
-                                            _displayInstructorController,
-                                        decoration: _inputDecoration(
-                                          label: 'المدرس المسئول',
-                                          icon: Icons.person,
-                                          hint: 'اختر مدرساً أو اتركه غير محدد',
-                                        ).copyWith(
-                                          suffixIcon: Icon(
-                                              Icons.arrow_drop_down,
-                                              color: AppColors.getTextColor(context).withOpacity(0.70)),
-                                        ),
-                                        style: TextStyle(color: AppColors.getTextColor(context)),
+                                            : _uploadImage,
+                                        icon: _isUploadingImage
+                                            ? SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: AppColors.getTextColor(
+                                                      context),
+                                                ),
+                                              )
+                                            : Icon(Icons.add_photo_alternate,
+                                                color: AppColors.getTextColor(
+                                                    context)),
                                       ),
-                                SizedBox(height: 16),
-                                _buildSwitchTile(
-                                  title: 'نشر الدورة',
-                                  subtitle:
-                                      'جعل الدورة متاحة للطلاب على التطبيق',
-                                  value: _isPublished,
-                                  onChanged: (value) =>
-                                      setState(() => _isPublished = value),
-                                  icon: Icons.publish,
-                                  activeColor: Colors.greenAccent,
-                                ),
-                              ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 32),
-                          _buildSubmitButton(isEditing),
-                          SizedBox(height: 40),
-                        ],
+                            SizedBox(height: 20),
+                            _buildGlassContainer(
+                              title: _t('pricing_time_data'),
+                              child: Column(
+                                children: [
+                                  _buildSwitchTile(
+                                    title: _t('free_course'),
+                                    subtitle: _t('free_course_desc'),
+                                    value: _isFree,
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _isFree = value;
+                                        if (value) {
+                                          _priceController.text = '0';
+                                        }
+                                      });
+                                    },
+                                    icon: Icons.money_off,
+                                    activeColor: Colors.blueAccent,
+                                  ),
+                                  SizedBox(height: 16),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        flex: 3,
+                                        child: TextFormField(
+                                          controller: _priceController,
+                                          enabled: !_isFree,
+                                          decoration: _inputDecoration(
+                                            label: _t('price'),
+                                            hint: _t('price_hint'),
+                                            icon: Icons.attach_money,
+                                          ).copyWith(
+                                            fillColor: _isFree
+                                                ? AppColors.getGlassColor(
+                                                    context,
+                                                    opacity: 0.02)
+                                                : AppColors.getGlassColor(
+                                                    context,
+                                                    opacity: 0.05),
+                                          ),
+                                          style: TextStyle(
+                                            color: _isFree
+                                                ? AppColors.getTextColor(
+                                                    context,
+                                                    secondary: true)
+                                                : AppColors.getTextColor(
+                                                    context),
+                                          ),
+                                          keyboardType: TextInputType.number,
+                                        ),
+                                      ),
+                                      SizedBox(width: 6),
+                                      Expanded(
+                                        flex: 2,
+                                        child: DropdownButtonFormField<String>(
+                                          value: _selectedCurrency,
+                                          isExpanded: true,
+                                          decoration: _inputDecoration(
+                                            label: _t('currency'),
+                                            icon: Icons.payments_outlined,
+                                          ),
+                                          dropdownColor:
+                                              AppColors.getSurfaceColor(
+                                                  context),
+                                          style: TextStyle(
+                                              color: AppColors.getTextColor(
+                                                  context)),
+                                          items: [
+                                            DropdownMenuItem(
+                                                value: 'ل.س',
+                                                child: Text('ل.س')),
+                                            DropdownMenuItem(
+                                                value: r'$', child: Text(r'$')),
+                                          ],
+                                          onChanged: (v) {
+                                            if (v != null) {
+                                              setState(
+                                                  () => _selectedCurrency = v);
+                                            }
+                                          },
+                                        ),
+                                      ),
+                                      SizedBox(width: 6),
+                                      Expanded(
+                                        flex: 3,
+                                        child: TextFormField(
+                                          controller: _durationController,
+                                          readOnly: true,
+                                          decoration: _inputDecoration(
+                                            label: _t('duration_label'),
+                                            hint: 'تلقائي',
+                                            icon: Icons.auto_awesome,
+                                          ).copyWith(
+                                            helperText:
+                                                'يُحسب تلقائياً من الدروس',
+                                            helperStyle: TextStyle(
+                                                color: AppColors.getTextColor(
+                                                    context,
+                                                    secondary: true),
+                                                fontSize: 10),
+                                          ),
+                                          style: TextStyle(
+                                              color: AppColors.getTextColor(
+                                                  context,
+                                                  secondary: true)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: 16),
+                                  TextFormField(
+                                    controller: _discountController,
+                                    enabled: !_isFree,
+                                    decoration: _inputDecoration(
+                                      label: _t('discount_percentage'),
+                                      hint: _t('enter_discount'),
+                                      icon: Icons.percent,
+                                    ).copyWith(
+                                      fillColor: _isFree
+                                          ? AppColors.getGlassColor(context,
+                                              opacity: 0.02)
+                                          : AppColors.getGlassColor(context,
+                                              opacity: 0.05),
+                                    ),
+                                    style: TextStyle(
+                                      color: _isFree
+                                          ? AppColors.getTextColor(context,
+                                              secondary: true)
+                                          : AppColors.getTextColor(context),
+                                    ),
+                                    keyboardType: TextInputType.number,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return null;
+                                      }
+                                      final discount = int.tryParse(value);
+                                      if (discount == null) {
+                                        return _t('error_label');
+                                      }
+                                      if (discount < 0 || discount > 100) {
+                                        return _t('discount_range_error');
+                                      }
+                                      return null;
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 20),
+                            _buildGlassContainer(
+                              title: _t('instructor_and_visibility'),
+                              child: Column(
+                                children: [
+                                  _isLoadingTeachers
+                                      ? Center(
+                                          child: CircularProgressIndicator())
+                                      : TextFormField(
+                                          key: ValueKey(_selectedTeacherId),
+                                          readOnly: true,
+                                          onTap:
+                                              widget.preselectedInstructorId !=
+                                                      null
+                                                  ? null
+                                                  : _showTeacherPicker,
+                                          controller:
+                                              _displayInstructorController,
+                                          decoration: _inputDecoration(
+                                            label: 'المدرس المسئول',
+                                            icon: Icons.person,
+                                            hint:
+                                                'اختر مدرساً أو اتركه غير محدد',
+                                          ).copyWith(
+                                            suffixIcon: Icon(
+                                                Icons.arrow_drop_down,
+                                                color: AppColors.getTextColor(
+                                                        context)
+                                                    .withOpacity(0.70)),
+                                          ),
+                                          style: TextStyle(
+                                              color: AppColors.getTextColor(
+                                                  context)),
+                                        ),
+                                  SizedBox(height: 16),
+                                  _buildSwitchTile(
+                                    title: 'نشر الدورة',
+                                    subtitle:
+                                        'جعل الدورة متاحة للطلاب على التطبيق',
+                                    value: _isPublished,
+                                    onChanged: (value) =>
+                                        setState(() => _isPublished = value),
+                                    icon: Icons.publish,
+                                    activeColor: Colors.greenAccent,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(height: 32),
+                            _buildSubmitButton(isEditing),
+                            SizedBox(height: 40),
+                          ],
+                        ),
                       ),
                     ),
                   ),
-                ),
                 ],
               ),
             ),
@@ -884,7 +976,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                       width: 1),
                 ),
                 child: IconButton(
-                   icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
+                  icon: Icon(Icons.arrow_back,
+                      color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -968,7 +1061,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               color: AppColors.getSurfaceColor(context),
               borderRadius:
                   const BorderRadius.vertical(top: Radius.circular(24)),
-              border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.1)),
+              border: Border.all(
+                  color: AppColors.getGlassColor(context, opacity: 0.1)),
             ),
             child: Column(
               children: [
@@ -1020,8 +1114,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                         return ListTile(
                           leading: CircleAvatar(
                             backgroundColor: Colors.grey.withOpacity(0.1),
-                            child: Icon(Icons.person_off,
-                                color: Colors.grey),
+                            child: Icon(Icons.person_off, color: Colors.grey),
                           ),
                           title: Text('غير محدد',
                               style: TextStyle(color: Colors.grey)),
@@ -1043,13 +1136,14 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                       final name =
                           userData['full_name'] ?? userData['name'] ?? 'مستخدم';
                       final avatarUrl = userData['avatar_url'] as String?;
-                      
+
                       // Get role display name
                       final userRoles = userData['user_roles'] as List? ?? [];
                       final roleName = userRoles.isNotEmpty
-                          ? (userRoles.first['roles']?['display_name'] ?? 'طالب')
+                          ? (userRoles.first['roles']?['display_name'] ??
+                              'طالب')
                           : 'طالب';
-                          
+
                       final isSelected =
                           _selectedTeacherId == teacher['user_id'];
 
@@ -1057,17 +1151,23 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                         leading: CircleAvatar(
                           backgroundColor:
                               AppColors.primaryPurple.withOpacity(0.2),
-                          backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                              ? NetworkImage(avatarUrl)
-                              : null,
+                          backgroundImage:
+                              avatarUrl != null && avatarUrl.isNotEmpty
+                                  ? NetworkImage(avatarUrl)
+                                  : null,
                           child: avatarUrl == null || avatarUrl.isEmpty
-                              ? Icon(Icons.person, color: AppColors.primaryPurple)
+                              ? Icon(Icons.person,
+                                  color: AppColors.primaryPurple)
                               : null,
                         ),
                         title: Text(name,
-                            style: TextStyle(color: AppColors.getTextColor(context))),
-                        subtitle: Text(roleName, 
-                            style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 12)),
+                            style: TextStyle(
+                                color: AppColors.getTextColor(context))),
+                        subtitle: Text(roleName,
+                            style: TextStyle(
+                                color: AppColors.getTextColor(context,
+                                    secondary: true),
+                                fontSize: 12)),
                         trailing: isSelected
                             ? Icon(Icons.check_circle,
                                 color: Colors.greenAccent)
@@ -1101,19 +1201,25 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      prefixIcon: Icon(icon, color: AppColors.getTextColor(context, secondary: true)),
+      prefixIcon:
+          Icon(icon, color: AppColors.getTextColor(context, secondary: true)),
       suffixIcon: suffix,
-      labelStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true)),
-      hintStyle: TextStyle(color: AppColors.getTextColor(context, secondary: true).withOpacity(0.5)),
+      labelStyle:
+          TextStyle(color: AppColors.getTextColor(context, secondary: true)),
+      hintStyle: TextStyle(
+          color: AppColors.getTextColor(context, secondary: true)
+              .withOpacity(0.5)),
       filled: true,
       fillColor: AppColors.getGlassColor(context, opacity: 0.05),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
+        borderSide:
+            BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
+        borderSide:
+            BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -1135,15 +1241,22 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       decoration: BoxDecoration(
         color: AppColors.getGlassColor(context, opacity: 0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.1)),
+        border:
+            Border.all(color: AppColors.getGlassColor(context, opacity: 0.1)),
       ),
       child: SwitchListTile(
         title: Text(title,
             style: TextStyle(
-                color: AppColors.getTextColor(context), fontWeight: FontWeight.normal)),
+                color: AppColors.getTextColor(context),
+                fontWeight: FontWeight.normal)),
         subtitle: Text(subtitle,
-            style: TextStyle(color: AppColors.getTextColor(context, secondary: true), fontSize: 12)),
-        secondary: Icon(icon, color: value ? activeColor : AppColors.getTextColor(context, secondary: true)),
+            style: TextStyle(
+                color: AppColors.getTextColor(context, secondary: true),
+                fontSize: 12)),
+        secondary: Icon(icon,
+            color: value
+                ? activeColor
+                : AppColors.getTextColor(context, secondary: true)),
         value: value,
         onChanged: onChanged,
         activeColor: activeColor,
@@ -1189,7 +1302,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(isEditing ? Icons.save : Icons.add, color: AppColors.getTextColor(context)),
+                  Icon(isEditing ? Icons.save : Icons.add,
+                      color: AppColors.getTextColor(context)),
                   SizedBox(width: 8),
                   Text(
                     isEditing ? _t('save_changes') : _t('create_new_course'),
@@ -1220,9 +1334,12 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     try {
       final courseData = {
         'title': _titleController.text,
-        'slug': _slugController.text.isNotEmpty 
-            ? _slugController.text 
-            : _titleController.text.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), ''),
+        'slug': _slugController.text.isNotEmpty
+            ? _slugController.text
+            : _titleController.text
+                .toLowerCase()
+                .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+                .replaceAll(RegExp(r'^-+|-+$'), ''),
         'description': _descriptionController.text,
         'category_id':
             _selectedCategoryIds.first, // Fallback for single category
@@ -1253,13 +1370,14 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             .select('id')
             .single();
         courseId = response['id'];
-        
+
         // Ensure assigned instructor has the teacher role if they are currently a student
         if (_selectedTeacherId != null) {
           final currentRole = await _db.getUserRole(_selectedTeacherId!);
           if (currentRole == 'student') {
             await _db.assignRole(_selectedTeacherId!, 'teacher');
-            debugPrint('✅ Automatically promoted instructor $_selectedTeacherId to teacher role');
+            debugPrint(
+                '✅ Automatically promoted instructor $_selectedTeacherId to teacher role');
           }
         }
 
@@ -1278,7 +1396,8 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
           final currentRole = await _db.getUserRole(_selectedTeacherId!);
           if (currentRole == 'student') {
             await _db.assignRole(_selectedTeacherId!, 'teacher');
-            debugPrint('✅ Automatically promoted instructor $_selectedTeacherId to teacher role');
+            debugPrint(
+                '✅ Automatically promoted instructor $_selectedTeacherId to teacher role');
           }
         }
 
@@ -1327,9 +1446,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
         final rows = categoryIds
             .map((catId) => {'course_id': courseId, 'category_id': catId})
             .toList();
-        await _db.supabaseClient
-            .from('course_category_junction')
-            .insert(rows);
+        await _db.supabaseClient.from('course_category_junction').insert(rows);
       }
     } catch (e) {
       debugPrint('Error updating course categories: $e');
@@ -1351,7 +1468,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       debugPrint('Error picking image: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في اختيار الصورة: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('خطأ في اختيار الصورة: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
@@ -1359,22 +1478,24 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
   Future<void> _uploadCourseImage() async {
     if (_courseImage == null) return;
-    
+
     setState(() => _isUploadingImage = true);
     try {
       final String url = await _imageUploadService.uploadImageToGitHub(
         _courseImage!,
         folder: 'courses/images',
       );
-      
+
       setState(() {
         _imageUrlController.text = url;
         _isUploadingImage = false;
       });
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تم رفع الصورة بنجاح!'), backgroundColor: Colors.green),
+          SnackBar(
+              content: Text('تم رفع الصورة بنجاح!'),
+              backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -1382,7 +1503,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
       setState(() => _isUploadingImage = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في رفع الصورة: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('خطأ في رفع الصورة: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }

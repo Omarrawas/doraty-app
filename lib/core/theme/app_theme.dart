@@ -19,32 +19,37 @@ class AppTheme {
         ? ThemeData.dark(useMaterial3: true)
         : ThemeData.light(useMaterial3: true);
     
-    // Choose font families based on the design update
-    final headlineFont = isDark ? GoogleFonts.manrope : GoogleFonts.inter;
-    final bodyFont = isDark ? GoogleFonts.plusJakartaSans : GoogleFonts.inter;
+    final displayFont = GoogleFonts.plusJakartaSans;
+    final bodyFont = GoogleFonts.inter;
+    final labelFont = GoogleFonts.plusJakartaSans;
 
     final textTheme = (isDark 
-        ? GoogleFonts.manropeTextTheme(baseTheme.textTheme)
+        ? GoogleFonts.interTextTheme(baseTheme.textTheme)
         : GoogleFonts.interTextTheme(baseTheme.textTheme)).copyWith(
-      displayLarge: headlineFont(
+      displayLarge: displayFont(
           fontSize: 32,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.64, // roughly -0.02em
           color: palette.textPrimary),
-      displayMedium: headlineFont(
+      displayMedium: displayFont(
           fontSize: 28,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.56,
           color: palette.textPrimary),
-      displaySmall: headlineFont(
+      displaySmall: displayFont(
           fontSize: 24,
           fontWeight: FontWeight.bold,
+          letterSpacing: -0.48,
           color: palette.textPrimary),
-      headlineMedium: headlineFont(
+      headlineMedium: displayFont(
           fontSize: 20,
           fontWeight: FontWeight.w600,
+          letterSpacing: -0.40,
           color: palette.textPrimary),
-      headlineSmall: headlineFont(
+      headlineSmall: displayFont(
           fontSize: 18,
           fontWeight: FontWeight.w600,
+          letterSpacing: -0.36,
           color: palette.textPrimary),
       titleLarge: bodyFont(
           fontSize: 16,
@@ -70,10 +75,18 @@ class AppTheme {
           fontSize: 12,
           fontWeight: FontWeight.normal,
           color: palette.textMuted),
-      labelLarge: bodyFont(
+      labelLarge: labelFont(
           fontSize: 14,
           fontWeight: FontWeight.w600,
           color: palette.textPrimary),
+      labelMedium: labelFont(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: palette.textSecondary),
+      labelSmall: labelFont(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: palette.textMuted),
     );
 
     final scaffoldBackground =
@@ -98,13 +111,14 @@ class AppTheme {
       scaffoldBackgroundColor: scaffoldBackground,
       dialogBackgroundColor: palette.dialog,
       canvasColor: palette.surface,
-      dividerColor: palette.border,
+      dividerColor: Colors.transparent, // Disable hard line borders
       shadowColor: palette.isDark
-          ? AppColors.alpha(Colors.black, 0.32)
-          : AppColors.alpha(AppColors.primaryPurple, 0.12),
+          ? const Color(0x14000000)
+          // Ambient shadow: primary at 8% (0.08 alpha) -> 0x14 roughly
+          : const Color.fromRGBO(44, 47, 103, 0.08), 
       splashColor: AppColors.alpha(palette.primary, 0.10),
       highlightColor: AppColors.alpha(palette.primary, 0.06),
-      fontFamily: isDark ? 'Manrope' : 'Inter',
+      fontFamily: 'Inter',
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         elevation: 0,
@@ -113,7 +127,7 @@ class AppTheme {
         centerTitle: true,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
-        titleTextStyle: headlineFont(
+        titleTextStyle: displayFont(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: palette.appBarForeground,
@@ -126,19 +140,19 @@ class AppTheme {
         elevation: 0,
         color: palette.card,
         shadowColor: palette.isDark
-            ? AppColors.alpha(Colors.black, 0.24)
-            : AppColors.alpha(AppColors.primaryPurple, 0.10),
+            ? const Color(0x14000000)
+            : const Color.fromRGBO(44, 47, 103, 0.08),
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: AppColors.alpha(palette.border, 0.65)),
+          side: BorderSide.none, // Forbidden solid borders
         ),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: palette.dialog,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        titleTextStyle: headlineFont(
+        titleTextStyle: displayFont(
           fontSize: 20,
           fontWeight: FontWeight.bold,
           color: palette.textPrimary,
@@ -158,11 +172,12 @@ class AppTheme {
             bodyFont(color: palette.textSecondary, fontSize: 14),
         prefixIconColor: palette.iconSecondary,
         suffixIconColor: palette.iconSecondary,
-        border: _inputBorder(palette.border, radius: 20),
-        enabledBorder: _inputBorder(palette.border, radius: 20),
-        focusedBorder: _inputBorder(palette.primary, width: 1.6, radius: 20),
-        errorBorder: _inputBorder(AppColors.error, radius: 20),
-        focusedErrorBorder: _inputBorder(AppColors.error, width: 1.6, radius: 20),
+        border: _inputBorder(Colors.transparent, radius: 9999), 
+        enabledBorder: _inputBorder(Colors.transparent, radius: 9999),
+        // "Ghost Border" of primary at 40% opacity during active
+        focusedBorder: _inputBorder(palette.borderStrong, width: 2, radius: 9999),
+        errorBorder: _inputBorder(AppColors.error, radius: 9999),
+        focusedErrorBorder: _inputBorder(AppColors.error, width: 2, radius: 9999),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -228,9 +243,9 @@ class AppTheme {
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
           fillColor: palette.inputFill,
-          border: _inputBorder(palette.border),
-          enabledBorder: _inputBorder(palette.border),
-          focusedBorder: _inputBorder(palette.primary, width: 1.6),
+          border: _inputBorder(Colors.transparent, radius: 9999),
+          enabledBorder: _inputBorder(Colors.transparent, radius: 9999),
+          focusedBorder: _inputBorder(palette.borderStrong, width: 2, radius: 9999),
         ),
       ),
       extensions: [palette],

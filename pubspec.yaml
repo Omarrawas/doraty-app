@@ -22,6 +22,7 @@ dependencies:
   # UI Components
   cupertino_icons: ^1.0.2
   google_fonts: ^8.0.2
+  font_awesome_flutter: ^10.7.0
   flutter_svg: ^2.0.9
   cached_network_image: ^3.3.0
   flutter_rating_bar: ^4.0.1
@@ -117,6 +118,7 @@ dependencies:
   flutter_web_plugins:
     sdk: flutter
   go_router: ^17.1.0
+  font_awesome_flutter: ^11.0.0
 
 dev_dependencies:
   flutter_test:

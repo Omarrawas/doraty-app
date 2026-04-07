@@ -146,11 +146,14 @@ class AppColorPalette extends ThemeExtension<AppColorPalette> {
       surfaceElevated: Color.lerp(surfaceElevated, other.surfaceElevated, t)!,
       card: Color.lerp(card, other.card, t)!,
       dialog: Color.lerp(dialog, other.dialog, t)!,
-      drawerBackground: Color.lerp(drawerBackground, other.drawerBackground, t)!,
+      drawerBackground:
+          Color.lerp(drawerBackground, other.drawerBackground, t)!,
       inputFill: Color.lerp(inputFill, other.inputFill, t)!,
       inputFillAlt: Color.lerp(inputFillAlt, other.inputFillAlt, t)!,
-      appBarBackground: Color.lerp(appBarBackground, other.appBarBackground, t)!,
-      appBarForeground: Color.lerp(appBarForeground, other.appBarForeground, t)!,
+      appBarBackground:
+          Color.lerp(appBarBackground, other.appBarBackground, t)!,
+      appBarForeground:
+          Color.lerp(appBarForeground, other.appBarForeground, t)!,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
       textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
       textMuted: Color.lerp(textMuted, other.textMuted, t)!,
@@ -171,7 +174,6 @@ class AppColorPalette extends ThemeExtension<AppColorPalette> {
   }
 }
 
-
 /// Single source of truth for app colors.
 class AppColors {
   AppColors._();
@@ -183,9 +185,9 @@ class AppColors {
   static const Color brandNeutral = Color(0xFF74777F);
 
   // Brand (Legacy/Compatibility)
-  static const Color primaryPurple = brandPrimary; 
-  static const Color primaryBlue = Color(0xFF00E5FF);   // Electric Neon Cyan
-  static const Color deepPurple = Color(0xFF2E004F);    // Nocturne Dark Purple
+  static const Color primaryPurple = brandPrimary;
+  static const Color primaryBlue = Color(0xFF00E5FF); // Electric Neon Cyan
+  static const Color deepPurple = Color(0xFF2E004F); // Nocturne Dark Purple
   static const Color professionalBlue = brandPrimary;
   static const Color mutedPurpleBlue = brandSecondary;
   static const Color lightPurple = Color(0xFF9163FF);
@@ -196,8 +198,8 @@ class AppColors {
   // const widgets such as BoxDecoration(...).
   static const Color background = Color(0xFFF8FAFF);
   static const Color darkBackground = Color(0xFF0B0C15); // Nocturne Black
-  static const Color darkNavy = Color(0xFF121422);       // Dark Surface
-  static const Color darkDeep = Color(0xFF080911);       // Deeper Shadow
+  static const Color darkNavy = Color(0xFF121422); // Dark Surface
+  static const Color darkDeep = Color(0xFF080911); // Deeper Shadow
   static const Color darkScaffold = Color(0xFF0B0C15);
   static const Color cardBackground = Color(0xFFFFFFFF);
   static const Color lightSurface = Color(0xFFFFFFFF);
@@ -292,15 +294,13 @@ class AppColors {
     colors: [brandPrimary, Color(0xFF90CAF9)],
   );
 
-
-
   static const LinearGradient lightBackgroundGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFFF8FAFF), // Very soft misty blue-white
-      Color(0xFFF1F4F9), // Soft airy blue
-      Color(0xFFE8EEF7), // Light periwinkle tint
+      Color(0xFFF9FAFC), // Pure, frosty white at the top left
+      Color(0xFFF0F4FA), // Very soft, icy blue in the middle
+      Color(0xFFE3EAF7), // Clean, light blue-grey accent at the bottom right
     ],
   );
 
@@ -327,7 +327,7 @@ class AppColors {
     border: Color(0xFFDDE2EA),
     borderStrong: Color(0xFFC1C7CE),
     glass: Color(0xA6FFFFFF), // Frosty White Glass
-    glassStrong: Color(0xE6FFFFFF), 
+    glassStrong: Color(0xE6FFFFFF),
     navBackground: lightSurface,
     shimmerBase: Color(0xFFE1E2E5),
     shimmerHighlight: Color(0xFFF1F0F4),
@@ -374,10 +374,9 @@ class AppColors {
     ),
   );
 
-
-
   static AppColorPalette of(BuildContext context) {
-    return Theme.of(context).extension<AppColorPalette>() ?? (Theme.of(context).brightness == Brightness.dark ? dark : light);
+    return Theme.of(context).extension<AppColorPalette>() ??
+        (Theme.of(context).brightness == Brightness.dark ? dark : light);
   }
 
   static Color alpha(Color color, double opacity) {
