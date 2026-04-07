@@ -27,6 +27,14 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
   bool _isUploading = false;
 
   String _t(String key) => AppStrings.get(key, Provider.of<LocaleProvider>(context, listen: false).locale);
+  
+  String _getTypeLabel(String type) {
+    if (type == 'ad') return _t('general_ad');
+    if (type == 'course') return _t('specific_course');
+    if (type == 'package') return _t('bundle_offer');
+    if (type == 'external') return _t('external_link');
+    return type;
+  }
 
   @override
   void initState() {
@@ -178,7 +186,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${_t('type_label')}: ${banner.type}',
+                    '${_t('type_label')}: ${_getTypeLabel(banner.type)}',
                     style: TextStyle(
                       color: AppColors.getTextColor(context).withOpacity(0.6),
                       fontSize: 13,
@@ -238,9 +246,9 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                   padding: EdgeInsets.all(10),
                   margin: EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: AppColors.getMutedTextColor(context),
+                    color: AppColors.getSurfaceColor(context).withOpacity(0.8),
                     borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: AppColors.getBorderColor(context)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,12 +302,7 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                   dropdownColor: AppColors.getSurfaceColor(context),
                   decoration: InputDecoration(labelText: _t('ad_type')),
                   items: ['ad', 'course', 'package', 'external'].map((type) {
-                    String label = type;
-                    if (type == 'ad') label = _t('general_ad');
-                    if (type == 'course') label = _t('specific_course');
-                    if (type == 'package') label = _t('bundle_offer');
-                    if (type == 'external') label = _t('external_link');
-                    return DropdownMenuItem(value: type, child: Text(label));
+                    return DropdownMenuItem(value: type, child: Text(_getTypeLabel(type)));
                   }).toList(),
                   onChanged: (val) {
                     if (val != null) {
@@ -423,8 +426,12 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.70)),
-          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-          focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primaryPurple)),
+          enabledBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: AppColors.getBorderColor(context)),
+          ),
+          focusedBorder: UnderlineInputBorder(
+            borderSide: BorderSide(color: AppColors.primaryPurple),
+          ),
         ),
       ),
     );
@@ -567,9 +574,9 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.getMutedTextColor(context),
+              color: AppColors.getInputFillColor(context),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white24),
+              border: Border.all(color: AppColors.getBorderColor(context)),
             ),
             child: Row(
               children: [
@@ -583,8 +590,11 @@ class _BannersManagementScreenState extends State<BannersManagementScreen> {
                   child: Text(
                     targetId.isEmpty ? _t('click_to_select') : '${_t('id_label')}: $targetId',
                     style: TextStyle(
-                      color: targetId.isEmpty ? Colors.white30 : Colors.white,
+                      color: targetId.isEmpty 
+                          ? AppColors.getTextColor(context).withOpacity(0.3) 
+                          : AppColors.getTextColor(context),
                       fontSize: 14,
+                      fontFamily: 'Cairo',
                     ),
                   ),
                 ),
@@ -743,8 +753,9 @@ class _TargetSearchDialogState extends State<_TargetSearchDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      backgroundColor: Color(0xFF1E1E2C),
-      title: Text(widget.type == 'course' ? _t('select_course') : _t('select_bundle')),
+      backgroundColor: AppColors.getSurfaceColor(context),
+      title: Text(widget.type == 'course' ? _t('select_course') : _t('select_bundle'),
+          style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
@@ -754,13 +765,13 @@ class _TargetSearchDialogState extends State<_TargetSearchDialog> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: _t('search_hint_name_teacher'),
-                hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.30)),
+                hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.30), fontFamily: 'Cairo'),
                 prefixIcon: Icon(Icons.search, color: AppColors.getTextColor(context).withOpacity(0.70)),
                 filled: true,
-                fillColor: Colors.white.withOpacity(0.05),
+                fillColor: AppColors.getInputFillColor(context),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
               ),
-              style: TextStyle(color: AppColors.getTextColor(context)),
+              style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
             ),
             SizedBox(height: 16),
             if (_isLoading)
@@ -799,7 +810,10 @@ class _TargetSearchDialogState extends State<_TargetSearchDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: Text(_t('close'))),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(_t('close'), style: TextStyle(fontFamily: 'Cairo')),
+        ),
       ],
     );
   }

@@ -5,6 +5,7 @@ import '../../models/exam.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'exam_taking_screen.dart';
 import '../../widgets/tex_view_widget.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 
 class ExamResultScreen extends StatefulWidget {
   final Exam exam;
@@ -37,8 +38,7 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
     final percentage = widget.exam.percentage ?? 0.0;
     final isPassed = percentage >= 60;
     try {
-      debugPrint(
-          '📣 Playing result sound: ${isPassed ? "success.mp3" : "failure.mp3"}');
+      debugPrint('📣 Playing result sound: ${isPassed ? "success.mp3" : "failure.mp3"}');
       if (isPassed) {
         await _audioPlayer.play(AssetSource('sounds/success.mp3'), volume: 1.0);
       } else {
@@ -62,59 +62,45 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
     final correctAnswers = _getCorrectAnswersCount();
 
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: AppColors.backgroundGradient(context),
-        ),
+      body: DynamicGradientBackground(
         child: SafeArea(
           child: Column(
             children: [
-              // Header
               _buildHeader(context),
-
-              // Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: EdgeInsets.all(20),
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                   child: Column(
                     children: [
-                      // Result Card
                       _buildResultCard(percentage, isPassed),
-
-                      SizedBox(height: 24),
-
-                      // Statistics
+                      const SizedBox(height: 32),
                       _buildStatistics(correctAnswers),
-
-                      SizedBox(height: 24),
-
-                      // Questions Review
+                      const SizedBox(height: 32),
                       if (widget.userAnswers != null) ...[
-                        Text(
-                          'مراجعة الأسئلة',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.getTextColor(context),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            'مراجعة الأسئلة',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.getTextColor(context),
+                              fontFamily: 'Cairo',
+                            ),
                           ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         ...List.generate(widget.exam.questions.length, (index) {
                           return Padding(
-                            padding: EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.only(bottom: 16),
                             child: _buildQuestionReview(index),
                           );
                         }),
                       ],
-
-                      SizedBox(height: 24),
-
-                      // Action Buttons
+                      const SizedBox(height: 32),
                       _buildActionButtons(context),
-
-                      SizedBox(height: 20),
+                      const SizedBox(height: 32),
                     ],
                   ),
                 ),
@@ -128,127 +114,126 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.getMutedTextColor(context),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppColors.getMutedTextColor(context),
-                    width: 1,
-                  ),
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
                 child: IconButton(
-                  icon: Icon(Icons.close, color: AppColors.getTextColor(context)),
-                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  onPressed: () {
+                    if (widget.onFinish != null) {
+                      widget.onFinish!();
+                    } else {
+                      Navigator.pop(context);
+                    }
+                  },
                 ),
               ),
             ),
           ),
-          Expanded(
-            child: Text(
-              'نتيجة الاختبار',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.getTextColor(context),
-              ),
+          Text(
+            'نتيجة الاختبار',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: AppColors.getTextColor(context),
+              fontFamily: 'Cairo',
             ),
           ),
-          SizedBox(width: 48),
+          const SizedBox(width: 48), // Balancing space for the header title centering
         ],
       ),
     );
   }
 
   Widget _buildResultCard(double percentage, bool isPassed) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-        child: Container(
-          padding: EdgeInsets.all(32),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.25),
-                Colors.white.withOpacity(0.15),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: AppColors.getMutedTextColor(context),
-              width: 1.5,
-            ),
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.getSurfaceColor(context).withOpacity(0.4),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(color: Colors.white.withOpacity(0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: (isPassed ? Colors.green : Colors.red).withOpacity(0.15),
+            blurRadius: 40,
+            spreadRadius: -5,
           ),
-          child: Column(
-            children: [
-              // Icon
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: isPassed
-                      ? Colors.green.withOpacity(0.3)
-                      : Colors.red.withOpacity(0.3),
-                  border: Border.all(
-                    color: isPassed ? Colors.green : Colors.red,
-                    width: 3,
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+            child: Column(
+              children: [
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: isPassed ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                    border: Border.all(
+                      color: isPassed ? Colors.green.withOpacity(0.5) : Colors.red.withOpacity(0.5),
+                      width: 4,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isPassed ? Colors.green.withOpacity(0.4) : Colors.red.withOpacity(0.4),
+                        blurRadius: 30,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    isPassed ? Icons.emoji_events_rounded : Icons.sentiment_dissatisfied_rounded,
+                    size: 60,
+                    color: isPassed ? Colors.greenAccent : Colors.redAccent,
                   ),
                 ),
-                child: Icon(
-                  isPassed ? Icons.check_circle : Icons.cancel,
-                  size: 60,
-                  color: isPassed ? Colors.green : Colors.red,
+                const SizedBox(height: 24),
+                Text(
+                  isPassed ? 'مبروك، لقد نجحت!' : 'للأسف، لم يحالفك الحظ',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: isPassed ? Colors.greenAccent : Colors.redAccent,
+                    fontFamily: 'Cairo',
+                  ),
                 ),
-              ),
-
-              SizedBox(height: 24),
-
-              // Status
-              Text(
-                isPassed ? 'نجحت!' : 'لم تنجح',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: isPassed ? Colors.green : Colors.red,
+                const SizedBox(height: 8),
+                Text(
+                  '${percentage.toStringAsFixed(1)}%',
+                  style: const TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontFamily: 'Cairo',
+                  ),
                 ),
-              ),
-
-              SizedBox(height: 12),
-
-              // Percentage - MAIN
-              Text(
-                '${percentage.toStringAsFixed(1)}%',
-                style: TextStyle(
-                  fontSize: 36,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.getTextColor(context),
+                Text(
+                  '(${widget.exam.score} من أصل ${widget.exam.calculatedTotalPoints} نقطة)',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withOpacity(0.7),
+                    fontFamily: 'Cairo',
+                  ),
                 ),
-              ),
-
-              SizedBox(height: 8),
-
-              // Score points - SECONDARY
-              Text(
-                '(${widget.exam.score} / ${widget.exam.calculatedTotalPoints})',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.getTextColor(context, secondary: true),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -260,28 +245,28 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
       children: [
         Expanded(
           child: _buildStatCard(
-            icon: Icons.check_circle,
+            icon: Icons.check_circle_outline_rounded,
             label: 'إجابات صحيحة',
             value: '$correctAnswers',
-            color: Colors.green,
+            color: Colors.greenAccent,
           ),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
-            icon: Icons.cancel,
+            icon: Icons.highlight_off_rounded,
             label: 'إجابات خاطئة',
             value: '${widget.exam.questions.length - correctAnswers}',
-            color: Colors.red,
+            color: Colors.redAccent,
           ),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 16),
         Expanded(
           child: _buildStatCard(
-            icon: Icons.assignment,
+            icon: Icons.format_list_numbered_rounded,
             label: 'مجموع الأسئلة',
             value: '${widget.exam.questions.length}',
-            color: const Color.fromARGB(255, 0, 140, 255),
+            color: Colors.blueAccent,
           ),
         ),
       ],
@@ -295,38 +280,38 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
     required Color color,
   }) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
           decoration: BoxDecoration(
-            color: AppColors.getMutedTextColor(context),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.getMutedTextColor(context),
-              width: 1,
-            ),
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
           child: Column(
             children: [
-              Icon(icon, color: color, size: 32),
-              SizedBox(height: 8),
+              Icon(icon, color: color, size: 36),
+              const SizedBox(height: 12),
               Text(
                 value,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.getTextColor(context),
+                  fontWeight: FontWeight.w800,
+                  color: Colors.white,
+                  fontFamily: 'Cairo',
                 ),
               ),
-              SizedBox(height: 4),
+              const SizedBox(height: 4),
               Text(
                 label,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 12,
-                  color: AppColors.getTextColor(context, secondary: true),
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withOpacity(0.7),
+                  fontFamily: 'Cairo',
                 ),
               ),
             ],
@@ -337,133 +322,124 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
   }
 
   Widget _buildQuestionReview(int index) {
+    if (index >= widget.exam.questions.length) return const SizedBox.shrink();
+    
     final question = widget.exam.questions[index];
     final userAnswer = widget.userAnswers?[index];
     final isCorrect = userAnswer == question.correctAnswer;
     final wasAnswered = userAnswer != null;
 
+    Color statusColor = wasAnswered
+        ? (isCorrect ? Colors.greenAccent : Colors.redAccent)
+        : Colors.orangeAccent;
+
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(24),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: AppColors.getMutedTextColor(context),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: wasAnswered
-                  ? (isCorrect
-                      ? Colors.green.withOpacity(0.5)
-                      : Colors.red.withOpacity(0.5))
-                  : Colors.white.withOpacity(0.3),
-              width: 1.5,
-            ),
+            color: Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: statusColor.withOpacity(0.3), width: 1.5),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Question Header
               Row(
                 children: [
                   Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
-                      color: wasAnswered
-                          ? (isCorrect
-                              ? Colors.green.withOpacity(0.3)
-                              : Colors.red.withOpacity(0.3))
-                          : Colors.grey.withOpacity(0.3),
+                      color: statusColor.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: statusColor.withOpacity(0.4)),
                     ),
                     child: Text(
-                      wasAnswered ? (isCorrect ? 'صحيح' : 'خطأ') : 'لم تجب',
+                      wasAnswered ? (isCorrect ? 'إجابة صحيحة' : 'إجابة خاطئة') : 'لم تجب',
                       style: TextStyle(
-                        color: wasAnswered
-                            ? (isCorrect ? const Color.fromARGB(255, 2, 255, 10) : Colors.red)
-                            : const Color.fromARGB(255, 250, 244, 244),
+                        color: statusColor,
                         fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: 'Cairo',
                       ),
                     ),
                   ),
-                  Spacer(),
+                  const Spacer(),
                   Text(
                     'السؤال ${index + 1}',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.getTextColor(context),
+                      color: Colors.white.withOpacity(0.7),
+                      fontFamily: 'Cairo',
                     ),
                   ),
                 ],
               ),
-
-              SizedBox(height: 12),
-
-              // Question Text
+              const SizedBox(height: 16),
               TexViewWidget(
                 question.text,
-                style: TextStyle(
-                  fontSize: 15,
-                  color: AppColors.getTextColor(context),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontFamily: 'Cairo',
                 ),
               ),
-
-              SizedBox(height: 12),
-
-              // Options
+              const SizedBox(height: 20),
               ...List.generate(question.options.length, (optionIndex) {
                 final isUserAnswer = userAnswer == optionIndex;
                 final isCorrectAnswer = question.correctAnswer == optionIndex;
 
+                Color optionColor = Colors.white.withOpacity(0.1);
+                Color borderColor = Colors.transparent;
+                Color textColor = Colors.white;
+
+                if (isCorrectAnswer) {
+                  optionColor = Colors.green.withOpacity(0.2);
+                  borderColor = Colors.greenAccent.withOpacity(0.5);
+                  textColor = Colors.greenAccent;
+                } else if (isUserAnswer) {
+                  optionColor = Colors.red.withOpacity(0.2);
+                  borderColor = Colors.redAccent.withOpacity(0.5);
+                  textColor = Colors.redAccent;
+                }
+
                 return Padding(
-                  padding: EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: Container(
-                    padding: EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isCorrectAnswer
-                          ? const Color.fromARGB(255, 2, 245, 10).withOpacity(0.2)
-                          : (isUserAnswer
-                              ? const Color.fromARGB(255, 247, 16, 0).withOpacity(0.2)
-                              : Colors.white.withOpacity(0.1)),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isCorrectAnswer
-                            ? const Color.fromARGB(255, 1, 247, 10)
-                            : (isUserAnswer
-                                ? const Color.fromARGB(255, 247, 16, 0)
-                                : Colors.white.withOpacity(0.3)),
-                        width: 1,
-                      ),
+                      color: optionColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: borderColor, width: 1),
                     ),
                     child: Row(
                       children: [
                         if (isCorrectAnswer)
-                          Icon(
-                            Icons.check_circle,
-                            color: Color.fromARGB(255, 0, 255, 8),
-                            size: 20,
-                          )
+                          const Icon(Icons.check_circle_rounded, color: Colors.greenAccent, size: 22)
                         else if (isUserAnswer)
-                          Icon(
-                            Icons.cancel,
-                            color: Color.fromARGB(255, 252, 17, 0),
-                            size: 20,
+                          const Icon(Icons.cancel_rounded, color: Colors.redAccent, size: 22)
+                        else
+                          Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white30, width: 2),
+                            ),
                           ),
-                        if (isCorrectAnswer || isUserAnswer)
-                          SizedBox(width: 8),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: TexViewWidget(
                             question.options[optionIndex],
                             style: TextStyle(
                               fontSize: 14,
-                              color: isCorrectAnswer
-                                  ? const Color.fromARGB(255, 0, 253, 8)
-                                  : (isUserAnswer ? const Color.fromARGB(255, 245, 17, 1) : Colors.white),
+                              color: textColor,
+                              fontFamily: 'Cairo',
+                              fontWeight: (isCorrectAnswer || isUserAnswer) ? FontWeight.bold : FontWeight.w500,
                             ),
                           ),
                         ),
@@ -472,35 +448,27 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                   ),
                 );
               }),
-
-              // Explanation
-              if (question.explanation != null) ...[
-                SizedBox(height: 12),
+              if (question.explanation != null && question.explanation!.isNotEmpty) ...[
+                const SizedBox(height: 16),
                 Container(
-                  padding: EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.blue.withOpacity(0.5),
-                      width: 1,
-                    ),
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.lightbulb,
-                        color: Colors.yellow,
-                        size: 20,
-                      ),
-                      SizedBox(width: 8),
+                      const Icon(Icons.lightbulb_circle_rounded, color: Colors.amberAccent, size: 24),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: TexViewWidget(
                           question.explanation!,
                           style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.getTextColor(context),
+                            fontSize: 14,
+                            color: Colors.white.withOpacity(0.9),
+                            fontFamily: 'Cairo',
                           ),
                         ),
                       ),
@@ -516,44 +484,72 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
+    final passesThreshold = widget.exam.questions.isNotEmpty 
+        ? (_getCorrectAnswersCount() / widget.exam.questions.length) >= 0.6 
+        : false;
+
     return Column(
       children: [
-        if (widget.onNext != null) ...[
+        if (widget.onNext != null && passesThreshold) ...[
           SizedBox(
             width: double.infinity,
-            child: _buildActionButton(
-              label: 'الانتقال للدرس التالي',
-              icon: Icons.arrow_forward_ios,
-              isPrimary: true,
-              onTap: () {
-                Navigator.pop(context); // Close results
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
                 widget.onNext!();
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                elevation: 8,
+                shadowColor: AppColors.primaryPurple.withOpacity(0.4),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('الدرس التالي', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+                  SizedBox(width: 8),
+                  Icon(Icons.arrow_forward_rounded, size: 20),
+                ],
+              ),
             ),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 16),
         ],
         Row(
           children: [
             Expanded(
-              child: _buildActionButton(
-                label: 'العودة للدرس',
-                icon: Icons.play_lesson,
-                onTap: () {
+              child: ElevatedButton(
+                onPressed: () {
                   if (widget.onFinish != null) {
                     widget.onFinish!();
                   } else {
                     Navigator.pop(context);
                   }
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white.withOpacity(0.1),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: 0,
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.library_books_rounded, size: 20),
+                    SizedBox(width: 8),
+                    Text('العودة للدرس', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Cairo')),
+                  ],
+                ),
               ),
             ),
-            SizedBox(width: 12),
+            const SizedBox(width: 16),
             Expanded(
-              child: _buildActionButton(
-                label: 'إعادة الاختبار',
-                icon: Icons.refresh,
-                onTap: () {
+              child: ElevatedButton(
+                onPressed: () {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
@@ -565,7 +561,22 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
                     ),
                   );
                 },
-                isPrimary: widget.onNext == null, // Make retry primary only if no next lesson option
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: widget.onNext == null ? AppColors.primaryPurple : Colors.white.withOpacity(0.1),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  elevation: widget.onNext == null ? 8 : 0,
+                  shadowColor: widget.onNext == null ? AppColors.primaryPurple.withOpacity(0.4) : Colors.transparent,
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.replay_rounded, size: 20),
+                    SizedBox(width: 8),
+                    Text('إعادة الاختبار', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, fontFamily: 'Cairo')),
+                  ],
+                ),
               ),
             ),
           ],
@@ -574,63 +585,14 @@ class _ExamResultScreenState extends State<ExamResultScreen> {
     );
   }
 
-  Widget _buildActionButton({
-    required String label,
-    required IconData icon,
-    required VoidCallback onTap,
-    bool isPrimary = false,
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: isPrimary ? AppColors.primaryGradient : null,
-            color: isPrimary ? null : Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: AppColors.getMutedTextColor(context),
-              width: 1,
-            ),
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: onTap,
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 14),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(icon, color: AppColors.getTextColor(context), size: 20),
-                    SizedBox(width: 8),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        color: AppColors.getTextColor(context),
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   int _getCorrectAnswersCount() {
     if (widget.userAnswers == null) return 0;
-
     int count = 0;
     for (var entry in widget.userAnswers!.entries) {
-      if (entry.value == widget.exam.questions[entry.key].correctAnswer) {
-        count++;
+      if (entry.key < widget.exam.questions.length) {
+        if (entry.value == widget.exam.questions[entry.key].correctAnswer) {
+          count++;
+        }
       }
     }
     return count;

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
 import 'package:flutter_tex/flutter_tex.dart';
@@ -16,21 +17,13 @@ class MathSymbolToolbar extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final background =
-        isDark ? Color(0xFF1E1E1E) : Color(0xFFF3F3F3);
-    final border = isDark ? Colors.white12 : Color(0xFFD0D0D0);
+    final background = isDark ? const Color(0xFF1E1E1E) : const Color(0xFFF3F3F3);
+    final border = isDark ? Colors.white12 : const Color(0xFFD0D0D0);
+
     return Container(
-      height: 60,
+      height: 65, // Slightly increased for scrollbar room
       decoration: BoxDecoration(
         color: background,
-        gradient: LinearGradient(
-          colors: [
-            background.withValues(alpha: 0.98),
-            background.withValues(alpha: 0.9),
-          ],
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-        ),
         border: Border(
           top: BorderSide(color: border),
           bottom: BorderSide(color: border),
@@ -39,17 +32,31 @@ class MathSymbolToolbar extends StatelessWidget {
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
             blurRadius: 12,
-            offset: Offset(0, -2),
+            offset: const Offset(0, -2),
           ),
         ],
       ),
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        controller: scrollController,
-        padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        children: [
-          // ── Quick Equation Insert (Word-like) ──
-          _buildEquationButton(context),
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(
+          dragDevices: {
+            PointerDeviceKind.touch,
+            PointerDeviceKind.mouse,
+            PointerDeviceKind.trackpad,
+          },
+        ),
+        child: Scrollbar(
+          controller: scrollController,
+          thumbVisibility: false, // Don't block the UI, but allow dragging
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            controller: scrollController,
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            children: [
+              // ── Quick Equation Insert (Word-like) ──
+              _buildEquationButton(context),
           _buildCategoryMenu(
             context,
             'الرموز',
@@ -275,8 +282,10 @@ class MathSymbolToolbar extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   /// ─── Equation Builder Button (Word-Like) ───
   Widget _buildEquationButton(BuildContext context) {

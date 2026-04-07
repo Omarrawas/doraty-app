@@ -276,11 +276,12 @@ class _TeachersListScreenState extends State<TeachersListScreen> {
                   _filterTeachers();
                 });
               },
-              backgroundColor: Colors.white.withOpacity(0.05),
+              backgroundColor: AppColors.getGlassColor(context, opacity: 0.1),
               selectedColor: AppColors.primaryPurple,
               labelStyle: TextStyle(
-                color: isSelected ? Colors.white : Colors.white70,
+                color: isSelected ? Colors.white : AppColors.getTextColor(context),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontFamily: 'Cairo', // Added standard font family just in case
               ),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),

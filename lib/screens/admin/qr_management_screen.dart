@@ -523,22 +523,22 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryPurple : Colors.white.withOpacity(0.05),
+          color: isSelected ? AppColors.primaryPurple : AppColors.getGlassColor(context, opacity: 0.08),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.white24 : Colors.white10,
+            color: isSelected ? Colors.white24 : AppColors.getGlassColor(context, opacity: 0.2),
             width: 1,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: isSelected ? Colors.white : Colors.white70),
+            Icon(icon, size: 16, color: isSelected ? Colors.white : AppColors.getTextColor(context, secondary: true)),
             SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white70,
+                color: isSelected ? Colors.white : AppColors.getTextColor(context),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                 fontSize: 13,
               ),
@@ -778,7 +778,7 @@ class _QrManagementScreenState extends State<QrManagementScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: Icon(Icons.print_rounded, color: AppColors.primaryBlue),
+                    icon: Icon(Icons.print_rounded, color: AppColors.professionalBlue),
                     onPressed: () => _printBatch(batchId),
                   ),
                   IconButton(
@@ -1128,9 +1128,9 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                   child: Container(
                                     padding: EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: AppColors.getMutedTextColor(context),
+                                      color: AppColors.getGlassColor(context, opacity: 0.05),
                                       borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                                      border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.1)),
                                     ),
                                     child: Row(
                                       children: [
@@ -1139,8 +1139,8 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text('تاريخ الانتهاء', style: TextStyle(fontSize: 11, color: AppColors.getTextColor(context).withOpacity(0.5))),
-                                            Text(intl.DateFormat('yyyy/MM/dd').format(_expiryDate), style: TextStyle(fontWeight: FontWeight.w600)),
+                                            Text('تاريخ الانتهاء', style: TextStyle(fontSize: 11, color: AppColors.getMutedTextColor(context))),
+                                            Text(intl.DateFormat('yyyy/MM/dd').format(_expiryDate), style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.getTextColor(context))),
                                           ],
                                         ),
                                       ],
@@ -1249,8 +1249,8 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
                                       padding: EdgeInsets.symmetric(vertical: 14),
                                     ),
                                     child: _isSaving
-                                        ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.getTextColor(context)))
-                                        : Text('إنشاء الأكواد', style: TextStyle(color: AppColors.getTextColor(context), fontWeight: FontWeight.bold)),
+                                        ? SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                        : Text('إنشاء الأكواد', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                   ),
                                 ),
                               ),
@@ -1281,20 +1281,20 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
       keyboardType: keyboardType,
       validator: validator,
       onChanged: onChanged,
-      style: TextStyle(fontSize: 14),
+      style: TextStyle(fontSize: 14, color: AppColors.getTextColor(context)),
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon, size: 20, color: AppColors.primaryPurple),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: AppColors.getGlassColor(context, opacity: 0.05),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+          borderSide: BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -1302,6 +1302,7 @@ class _CreateQrBulkDialogState extends State<CreateQrBulkDialog> {
         ),
         isDense: isDense,
         labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.6)),
+        hintStyle: TextStyle(color: AppColors.getMutedTextColor(context)),
       ),
     );
   }

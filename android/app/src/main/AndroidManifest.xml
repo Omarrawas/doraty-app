@@ -43,6 +43,16 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="com.doraty.app" android:host="callback" />
             </intent-filter>
+
+            <!-- Doraty Web Links (Universal/App Links) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="doraty-app.vercel.app" />
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

@@ -5,6 +5,7 @@ import 'course.dart';
 class Tip {
   final String id;
   final String title;
+  final String slug; // Added
   final String description; // Added
   final String videoUrl;
   final String? thumbnailUrl;
@@ -51,6 +52,7 @@ class Tip {
   Tip({
     required this.id,
     required this.title,
+    this.slug = '', // Added
     required this.description, // Added
     required this.videoUrl,
     this.thumbnailUrl,
@@ -69,6 +71,7 @@ class Tip {
       return Tip(
         id: SafeParser.toStringSafe(json['id']),
         title: SafeParser.toStringSafe(json['title']),
+        slug: SafeParser.toStringSafe(json['slug']), // Added
         description: SafeParser.toStringSafe(json['description']),
         videoUrl: SafeParser.toStringSafe(json['video_url']),
         thumbnailUrl: SafeParser.toStringSafe(json['thumbnail_url']),
@@ -102,6 +105,7 @@ class Tip {
     return {
       'id': id,
       'title': title,
+      'slug': slug, // Added
       'video_url': videoUrl,
       'thumbnail_url': thumbnailUrl,
       'course_id': courseId,
@@ -114,6 +118,7 @@ class Tip {
   Tip copyWith({
     String? id,
     String? title,
+    String? slug, // Added
     String? description,
     String? category,
     String? videoUrl,
@@ -127,6 +132,7 @@ class Tip {
     return Tip(
       id: id ?? this.id,
       title: title ?? this.title,
+      slug: slug ?? this.slug, // Added
       description: description ?? this.description,
       category: category ?? this.category,
       videoUrl: videoUrl ?? this.videoUrl,

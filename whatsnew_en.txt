@@ -1,7 +1,7 @@
-What's New in Version 1.2.0:
+What's New in Version 1.1.6:
 
-1. Refined Registration Flow: A smoother and faster account creation experience.
-2. Language Switcher: Easy-access language toggle (Arabic/English) added directly to the register screen.
-3. Premium Role Selector: Interactive and modern sliding selector for Students and Teachers.
-4. UI/UX Enhancements: Glassmorphism design updates for a more premium look and feel.
-5. Performance & Stability: Bug fixes and improvements to ensure a more stable experience.
+1. Custom Video Player: A premium, branded control interface replacing the default YouTube player for a professional learning experience.
+2. Equation Drawer: New dedicated side drawer to quickly access and review math formulas and equations during lessons.
+3. Enhanced Navigation: Stable top navigation bar displaying lesson titles with a persistent and responsive back button.
+4. Premium Visuals: Introduced soft gradient backgrounds for Light Mode to improve visual comfort and design parity.
+5. Optimization & Stability: Significant code cleanup and performance tuning to ensure a smooth experience across all platforms.

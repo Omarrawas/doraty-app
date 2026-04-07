@@ -452,7 +452,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                                 imageUrl: imageUrl,
                                 fit: BoxFit.cover,
                                 placeholder: (context, url) => Container(
-                                  color: Colors.white10,
+                                  color: AppColors.getGlassColor(context, opacity: 0.1),
                                   child: const Center(
                                     child: SizedBox(
                                       width: 20,
@@ -462,13 +462,13 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                                   ),
                                 ),
                                 errorWidget: (context, url, error) => Container(
-                                  color: Colors.white10,
-                                  child: const Icon(Icons.image, color: Colors.white24),
+                                  color: AppColors.getGlassColor(context, opacity: 0.1),
+                                  child: Icon(Icons.image, color: AppColors.getTextColor(context).withOpacity(0.2)),
                                 ),
                               )
                             : Container(
-                                color: Colors.white10,
-                                child: const Icon(Icons.school, color: Colors.white24),
+                                color: AppColors.getGlassColor(context, opacity: 0.1),
+                                child: Icon(Icons.school, color: AppColors.getTextColor(context).withOpacity(0.2)),
                               ),
                       ),
                     ),
@@ -484,10 +484,10 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                               course['title'] ?? '',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: AppColors.getTextColor(context),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -495,7 +495,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                               instructorName,
                               style: TextStyle(
                                 fontSize: 13,
-                                color: Colors.white.withOpacity(0.7),
+                                color: AppColors.getTextColor(context, secondary: true),
                               ),
                             ),
                             const Spacer(),
@@ -530,7 +530,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 11,
-                                        color: Colors.white.withOpacity(0.5),
+                                        color: AppColors.getMutedTextColor(context),
                                       ),
                                     ),
                                   ),
@@ -556,8 +556,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit_outlined,
-                                color: Colors.white70, size: 20),
+                            icon: Icon(Icons.edit_outlined,
+                                color: AppColors.getTextColor(context, secondary: true), size: 20),
                             onPressed: () async {
                               final result = await context.push(
                                 '/admin/courses/edit/${course['id']}',
@@ -567,8 +567,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.quiz_outlined,
-                                color: Colors.white70, size: 20),
+                            icon: Icon(Icons.quiz_outlined,
+                                color: AppColors.getTextColor(context, secondary: true), size: 20),
                             onPressed: () async {
                               final result = await context.push(
                                 '/admin/courses/${course['id']}/exams?title=${Uri.encodeComponent(course['title'] ?? '')}',
@@ -577,8 +577,8 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                             },
                           ),
                           PopupMenuButton<String>(
-                            icon: const Icon(Icons.more_vert,
-                                color: Colors.white70, size: 20),
+                            icon: Icon(Icons.more_vert,
+                                color: AppColors.getTextColor(context, secondary: true), size: 20),
                             onSelected: (value) {
                               if (value == 'delete') _deleteCourse(course);
                               if (value == 'stats') _showStatistics(course);

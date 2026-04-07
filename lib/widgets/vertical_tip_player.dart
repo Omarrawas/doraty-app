@@ -8,6 +8,9 @@ import '../../models/tip.dart';
 import '../../core/services/video_pool_manager.dart';
 import 'course_preview_modal.dart';
 import 'lesson/youtube_player_web_windows.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:provider/provider.dart';
+import '../core/localization/locale_provider.dart';
 
 class VerticalTipPlayer extends StatefulWidget {
   final List<Tip> tips;
@@ -371,7 +374,7 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      _buildAction(Icons.reply, '', () {}), // Share
+                      _buildAction(Icons.reply, '', () => _shareTip(widget.tip)), // Share
                       SizedBox(height: 16),
                       _buildAction(
                         _videoController?.value.volume == 0 ? Icons.volume_off : Icons.volume_up, 
@@ -402,6 +405,18 @@ class _TipPlayerItemState extends State<TipPlayerItem> {
     final newVol = (_videoController?.value.volume ?? 1.0) == 0 ? 1.0 : 0.0;
     _videoController?.setVolume(newVol);
     setState(() {});
+  }
+
+  void _shareTip(Tip tip) async {
+    final identifier = tip.slug.isNotEmpty ? tip.slug : tip.id;
+    final String tipUrl = Uri.encodeFull('https://doraty-app.vercel.app/tip/$identifier');
+    
+    final String locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+    final String shareText = locale == 'ar' 
+        ? 'شاهد هذه النصيحة التعليمية: ${tip.title}\n$tipUrl'
+        : 'Check out this educational tip: ${tip.title}\n$tipUrl';
+    
+    await Share.share(shareText);
   }
 
   void _showCoursePreview() {

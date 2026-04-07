@@ -263,7 +263,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'ملخص الأداء والنمو',
+                        _t('performance_summary_title'),
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -273,11 +273,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       SizedBox(height: 12),
                       Row(
                         children: [
-                          _buildSummaryMiniItem('${_stats['total_users'] ?? 0}', 'طالب', Colors.greenAccent),
+                          _buildSummaryMiniItem('${_stats['total_users'] ?? 0}', _t('student'), Colors.greenAccent),
                           SizedBox(width: 16),
-                          _buildSummaryMiniItem('${_stats['total_courses'] ?? 0}', 'دورة', Colors.blueAccent),
+                          _buildSummaryMiniItem('${_stats['total_courses'] ?? 0}', _t('courses_count_title'), Colors.blueAccent),
                           SizedBox(width: 16),
-                          _buildSummaryMiniItem('${_stats['total_attempts'] ?? 0}', 'محاولة', Colors.orangeAccent),
+                          _buildSummaryMiniItem('${_stats['total_attempts'] ?? 0}', _t('attempt_unit_label'), Colors.orangeAccent),
                         ],
                       ),
                     ],
@@ -295,14 +295,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: List.generate(7, (index) {
-                            double heightFactor = (index + 2) * 0.12; 
+                            final activity = (_stats['daily_activity'] as List?) ?? [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7];
+                            double maxActivity = activity.cast<num>().reduce((a, b) => a > b ? a : b).toDouble();
+                            if (maxActivity < 1) maxActivity = 1;
+                            double heightFactor = (activity[index].toDouble() / maxActivity).clamp(0.1, 1.0);
                             return _buildChartBar(heightFactor, index == 6);
                           }),
                         ),
                       ),
                       SizedBox(height: 8),
                       Text(
-                        'نمو أسبوعي +12%',
+                        '${_t('weekly_growth_label')} +${_stats['weekly_growth'] ?? '0'}%',
                         style: TextStyle(
                           fontSize: 10,
                           color: AppColors.getTextColor(context).withOpacity(0.5),
@@ -349,6 +352,50 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Widget _buildStatsGrid(int crossAxisCount) {
+    final List<Widget> cards = [
+      _buildStatCard(
+        icon: Icons.people,
+        label: _t('admin_users'),
+        value: '${_stats['total_users'] ?? 0}',
+        color: Colors.blue,
+      ),
+      _buildStatCard(
+        icon: Icons.bolt_rounded,
+        label: _t('active_users_label'),
+        value: '${_stats['active_users'] ?? 0}',
+        color: Colors.amber,
+      ),
+      _buildStatCard(
+        icon: Icons.school,
+        label: _t('courses_count_title'),
+        value: '${_stats['total_courses'] ?? 0}',
+        color: Colors.purple,
+      ),
+      _buildStatCard(
+        icon: Icons.assignment,
+        label: _t('exams'),
+        value: '${_stats['total_exams'] ?? 0}',
+        color: Colors.orange,
+      ),
+      _buildStatCard(
+        icon: Icons.analytics,
+        label: _t('total_attempts_title'),
+        value: '${_stats['total_attempts'] ?? 0}',
+        color: Colors.green,
+      ),
+    ];
+
+    if (_userRole == 'super_admin') {
+      cards.add(
+        _buildStatCard(
+          icon: Icons.account_balance_wallet_rounded,
+          label: _t('total_revenue_label'),
+          value: '${((_stats['total_revenue'] ?? 0.0) as num).toInt()}',
+          color: Colors.teal,
+        ),
+      );
+    }
+
     return GridView.count(
       crossAxisCount: crossAxisCount,
       shrinkWrap: true,
@@ -356,32 +403,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
       childAspectRatio: 2.5,
-      children: [
-        _buildStatCard(
-          icon: Icons.people,
-          label: 'المستخدمين',
-          value: '${_stats['total_users'] ?? 0}',
-          color: Colors.blue,
-        ),
-        _buildStatCard(
-          icon: Icons.school,
-          label: 'الدورات',
-          value: '${_stats['total_courses'] ?? 0}',
-          color: Colors.purple,
-        ),
-        _buildStatCard(
-          icon: Icons.assignment,
-          label: 'الاختبارات',
-          value: '${_stats['total_exams'] ?? 0}',
-          color: Colors.orange,
-        ),
-        _buildStatCard(
-          icon: Icons.analytics,
-          label: 'المحاولات',
-          value: '${_stats['total_attempts'] ?? 0}',
-          color: Colors.green,
-        ),
-      ],
+      children: cards,
     );
   }
 

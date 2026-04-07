@@ -94,8 +94,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                   child: _isLoading
                       ? Center(
                           child: CircularProgressIndicator(
-                            valueColor:
-                                AlwaysStoppedAnimation<Color>(Colors.white),
+                            color: AppColors.primaryPurple,
                           ),
                         )
                       : RefreshIndicator(
@@ -270,16 +269,16 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.video_library, color: Colors.white, size: 64),
+              Icon(Icons.video_library, color: AppColors.getTextColor(context).withOpacity(0.4), size: 64),
               SizedBox(height: 16),
               Text(
                 _t('no_lessons'),
-                style: TextStyle(fontSize: 18, color: Colors.white70),
+                style: TextStyle(fontSize: 18, color: AppColors.getTextColor(context)),
               ),
               SizedBox(height: 8),
               Text(
                 _t('start_adding_first_lesson'),
-                style: TextStyle(fontSize: 14, color: Colors.white54),
+                style: TextStyle(fontSize: 14, color: AppColors.getTextColor(context, secondary: true)),
               ),
             ],
           ),
@@ -298,23 +297,23 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       decoration: BoxDecoration(
         color: AppColors.getGlassColor(context, opacity: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: AppColors.getBorderColor(context)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
         child: ExpansionTile(
           shape: Border(),
-          backgroundColor: Colors.white.withOpacity(0.02),
-          iconColor: Colors.white,
-          collapsedIconColor: Colors.white70,
+          backgroundColor: Colors.transparent,
+          iconColor: AppColors.getTextColor(context),
+          collapsedIconColor: AppColors.getTextColor(context, secondary: true),
           tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           title: Text(
             chapter.title,
-            style: TextStyle(fontSize: 16, color: Colors.white),
+            style: TextStyle(fontSize: 16, color: AppColors.getTextColor(context)),
           ),
           subtitle: Text(
             '${chapterLessons.length} ${_t('lessons_count_label')}',
-            style: TextStyle(fontSize: 12, color: Colors.white70),
+            style: TextStyle(fontSize: 12, color: AppColors.getTextColor(context, secondary: true)),
           ),
           trailing: _buildChapterActions(chapter, index, total),
           children: chapterLessons.asMap().entries.map((entry) {
@@ -332,9 +331,9 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.getGlassColor(context, opacity: 0.1).withOpacity(0.05),
+        color: AppColors.getGlassColor(context, opacity: 0.08),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: AppColors.getBorderColor(context)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
@@ -342,7 +341,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
           shape: Border(),
           title: Text(
             _t('other_lessons'),
-            style: TextStyle(fontSize: 16, color: Colors.white70),
+            style: TextStyle(fontSize: 16, color: AppColors.getTextColor(context, secondary: true)),
           ),
           children: lessons.asMap().entries.map((entry) {
             return Padding(
@@ -362,9 +361,9 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: AppColors.getGlassColor(context, opacity: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
+        border: Border.all(color: AppColors.getBorderColor(context)),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -375,12 +374,12 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
             height: 32,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.primaryPurple.withOpacity(0.3),
+              color: AppColors.primaryPurple.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
             child: Text(
               '${index + 1}',
-              style: TextStyle(fontSize: 12, color: Colors.white),
+              style: TextStyle(fontSize: 12, color: AppColors.primaryPurple),
             ),
           ),
           title: Row(
@@ -388,7 +387,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
               Expanded(
                 child: Text(
                   lesson['title'] ?? '',
-                  style: TextStyle(fontSize: 14, color: Colors.white),
+                  style: TextStyle(fontSize: 14, color: AppColors.getTextColor(context)),
                 ),
               ),
               if (isFree)
@@ -407,14 +406,14 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
           ),
           subtitle: Text(
             '${lessonExams.length} ${_t('exams_label').replaceAll(':', '')}',
-            style: TextStyle(fontSize: 11, color: Colors.white54),
+            style: TextStyle(fontSize: 11, color: AppColors.getMutedTextColor(context)),
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (index > 0)
                 IconButton(
-                  icon: Icon(Icons.arrow_upward, size: 16, color: Colors.white54),
+                  icon: Icon(Icons.arrow_upward, size: 16, color: AppColors.getTextColor(context, secondary: true)),
                   onPressed: () => _moveLesson(chapterId, index, index - 1),
                   padding: EdgeInsets.zero,
                   constraints: BoxConstraints(),
@@ -422,14 +421,14 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                 ),
               if (index < total - 1)
                 IconButton(
-                  icon: Icon(Icons.arrow_downward, size: 16, color: Colors.white54),
+                  icon: Icon(Icons.arrow_downward, size: 16, color: AppColors.getTextColor(context, secondary: true)),
                   onPressed: () => _moveLesson(chapterId, index, index + 1),
                   padding: EdgeInsets.zero,
                   constraints: BoxConstraints(),
                   visualDensity: VisualDensity.compact,
                 ),
               SizedBox(width: 8),
-              Icon(Icons.expand_more, color: Colors.white70),
+              Icon(Icons.expand_more, color: AppColors.getTextColor(context, secondary: true)),
             ],
           ),
           children: [
@@ -470,18 +469,18 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
               margin: EdgeInsets.only(bottom: 6),
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.03),
+                color: AppColors.getGlassColor(context, opacity: 0.06),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white10),
+                border: Border.all(color: AppColors.getBorderColor(context)),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.description_rounded, size: 14, color: Colors.white60),
+                  Icon(Icons.description_rounded, size: 14, color: AppColors.getTextColor(context, secondary: true)),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       exam['title'] ?? '',
-                      style: TextStyle(fontSize: 12, color: Colors.white),
+                      style: TextStyle(fontSize: 12, color: AppColors.getTextColor(context)),
                     ),
                   ),
                   _buildExamActions(exam),
@@ -499,21 +498,21 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
         if (index > 0)
           IconButton(
             onPressed: () => _moveChapter(index, index - 1),
-            icon: Icon(Icons.arrow_drop_up_rounded, color: Colors.white54),
+            icon: Icon(Icons.arrow_drop_up_rounded, color: AppColors.getTextColor(context, secondary: true)),
             padding: EdgeInsets.zero,
             constraints: BoxConstraints(),
           ),
         if (index < total - 1)
           IconButton(
             onPressed: () => _moveChapter(index, index + 1),
-            icon: Icon(Icons.arrow_drop_down_rounded, color: Colors.white54),
+            icon: Icon(Icons.arrow_drop_down_rounded, color: AppColors.getTextColor(context, secondary: true)),
             padding: EdgeInsets.zero,
             constraints: BoxConstraints(),
           ),
         SizedBox(width: 4),
         IconButton(
           onPressed: () => _editChapter(chapter),
-          icon: Icon(Icons.edit_note_rounded, color: Colors.white70, size: 20),
+          icon: Icon(Icons.edit_note_rounded, color: AppColors.getTextColor(context, secondary: true), size: 20),
           tooltip: _t('edit_chapter'),
         ),
         IconButton(
@@ -674,11 +673,11 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       children: [
         Row(
           children: [
-            Icon(icon, color: Colors.white, size: 20),
+            Icon(icon, color: AppColors.getTextColor(context), size: 20),
             SizedBox(width: 10),
             Text(
               title,
-              style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.normal),
+              style: TextStyle(fontSize: 18, color: AppColors.getTextColor(context), fontWeight: FontWeight.normal),
             ),
           ],
         ),
@@ -686,9 +685,9 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.black12,
+              color: AppColors.getGlassColor(context, opacity: 0.06),
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withOpacity(0.05)),
+              border: Border.all(color: AppColors.getBorderColor(context)),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(24),
@@ -704,12 +703,12 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     return Container(
       margin: EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: AppColors.getGlassColor(context, opacity: 0.08),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: AppColors.getBorderColor(context)),
       ),
       child: ListTile(
-        title: Text(chapter.title, style: TextStyle(color: Colors.white)),
+        title: Text(chapter.title, style: TextStyle(color: AppColors.getTextColor(context))),
         trailing: _buildChapterActions(chapter, index, total),
       ),
     );

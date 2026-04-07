@@ -344,7 +344,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                 ? Center(child: LinearProgressIndicator())
                                 : DropdownButtonFormField<String>(
                                     dropdownColor: isDark
-                                        ? AppColors.primaryPurple
+                                        ? AppColors.darkCardSurface
                                         : Colors.white,
                                     value: _selectedChapterId,
                                     decoration: _inputDecoration(
@@ -857,8 +857,8 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                             : 'اختر ملفات للرفع',
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white.withOpacity(0.1),
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.getGlassColor(context, opacity: 0.15),
+                        foregroundColor: AppColors.getTextColor(context),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8)),
                       ),

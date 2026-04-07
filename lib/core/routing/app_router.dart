@@ -164,6 +164,15 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
+      path: '/tip/:idOrSlug',
+      parentNavigatorKey: rootNavigatorKey,
+      builder: (context, state) {
+        final id = state.pathParameters['idOrSlug'];
+        if (id == null || id.isEmpty) return const ErrorScreen();
+        return AllTipsScreen(initialTipId: id);
+      },
+    ),
+    GoRoute(
       path: '/teacher/:id',
       parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) {
@@ -173,11 +182,17 @@ final GoRouter appRouter = GoRouter(
       },
     ),
     GoRoute(
-      path: '/package/:id',
+      path: '/package/:idOrSlug',
       parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) {
-        final id = state.pathParameters['id'];
-        if (id == null) return const ErrorScreen();
+        final id = state.pathParameters['idOrSlug'];
+        if (id == null || id.isEmpty) return const ErrorScreen();
+        
+        final extra = state.extra;
+        if (extra is Map<String, dynamic> && extra.containsKey('bundle')) {
+          return PackageScreen(bundle: extra['bundle']);
+        }
+        
         return PackageScreen(bundleId: id);
       },
     ),

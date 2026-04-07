@@ -4,6 +4,9 @@ import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:video_player/video_player.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
+import 'package:provider/provider.dart';
+import '../../core/localization/locale_provider.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 
 class VideoPlayerControls extends StatefulWidget {
@@ -117,108 +120,129 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
   Widget build(BuildContext context) {
     final bool isFullScreen = widget.isYoutube
         ? (widget.youtubeController?.value.isFullScreen ?? false)
-        : false; // For VideoPlayer, it's usually managed by the parent or orientation
+        : (MediaQuery.of(context).orientation == Orientation.landscape);
 
-    return GestureDetector(
-      onTap: _toggleVisibility,
-      onDoubleTapDown: (details) {
-        if (_isLocked) return;
-        final screenWidth = MediaQuery.of(context).size.width;
-        if (details.globalPosition.dx < screenWidth / 2) {
-          _seekRelative(-10);
-        } else {
-          _seekRelative(10);
-        }
-      },
-      child: Container(
-        color: Colors.transparent,
-        child: Stack(
-          children: [
-            // Black fading overlay
-            AnimatedOpacity(
-              opacity: _isVisible ? 1.0 : 0.0,
-              duration: Duration(milliseconds: 300),
-              child: Container(color: Colors.black45),
-            ),
-
-            if (_isVisible)
-              SafeArea(
-                child: Stack(
-                  children: [
-                    // Top Bar
-                    Positioned(
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Colors.black54, Colors.transparent],
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: Icon(_isLocked ? Icons.lock : Icons.lock_open,
-                                  color: AppColors.getTextColor(context)),
-                              onPressed: () {
-                                setState(() {
-                                  _isLocked = !_isLocked;
-                                  if (!_isLocked) _startHideTimer();
-                                });
-                              },
-                            ),
-                            if (!_isLocked) ...[
-                              Spacer(),
-                              _buildSpeedButton(),
-                            ],
-
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    // Center Controls
-                    if (!_isLocked)
-                      Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildControlButton(
-                                Icons.replay_10, () => _seekRelative(-10)),
-                            SizedBox(width: 40),
-                            _buildPlayPauseButton(),
-                            SizedBox(width: 40),
-                            _buildControlButton(
-                                Icons.forward_10, () => _seekRelative(10)),
-                          ],
-                        ),
-                      ),
-
-                    // Bottom Progress Bar
-                    Positioned(
-                      bottom: 0,
-                      left: 0,
-                      right: 0,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                            colors: [Colors.black54, Colors.transparent],
-                          ),
-                        ),
-                        child: _buildControlBar(isFullScreen),
-                      ),
-                    ),
-                  ],
-                ),
+    return PointerInterceptor(
+      child: GestureDetector(
+        onTap: _toggleVisibility,
+        behavior: HitTestBehavior.opaque,
+        onDoubleTapDown: (details) {
+          if (_isLocked) return;
+          final screenWidth = MediaQuery.of(context).size.width;
+          if (details.globalPosition.dx < screenWidth / 2) {
+            _seekRelative(-10);
+          } else {
+            _seekRelative(10);
+          }
+        },
+        child: Container(
+          color: Colors.transparent,
+          child: Stack(
+            children: [
+              // Black fading overlay
+              AnimatedOpacity(
+                opacity: _isVisible ? 1.0 : 0.0,
+                duration: Duration(milliseconds: 300),
+                child: Container(color: Colors.black54),
               ),
-          ],
+
+              if (_isVisible)
+                SafeArea(
+                  child: Stack(
+                    children: [
+                      // Top Bar
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Colors.black54, Colors.transparent],
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                              const SizedBox(width: 8),
+                              if (!_isLocked)
+                                Expanded(
+                                  child: Text(
+                                    widget.lesson?.getLocalizedTitle(
+                                      Provider.of<LocaleProvider>(context, listen: false).locale
+                                    ) ?? '',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Cairo',
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              if (!_isLocked) ...[
+                                _buildSpeedButton(),
+                              ],
+                              IconButton(
+                                icon: Icon(_isLocked ? Icons.lock : Icons.lock_open,
+                                    color: Colors.white),
+                                onPressed: () {
+                                  setState(() {
+                                    _isLocked = !_isLocked;
+                                    if (!_isLocked) _startHideTimer();
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Center Controls
+                      if (!_isLocked)
+                        Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              _buildControlButton(
+                                  Icons.replay_10, () => _seekRelative(-10)),
+                              const SizedBox(width: 40),
+                              _buildPlayPauseButton(),
+                              const SizedBox(width: 40),
+                              _buildControlButton(
+                                  Icons.forward_10, () => _seekRelative(10)),
+                            ],
+                          ),
+                        ),
+
+                      // Bottom Progress Bar
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [Colors.black54, Colors.transparent],
+                            ),
+                          ),
+                          child: _buildControlBar(isFullScreen),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -227,46 +251,90 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
   Widget _buildControlBar(bool isFullScreen) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            child: widget.isYoutube
-                ? (widget.youtubeController != null
-                    ? ProgressBar(
-                        controller: widget.youtubeController!,
-                        colors: ProgressBarColors(
-                          playedColor: AppColors.primaryPurple,
-                          handleColor: AppColors.primaryPurple,
-                        ),
-                      )
-                    : SizedBox.shrink())
-                : (widget.videoController != null
-                    ? VideoProgressIndicator(widget.videoController!,
-                        allowScrubbing: true,
-                        colors: VideoProgressColors(
-                          playedColor: AppColors.primaryPurple,
-                        ))
-                    : SizedBox.shrink()),
-          ),
-          if (widget.onToggleFullScreen != null)
-            IconButton(
-              icon: Icon(
-                isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                color: AppColors.getTextColor(context),
+          Row(
+            children: [
+              Expanded(
+                child: widget.isYoutube
+                    ? (widget.youtubeController != null
+                        ? ProgressBar(
+                            controller: widget.youtubeController!,
+                            colors: ProgressBarColors(
+                              playedColor: AppColors.primaryPurple,
+                              handleColor: AppColors.primaryPurple,
+                              bufferedColor: Colors.white24,
+                              backgroundColor: Colors.white12,
+                            ),
+                          )
+                        : SizedBox.shrink())
+                    : (widget.videoController != null
+                        ? VideoProgressIndicator(widget.videoController!,
+                            allowScrubbing: true,
+                            colors: VideoProgressColors(
+                              playedColor: AppColors.primaryPurple,
+                              bufferedColor: Colors.white24,
+                              backgroundColor: Colors.white12,
+                            ))
+                        : SizedBox.shrink()),
               ),
-              onPressed: () {
-                widget.onToggleFullScreen!();
-                _startHideTimer();
-              },
-            ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildTimeDisplay(),
+              if (widget.onToggleFullScreen != null)
+                IconButton(
+                  icon: Icon(
+                    isFullScreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                  onPressed: () {
+                    widget.onToggleFullScreen!();
+                    _startHideTimer();
+                  },
+                ),
+            ],
+          ),
         ],
       ),
     );
   }
 
+  Widget _buildTimeDisplay() {
+    String formatDuration(Duration d) {
+      String twoDigits(int n) => n.toString().padLeft(2, "0");
+      String twoDigitMinutes = twoDigits(d.inMinutes.remainder(60));
+      String twoDigitSeconds = twoDigits(d.inSeconds.remainder(60));
+      if (d.inHours > 0) {
+        return "${twoDigits(d.inHours)}:$twoDigitMinutes:$twoDigitSeconds";
+      }
+      return "$twoDigitMinutes:$twoDigitSeconds";
+    }
+
+    Duration position = Duration.zero;
+    Duration total = Duration.zero;
+
+    if (widget.isYoutube && widget.youtubeController != null) {
+      position = widget.youtubeController!.value.position;
+      total = widget.youtubeController!.metadata.duration;
+    } else if (widget.videoController != null) {
+      position = widget.videoController!.value.position;
+      total = widget.videoController!.value.duration;
+    }
+
+    return Text(
+      '${formatDuration(position)} / ${formatDuration(total)}',
+      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+    );
+  }
+
   Widget _buildControlButton(IconData icon, VoidCallback onTap) {
     return IconButton(
-      icon: Icon(icon, color: AppColors.getTextColor(context), size: 36),
+      icon: Icon(icon, color: Colors.white, size: 36),
       onPressed: onTap,
     );
   }
@@ -277,14 +345,22 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
         : (widget.videoController?.value.isPlaying ?? false);
 
     return Container(
+      padding: EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.getMutedTextColor(context),
+        color: AppColors.primaryPurple.withOpacity(0.8),
         shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 10,
+            spreadRadius: 2,
+          )
+        ]
       ),
       child: IconButton(
         icon: Icon(
           isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-          color: AppColors.getTextColor(context),
+          color: Colors.white,
           size: 48,
         ),
         onPressed: _togglePlayPause,

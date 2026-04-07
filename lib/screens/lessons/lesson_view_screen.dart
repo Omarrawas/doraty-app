@@ -5,14 +5,11 @@ import 'package:flutter/services.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
-
 import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
 import '../../models/interactive_element.dart';
 import '../../core/services/database_service.dart';
-
 import 'lesson_exam_screen.dart';
-
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../widgets/lesson/youtube_player_web_windows.dart';
@@ -24,7 +21,6 @@ import '../../widgets/lesson/external_video_player.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
-
 
 class LessonViewScreen extends StatefulWidget {
   final Lesson lesson;
@@ -96,8 +92,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
         return;
       }
 
-      if (url.contains('avcaption.com') || 
-          url.contains('vimeo.com') || 
+      if (url.contains('avcaption.com') ||
+          url.contains('vimeo.com') ||
           url.contains('drive.google.com') ||
           url.contains('facebook.com')) {
         _initializeExternalPlayer(url);
@@ -203,7 +199,6 @@ class _LessonViewScreenState extends State<LessonViewScreen>
     }
   }
 
-
   Future<void> _loadNotes() async {
     try {
       final notes = await _databaseService.getNotes(widget.lesson.id);
@@ -288,7 +283,10 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       await _databaseService.createNote(
         lessonId: widget.lesson.id,
         courseId: widget.lesson.courseId,
-        title: _noteController.text.trim().split('\n').first, // Use first line as title or logic
+        title: _noteController.text
+            .trim()
+            .split('\n')
+            .first, // Use first line as title or logic
         content: _noteController.text.trim(),
         timestamp: position,
       );
@@ -307,8 +305,6 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       }
     }
   }
-
-
 
   void _navigateToLesson(int index) {
     if (index < 0 || index >= widget.allLessons.length) return;
@@ -351,8 +347,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                   top: 20,
                   left: 20,
                   child: IconButton(
-                    icon:
-                        Icon(Icons.fullscreen_exit, color: AppColors.getTextColor(context)),
+                    icon: Icon(Icons.fullscreen_exit,
+                        color: AppColors.getTextColor(context)),
                     onPressed: () {
                       // إجبار الجهاز على العودة للوضع العمودي
                       SystemChrome.setPreferredOrientations([
@@ -440,7 +436,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                   ),
                 ),
                 child: IconButton(
-                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
+                  icon: Icon(Icons.arrow_back,
+                      color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -472,7 +469,6 @@ class _LessonViewScreenState extends State<LessonViewScreen>
           ),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
@@ -502,8 +498,6 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       ),
     );
   }
-
-
 
   Widget _buildVideoPlayer() {
     if (!_hasValidVideo) {
@@ -700,7 +694,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
 
   Widget _buildResources() {
     if (widget.lesson.resources.isEmpty) return SizedBox.shrink();
-    
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -766,7 +760,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                       } else {
                         final uri = Uri.parse(url);
                         if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri, mode: LaunchMode.externalApplication);
+                          await launchUrl(uri,
+                              mode: LaunchMode.externalApplication);
                         } else {
                           debugPrint('Could not launch $url');
                         }
@@ -789,7 +784,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                                 : (ext == 'html' || ext == 'htm'
                                     ? Icons.play_circle_outline
                                     : Icons.attach_file),
-                            color: AppColors.getTextColor(context).withOpacity(0.70),
+                            color: AppColors.getTextColor(context)
+                                .withOpacity(0.70),
                             size: 20,
                           ),
                           SizedBox(width: 12),
@@ -871,8 +867,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                     child: TextField(
                       controller: _noteController,
                       autofocus: false,
-                      style:
-                          TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
+                      style: TextStyle(color: Color.fromARGB(255, 0, 0, 0)),
                       decoration: InputDecoration(
                         hintText: 'أضف ملاحظة...',
                         hintStyle: TextStyle(
@@ -913,7 +908,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: IconButton(
-                      icon: Icon(Icons.add, color: AppColors.getTextColor(context)),
+                      icon: Icon(Icons.add,
+                          color: AppColors.getTextColor(context)),
                       onPressed: _addNote,
                     ),
                   ),
@@ -922,7 +918,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
               SizedBox(height: 16),
               if (_isLoadingNotes)
                 Center(
-                  child: CircularProgressIndicator(color: AppColors.getTextColor(context)),
+                  child: CircularProgressIndicator(
+                      color: AppColors.getTextColor(context)),
                 )
               else if (_notes.isEmpty)
                 Center(
@@ -951,7 +948,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                             _formatTimestamp(note['timestamp']),
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppColors.getTextColor(context, secondary: true),
+                              color: AppColors.getTextColor(context,
+                                  secondary: true),
                             ),
                           ),
                         SizedBox(height: 4),
@@ -1143,7 +1141,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                       Text(
                         element.description!,
                         style: TextStyle(
-                          color: AppColors.getTextColor(context, secondary: true),
+                          color:
+                              AppColors.getTextColor(context, secondary: true),
                           fontSize: 14,
                         ),
                       ),
@@ -1323,7 +1322,8 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                           'التالي:',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppColors.getTextColor(context).withOpacity(0.54),
+                            color: AppColors.getTextColor(context)
+                                .withOpacity(0.54),
                           ),
                         ),
                         SizedBox(height: 4),

@@ -5,7 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/notification_model.dart';
 import '../../core/services/database_service.dart';
 import '../../core/utils/error_utils.dart';
-import '../courses/course_loader_screen.dart';
+import 'package:go_router/go_router.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -74,19 +74,54 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _clearAllNotifications() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('مسح الكل'),
-        content: Text('هل أنت متأكد من مسح جميع الإشعارات؟'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('إلغاء'),
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: AppColors.getSurfaceColor(context).withOpacity(0.8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withOpacity(0.1)),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('مسح', style: TextStyle(color: Colors.red)),
+          title: Text(
+            'مسح التنبيهات',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.getTextColor(context),
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Cairo',
+            ),
           ),
-        ],
+          content: Text(
+            'هل أنت متأكد من مسح جميع الإشعارات؟',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.getMutedTextColor(context),
+              fontFamily: 'Cairo',
+            ),
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'إلغاء',
+                style: TextStyle(color: AppColors.getMutedTextColor(context)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.withOpacity(0.8),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text('مسح الكل', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -537,37 +572,61 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     try {
       final uri = Uri.parse(notification.actionUrl!);
 
-      // Handle doraty:// scheme
-      if (uri.scheme == 'doraty') {
-        final pathSegments = uri.pathSegments;
-        if (pathSegments.isEmpty) return;
+      // Standardize on GoRouter for internal links
+      // Support for doraty:// scheme and relative paths
+      if (uri.scheme == 'doraty' || uri.scheme.isEmpty) {
+        final path = uri.path;
+        final segments = uri.pathSegments;
+        if (segments.isEmpty) return;
 
-        // doraty://course/{id}
-        if (pathSegments[0] == 'course' && pathSegments.length > 1) {
-          final courseId = pathSegments[1];
-          // Navigate to Course Loader
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => CourseLoaderScreen(courseId: courseId),
-            ),
-          );
-        }
-        // doraty://profile
-        else if (pathSegments[0] == 'profile') {
-          // Navigate to Profile
+        final type = segments[0];
+        final idOrSlug = segments.length > 1 ? segments[1] : null;
+
+        if (idOrSlug == null) return;
+
+        switch (type) {
+          case 'course':
+            context.pushNamed(
+              'course_details',
+              pathParameters: {'idOrSlug': idOrSlug},
+            );
+            break;
+          case 'package':
+          case 'bundle':
+            context.pushNamed(
+              'package_details',
+              pathParameters: {'idOrSlug': idOrSlug},
+            );
+            break;
+          case 'tip':
+            context.pushNamed(
+              'tip_details',
+              pathParameters: {'idOrSlug': idOrSlug},
+            );
+            break;
+          case 'exam':
+            context.pushNamed(
+              'exam_taking',
+              pathParameters: {'idOrSlug': idOrSlug},
+            );
+            break;
+          default:
+            debugPrint('Unknown notification path: $path');
         }
       }
       // Handle https:// for external links
       else if (uri.scheme == 'https' || uri.scheme == 'http') {
-        // Launch URL
-        // launchUrl(uri);
+        // Here you would typically use url_launcher, but for now we log it
+        debugPrint('Opening external link: ${uri.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Opening Link: ${uri.toString()}')),
+          SnackBar(content: Text('جاري فتح الرابط: ${uri.toString()}')),
         );
       }
     } catch (e) {
       debugPrint('Error handling notification tap: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('عذراً، حدث خطأ أثناء التوجيه')),
+      );
     }
   }
 

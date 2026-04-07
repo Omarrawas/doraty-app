@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:async';
-import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
 import '../../models/lesson.dart';
@@ -22,6 +21,7 @@ import '../../core/services/auth_service.dart';
 import '../../core/theme/theme_provider.dart';
 import 'course_content_screen.dart';
 import '../../models/chapter.dart';
+import 'package:share_plus/share_plus.dart';
 
 class CourseDetailsScreen extends StatefulWidget {
   final Course? course;
@@ -98,20 +98,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           _isLoadingCourse = false;
         });
 
-        // Update browser URL to use slug if possible (for Web SEO)
-        final finalId = widget.courseId ?? widget.course?.id;
-        if (_course!.slug.isNotEmpty && finalId != _course!.slug) {
-          Future.microtask(() {
-            if (mounted) {
-              final String newPath = widget.startAtContent 
-                  ? '/course/${_course!.slug}/content' 
-                  : '/course/${_course!.slug}';
-              
-              // Use go to update URL without adding to history if possible, or just go to correctly routed path
-              context.go(newPath);
-            }
-          });
-        }
+        // Redirection removed to prevent redundant re-mounts and navigation errors.
+        // The router will handle the display. We only fetch if needed.
         _initCourseData();
       }
     } catch (e) {
@@ -442,16 +430,13 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           onPressed: () async {
             if (_course != null) {
               final String courseIdentifier = (_course!.slug.isNotEmpty) ? _course!.slug : _course!.id;
-              final String courseUrl = 'https://doraty.me/course/$courseIdentifier';
-              await Clipboard.setData(ClipboardData(text: courseUrl));
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('تم نسخ رابط الدورة! يمكنك مشاركته الآن.'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
+              final String courseUrl = Uri.encodeFull('https://doraty-app.vercel.app/course/$courseIdentifier');
+              final String locale = Provider.of<LocaleProvider>(context, listen: false).locale;
+              final String shareText = locale == 'ar' 
+                  ? 'تحقق من هذه الدورة في أكاديمية دوراتي: ${_course!.getLocalizedTitle(locale)}\n$courseUrl'
+                  : 'Check out this course on Doraty Academy: ${_course!.getLocalizedTitle(locale)}\n$courseUrl';
+              
+              await Share.share(shareText);
             }
           },
         ),
@@ -846,7 +831,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         _buildReviewsSection(isRTL),
         SizedBox(height: 40),
         _buildSimilarCoursesSection(isRTL),
-        _buildAccreditationSection(isRTL),
         _buildInstructorFullSection(isRTL),
         SizedBox(height: 80),
       ],
@@ -1108,105 +1092,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
   }
 
-  Widget _buildAccreditationSection(bool isRTL) {
-    return Container(
-      width: double.infinity,
-      margin: EdgeInsets.only(top: 40),
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-      decoration: BoxDecoration(
-        color: AppColors.getSurfaceColor(context),
-        border: Border.symmetric(
-          horizontal:
-              BorderSide(color: AppColors.getBorderColor(context), width: 1),
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 40,
-                height: 1,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.transparent, Colors.white.withOpacity(0.2)],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 15),
-                child: Text(
-                  _t('accredited_by'),
-                  style: TextStyle(
-                    color: AppColors.getTextColor(context, secondary: true),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              Container(
-                width: 40,
-                height: 1,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.white.withOpacity(0.2), Colors.transparent],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 35),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildAccreditationLogo('assets/images/logo.png', 'CPD'),
-                SizedBox(width: 40),
-                _buildAccreditationLogo('assets/images/logo.png', 'PAAET'),
-                SizedBox(width: 40),
-                _buildAccreditationLogo('assets/images/logo.png', 'MOE'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAccreditationLogo(String assetPath, String label) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Opacity(
-          opacity: 0.7,
-          child: Image.asset(
-            assetPath,
-            height: 45,
-            errorBuilder: (context, error, stackTrace) => Container(
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: AppColors.getElevatedSurfaceColor(context),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.verified_user_rounded,
-                  color: AppColors.getTextColor(context).withOpacity(0.24), size: 30),
-            ),
-          ),
-        ),
-        SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-              color: AppColors.getMutedTextColor(context),
-              fontSize: 10,
-              fontWeight: FontWeight.bold),
-        ),
-      ],
-    );
-  }
 
   Widget _buildListSection(String title, List<String> items, bool isRTL) {
     return Padding(
@@ -1261,7 +1146,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         children: [
           ElevatedButton.icon(
             onPressed: () {
-              context.push('/course/${_course?.slug ?? _course?.id}/content', extra: {
+              final id = _course?.slug ?? _course?.id;
+              if (id == null) return;
+              
+              final path = Uri.encodeFull('/course/$id/content');
+              context.push(path, extra: {
                 'course': _course,
                 'lessonsData': _lessons,
                 'chapters': _chapters,
@@ -1329,10 +1218,18 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     if (_isEnrolled) {
       if (_course!.deliveryMode == 'recorded' && _lessons.isNotEmpty) {
         final firstLesson = Lesson.fromJson(_lessons.first);
-        context.push('/course/${_course?.slug ?? _course?.id}/lesson/${firstLesson.slug ?? firstLesson.id}');
+        final courseId = _course?.slug ?? _course?.id;
+        if (courseId == null) return;
+        
+        final path = Uri.encodeFull('/course/$courseId/lesson/${firstLesson.slug ?? firstLesson.id}');
+        context.push(path);
       } else {
         // For Live or In-Person, go to content overview to see sessions list
-        context.push('/course/${_course?.slug ?? _course?.id}/content', extra: {
+        final courseId = _course?.slug ?? _course?.id;
+        if (courseId == null) return;
+        
+        final path = Uri.encodeFull('/course/$courseId/content');
+        context.push(path, extra: {
           'course': _course,
           'lessonsData': _lessons,
           'chapters': _chapters,

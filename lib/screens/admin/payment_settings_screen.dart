@@ -185,16 +185,17 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.getGlassColor(context, opacity: 0.2),
+              color: AppColors.getGlassColor(context, opacity: 0.4),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                  color: AppColors.getGlassColor(context, opacity: 0.3),
-                  width: 1),
+                color: AppColors.getGlassColor(context, opacity: 0.5),
+                width: 1.5,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withOpacity(0.05),
                   blurRadius: 10,
-                  offset: Offset(0, 5),
+                  offset: Offset(0, 4),
                 ),
               ],
             ),
@@ -294,11 +295,18 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
           filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
           child: Container(
             decoration: BoxDecoration(
-              color: AppColors.getGlassColor(context, opacity: 0.2),
+              color: AppColors.getGlassColor(context, opacity: 0.4),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                  color: AppColors.getGlassColor(context, opacity: 0.3),
+                  color: AppColors.getGlassColor(context, opacity: 0.5),
                   width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: Offset(0, 4),
+                ),
+              ],
             ),
             child: Padding(
               padding: EdgeInsets.all(16),
@@ -409,9 +417,9 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
           return Directionality(
             textDirection: TextDirection.rtl,
             child: AlertDialog(
-              backgroundColor: Theme.of(context).dialogTheme.backgroundColor,
+              backgroundColor: AppColors.getSurfaceColor(context),
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20)),
+                  borderRadius: BorderRadius.circular(24)),
               title: Text(
                 'تعديل ${account.methodDisplayName}',
                 style: TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
@@ -427,9 +435,11 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                       decoration: InputDecoration(
                         labelText: 'اسم الحساب',
                         labelStyle: TextStyle(
-                            color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
+                            color: AppColors.getTextColor(context).withOpacity(0.7), fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: AppColors.getBorderColor(context))),
+                        focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.primaryPurple, width: 2)),
                       ),
                     ),
                     SizedBox(height: 16),
@@ -440,9 +450,11 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                       decoration: InputDecoration(
                         labelText: 'رقم الحساب / الهاتف',
                         labelStyle: TextStyle(
-                            color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
+                            color: AppColors.getTextColor(context).withOpacity(0.7), fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: AppColors.getBorderColor(context))),
+                        focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.primaryPurple, width: 2)),
                       ),
                     ),
                     SizedBox(height: 16),
@@ -454,9 +466,11 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                       decoration: InputDecoration(
                         labelText: 'تعليمات إضافية',
                         labelStyle: TextStyle(
-                            color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
+                            color: AppColors.getTextColor(context).withOpacity(0.7), fontFamily: 'Cairo'),
                         enabledBorder: UnderlineInputBorder(
                             borderSide: BorderSide(color: AppColors.getBorderColor(context))),
+                        focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.primaryPurple, width: 2)),
                       ),
                     ),
                     SizedBox(height: 16),
@@ -547,7 +561,7 @@ class _PaymentSettingsScreenState extends State<PaymentSettingsScreen> {
                   },
                   child: Text('حفظ',
                       style:
-                          TextStyle(color: AppColors.getTextColor(context), fontFamily: 'Cairo')),
+                          TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
                 ),
               ],
             ),

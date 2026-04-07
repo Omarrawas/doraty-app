@@ -1,5 +1,7 @@
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/course.dart';
@@ -119,7 +121,7 @@ class _PackageScreenState extends State<PackageScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(
           child: CircularProgressIndicator(color: AppColors.primaryPurple),
         ),
@@ -131,232 +133,231 @@ class _PackageScreenState extends State<PackageScreen> {
     
     String t(String key) => AppStrings.get(key, locale);
 
-    // Responsive grid settings
-    int gridCrossAxisCount = 2;
-    double gridChildAspectRatio = 0.65;
-    if (screenWidth > 1200) {
-      gridCrossAxisCount = 4;
-      gridChildAspectRatio = 0.72;
-    } else if (screenWidth > 900) {
-      gridCrossAxisCount = 3;
-      gridChildAspectRatio = 0.70;
-    } else if (screenWidth > 550) {
-      gridCrossAxisCount = 2;
-      gridChildAspectRatio = 0.68;
-    } else {
-      gridCrossAxisCount = 1;
-      gridChildAspectRatio = 2.4; // Horizontal card style for mobile if narrow? 
-      // Actually course card might be better vertical. 
-      // Let's stick to 2 columns for mobile if they are small, or 1 if very narrow.
-    }
-
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text(t('bundle_details'), style: const TextStyle(fontFamily: 'Cairo')),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
       body: DynamicGradientBackground(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 1200),
-            child: Column(
-              children: [
-                Expanded(
-                  child: CustomScrollView(
-                    slivers: [
-                      const SliverPadding(padding: EdgeInsets.only(top: 100)),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 850),
-                              child: Container(
-                                padding: const EdgeInsets.all(32),
-                                decoration: BoxDecoration(
-                                  color: AppColors.getGlassColor(context, opacity: 0.15),
-                                  borderRadius: BorderRadius.circular(40),
-                                  border: Border.all(color: Colors.white10),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.2),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 10),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    if (_displayBundle.imageUrl != null && _displayBundle.imageUrl!.isNotEmpty)
-                                      Container(
-                                        width: double.infinity,
-                                        height: isMediumScreen ? 250 : 180,
-                                        margin: const EdgeInsets.only(bottom: 24),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(24),
-                                          boxShadow: const [
-                                            BoxShadow(
-                                              color: Colors.black26,
-                                              blurRadius: 15,
-                                              offset: Offset(0, 8),
-                                            ),
-                                          ],
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(24),
-                                          child: Image.network(
-                                            _displayBundle.imageUrl!,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) =>
-                                                Container(
-                                              color: AppColors.secondaryGold.withOpacity(0.2),
-                                              child: const Icon(
-                                                Icons.collections_bookmark,
-                                                color: AppColors.secondaryGold,
-                                                size: 50,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                    else
-                                      Container(
-                                        padding: const EdgeInsets.all(20),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.secondaryGold.withOpacity(0.15),
-                                          shape: BoxShape.circle,
-                                        ),
+            child: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  title: Text(t('bundle_details'), style: const TextStyle(fontFamily: 'Cairo')),
+                  centerTitle: true,
+                  backgroundColor: AppColors.getSurfaceColor(context).withOpacity(0.6),
+                  elevation: 0,
+                  pinned: false,
+                  floating: true,
+                  flexibleSpace: ClipRRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(color: Colors.transparent),
+                    ),
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: const Icon(Icons.share_rounded),
+                      onPressed: () async {
+                        final bundle = _displayBundle;
+                        final identifier = bundle.slug.isNotEmpty ? bundle.slug : bundle.id;
+                        final String packageUrl = Uri.encodeFull('https://doraty-app.vercel.app/package/$identifier');
+                        
+                        final String shareText = locale == 'ar' 
+                            ? 'تحقق من هذه الباقة في أكاديمية دوراتي: ${bundle.title}\n$packageUrl'
+                            : 'Check out this package on Doraty Academy: ${bundle.title}\n$packageUrl';
+                        
+                        await Share.share(shareText);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 24.0),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 850),
+                        child: Container(
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            color: AppColors.getGlassColor(context, opacity: 0.15),
+                            borderRadius: BorderRadius.circular(40),
+                            border: Border.all(color: Colors.white10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 40,
+                                offset: const Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              if (_displayBundle.imageUrl != null && _displayBundle.imageUrl!.isNotEmpty)
+                                Container(
+                                  width: double.infinity,
+                                  height: isMediumScreen ? 250 : 180,
+                                  margin: const EdgeInsets.only(bottom: 24),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(24),
+                                    boxShadow: const [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 15,
+                                        offset: Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(24),
+                                    child: Image.network(
+                                      _displayBundle.imageUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) =>
+                                          Container(
+                                        color: AppColors.secondaryGold.withOpacity(0.2),
                                         child: const Icon(
                                           Icons.collections_bookmark,
                                           color: AppColors.secondaryGold,
-                                          size: 48,
-                                        ),
-                                      ),
-                                    const SizedBox(height: 20),
-                                    Text(
-                                      _displayTitle,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: AppColors.getTextColor(context),
-                                        fontSize: isMediumScreen ? 32 : 26,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'Cairo',
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.auto_stories,
-                                            color: AppColors.getTextColor(context, secondary: true),
-                                            size: 18),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '${_displayCourses.length} ${t('courses_count_bundle')}',
-                                          style: TextStyle(
-                                            color: AppColors.getTextColor(context, secondary: true),
-                                            fontSize: 16,
-                                            fontFamily: 'Cairo',
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    if (_displayBundle.description != null) ...[
-                                      const SizedBox(height: 24),
-                                      Text(
-                                        _displayBundle.description!,
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: AppColors.getTextColor(context, secondary: true),
-                                          fontSize: 16,
-                                          height: 1.6,
-                                          fontFamily: 'Cairo',
-                                        ),
-                                      ),
-                                    ],
-                                    const SizedBox(height: 32),
-                                    ElevatedButton(
-                                      onPressed: _handlePrimaryAction,
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.primaryPurple,
-                                        foregroundColor: Colors.white,
-                                        minimumSize: const Size(double.infinity, 60),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        elevation: 8,
-                                        shadowColor: AppColors.primaryPurple.withOpacity(0.4),
-                                      ),
-                                      child: Text(
-                                        _hasBundleAccess
-                                            ? 'أكمل'
-                                            : '${t('subscribe_now_prefix')}${_displayBundle.getFormattedPrice(locale)}',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: 'Cairo',
+                                          size: 50,
                                         ),
                                       ),
                                     ),
-                                  ],
+                                  ),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.all(20),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.secondaryGold.withOpacity(0.15),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.collections_bookmark,
+                                    color: AppColors.secondaryGold,
+                                    size: 48,
+                                  ),
                                 ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 5,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primaryPurple,
-                                  borderRadius: BorderRadius.circular(2.5),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
+                              const SizedBox(height: 20),
                               Text(
-                                t('included_courses'),
+                                _displayTitle,
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: AppColors.getTextColor(context),
-                                  fontSize: 24,
+                                  fontSize: isMediumScreen ? 32 : 26,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Cairo',
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.auto_stories,
+                                      color: AppColors.getTextColor(context, secondary: true),
+                                      size: 18),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${_displayCourses.length} ${t('courses_count_bundle')}',
+                                    style: TextStyle(
+                                      color: AppColors.getTextColor(context, secondary: true),
+                                      fontSize: 16,
+                                      fontFamily: 'Cairo',
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (_displayBundle.description != null) ...[
+                                const SizedBox(height: 24),
+                                Text(
+                                  _displayBundle.description!,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppColors.getTextColor(context, secondary: true),
+                                    fontSize: 16,
+                                    height: 1.6,
+                                    fontFamily: 'Cairo',
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 32),
+                              ElevatedButton(
+                                onPressed: _handlePrimaryAction,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryPurple,
+                                  foregroundColor: Colors.white,
+                                  minimumSize: const Size(double.infinity, 60),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  elevation: 8,
+                                  shadowColor: AppColors.primaryPurple.withOpacity(0.4),
+                                ),
+                                child: Text(
+                                  _hasBundleAccess
+                                      ? 'أكمل'
+                                      : '${t('subscribe_now_prefix')}${_displayBundle.getFormattedPrice(locale)}',
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Cairo',
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                         ),
                       ),
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverGrid(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) => CourseCard(
-                              course: _displayCourses[index],
-                              heroTag: 'package_course_${_displayCourses[index].id}',
-                            ),
-                            childCount: _displayCourses.length,
-                          ),
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: gridCrossAxisCount,
-                            childAspectRatio: gridChildAspectRatio,
-                            crossAxisSpacing: 20,
-                            mainAxisSpacing: 24,
-                          ),
-                        ),
-                      ),
-                      const SliverToBoxAdapter(child: SizedBox(height: 60)),
-                    ],
+                    ),
                   ),
                 ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 5,
+                          height: 28,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryPurple,
+                            borderRadius: BorderRadius.circular(2.5),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          t('included_courses'),
+                          style: TextStyle(
+                            color: AppColors.getTextColor(context),
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Cairo',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverGrid(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => CourseCard(
+                        course: _displayCourses[index],
+                        heroTag: 'package_course_${_displayCourses[index].id}',
+                      ),
+                      childCount: _displayCourses.length,
+                    ),
+                    gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 400, // Maximum card width to allow columns
+                      mainAxisExtent: 330,     // Enforce strict vertical height to avoid overlaps
+                      crossAxisSpacing: 20,
+                      mainAxisSpacing: 20,
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(child: SizedBox(height: 60)),
               ],
             ),
           ),

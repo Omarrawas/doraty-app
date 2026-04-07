@@ -6,6 +6,9 @@ import '../../models/course.dart';
 import '../../widgets/course_card.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/localization/locale_provider.dart';
+import 'package:flutter/services.dart';
+import '../../widgets/shimmer_loader.dart';
+import 'dart:ui';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -92,7 +95,6 @@ class _FavoritesScreenState extends State<FavoritesScreen>
         if (_courses.isEmpty) _emptyAnimController.forward();
       }
     } catch (e) {
-      // Re-insert if failed
       setState(() => _courses.insert(index, course));
     }
   }
@@ -107,7 +109,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
         child: SafeArea(
           child: Column(
             children: [
-              // ─── Header ───
+              // Header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
@@ -131,11 +133,9 @@ class _FavoritesScreenState extends State<FavoritesScreen>
                         ),
                       ),
                     ),
-                    // Badge count
                     if (!_isLoading && _courses.isNotEmpty)
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           gradient: AppColors.primaryGradient,
                           borderRadius: BorderRadius.circular(20),
@@ -155,7 +155,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
                 ),
               ),
 
-              // ─── Body ───
+              // Body
               Expanded(
                 child: _isLoading
                     ? _buildLoadingSkeleton()
@@ -187,9 +187,13 @@ class _FavoritesScreenState extends State<FavoritesScreen>
             direction: DismissDirection.endToStart,
             background: _buildDismissBackground(),
             confirmDismiss: (_) async {
+              HapticFeedback.mediumImpact();
               return await _showConfirmDialog(course.title);
             },
-            onDismissed: (_) => _removeFromFavorites(course, index),
+            onDismissed: (_) {
+              HapticFeedback.lightImpact();
+              _removeFromFavorites(course, index);
+            },
             child: Padding(
               padding: const EdgeInsets.only(bottom: 16),
               child: SizedBox(
@@ -230,44 +234,54 @@ class _FavoritesScreenState extends State<FavoritesScreen>
   Future<bool?> _showConfirmDialog(String courseTitle) {
     return showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.getSurfaceColor(context),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'إزالة من المفضلة',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppColors.getTextColor(context),
-            fontFamily: 'Cairo',
-            fontWeight: FontWeight.bold,
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: AppColors.getSurfaceColor(context).withOpacity(0.8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withOpacity(0.1)),
           ),
-        ),
-        content: Text(
-          'هل تريد إزالة "$courseTitle" من قائمة مفضلتك؟',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppColors.getTextColor(context, secondary: true),
-            fontFamily: 'Cairo',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'إلغاء',
-              style: TextStyle(color: AppColors.getTextColor(context, secondary: true)),
+          title: Text(
+            'إزالة من المفضلة',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.getTextColor(context),
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Cairo',
             ),
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade700,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+          content: Text(
+            'هل تريد إزالة "$courseTitle" من قائمة مفضلتك؟',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.getMutedTextColor(context),
+              fontFamily: 'Cairo',
             ),
-            child: const Text('إزالة', style: TextStyle(color: Colors.white)),
           ),
-        ],
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                'إلغاء',
+                style: TextStyle(color: AppColors.getMutedTextColor(context)),
+              ),
+            ),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.withOpacity(0.8),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              child: const Text('إزالة', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -332,10 +346,8 @@ class _FavoritesScreenState extends State<FavoritesScreen>
               ),
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: AppColors.primaryPurple.withOpacity(0.5)),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
             ),
           ],
@@ -349,61 +361,8 @@ class _FavoritesScreenState extends State<FavoritesScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: 5,
       itemBuilder: (context, index) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Container(
-            height: 200,
-            decoration: BoxDecoration(
-              color: AppColors.getSurfaceColor(context).withOpacity(0.5),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              children: [
-                // Image Skeleton
-                Container(
-                  width: 140,
-                  decoration: BoxDecoration(
-                    color: AppColors.getMutedTextColor(context),
-                    borderRadius: const BorderRadius.horizontal(
-                      left: Radius.circular(16),
-                    ),
-                  ),
-                ),
-                // Content skeleton
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _skeletonLine(0.8),
-                        const SizedBox(height: 8),
-                        _skeletonLine(0.5),
-                        const SizedBox(height: 16),
-                        _skeletonLine(0.4),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        return const CourseCardShimmer();
       },
-    );
-  }
-
-  Widget _skeletonLine(double widthFactor) {
-    return FractionallySizedBox(
-      widthFactor: widthFactor,
-      child: Container(
-        height: 14,
-        decoration: BoxDecoration(
-          color: AppColors.getMutedTextColor(context),
-          borderRadius: BorderRadius.circular(8),
-        ),
-      ),
     );
   }
 
@@ -432,8 +391,7 @@ class _FavoritesScreenState extends State<FavoritesScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],

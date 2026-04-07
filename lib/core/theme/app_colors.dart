@@ -194,7 +194,7 @@ class AppColors {
 
   // Legacy base colors kept as const because many screens still use them in
   // const widgets such as BoxDecoration(...).
-  static const Color background = Color(0xFFFBFCFF);
+  static const Color background = Color(0xFFF8FAFF);
   static const Color darkBackground = Color(0xFF0B0C15); // Nocturne Black
   static const Color darkNavy = Color(0xFF121422);       // Dark Surface
   static const Color darkDeep = Color(0xFF080911);       // Deeper Shadow
@@ -295,11 +295,12 @@ class AppColors {
 
 
   static const LinearGradient lightBackgroundGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
     colors: [
-      Color(0xFFFBFCFF), // Pure white
-      Color(0xFFF2F5FF), // Very soft airy blue
+      Color(0xFFF8FAFF), // Very soft misty blue-white
+      Color(0xFFF1F4F9), // Soft airy blue
+      Color(0xFFE8EEF7), // Light periwinkle tint
     ],
   );
 

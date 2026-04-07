@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.doraty.app",
+      "sha256_cert_fingerprints": [
+        "09:1D:22:1C:98:14:10:DF:22:3F:23:B6:EE:C0:C8:1B:82:76:7B:1A:26:9A:CE:DD:D9:1A:DB:E8:EB:3C:86:F9"
+      ]
+    }
+  }
+]

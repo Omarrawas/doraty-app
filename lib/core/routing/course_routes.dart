@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/course.dart';
+import '../../models/chapter.dart';
 import '../../screens/courses/course_details_screen.dart';
 import '../../screens/courses/course_content_screen.dart';
 import '../../screens/lesson/lesson_screen.dart';
@@ -13,6 +15,14 @@ List<RouteBase> getCourseRoutes(GlobalKey<NavigatorState> parentKey) {
       builder: (context, state) {
         final id = state.pathParameters['id'];
         if (id == null || id.isEmpty) return const ErrorScreen();
+        
+        final extra = state.extra;
+        if (extra is Course) {
+          return CourseDetailsScreen(course: extra);
+        } else if (extra is Map<String, dynamic> && extra.containsKey('course')) {
+           return CourseDetailsScreen(course: extra['course'] as Course);
+        }
+
         return CourseDetailsScreen(courseId: id);
       },
       routes: [
@@ -22,13 +32,13 @@ List<RouteBase> getCourseRoutes(GlobalKey<NavigatorState> parentKey) {
             final courseId = state.pathParameters['id'];
             if (courseId == null || courseId.isEmpty) return const ErrorScreen();
             
-            final extra = state.extra as Map<String, dynamic>?;
-            if (extra != null) {
+            final extra = state.extra;
+            if (extra is Map<String, dynamic> && extra.containsKey('course')) {
               return CourseContentScreen(
                 course: extra['course'],
-                lessonsData: extra['lessonsData'],
-                chapters: extra['chapters'],
-                isEnrolled: extra['isEnrolled'],
+                lessonsData: (extra['lessonsData'] as List?)?.cast<Map<String, dynamic>>() ?? [],
+                chapters: (extra['chapters'] as List?)?.cast<Chapter>() ?? [],
+                isEnrolled: extra['isEnrolled'] ?? false,
               );
             }
             

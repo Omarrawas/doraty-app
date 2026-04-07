@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/supabase_service.dart';
+import '../../widgets/dynamic_gradient_background.dart';
 import '../../models/session.dart';
 
 class SessionsManagementScreen extends StatefulWidget {
@@ -90,23 +91,31 @@ class _SessionsManagementScreenState extends State<SessionsManagementScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: AppColors.darkNavy,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('إدارة الجلسات',
-                style: TextStyle(color: Colors.white, fontSize: 16)),
+            Text('إدارة الجلسات',
+                style: TextStyle(
+                    color: AppColors.getTextColor(context),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Cairo')),
             Text(widget.courseTitle,
                 style: TextStyle(
                     color: AppColors.primaryPurple.withOpacity(0.8),
-                    fontSize: 12)),
+                    fontSize: 12,
+                    fontFamily: 'Cairo')),
           ],
         ),
+        iconTheme: IconThemeData(color: AppColors.getTextColor(context)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white70),
+            icon: Icon(Icons.refresh,
+                color: AppColors.getTextColor(context).withOpacity(0.7)),
             onPressed: _loadSessions,
           ),
         ],
@@ -114,24 +123,33 @@ class _SessionsManagementScreenState extends State<SessionsManagementScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showSessionDialog(),
         backgroundColor: AppColors.primaryPurple,
+        elevation: 4,
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text('جلسة جديدة',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'Cairo')),
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF7B2CBF)))
-          : _sessions.isEmpty
-              ? _buildEmpty()
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-                  itemCount: _sessions.length,
-                  itemBuilder: (_, i) => _SessionCard(
-                    session: _sessions[i],
-                    onEdit: () => _showSessionDialog(_sessions[i]),
-                    onDelete: () => _deleteSession(_sessions[i].id),
-                  ),
-                ),
+      body: DynamicGradientBackground(
+        child: SafeArea(
+          child: _isLoading
+              ? Center(
+                  child:
+                      CircularProgressIndicator(color: AppColors.primaryPurple))
+              : _sessions.isEmpty
+                  ? _buildEmpty()
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+                      itemCount: _sessions.length,
+                      itemBuilder: (_, i) => _SessionCard(
+                        session: _sessions[i],
+                        onEdit: () => _showSessionDialog(_sessions[i]),
+                        onDelete: () => _deleteSession(_sessions[i].id),
+                      ),
+                    ),
+        ),
+      ),
     );
   }
 
@@ -140,13 +158,20 @@ class _SessionsManagementScreenState extends State<SessionsManagementScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.video_camera_back_outlined,
-                size: 72, color: Colors.white24),
+                size: 72,
+                color: AppColors.getMutedTextColor(context).withOpacity(0.3)),
             const SizedBox(height: 16),
-            const Text('لا توجد جلسات بعد',
-                style: TextStyle(color: Colors.white54, fontSize: 16)),
+            Text('لا توجد جلسات بعد',
+                style: TextStyle(
+                    color: AppColors.getTextColor(context, secondary: true),
+                    fontSize: 16,
+                    fontFamily: 'Cairo')),
             const SizedBox(height: 8),
-            const Text('اضغط + لإضافة أول جلسة',
-                style: TextStyle(color: Colors.white38, fontSize: 13)),
+            Text('اضغط + لإضافة أول جلسة',
+                style: TextStyle(
+                    color: AppColors.getMutedTextColor(context),
+                    fontSize: 13,
+                    fontFamily: 'Cairo')),
           ],
         ),
       );
@@ -166,148 +191,164 @@ class _SessionCard extends StatelessWidget {
         SessionStatus.liveNow => const Color(0xFFEF4444),
         SessionStatus.completed => const Color(0xFF22C55E),
         SessionStatus.cancelled => Colors.grey,
-        _ => const Color(0xFF8B5CF6),
+        _ => AppColors.primaryPurple,
       };
 
   @override
   Widget build(BuildContext context) {
     final fmt = DateFormat('EEEE، d MMMM yyyy  •  hh:mm a', 'ar');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            _statusColor.withOpacity(0.12),
-            Colors.white.withOpacity(0.03),
-          ],
+        color: AppColors.getGlassColor(context, opacity: isDark ? 0.05 : 0.4),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _statusColor.withOpacity(0.3),
+          width: 1,
         ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _statusColor.withOpacity(0.3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 10, 0),
-            child: Row(
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _statusColor.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: _statusColor.withOpacity(0.5)),
-                  ),
-                  child: Text(session.statusLabel,
-                      style: TextStyle(
-                          color: _statusColor,
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold)),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined,
-                      size: 20, color: Colors.white54),
-                  onPressed: onEdit,
-                  tooltip: 'تعديل',
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline,
-                      size: 20, color: Colors.redAccent),
-                  onPressed: onDelete,
-                  tooltip: 'حذف',
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(session.title,
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold)),
-                if (session.description != null &&
-                    session.description!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(session.description!,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          color: Colors.white54, fontSize: 12)),
-                ],
-                const SizedBox(height: 10),
-                // Date row
-                _InfoRow(
-                    icon: Icons.calendar_today_outlined,
-                    text: fmt.format(session.scheduledAt.toLocal())),
-                const SizedBox(height: 4),
-                _InfoRow(
-                    icon: Icons.timer_outlined,
-                    text: '${session.durationMinutes} دقيقة'),
-                if (session.location != null &&
-                    session.location!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  _InfoRow(
-                      icon: Icons.location_on_outlined,
-                      text: session.location!),
-                ],
-                if (session.joinUrl != null &&
-                    session.joinUrl!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  _InfoRow(
-                      icon: Icons.video_call_outlined,
-                      text: session.platformLabel),
-                ],
-                const SizedBox(height: 12),
-                // Action buttons
-                Row(
-                  children: [
-                    if (session.joinUrl != null && session.isJoinable)
-                      Expanded(
-                        child: _ActionBtn(
-                          label: 'انضم للجلسة',
-                          icon: Icons.video_call_rounded,
-                          color: const Color(0xFF22C55E),
-                          onTap: () =>
-                              launchUrl(Uri.parse(session.joinUrl!)),
-                        ),
-                      ),
-                    if (session.joinUrl != null && session.isJoinable)
-                      const SizedBox(width: 8),
-                    if (session.recordingUrl != null &&
-                        session.recordingUrl!.isNotEmpty)
-                      Expanded(
-                        child: _ActionBtn(
-                          label: 'التسجيل',
-                          icon: Icons.play_circle_outline,
-                          color: const Color(0xFF8B5CF6),
-                          onTap: () =>
-                              launchUrl(Uri.parse(session.recordingUrl!)),
-                        ),
-                      ),
-                    if (session.status == SessionStatus.completed &&
-                        (session.recordingUrl == null ||
-                            session.recordingUrl!.isEmpty))
-                      Expanded(
-                        child: _ActionBtn(
-                          label: 'أضف التسجيل',
-                          icon: Icons.add_link,
-                          color: Colors.orange,
-                          onTap: onEdit,
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: _statusColor.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header row
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 10, 0),
+              child: Row(
+                children: [
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: _statusColor.withOpacity(0.5)),
+                    ),
+                    child: Text(session.statusLabel,
+                        style: TextStyle(
+                            color: _statusColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Cairo')),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(Icons.edit_outlined,
+                        size: 20,
+                        color:
+                            AppColors.getTextColor(context, secondary: true)),
+                    onPressed: onEdit,
+                    tooltip: 'تعديل',
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        size: 20, color: Colors.redAccent),
+                    onPressed: onDelete,
+                    tooltip: 'حذف',
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(session.title,
+                      style: TextStyle(
+                          color: AppColors.getTextColor(context),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Cairo')),
+                  if (session.description != null &&
+                      session.description!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(session.description!,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                            color: AppColors.getTextColor(context,
+                                secondary: true),
+                            fontSize: 13,
+                            fontFamily: 'Cairo')),
+                  ],
+                  const SizedBox(height: 12),
+                  // Date row
+                  _InfoRow(
+                      icon: Icons.calendar_today_outlined,
+                      text: fmt.format(session.scheduledAt.toLocal())),
+                  const SizedBox(height: 6),
+                  _InfoRow(
+                      icon: Icons.timer_outlined,
+                      text: '${session.durationMinutes} دقيقة'),
+                  if (session.location != null &&
+                      session.location!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    _InfoRow(
+                        icon: Icons.location_on_outlined,
+                        text: session.location!),
+                  ],
+                  if (session.joinUrl != null &&
+                      session.joinUrl!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    _InfoRow(
+                        icon: Icons.video_call_outlined,
+                        text: session.platformLabel),
+                  ],
+                  const SizedBox(height: 16),
+                  // Action buttons
+                  Row(
+                    children: [
+                      if (session.joinUrl != null && session.isJoinable)
+                        Expanded(
+                          child: _ActionBtn(
+                            label: 'انضم للجلسة',
+                            icon: Icons.video_call_rounded,
+                            color: const Color(0xFF22C55E),
+                            onTap: () => launchUrl(Uri.parse(session.joinUrl!)),
+                          ),
+                        ),
+                      if (session.joinUrl != null && session.isJoinable)
+                        const SizedBox(width: 8),
+                      if (session.recordingUrl != null &&
+                          session.recordingUrl!.isNotEmpty)
+                        Expanded(
+                          child: _ActionBtn(
+                            label: 'التسجيل',
+                            icon: Icons.play_circle_outline,
+                            color: const Color(0xFF8B5CF6),
+                            onTap: () =>
+                                launchUrl(Uri.parse(session.recordingUrl!)),
+                          ),
+                        ),
+                      if (session.status == SessionStatus.completed &&
+                          (session.recordingUrl == null ||
+                              session.recordingUrl!.isEmpty))
+                        Expanded(
+                          child: _ActionBtn(
+                            label: 'أضف التسجيل',
+                            icon: Icons.add_link,
+                            color: Colors.orange,
+                            onTap: onEdit,
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -321,12 +362,14 @@ class _InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Row(
         children: [
-          Icon(icon, size: 14, color: Colors.white38),
-          const SizedBox(width: 6),
+          Icon(icon, size: 14, color: AppColors.primaryPurple.withOpacity(0.7)),
+          const SizedBox(width: 8),
           Expanded(
               child: Text(text,
-                  style:
-                      const TextStyle(color: Colors.white60, fontSize: 12))),
+                  style: TextStyle(
+                      color: AppColors.getTextColor(context, secondary: true),
+                      fontSize: 13,
+                      fontFamily: 'Cairo'))),
         ],
       );
 }
@@ -346,22 +389,23 @@ class _ActionBtn extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: color.withOpacity(0.4)),
+            color: color.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.3)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, size: 15, color: color),
-              const SizedBox(width: 5),
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 6),
               Text(label,
                   style: TextStyle(
                       color: color,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold)),
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Cairo')),
             ],
           ),
         ),
@@ -411,8 +455,8 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
     _recordingCtrl = TextEditingController(text: e?.recordingUrl ?? '');
     _durationCtrl =
         TextEditingController(text: (e?.durationMinutes ?? 60).toString());
-    _maxAttendeesCtrl = TextEditingController(
-        text: e?.maxAttendees?.toString() ?? '');
+    _maxAttendeesCtrl =
+        TextEditingController(text: e?.maxAttendees?.toString() ?? '');
     if (e != null) {
       _scheduledAt = e.scheduledAt;
       _platform = e.platform;
@@ -423,8 +467,13 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
   @override
   void dispose() {
     for (final c in [
-      _titleCtrl, _descCtrl, _joinUrlCtrl, _locationCtrl,
-      _recordingCtrl, _durationCtrl, _maxAttendeesCtrl
+      _titleCtrl,
+      _descCtrl,
+      _joinUrlCtrl,
+      _locationCtrl,
+      _recordingCtrl,
+      _durationCtrl,
+      _maxAttendeesCtrl
     ]) {
       c.dispose();
     }
@@ -457,26 +506,25 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
     final payload = {
       'course_id': widget.courseId,
       'title': _titleCtrl.text.trim(),
-      'description': _descCtrl.text.trim().isEmpty
-          ? null
-          : _descCtrl.text.trim(),
+      'description':
+          _descCtrl.text.trim().isEmpty ? null : _descCtrl.text.trim(),
       'scheduled_at': _scheduledAt.toIso8601String(),
       'duration_minutes': int.tryParse(_durationCtrl.text) ?? 60,
-      'join_url': _joinUrlCtrl.text.trim().isEmpty
-          ? null
-          : _joinUrlCtrl.text.trim(),
+      'join_url':
+          _joinUrlCtrl.text.trim().isEmpty ? null : _joinUrlCtrl.text.trim(),
       'platform': _platform.name,
-      'location': _locationCtrl.text.trim().isEmpty
-          ? null
-          : _locationCtrl.text.trim(),
+      'location':
+          _locationCtrl.text.trim().isEmpty ? null : _locationCtrl.text.trim(),
       'recording_url': _recordingCtrl.text.trim().isEmpty
           ? null
           : _recordingCtrl.text.trim(),
       'status': Session.fromJson({
-            'id': '', 'course_id': '', 'title': '',
-            'scheduled_at': _scheduledAt.toIso8601String(),
-            'status': _statusName(_status),
-          }).toJson()['status'],
+        'id': '',
+        'course_id': '',
+        'title': '',
+        'scheduled_at': _scheduledAt.toIso8601String(),
+        'status': _statusName(_status),
+      }).toJson()['status'],
       'max_attendees': _maxAttendeesCtrl.text.trim().isEmpty
           ? null
           : int.tryParse(_maxAttendeesCtrl.text),
@@ -489,9 +537,7 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
             .update(payload)
             .eq('id', widget.existing!.id);
       } else {
-        await SupabaseService.instance.client
-            .from('sessions')
-            .insert(payload);
+        await SupabaseService.instance.client.from('sessions').insert(payload);
       }
       if (mounted) Navigator.pop(context);
       widget.onSaved();
@@ -520,11 +566,11 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
     final dateFmt = DateFormat('EEEE، d MMM yyyy  •  hh:mm a', 'ar');
 
     return Dialog(
-      backgroundColor: const Color(0xFF1E293B),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.getSurfaceColor(context),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       child: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(24),
           child: Form(
             key: _formKey,
             child: Column(
@@ -535,76 +581,86 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: AppColors.primaryPurple.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(10),
+                        color: AppColors.primaryPurple.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
                         isEdit ? Icons.edit_outlined : Icons.add_circle_outline,
                         color: AppColors.primaryPurple,
+                        size: 24,
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 14),
                     Text(
                       isEdit ? 'تعديل الجلسة' : 'جلسة جديدة',
-                      style: const TextStyle(
-                          color: Colors.white,
+                      style: TextStyle(
+                          color: AppColors.getTextColor(context),
                           fontSize: 18,
-                          fontWeight: FontWeight.bold),
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Cairo'),
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Colors.white54, size: 20),
+                      icon: Icon(Icons.close,
+                          color:
+                              AppColors.getTextColor(context, secondary: true),
+                          size: 22),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
                 _field('عنوان الجلسة *', _titleCtrl,
-                    validator: (v) =>
-                        (v?.isEmpty ?? true) ? 'مطلوب' : null),
+                    validator: (v) => (v?.isEmpty ?? true) ? 'مطلوب' : null),
                 _field('وصف الجلسة (اختياري)', _descCtrl, maxLines: 2),
 
                 // Date picker
-                const Text('موعد الجلسة *',
-                    style: TextStyle(color: Colors.white70, fontSize: 13)),
-                const SizedBox(height: 6),
+                Text('موعد الجلسة *',
+                    style: TextStyle(
+                        color: AppColors.getTextColor(context, secondary: true),
+                        fontSize: 13,
+                        fontFamily: 'Cairo')),
+                const SizedBox(height: 8),
                 GestureDetector(
                   onTap: _pickDateTime,
                   child: Container(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
+                      color: AppColors.getInputFillColor(context),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                          color: AppColors.primaryPurple.withOpacity(0.3)),
+                          color: AppColors.primaryPurple.withOpacity(0.2)),
                     ),
                     child: Row(
                       children: [
                         const Icon(Icons.calendar_today,
                             size: 16, color: Color(0xFF8B5CF6)),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         Text(dateFmt.format(_scheduledAt),
-                            style: const TextStyle(
-                                color: Colors.white, fontSize: 13)),
+                            style: TextStyle(
+                                color: AppColors.getTextColor(context),
+                                fontSize: 13,
+                                fontFamily: 'Cairo')),
                         const Spacer(),
-                        const Icon(Icons.edit, size: 14, color: Colors.white38),
+                        Icon(Icons.edit,
+                            size: 14,
+                            color: AppColors.getMutedTextColor(context)),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
 
                 Row(
                   children: [
                     Expanded(
                         child: _field('المدة (دقيقة)', _durationCtrl,
                             keyboardType: TextInputType.number)),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 12),
                     Expanded(
                         child: _field('أقصى عدد مشاركين', _maxAttendeesCtrl,
                             keyboardType: TextInputType.number)),
@@ -615,18 +671,20 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
                 _label('المنصة'),
                 DropdownButtonFormField<SessionPlatform>(
                   value: _platform,
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: AppColors.getSurfaceColor(context),
+                  style: TextStyle(color: AppColors.getTextColor(context)),
                   decoration: _inputDeco(),
                   items: SessionPlatform.values
                       .map((p) => DropdownMenuItem(
                           value: p,
                           child: Text(_platformLabel(p),
-                              style: const TextStyle(color: Colors.white))))
+                              style: TextStyle(
+                                  color: AppColors.getTextColor(context),
+                                  fontFamily: 'Cairo'))))
                       .toList(),
                   onChanged: (v) => setState(() => _platform = v!),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
 
                 _field('رابط الانضمام (Zoom / Meet...)', _joinUrlCtrl),
                 _field('المكان (للحضوري)', _locationCtrl),
@@ -636,18 +694,20 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
                 _label('الحالة'),
                 DropdownButtonFormField<SessionStatus>(
                   value: _status,
-                  dropdownColor: const Color(0xFF1E293B),
-                  style: const TextStyle(color: Colors.white),
+                  dropdownColor: AppColors.getSurfaceColor(context),
+                  style: TextStyle(color: AppColors.getTextColor(context)),
                   decoration: _inputDeco(),
                   items: SessionStatus.values
                       .map((s) => DropdownMenuItem(
                           value: s,
                           child: Text(_statusLabel(s),
-                              style: const TextStyle(color: Colors.white))))
+                              style: TextStyle(
+                                  color: AppColors.getTextColor(context),
+                                  fontFamily: 'Cairo'))))
                       .toList(),
                   onChanged: (v) => setState(() => _status = v!),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
 
                 // Save button
                 SizedBox(
@@ -656,9 +716,10 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
                     onPressed: _isSaving ? null : _save,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryPurple,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(14)),
+                      elevation: 4,
                     ),
                     child: _isSaving
                         ? const SizedBox(
@@ -666,12 +727,12 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
                             width: 20,
                             child: CircularProgressIndicator(
                                 color: Colors.white, strokeWidth: 2))
-                        : Text(
-                            isEdit ? 'حفظ التعديلات' : 'إنشاء الجلسة',
-                            style: const TextStyle(
+                        : const Text('حفظ الجلسة',
+                            style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 15)),
+                                fontSize: 16,
+                                fontFamily: 'Cairo')),
                   ),
                 ),
               ],
@@ -710,37 +771,40 @@ class _SessionFormDialogState extends State<_SessionFormDialog> {
           maxLines: maxLines,
           keyboardType: keyboardType,
           validator: validator,
-          style: const TextStyle(color: Colors.white),
+          style: TextStyle(
+              color: AppColors.getTextColor(context), fontFamily: 'Cairo'),
           decoration: _inputDeco(),
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
       ],
     );
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.only(bottom: 8),
         child: Text(text,
-            style: const TextStyle(color: Colors.white70, fontSize: 13)),
+            style: TextStyle(
+                color: AppColors.getTextColor(context, secondary: true),
+                fontSize: 13,
+                fontFamily: 'Cairo')),
       );
 
   InputDecoration _inputDeco() => InputDecoration(
         filled: true,
-        fillColor: Colors.white.withOpacity(0.05),
+        fillColor: AppColors.getInputFillColor(context),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-              color: AppColors.primaryPurple.withOpacity(0.3)),
+          borderSide:
+              BorderSide(color: AppColors.primaryPurple.withOpacity(0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-              color: AppColors.primaryPurple.withOpacity(0.25)),
+          borderSide:
+              BorderSide(color: AppColors.primaryPurple.withOpacity(0.15)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: AppColors.primaryPurple, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primaryPurple, width: 1.5),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 14, vertical: 12),

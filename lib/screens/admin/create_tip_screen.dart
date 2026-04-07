@@ -243,17 +243,17 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppColors.getMutedTextColor(context),
+                    color: AppColors.getGlassColor(context, opacity: 0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white10),
+                    border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.15)),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButtonFormField<String>(
-                      dropdownColor: Colors.deepPurple.shade900,
+                      dropdownColor: AppColors.getSurfaceColor(context),
                       value: _selectedCourseId,
                       decoration: InputDecoration(
                         labelText: 'اربط بدورة معينة (CTA)',
-                        labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54)),
+                        labelStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.54), fontFamily: 'Cairo'),
                         border: InputBorder.none,
                         prefixIcon: Icon(Icons.link, color: AppColors.secondaryGold),
                       ),
@@ -284,7 +284,14 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   ),
                   child: _isSaving 
-                      ? CircularProgressIndicator(color: AppColors.getTextColor(context))
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : Text(widget.tip == null ? 'إضافة' : 'حفظ التغييرات'),
                 ),
               ],
@@ -315,14 +322,14 @@ class _CreateTipScreenState extends State<CreateTipScreen> {
         prefixIcon: Icon(icon, color: AppColors.getTextColor(context).withOpacity(0.70)),
         suffixIcon: suffix,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.08),
+        fillColor: AppColors.getGlassColor(context, opacity: 0.05),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white10),
+          borderSide: BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Colors.white10),
+          borderSide: BorderSide(color: AppColors.getGlassColor(context, opacity: 0.1)),
         ),
       ),
     );

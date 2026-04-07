@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/error_utils.dart';
 import '../../core/services/database_service.dart';
@@ -11,10 +12,27 @@ class QrScannerScreen extends StatefulWidget {
   State<QrScannerScreen> createState() => _QrScannerScreenState();
 }
 
-class _QrScannerScreenState extends State<QrScannerScreen> {
+class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProviderStateMixin {
   final DatabaseService _db = DatabaseService();
   bool _isProcessing = false;
-  MobileScannerController cameraController = MobileScannerController();
+  final MobileScannerController cameraController = MobileScannerController();
+  late AnimationController _scanLineController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scanLineController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _scanLineController.dispose();
+    cameraController.dispose();
+    super.dispose();
+  }
 
   void _onDetect(BarcodeCapture capture) async {
     if (_isProcessing) return;
@@ -24,97 +42,106 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       final String? code = barcodes.first.rawValue;
       if (code != null) {
         setState(() => _isProcessing = true);
-        cameraController.stop(); // Stop scanning while processing
-        
+        cameraController.stop();
         await _processCode(code);
       }
     }
   }
 
   Future<void> _processCode(String code) async {
-    // Show Loading Dialog
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => Center(child: CircularProgressIndicator()),
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: const Center(
+          child: CircularProgressIndicator(color: AppColors.primaryPurple),
+        ),
+      ),
     );
 
     try {
       final userId = _db.currentUserId;
-      if (userId == null) {
-        throw Exception('يرجى تسجيل الدخول أولاً');
-      }
+      if (userId == null) throw Exception('يرجى تسجيل الدخول أولاً');
       
       final result = await _db.redeemQrCode(code, userId);
-      if (mounted) Navigator.pop(context); // Close loading dialog
+      if (mounted) Navigator.pop(context); // Close loading
 
       if (result['success'] == true) {
         if (mounted) {
-          await showDialog(
-            context: context,
-            barrierDismissible: false, // Force user to acknowledge
-            builder: (ctx) => AlertDialog(
-              title: Text('تم بنجاح!', textAlign: TextAlign.center),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.check_circle, color: Colors.green, size: 64),
-                  SizedBox(height: 16),
-                  Text(
-                    result['message'] ?? 'تم تفعيل الكود بنجاح',
-                    textAlign: TextAlign.center,
-                  ),
-                  if (result['courses_enrolled'] != null)
-                    Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Text(
-                        'تم تفعيل ${result['courses_enrolled']} مادة/مواد',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(ctx); // Close dialog
-                    Navigator.pop(context, true); // Return success to previous screen
-                  },
-                  child: Text('موافق'),
-                ),
-              ],
-            ),
+          await _showGlassResultDialog(
+            title: 'تم بنجاح!',
+            message: result['message'] ?? 'تم تفعيل الكود بنجاح',
+            isSuccess: true,
+            extra: result['courses_enrolled'] != null ? 'تم تفعيل ${result['courses_enrolled']} مادة' : null,
           );
+          if (mounted) Navigator.pop(context, true);
         }
       } else {
-        if (mounted) {
-          _showErrorDialog(result['message'] ?? 'كود غير صالح');
-        }
+        if (mounted) _showGlassResultDialog(title: 'خطأ', message: result['message'] ?? 'كود غير صالح', isSuccess: false);
       }
     } catch (e) {
       if (mounted) {
         Navigator.pop(context); // Close loading
-        _showErrorDialog(ErrorUtils.getFriendlyErrorMessage(e));
+        _showGlassResultDialog(title: 'خطأ', message: ErrorUtils.getFriendlyErrorMessage(e), isSuccess: false);
       }
     }
   }
 
-  void _showErrorDialog(String message) {
-    showDialog(
+  Future<void> _showGlassResultDialog({required String title, required String message, required bool isSuccess, String? extra}) async {
+    return showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('خطأ'),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() => _isProcessing = false);
-              cameraController.start(); // Resume scanning
-            },
-            child: Text('حاول مرة أخرى'),
+      barrierDismissible: !isSuccess,
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: AppColors.getSurfaceColor(context).withOpacity(0.8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withOpacity(0.1)),
           ),
-        ],
+          title: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSuccess ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                color: isSuccess ? Colors.greenAccent : Colors.redAccent,
+                size: 72,
+              ),
+              const SizedBox(height: 20),
+              Text(message, textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Cairo')),
+              if (extra != null) ...[
+                const SizedBox(height: 10),
+                Text(extra, style: TextStyle(color: AppColors.getMutedTextColor(context), fontSize: 13, fontFamily: 'Cairo')),
+              ],
+            ],
+          ),
+          actions: [
+            Center(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  if (!isSuccess) {
+                    setState(() => _isProcessing = false);
+                    cameraController.start();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isSuccess ? Colors.greenAccent.withOpacity(0.2) : Colors.white10,
+                  foregroundColor: isSuccess ? Colors.greenAccent : Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                ),
+                child: Text(isSuccess ? 'موافق' : 'حاول مرة أخرى', style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -122,203 +149,211 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('مسح كود QR'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            color: AppColors.getTextColor(context),
-            icon: Icon(Icons.flash_on, color: Colors.yellow),
-            iconSize: 32.0,
-            onPressed: () => cameraController.toggleTorch(),
-          ),
-          IconButton(
-            color: AppColors.getTextColor(context),
-            icon: Icon(Icons.cameraswitch),
-            iconSize: 32.0,
-            onPressed: () => cameraController.switchCamera(),
-          ),
-        ],
-      ),
       extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('مسح كود QR', style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: Stack(
         children: [
           MobileScanner(
             controller: cameraController,
             onDetect: _onDetect,
           ),
+          // Gradient Dark Overlay for focus
           Container(
-            decoration: ShapeDecoration(
-              shape: QrScannerOverlayShape(
-                borderColor: AppColors.primaryPurple,
-                borderRadius: 10,
-                borderLength: 30,
-                borderWidth: 10,
-                cutOutSize: 300,
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.center,
+                radius: 0.8,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.5),
+                ],
               ),
             ),
           ),
+          // Scanner UI
+          _buildScannerOverlay(),
+          // Action Buttons
           Positioned(
-            bottom: 80,
+            bottom: 60,
             left: 0,
             right: 0,
-            child: Text(
-              'وجه الكاميرا نحو الكود للمسح',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppColors.getTextColor(context, secondary: true),
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildGlassButton(
+                  icon: Icons.flash_on_rounded,
+                  onTap: () => cameraController.toggleTorch(),
+                ),
+                const SizedBox(width: 30),
+                _buildGlassButton(
+                  icon: Icons.flip_camera_ios_rounded,
+                  onTap: () => cameraController.switchCamera(),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+
+  Widget _buildGlassButton({required IconData icon, required VoidCallback onTap}) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Icon(icon, color: Colors.white, size: 28),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildScannerOverlay() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.maxWidth * 0.7;
+        return Stack(
+          children: [
+            Center(
+              child: Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.primaryPurple.withOpacity(0.5), width: 2),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+            ),
+            // Corner Borders
+            Center(
+              child: CustomPaint(
+                size: Size(size, size),
+                painter: ScannerCornersPainter(color: AppColors.primaryPurple),
+              ),
+            ),
+            // Animated Scan Line
+            Center(
+              child: AnimatedBuilder(
+                animation: _scanLineController,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, (size * 0.8) * (_scanLineController.value - 0.5)),
+                    child: Container(
+                      width: size * 0.9,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            AppColors.primaryPurple.withOpacity(0.8),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              top: constraints.maxHeight * 0.5 + size * 0.6,
+              left: 0,
+              right: 0,
+              child: Column(
+                children: [
+                  const Text(
+                    'وجه الكاميرا نحو الكود',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, fontFamily: 'Cairo'),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'سيتم تفعيل المواد تلقائياً عند المسح',
+                    style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13, fontFamily: 'Cairo'),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
-// Custom Overlay Shape Painter (Basic Implementation)
-class QrScannerOverlayShape extends ShapeBorder {
-  final Color borderColor;
-  final double borderWidth;
-  final Color overlayColor;
-  final double borderRadius;
-  final double borderLength;
-  final double cutOutSize;
-
-  const QrScannerOverlayShape({
-    this.borderColor = Colors.red,
-    this.borderWidth = 10.0,
-    this.overlayColor = const Color.fromRGBO(0, 0, 0, 80),
-    this.borderRadius = 0,
-    this.borderLength = 40,
-    this.cutOutSize = 250,
-  });
+class ScannerCornersPainter extends CustomPainter {
+  final Color color;
+  ScannerCornersPainter({required this.color});
 
   @override
-  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
-
-  @override
-  Path getInnerPath(Rect rect, {TextDirection? textDirection}) {
-    return Path()
-      ..addRect(Rect.fromCenter(
-        center: rect.center,
-        width: cutOutSize,
-        height: cutOutSize,
-      ));
-  }
-
-  @override
-  Path getOuterPath(Rect rect, {TextDirection? textDirection}) {
-    Path getLeftTopPath(Rect rect) {
-      return Path()
-        ..moveTo(rect.left, rect.bottom)
-        ..lineTo(rect.left, rect.top)
-        ..lineTo(rect.right, rect.top);
-    }
-
-    return getLeftTopPath(rect);
-  }
-
-  @override
-  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
-    final width = rect.width;
-    // final borderWidthSize = width / 2; // Unused
-    // final height = rect.height; // Unused
-    // final borderOffset = borderWidth / 2; // Unused
-    final mBorderLength = borderLength > cutOutSize / 2 + borderWidth * 2
-        ? borderWidth * 2
-        : borderLength;
-    final mCutOutSize = cutOutSize < width ? cutOutSize : width - borderWidth;
-
-    final backgroundPaint = Paint()
-      ..color = overlayColor
-      ..style = PaintingStyle.fill;
-
-    final borderPaint = Paint()
-      ..color = borderColor
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 6
       ..style = PaintingStyle.stroke
-      ..strokeWidth = borderWidth;
+      ..strokeCap = StrokeCap.round;
 
-    final boxPaint = Paint()
-      ..color = borderColor
-      ..style = PaintingStyle.fill
-      ..blendMode = BlendMode.dstOut;
+    const length = 40.0;
+    const radius = 24.0;
 
-    final cutOutRect = Rect.fromCenter(
-      center: rect.center,
-      width: mCutOutSize,
-      height: mCutOutSize,
+    // Top Left
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, length)
+        ..lineTo(0, radius)
+        ..arcToPoint(const Offset(radius, 0), radius: const Radius.circular(radius))
+        ..lineTo(length, 0),
+      paint,
     );
 
-    canvas.saveLayer(
-      rect,
-      backgroundPaint,
+    // Top Right
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width - length, 0)
+        ..lineTo(size.width - radius, 0)
+        ..arcToPoint(Offset(size.width, radius), radius: const Radius.circular(radius))
+        ..lineTo(size.width, length),
+      paint,
     );
 
-    canvas.drawRect(
-      rect,
-      backgroundPaint,
+    // Bottom Right
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width, size.height - length)
+        ..lineTo(size.width, size.height - radius)
+        ..arcToPoint(Offset(size.width - radius, size.height), radius: const Radius.circular(radius))
+        ..lineTo(size.width - length, size.height),
+      paint,
     );
 
-    // Draw cut out
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        cutOutRect,
-        Radius.circular(borderRadius),
-      ),
-      boxPaint,
+    // Bottom Left
+    canvas.drawPath(
+      Path()
+        ..moveTo(length, size.height)
+        ..lineTo(radius, size.height)
+        ..arcToPoint(Offset(0, size.height - radius), radius: const Radius.circular(radius))
+        ..lineTo(0, size.height - length),
+      paint,
     );
-
-    canvas.restore();
-
-    final borderPath = Path()
-      ..moveTo(cutOutRect.left, cutOutRect.top + mBorderLength)
-      ..lineTo(cutOutRect.left, cutOutRect.top + borderRadius)
-      ..arcToPoint(
-        Offset(cutOutRect.left + borderRadius, cutOutRect.top),
-        radius: Radius.circular(borderRadius),
-      )
-      ..lineTo(cutOutRect.left + mBorderLength, cutOutRect.top)
-      ..moveTo(cutOutRect.right, cutOutRect.top + mBorderLength)
-      ..lineTo(cutOutRect.right, cutOutRect.top + borderRadius)
-      ..arcToPoint(
-        Offset(cutOutRect.right - borderRadius, cutOutRect.top),
-        radius: Radius.circular(borderRadius),
-        clockwise: false,
-      )
-      ..lineTo(cutOutRect.right - mBorderLength, cutOutRect.top)
-      ..moveTo(cutOutRect.right, cutOutRect.bottom - mBorderLength)
-      ..lineTo(cutOutRect.right, cutOutRect.bottom - borderRadius)
-      ..arcToPoint(
-        Offset(cutOutRect.right - borderRadius, cutOutRect.bottom),
-        radius: Radius.circular(borderRadius),
-      )
-      ..lineTo(cutOutRect.right - mBorderLength, cutOutRect.bottom)
-      ..moveTo(cutOutRect.left, cutOutRect.bottom - mBorderLength)
-      ..lineTo(cutOutRect.left, cutOutRect.bottom - borderRadius)
-      ..arcToPoint(
-        Offset(cutOutRect.left + borderRadius, cutOutRect.bottom),
-        radius: Radius.circular(borderRadius),
-        clockwise: false,
-      )
-      ..lineTo(cutOutRect.left + mBorderLength, cutOutRect.bottom);
-
-    canvas.drawPath(borderPath, borderPaint);
   }
 
   @override
-  ShapeBorder scale(double t) {
-    return QrScannerOverlayShape(
-      borderColor: borderColor,
-      borderWidth: borderWidth * t,
-      overlayColor: overlayColor,
-      borderRadius: borderRadius * t,
-      borderLength: borderLength * t,
-      cutOutSize: cutOutSize * t,
-    );
-  }
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

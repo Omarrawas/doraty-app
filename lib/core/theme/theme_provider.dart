@@ -9,8 +9,8 @@ enum AppThemeMode {
 }
 
 class ThemeProvider extends ChangeNotifier {
-  AppThemeMode _themeMode = AppThemeMode.system;
-  bool _useSystemTheme = true;
+  AppThemeMode _themeMode = AppThemeMode.dark;
+  bool _useSystemTheme = false;
 
   AppThemeMode get appThemeMode => _themeMode;
   bool get useSystemTheme => _useSystemTheme;
@@ -40,10 +40,11 @@ class ThemeProvider extends ChangeNotifier {
 
   Future<void> _loadThemePreference() async {
     final prefs = await SharedPreferences.getInstance();
-    final savedTheme = prefs.getString('theme_mode');
-    _useSystemTheme = prefs.getBool('use_system_theme') ?? true;
+    
+    _useSystemTheme = prefs.getBool('use_system_theme') ?? false;
+    final savedTheme = prefs.getString('theme_mode') ?? 'dark';
 
-    if (savedTheme != null && !_useSystemTheme) {
+    if (!_useSystemTheme) {
       switch (savedTheme) {
         case 'light':
           _themeMode = AppThemeMode.light;
@@ -52,10 +53,14 @@ class ThemeProvider extends ChangeNotifier {
           _themeMode = AppThemeMode.dark;
           break;
         case 'system':
-        default:
           _themeMode = AppThemeMode.system;
+          _useSystemTheme = true;
           break;
+        default: // Fallback to dark
+          _themeMode = AppThemeMode.dark;
       }
+    } else {
+      _themeMode = AppThemeMode.system;
     }
     notifyListeners();
   }

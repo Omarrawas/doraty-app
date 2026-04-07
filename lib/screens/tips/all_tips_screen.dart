@@ -9,11 +9,13 @@ class AllTipsScreen extends StatefulWidget {
   final bool showAppBar;
   final bool isVisible;
   final bool showCloseButton;
+  final String? initialTipId;
   const AllTipsScreen({
     super.key, 
     this.showAppBar = false,
     this.isVisible = true,
     this.showCloseButton = true,
+    this.initialTipId,
   });
 
   @override
@@ -124,10 +126,16 @@ class _AllTipsScreenState extends State<AllTipsScreen> with AutomaticKeepAliveCl
       );
     }
 
+    int initialIndex = 0;
+    if (widget.initialTipId != null) {
+      final index = _tips.indexWhere((t) => t.id == widget.initialTipId);
+      if (index != -1) initialIndex = index;
+    }
+
     // Directly return the TikTok-style vertical player
     return VerticalTipPlayer(
       tips: _tips,
-      initialIndex: 0,
+      initialIndex: initialIndex,
       isVisible: widget.isVisible,
       showCloseButton: widget.showCloseButton,
     );
