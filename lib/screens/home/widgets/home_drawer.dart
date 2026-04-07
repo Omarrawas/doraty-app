@@ -314,47 +314,47 @@ class _HomeDrawerState extends State<HomeDrawer> {
 
                         if (links['social_facebook']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              FontAwesomeIcons.facebook,
+                              const FaIcon(FontAwesomeIcons.facebook),
                               Colors.blue,
                               links['social_facebook']!));
                         }
                         if (links['social_instagram']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              FontAwesomeIcons.instagram,
+                              const FaIcon(FontAwesomeIcons.instagram),
                               Colors.pink,
                               links['social_instagram']!));
                         }
                         if (links['social_youtube']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              FontAwesomeIcons.youtube,
+                              const FaIcon(FontAwesomeIcons.youtube),
                               Colors.red,
                               links['social_youtube']!));
                         }
                         if (links['social_whatsapp']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              FontAwesomeIcons.whatsapp, Colors.green, links['social_whatsapp']!));
+                              const FaIcon(FontAwesomeIcons.whatsapp), Colors.green, links['social_whatsapp']!));
                         }
                         if (links['social_x_twitter']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              FontAwesomeIcons.xTwitter,
+                              const FaIcon(FontAwesomeIcons.xTwitter),
                               isDarkInner ? Colors.white : Colors.black87,
                               links['social_x_twitter']!));
                         }
                         if (links['social_tiktok']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              FontAwesomeIcons.tiktok,
+                              const FaIcon(FontAwesomeIcons.tiktok),
                               isDarkInner ? Colors.white : Colors.black87,
                               links['social_tiktok']!));
                         }
                         if (links['social_telegram']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              FontAwesomeIcons.telegram,
+                              const FaIcon(FontAwesomeIcons.telegram),
                               Colors.blueAccent,
                               links['social_telegram']!));
                         }
                         if (links['social_linkedin']?.isNotEmpty == true) {
                           availablePlatforms.add(_buildSocialIcon(
-                              FontAwesomeIcons.linkedin,
+                              const FaIcon(FontAwesomeIcons.linkedin),
                               Colors.blue[800] ?? Colors.blue,
                               links['social_linkedin']!));
                         }
@@ -535,7 +535,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
     );
   }
 
-  Widget _buildSocialIcon(IconData icon, Color color, String url) {
+  Widget _buildSocialIcon(Widget iconWidget, Color color, String url) {
     return InkWell(
       onTap: () async {
         final uri = Uri.parse(url);
@@ -550,7 +550,10 @@ class _HomeDrawerState extends State<HomeDrawer> {
           color: color.withOpacity(0.15),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, color: color, size: 28),
+        child: IconTheme(
+          data: IconThemeData(color: color, size: 28),
+          child: iconWidget,
+        ),
       ),
     );
   }
@@ -573,7 +576,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
               },
             ),
             ListTile(
-              leading: const Icon(FontAwesomeIcons.whatsapp, color: Colors.green),
+              leading: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.green),
               title: Text(_t(context, 'whatsapp_us')),
               onTap: () {
                 // WhatsApp logic

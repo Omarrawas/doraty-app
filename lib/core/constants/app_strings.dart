@@ -94,7 +94,8 @@ class AppStrings {
       'delete_account': 'حذف الحساب',
       'delete_account_desc': 'حذف حسابك وجميع بياناتك نهائياً',
       'delete_confirm_title': 'حذف الحساب',
-      'delete_confirm_desc': 'هل أنت متأكد من رغبتك في حذف حسابك؟ هذا الإجراء لا يمكن التراجع عنه.',
+      'delete_confirm_desc':
+          'هل أنت متأكد من رغبتك في حذف حسابك؟ هذا الإجراء لا يمكن التراجع عنه.',
       'delete': 'حذف',
       'support_dialog_title': 'الدعم الفني',
       'support_dialog_desc': 'يمكنك التواصل معنا عبر الوسائل التالية:',
@@ -123,7 +124,8 @@ class AppStrings {
       'no_courses_found': 'لم يتم العثور على دورات',
       'try_different_search': 'حاول البحث بكلمات مختلفة',
       'featured_courses': 'دورات مميزة',
-      'no_featured_courses_message': 'لم يتم العثور على أي دورات مميزة في الوقت الحالي.',
+      'no_featured_courses_message':
+          'لم يتم العثور على أي دورات مميزة في الوقت الحالي.',
       'welcome_with_name': 'أهلاً بك يا',
       'ready_to_learn': 'جاهز للتعلم؟',
       'search_course_hint': 'ابحث عن دورة...',
@@ -146,7 +148,8 @@ class AppStrings {
       'unenroll_error': 'حدث خطأ أثناء إلغاء التسجيل',
       'course_removed': 'تم إزالة الدورة بنجاح',
       'no_current_courses_desc': 'ابدأ بتصفح الدورات وسجل في اهتماماتك!',
-      'no_completed_courses_desc': 'بمجرد إنهاء الدورة، ستظهر هنا في قائمة المكتملة.',
+      'no_completed_courses_desc':
+          'بمجرد إنهاء الدورة، ستظهر هنا في قائمة المكتملة.',
       'current': 'الحالية',
       'admin_dashboard': 'لوحة تحكم المشرف',
       'teacher_dashboard': 'لوحة تحكم الأستاذ',
@@ -156,6 +159,14 @@ class AppStrings {
       'orders': 'طلباتي',
       'dashboard': 'لوحة التحكم',
       'performance_summary': 'ملخص الأداء',
+      'performance_summary_title': 'ملخص الأداء الشامل',
+      'active_users_label': 'نشطين (أسبوع)',
+      'weekly_growth_label': 'نمو أسبوعي',
+      'total_revenue_label': 'إجمالي الإيرادات',
+      'student_label': 'طالب',
+      'course_unit_label': 'دورة',
+      'attempt_unit_label': 'محاولة',
+      'total_attempts_title': 'إجمالي الاختبارات',
       'active_students': 'الطلاب النشطون',
       'total_revenue': 'إجمالي الدخل',
       'courses_count': 'عدد الكورسات',
@@ -164,8 +175,10 @@ class AppStrings {
       'no_orders_yet': 'لا توجد طلبات سابقة',
       'no_orders_desc': 'لم تقم بشراء أي دورات بعد. جميع فواتيرك ستظهر هنا.',
       'study_continue': 'استمر في الدراسة!',
-      'courses_not_completed_desc': 'لم تكمل أي دورة بالكامل حتى الآن. استمر في الدراسة!',
-      'enrolled_courses_desc': 'ابدأ رحلتك التعليمية اليوم واستكشف دوراتنا المتاحة.',
+      'courses_not_completed_desc':
+          'لم تكمل أي دورة بالكامل حتى الآن. استمر في الدراسة!',
+      'enrolled_courses_desc':
+          'ابدأ رحلتك التعليمية اليوم واستكشف دوراتنا المتاحة.',
       'no_courses_yet': 'لم تشتر أي دورة بعد',
       'course_description': 'وصف الدورة',
       'curriculum_tab': 'المنهاج',
@@ -207,7 +220,8 @@ class AppStrings {
       'reviews': 'تقييمات',
       'add_review': 'أضف تقييمك',
       'reviewed_already': 'لقد قمت بتقييم هذه الدورة',
-      'be_first_to_review': 'كن أول من يقيم هذه الدورة ويشارك تجربته مع الآخرين',
+      'be_first_to_review':
+          'كن أول من يقيم هذه الدورة ويشارك تجربته مع الآخرين',
       'anonymous_user': 'مستخدم',
       'your_comment_here': 'اكتب تعليقك هنا...',
       'publish': 'نشر',
@@ -271,8 +285,6 @@ class AppStrings {
       'discount_range_error': 'يجب أن تكون النسبة بين 0 و 100',
       'manage_my_courses': 'إدارة دوراتي',
       'manage_courses': 'إدارة الدورات',
-      'active_users_label': 'النشطين (أسبوع)',
-      'weekly_growth_label': 'نمو أسبوعي',
       'courses_count_title': 'دورة',
       'total_courses_count': 'إجمالي {count} دورة تعليمية',
       'general_specialization': 'تخصص عام',
@@ -289,7 +301,8 @@ class AppStrings {
       'no_courses_current': 'لا توجد دورات حالياً',
       'start_adding_first_course': 'ابدأ بإضافة أول دورة تعليمية للمنصة',
       'delete_course_title': 'حذف الدورة',
-      'delete_course_confirm': 'هل أنت متأكد من حذف هذه الدورة؟ سيتم حذف جميع الدروس المرتبطة بها.',
+      'delete_course_confirm':
+          'هل أنت متأكد من حذف هذه الدورة؟ سيتم حذف جميع الدروس المرتبطة بها.',
       'close': 'إغلاق',
       'subscribers': 'المشتركين',
       'completers': 'المكملين',
@@ -390,8 +403,10 @@ class AppStrings {
       'cv_label': 'السيرة الذاتية',
       'certificates_label': 'الشهادات العلمية',
       'short_bio_hint': 'نبذة قصيرة عنك',
-      'success_submit_teacher': 'تم إرسال طلبك بنجاح! سنقوم بمراجعته والرد عليك قريباً',
-      'select_sub_type_error': 'الرجاء اختيار نوع الاشتراك (دورات أو ساعات خصوصية)',
+      'success_submit_teacher':
+          'تم إرسال طلبك بنجاح! سنقوم بمراجعته والرد عليك قريباً',
+      'select_sub_type_error':
+          'الرجاء اختيار نوع الاشتراك (دورات أو ساعات خصوصية)',
       'fail_get_user_id': 'فشل الحصول على معرف المستخدم',
       'no_file_selected': 'لم يتم اختيار ملف (الحد الأقصى 5MB)',
       'change': 'تغيير',
@@ -426,7 +441,8 @@ class AppStrings {
       'featured_bundles': 'باقات مميزة',
       'login_title': 'تسجيل الدخول',
       'login_required_title': 'تسجيل الدخول مطلوب',
-      'login_required_desc': 'يرجى تسجيل الدخول للوصول إلى ملفك الشخصي ومتابعة دوراتك',
+      'login_required_desc':
+          'يرجى تسجيل الدخول للوصول إلى ملفك الشخصي ومتابعة دوراتك',
       'offline_mode': 'وضع الأوفلاين (بيانات مخزنة)',
       'ad_banner_title': 'خطط دراسية متميزة',
       'ad_banner_subtitle': 'اشترك بـ باقة دورات ووفر أكثر من 50%',
@@ -447,15 +463,20 @@ class AppStrings {
       'add_banner': 'إضافة إعلان جديد',
       'faq_search_hint': 'ابحث عن سؤال...',
       'faq_how_subscribe': 'كيف يمكنني الاشتراك في دورة؟',
-      'faq_how_subscribe_ans': 'يمكنك اختيار الدورة التي تريدها، ثم الضغط على زر "اشترك" في الأسفل، وإكمال عملية الدفع.',
+      'faq_how_subscribe_ans':
+          'يمكنك اختيار الدورة التي تريدها، ثم الضغط على زر "اشترك" في الأسفل، وإكمال عملية الدفع.',
       'faq_payment_methods': 'ما هي طرق الدفع المتاحة؟',
-      'faq_payment_methods_ans': 'ندعم حالياً التحويل البنكي، والدفع عند الاستلام في مراكزنا، وسنضيف قريباً الدفع الإلكتروني.',
+      'faq_payment_methods_ans':
+          'ندعم حالياً التحويل البنكي، والدفع عند الاستلام في مراكزنا، وسنضيف قريباً الدفع الإلكتروني.',
       'faq_certificate': 'هل أحصل على شهادة بعد إتمام الدورة؟',
-      'faq_certificate_ans': 'نعم، ستحصل على شهادة إتمام إلكترونية فور إنهاء جميع دروس الدورة والاختبارات الملحقة بها.',
+      'faq_certificate_ans':
+          'نعم، ستحصل على شهادة إتمام إلكترونية فور إنهاء جميع دروس الدورة والاختبارات الملحقة بها.',
       'faq_contact_teacher': 'كيف يمكنني التواصل مع المدرب؟',
-      'faq_contact_teacher_ans': 'يمكنك طرح استفساراتك عبر قسم التعليقات في صفحة الدرس، أو عبر الرسائل المباشرة مع المدرب.',
+      'faq_contact_teacher_ans':
+          'يمكنك طرح استفساراتك عبر قسم التعليقات في صفحة الدرس، أو عبر الرسائل المباشرة مع المدرب.',
       'faq_support': 'كيف أتواصل مع الدعم الفني؟',
-      'faq_support_ans': 'يمكنك التواصل معنا عبر صفحة "تواصل مع الدعم" الموجودة في القائمة الجانبية.',
+      'faq_support_ans':
+          'يمكنك التواصل معنا عبر صفحة "تواصل مع الدعم" الموجودة في القائمة الجانبية.',
       // Admin Dashboard
       'admin_users': 'المستخدمين',
       'admin_users_desc': 'إدارة جميع مستخدمي المنصة',
@@ -654,7 +675,8 @@ class AppStrings {
       'cancel_subscription': 'إلغاء الاشتراك',
       'no_matching_subscriptions': 'لا توجد اشتراكات مطابقة',
       'confirm_cancellation': 'تأكيد الإلغاء',
-      'cancel_subscription_confirm': 'هل أنت متأكد من تغيير حالة الاشتراك لهذا الطالب؟ سيؤدي هذا لإلغاء وصوله للمحتوى.',
+      'cancel_subscription_confirm':
+          'هل أنت متأكد من تغيير حالة الاشتراك لهذا الطالب؟ سيؤدي هذا لإلغاء وصوله للمحتوى.',
       'subscription_updated_success': 'تم تحديث حالة الاشتراك بنجاح',
       'select_filter_period': 'اختر فترة التصفية',
       'monthly': 'شهري',
@@ -766,14 +788,16 @@ class AppStrings {
       'qr_activate_title': 'هل لديك كود تفعيل؟',
       'charge_with_qr': 'اشحن بالكود (QR)',
       'order_under_review': 'طلبك قيد المراجعة',
-      'order_sent_success': 'تم إرسال طلبك بنجاح\nسيتم مراجعته والرد عليك قريباً',
+      'order_sent_success':
+          'تم إرسال طلبك بنجاح\nسيتم مراجعته والرد عليك قريباً',
       'order_number_prefix': 'رقم الطلب: ',
       'back_to_home': 'العودة للرئيسية',
       'payment_screen_title': 'الدفع',
       'phone_from': 'رقم الهاتف الذي حولت منه',
       'transaction_number': 'رقم العملية *',
       'transaction_hint': 'أدخل رقم عملية التحويل',
-      'transfer_complete_tip': 'بعد إتمام التحويل، أدخل رقم العملية الذي حصلت عليه من التطبيق',
+      'transfer_complete_tip':
+          'بعد إتمام التحويل، أدخل رقم العملية الذي حصلت عليه من التطبيق',
       'social_links_saved_success': 'تم حفظ الحسابات بنجاح!',
       'error_loading_links': 'خطأ في جلب الروابط',
       'error_saving_links': 'حدث خطأ أثناء الحفظ',
@@ -838,7 +862,7 @@ class AppStrings {
       'successfully_completed_course': 'Has successfully completed the course',
       'teacher_already_linked': 'Teacher is already linked to this course',
       'course_select_required': 'Please select a course',
-      
+
       'version': 'Version',
       'privacy_policy': 'Privacy Policy',
       'terms_conditions': 'Terms of Service',
@@ -875,7 +899,8 @@ class AppStrings {
       'delete_account': 'Delete Account',
       'delete_account_desc': 'Permanently delete your account and data',
       'delete_confirm_title': 'Delete Account',
-      'delete_confirm_desc': 'Are you sure you want to delete your account? This action cannot be undone.',
+      'delete_confirm_desc':
+          'Are you sure you want to delete your account? This action cannot be undone.',
       'delete': 'Delete',
       'support_dialog_title': 'Technical Support',
       'support_dialog_desc': 'You can contact us through:',
@@ -929,8 +954,10 @@ class AppStrings {
       'unenroll_success': 'Course removed from your list',
       'unenroll_error': 'Error during unenrollment',
       'course_removed': 'Course removed successfully',
-      'no_current_courses_desc': 'Start exploring courses and enroll in your interests!',
-      'no_completed_courses_desc': 'Once you finish a course, it will appear here in the completed list.',
+      'no_current_courses_desc':
+          'Start exploring courses and enroll in your interests!',
+      'no_completed_courses_desc':
+          'Once you finish a course, it will appear here in the completed list.',
       'current': 'Current',
       'admin_dashboard': 'Admin Dashboard',
       'teacher_dashboard': 'Teacher Dashboard',
@@ -947,10 +974,13 @@ class AppStrings {
       'user': 'User',
       'completed_courses_count_label': 'Completed Course(s)',
       'no_orders_yet': 'No previous orders',
-      'no_orders_desc': 'You haven\'t purchased any courses yet. All your bills will appear here.',
+      'no_orders_desc':
+          'You haven\'t purchased any courses yet. All your bills will appear here.',
       'study_continue': 'Keep studying!',
-      'courses_not_completed_desc': 'You haven\'t completed any course fully yet. Keep studying!',
-      'enrolled_courses_desc': 'Start your educational journey today and explore our available courses.',
+      'courses_not_completed_desc':
+          'You haven\'t completed any course fully yet. Keep studying!',
+      'enrolled_courses_desc':
+          'Start your educational journey today and explore our available courses.',
       'no_courses_yet': 'You haven\'t purchased any course yet',
       'course_description': 'Course Description',
       'curriculum_tab': 'Curriculum',
@@ -963,7 +993,8 @@ class AppStrings {
       'start_learning_message': 'Start by adding courses from the home screen',
       'keep_learning_message': 'Keep learning to complete your courses!',
       'confirm_delete_title': 'Confirm Delete',
-      'confirm_delete_message': 'Do you want to remove this course from your list?',
+      'confirm_delete_message':
+          'Do you want to remove this course from your list?',
       'error_label': 'Error',
       'buy_now': 'Buy Now',
       'enrolled_already': 'You are enrolled in this course',
@@ -987,7 +1018,8 @@ class AppStrings {
       'no_reviews_yet': 'No reviews yet',
       'add_review': 'Add your review',
       'reviewed_already': 'You have already reviewed this course',
-      'be_first_to_review': 'Be the first to review this course and share your experience',
+      'be_first_to_review':
+          'Be the first to review this course and share your experience',
       'anonymous_user': 'User',
       'your_comment_here': 'Write your comment here...',
       'publish': 'Publish',
@@ -1068,6 +1100,7 @@ class AppStrings {
       'student_label': 'Students',
       'course_unit_label': 'Courses',
       'attempt_unit_label': 'Attempts',
+      'total_attempts_title': 'Total Attempts',
       'level_label': 'Level',
       'recorded': 'Recorded',
       'live': 'Live',
@@ -1079,9 +1112,11 @@ class AppStrings {
       'exams': 'Exams',
       'edit': 'Edit',
       'no_courses_current': 'No courses found',
-      'start_adding_first_course': 'Start by adding the first educational course',
+      'start_adding_first_course':
+          'Start by adding the first educational course',
       'delete_course_title': 'Delete Course',
-      'delete_course_confirm': 'Are you sure you want to delete this course? All associated lessons will be deleted.',
+      'delete_course_confirm':
+          'Are you sure you want to delete this course? All associated lessons will be deleted.',
       'close': 'Close',
       'subscribers': 'Subscribers',
       'completers': 'Completers',
@@ -1161,7 +1196,8 @@ class AppStrings {
       'required_field': 'Required',
       'register_new_coach': 'Register New Coach',
       'participation_plans': 'Participation Plans',
-      'participation_intent_label': 'I want to join the platform for (Required):',
+      'participation_intent_label':
+          'I want to join the platform for (Required):',
       'phone_number_label': 'Phone Number',
       'country_label': 'Country',
       'specialization_label': 'Specialization',
@@ -1170,8 +1206,10 @@ class AppStrings {
       'cv_label': 'CV / Resume',
       'certificates_label': 'Academic Certificates',
       'short_bio_hint': 'Brief bio about yourself',
-      'success_submit_teacher': 'Your application has been submitted successfully! We will review it and get back to you soon.',
-      'select_sub_type_error': 'Please select a subscription type (Courses or Tutoring)',
+      'success_submit_teacher':
+          'Your application has been submitted successfully! We will review it and get back to you soon.',
+      'select_sub_type_error':
+          'Please select a subscription type (Courses or Tutoring)',
       'fail_get_user_id': 'Failed to get user ID',
       'no_file_selected': 'No file selected (Max 5MB)',
       'change': 'Change',
@@ -1206,7 +1244,8 @@ class AppStrings {
       'featured_bundles': 'Featured Bundles',
       'login_title': 'Login',
       'login_required_title': 'Login Required',
-      'login_required_desc': 'Please login to access your profile and track your courses',
+      'login_required_desc':
+          'Please login to access your profile and track your courses',
       'offline_mode': 'Offline Mode (Cached Data)',
       'ad_banner_title': 'Premium Study Plans',
       'ad_banner_subtitle': 'Subscribe to a bundle and save over 50%',
@@ -1223,15 +1262,20 @@ class AppStrings {
       'faq': 'FAQ',
       'faq_search_hint': 'Search for a question...',
       'faq_how_subscribe': 'How can I subscribe to a course?',
-      'faq_how_subscribe_ans': 'Choose the course you want, then click the "Enroll" button and complete the payment process.',
+      'faq_how_subscribe_ans':
+          'Choose the course you want, then click the "Enroll" button and complete the payment process.',
       'faq_payment_methods': 'What are the available payment methods?',
-      'faq_payment_methods_ans': 'Currently, we support bank transfers and cash at our centers. Electronic payments will be added soon.',
+      'faq_payment_methods_ans':
+          'Currently, we support bank transfers and cash at our centers. Electronic payments will be added soon.',
       'faq_certificate': 'Do I get a certificate after completing the course?',
-      'faq_certificate_ans': 'Yes, you will receive an electronic certificate immediately after completing all course lessons and tests.',
+      'faq_certificate_ans':
+          'Yes, you will receive an electronic certificate immediately after completing all course lessons and tests.',
       'faq_contact_teacher': 'How can I contact the instructor?',
-      'faq_contact_teacher_ans': 'You can ask your questions via the comments section or direct messages with the instructor.',
+      'faq_contact_teacher_ans':
+          'You can ask your questions via the comments section or direct messages with the instructor.',
       'faq_support': 'How do I contact technical support?',
-      'faq_support_ans': 'You can contact us through the "Contact Support" page in the side drawer.',
+      'faq_support_ans':
+          'You can contact us through the "Contact Support" page in the side drawer.',
       'dark_mode_title': 'Dark Mode',
       'banners_management': 'Banners Management',
       'no_banners_found': 'No banners found',
@@ -1423,8 +1467,10 @@ class AppStrings {
       'cancel_subscription': 'Cancel Subscription',
       'no_matching_subscriptions': 'No matching subscriptions',
       'confirm_cancellation': 'Confirm Cancellation',
-      'cancel_subscription_confirm': 'Are you sure you want to change the subscription status for this student? This will revoke their access to the content.',
-      'subscription_updated_success': 'Subscription status updated successfully',
+      'cancel_subscription_confirm':
+          'Are you sure you want to change the subscription status for this student? This will revoke their access to the content.',
+      'subscription_updated_success':
+          'Subscription status updated successfully',
       'select_filter_period': 'Select Filter Period',
       'monthly': 'Monthly',
       'yearly': 'Yearly',
@@ -1550,14 +1596,16 @@ class AppStrings {
       'qr_activate_title': 'Have an activation code?',
       'charge_with_qr': 'Charge with Code (QR)',
       'order_under_review': 'Your order is under review',
-      'order_sent_success': 'Your request has been sent successfully\nIt will be reviewed and you will be notified soon',
+      'order_sent_success':
+          'Your request has been sent successfully\nIt will be reviewed and you will be notified soon',
       'order_number_prefix': 'Order Number: ',
       'back_to_home': 'Back to Home',
       'payment_screen_title': 'Payment',
       'phone_from': 'Phone number you transferred from',
       'transaction_number': 'Transaction Number *',
       'transaction_hint': 'Enter the transfer transaction number',
-      'transfer_complete_tip': 'After completing the transfer, enter the transaction number you received from the app',
+      'transfer_complete_tip':
+          'After completing the transfer, enter the transaction number you received from the app',
       'bundles_label': 'Related Packages',
       'no_bundles_available': 'No packages available at the moment',
       'social_links_saved_success': 'Social links saved successfully!',
