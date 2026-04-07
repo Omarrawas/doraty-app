@@ -534,6 +534,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     t: _t,
                     isAuthenticated: authService.isAuthenticated,
                     isLoadingProfile: authService.isLoadingProfile,
+                    isDarkMode: Provider.of<ThemeProvider>(context).isDarkMode,
                     onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
                     onNotificationTap: () => context.push('/notifications'),
                   ),
@@ -2130,6 +2131,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   final bool isAuthenticated;
   final bool isLoadingProfile;
+  final bool isDarkMode;
 
   _HomeHeaderDelegate({
     required this.userName,
@@ -2139,6 +2141,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.onNotificationTap,
     required this.isAuthenticated,
     required this.isLoadingProfile,
+    required this.isDarkMode,
   });
 
   @override
@@ -2197,15 +2200,10 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.school_rounded,
-                    color: AppColors.primaryPurple,
-                    size: 28,
-                    shadows: [
-                      Shadow(
-                          color: AppColors.primaryPurple.withOpacity(0.5),
-                          blurRadius: 10)
-                    ],
+                  Image.asset(
+                    'assets/images/logo.png',
+                    width: 32,
+                    height: 32,
                   ),
                   SizedBox(width: 8),
                   Text(
@@ -2354,6 +2352,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
     return oldDelegate.userName != userName ||
         oldDelegate.isAuthenticated != isAuthenticated ||
         oldDelegate.isLoadingProfile != isLoadingProfile ||
-        oldDelegate.hasUnreadNotifications != hasUnreadNotifications;
+        oldDelegate.hasUnreadNotifications != hasUnreadNotifications ||
+        oldDelegate.isDarkMode != isDarkMode;
   }
 }

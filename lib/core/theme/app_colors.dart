@@ -414,6 +414,10 @@ class AppColors {
   static Color getElevatedSurfaceColor(BuildContext context) =>
       of(context).surfaceElevated;
 
+  static Color getBackgroundColor(BuildContext context) => of(context).background;
+
+  static Color getScaffoldBackgroundColor(BuildContext context) => of(context).scaffoldBackground;
+
   static Color getInputFillColor(BuildContext context,
       {bool stronger = false}) {
     final palette = of(context);

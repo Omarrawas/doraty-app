@@ -539,42 +539,10 @@ class _LessonScreenState extends State<LessonScreen>
       );
     }
 
-    if (_isYoutube &&
-        _youtubePlayerController != null &&
-        !kIsWeb &&
-        defaultTargetPlatform != TargetPlatform.windows) {
-      return YoutubePlayerBuilder(
-        onEnterFullScreen: () {
-          SystemChrome.setPreferredOrientations([
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ]);
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-        },
-        onExitFullScreen: () {
-          SystemChrome.setPreferredOrientations([
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-          ]);
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        },
-        player: YoutubePlayer(
-          controller: _youtubePlayerController!,
-          showVideoProgressIndicator: false,
-        ),
-        builder: (context, player) {
-          return _buildScaffold(
-            context,
-            videoPlayer: _buildVideoWithOverlay(
-              player: player,
-              onToggleFullScreen: () => _handleToggleFullScreen(),
-            ),
-          );
-        },
-      );
-    }
-
-    Widget playerWidget = _buildVideoPlayer();
+    // For mobile YouTube we wrap the player widget in a minimal YoutubePlayerBuilder
+    // so the YoutubePlayer has the required ancestor. Fullscreen is handled by our
+    // own _YoutubeFullscreenPage (pushed manually) to keep control overlay visible.
+    final Widget playerWidget = _buildVideoPlayer();
     return _buildScaffold(
       context,
       videoPlayer: _buildVideoWithOverlay(
@@ -585,16 +553,41 @@ class _LessonScreenState extends State<LessonScreen>
   }
 
   void _handleToggleFullScreen() {
-    final bool isCurrentlyFullScreen = _isYoutube
-        ? (_youtubePlayerController?.value.isFullScreen ?? false)
-        : (_chewieController?.isFullScreen ?? false);
+    // YouTube on mobile: push our own fullscreen page so controls remain visible.
+    if (_isYoutube && !kIsWeb && defaultTargetPlatform != TargetPlatform.windows) {
+      if (_youtubePlayerController == null) return;
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.landscapeLeft,
+        DeviceOrientation.landscapeRight,
+      ]);
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => _YoutubeFullscreenPage(
+            controller: _youtubePlayerController!,
+            lesson: lesson,
+            courseTitle: courseTitle,
+          ),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      ).then((_) {
+        if (mounted) {
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+        }
+      });
+      return;
+    }
 
+    // Non-YouTube (direct video via Chewie)
+    final bool isCurrentlyFullScreen = _chewieController?.isFullScreen ?? false;
     if (isCurrentlyFullScreen) {
-      if (_isYoutube) {
-        _youtubePlayerController?.toggleFullScreenMode();
-      } else {
-        _chewieController?.exitFullScreen();
-      }
+      _chewieController?.exitFullScreen();
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
@@ -602,46 +595,40 @@ class _LessonScreenState extends State<LessonScreen>
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     } else {
       double aspectRatio = 16 / 9;
-      if (!_isYoutube &&
-          _videoPlayerController != null &&
+      if (_videoPlayerController != null &&
           _videoPlayerController!.value.isInitialized) {
         aspectRatio = _videoPlayerController!.value.aspectRatio;
       }
-
       if (aspectRatio < 1.0) {
-        SystemChrome.setPreferredOrientations([
-          DeviceOrientation.portraitUp,
-        ]);
+        SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
       } else {
         SystemChrome.setPreferredOrientations([
           DeviceOrientation.landscapeLeft,
           DeviceOrientation.landscapeRight,
         ]);
       }
-
-      if (_isYoutube) {
-        _youtubePlayerController?.toggleFullScreenMode();
-      } else {
-        _chewieController?.enterFullScreen();
-      }
+      _chewieController?.enterFullScreen();
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     }
   }
 
   Widget _buildVideoWithOverlay(
       {required Widget player, VoidCallback? onToggleFullScreen}) {
+    final bool showCustomControls = !(_isYoutube && (kIsWeb || defaultTargetPlatform == TargetPlatform.windows));
+
     return Stack(
       fit: StackFit.expand,
       children: [
         player,
-        VideoPlayerControls(
-          isYoutube: _isYoutube,
-          youtubeController: _youtubePlayerController,
-          videoController: _videoPlayerController,
-          lesson: lesson,
-          courseTitle: courseTitle,
-          onToggleFullScreen: onToggleFullScreen,
-        ),
+        if (showCustomControls)
+          VideoPlayerControls(
+            isYoutube: _isYoutube,
+            youtubeController: _youtubePlayerController,
+            videoController: _videoPlayerController,
+            lesson: lesson,
+            courseTitle: courseTitle,
+            onToggleFullScreen: onToggleFullScreen,
+          ),
       ],
     );
   }
@@ -653,8 +640,7 @@ class _LessonScreenState extends State<LessonScreen>
       ),
       child: Scaffold(
         key: _scaffoldKey,
-        backgroundColor: AppColors.primaryDark,
-        endDrawer: _buildEquationDrawer(),
+        backgroundColor: AppColors.getBackgroundColor(context),
         body: NestedScrollView(
           headerSliverBuilder: (context, innerBoxIsScrolled) {
             return [
@@ -662,7 +648,7 @@ class _LessonScreenState extends State<LessonScreen>
                 expandedHeight: 250,
                 pinned: true,
                 stretch: true,
-                backgroundColor: AppColors.primaryDark,
+                backgroundColor: AppColors.getBackgroundColor(context),
                 elevation: 0,
                 automaticallyImplyLeading: false,
                 leading: PointerInterceptor(
@@ -682,24 +668,7 @@ class _LessonScreenState extends State<LessonScreen>
                     ),
                   ),
                 ),
-                actions: [
-                  PointerInterceptor(
-                    child: Container(
-                      margin: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.3),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white24, width: 1),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.functions, color: Colors.white, size: 20),
-                        onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
-                        tooltip: 'شريط المعادلات',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                ],
+                // Removed actions containing equations button as requested
                 flexibleSpace: FlexibleSpaceBar(
                   stretchModes: const [
                     StretchMode.zoomBackground,
@@ -712,8 +681,8 @@ class _LessonScreenState extends State<LessonScreen>
                     opacity: innerBoxIsScrolled ? 1.0 : 0.0,
                     child: Text(
                       lesson.getLocalizedTitle(Provider.of<LocaleProvider>(context).locale),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context),
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Cairo',
@@ -775,8 +744,8 @@ class _LessonScreenState extends State<LessonScreen>
                 delegate: LessonSliverAppBarDelegate(
                   child: Container(
                     decoration: BoxDecoration(
-                      color: AppColors.primaryDark,
-                      border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.05), width: 1)),
+                      color: AppColors.getBackgroundColor(context),
+                      border: Border(bottom: BorderSide(color: AppColors.getBorderColor(context), width: 1)),
                     ),
                     child: TabBar(
                       controller: _tabController,
@@ -785,7 +754,7 @@ class _LessonScreenState extends State<LessonScreen>
                       indicatorColor: AppColors.primaryPurple,
                       indicatorWeight: 3,
                       labelColor: AppColors.primaryPurple,
-                      unselectedLabelColor: Colors.white60,
+                      unselectedLabelColor: AppColors.getTextColor(context, secondary: true),
                       labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, fontFamily: 'Cairo'),
                       tabs: [
                         Tab(text: _t('description_tab')),
@@ -846,7 +815,7 @@ class _LessonScreenState extends State<LessonScreen>
       return Container(
         width: double.infinity,
         height: 250,
-        color: Colors.black,
+        color: AppColors.getSurfaceColor(context),
         child: Center(
           child: Text(_t('no_video_available'),
               style: TextStyle(color: AppColors.getTextColor(context))),
@@ -855,6 +824,7 @@ class _LessonScreenState extends State<LessonScreen>
     }
 
     if (_isYoutube) {
+      // Web / Windows: use IFrame-based player.
       if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows) {
         final videoId = YoutubePlayer.convertUrlToId(lesson.videoUrl);
         if (videoId != null) {
@@ -866,9 +836,18 @@ class _LessonScreenState extends State<LessonScreen>
         }
       }
 
-      // In YoutubePlayerBuilder, we shouldn't build it again here if used in builder
-      // But for the non-youtube path (_isYoutube = false), this is skipped anyway.
-      // If we reach here and _isYoutube is true, it means _youtubePlayerController is null
+      // Mobile: wrap with minimal YoutubePlayerBuilder so YoutubePlayer has
+      // a valid ancestor. Fullscreen is handled via _YoutubeFullscreenPage.
+      if (_youtubePlayerController != null) {
+        return YoutubePlayerBuilder(
+          player: YoutubePlayer(
+            controller: _youtubePlayerController!,
+            showVideoProgressIndicator: false,
+          ),
+          builder: (_, player) => player,
+        );
+      }
+
       return Container(
           height: 250,
           color: Colors.black,
@@ -2516,9 +2495,9 @@ class _LessonScreenState extends State<LessonScreen>
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.primaryDark,
+        color: AppColors.getBackgroundColor(context),
         border: Border(
-            top: BorderSide(color: Colors.white.withOpacity(0.05), width: 1)),
+            top: BorderSide(color: AppColors.getBorderColor(context), width: 1)),
       ),
       child: SafeArea(
         top: false,
@@ -2532,8 +2511,8 @@ class _LessonScreenState extends State<LessonScreen>
                   icon: Icon(Icons.chevron_right, size: 18),
                   label: Text('الدرس السابق'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white70,
-                    side: BorderSide(color: Colors.white12),
+                    foregroundColor: AppColors.getTextColor(context, secondary: true),
+                    side: BorderSide(color: AppColors.getBorderColor(context)),
                     padding: EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
@@ -2579,79 +2558,7 @@ class _LessonScreenState extends State<LessonScreen>
     );
   }
 
-  Widget _buildEquationDrawer() {
-    return Drawer(
-      backgroundColor: AppColors.primaryDark,
-      child: SafeArea(
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.primaryPurple.withOpacity(0.1),
-                border: const Border(bottom: BorderSide(color: Colors.white12)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.functions, color: AppColors.primaryPurple, size: 28),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'شريط المعادلات',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Cairo',
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white60),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(20),
-                children: [
-                  _buildEquationItem('معادلات مقترحة لهذا الدرس:'),
-                  _buildEquationItem(r'E = mc^2'),
-                  _buildEquationItem(r'a^2 + b^2 = c^2'),
-                  _buildEquationItem(r'F = G \frac{m_1 m_2}{r^2}'),
-                  _buildEquationItem(r'\sin^2 \theta + \cos^2 \theta = 1'),
-                  _buildEquationItem(r'x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}'),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'استخدم ميزة السحب للجانب لعرض المعادلات في أي وقت.',
-                    style: TextStyle(color: Colors.white38, fontSize: 12, fontFamily: 'Cairo'),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildEquationItem(String latex) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white10),
-      ),
-      child: TexViewWidget(
-        latex,
-        style: const TextStyle(color: Colors.white, fontSize: 16, height: 1.5),
-      ),
-    );
-  }
 
 }
 
@@ -2678,5 +2585,59 @@ class LessonSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   @override
   bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) {
     return true;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Custom fullscreen page for YouTube on mobile.
+// Shown by _handleToggleFullScreen() so our VideoPlayerControls overlay is
+// always visible (play/pause, progress bar, fullscreen-exit button).
+// ─────────────────────────────────────────────────────────────────────────────
+class _YoutubeFullscreenPage extends StatelessWidget {
+  final YoutubePlayerController controller;
+  final Lesson lesson;
+  final String courseTitle;
+
+  const _YoutubeFullscreenPage({
+    required this.controller,
+    required this.lesson,
+    this.courseTitle = '',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Wrap in YoutubePlayerBuilder so internal YoutubePlayer lookups work.
+    return YoutubePlayerBuilder(
+      player: YoutubePlayer(
+        controller: controller,
+        showVideoProgressIndicator: false,
+      ),
+      builder: (context, player) {
+        return Scaffold(
+          backgroundColor: Colors.black,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              // Centre the 16:9 video inside the landscape screen.
+              Center(
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: player,
+                ),
+              ),
+              // Our custom controls overlay.
+              VideoPlayerControls(
+                isYoutube: true,
+                youtubeController: controller,
+                lesson: lesson,
+                courseTitle: courseTitle,
+                // Pressing the fullscreen toggle or the back arrow closes the page.
+                onToggleFullScreen: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }

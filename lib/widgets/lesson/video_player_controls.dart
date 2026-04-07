@@ -118,130 +118,137 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
   @override
   Widget build(BuildContext context) {
-    final bool isFullScreen = widget.isYoutube
-        ? (widget.youtubeController?.value.isFullScreen ?? false)
-        : (MediaQuery.of(context).orientation == Orientation.landscape);
+    // Use device orientation to determine fullscreen state.
+    // For YouTube on mobile we push our own _YoutubeFullscreenPage (landscape)
+    // so controller.value.isFullScreen never changes — orientation is the ground truth.
+    final bool isFullScreen =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
-    return PointerInterceptor(
-      child: GestureDetector(
-        onTap: _toggleVisibility,
-        behavior: HitTestBehavior.opaque,
-        onDoubleTapDown: (details) {
-          if (_isLocked) return;
-          final screenWidth = MediaQuery.of(context).size.width;
-          if (details.globalPosition.dx < screenWidth / 2) {
-            _seekRelative(-10);
-          } else {
-            _seekRelative(10);
-          }
-        },
-        child: Container(
-          color: Colors.transparent,
-          child: Stack(
-            children: [
-              // Black fading overlay
-              AnimatedOpacity(
-                opacity: _isVisible ? 1.0 : 0.0,
-                duration: Duration(milliseconds: 300),
-                child: Container(color: Colors.black54),
-              ),
-
-              if (_isVisible)
-                SafeArea(
-                  child: Stack(
-                    children: [
-                      // Top Bar
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Colors.black54, Colors.transparent],
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                                onPressed: () => Navigator.pop(context),
-                              ),
-                              const SizedBox(width: 8),
-                              if (!_isLocked)
-                                Expanded(
-                                  child: Text(
-                                    widget.lesson?.getLocalizedTitle(
-                                      Provider.of<LocaleProvider>(context, listen: false).locale
-                                    ) ?? '',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'Cairo',
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              if (!_isLocked) ...[
-                                _buildSpeedButton(),
-                              ],
-                              IconButton(
-                                icon: Icon(_isLocked ? Icons.lock : Icons.lock_open,
-                                    color: Colors.white),
-                                onPressed: () {
-                                  setState(() {
-                                    _isLocked = !_isLocked;
-                                    if (!_isLocked) _startHideTimer();
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // Center Controls
-                      if (!_isLocked)
-                        Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildControlButton(
-                                  Icons.replay_10, () => _seekRelative(-10)),
-                              const SizedBox(width: 40),
-                              _buildPlayPauseButton(),
-                              const SizedBox(width: 40),
-                              _buildControlButton(
-                                  Icons.forward_10, () => _seekRelative(10)),
-                            ],
-                          ),
-                        ),
-
-                      // Bottom Progress Bar
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          decoration: const BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                              colors: [Colors.black54, Colors.transparent],
-                            ),
-                          ),
-                          child: _buildControlBar(isFullScreen),
-                        ),
-                      ),
-                    ],
-                  ),
+    return IgnorePointer(
+      // When controls are hidden AND not in locked state, let taps pass
+      // through to whatever is below the video area (tabs, buttons, etc.)
+      ignoring: !_isVisible && !_isLocked,
+      child: PointerInterceptor(
+        child: GestureDetector(
+          onTap: _toggleVisibility,
+          behavior: HitTestBehavior.opaque,
+          onDoubleTapDown: (details) {
+            if (_isLocked) return;
+            final screenWidth = MediaQuery.of(context).size.width;
+            if (details.globalPosition.dx < screenWidth / 2) {
+              _seekRelative(-10);
+            } else {
+              _seekRelative(10);
+            }
+          },
+          child: Container(
+            color: Colors.transparent,
+            child: Stack(
+              children: [
+                // Black fading overlay
+                AnimatedOpacity(
+                  opacity: _isVisible ? 1.0 : 0.0,
+                  duration: Duration(milliseconds: 300),
+                  child: Container(color: Colors.black54),
                 ),
-            ],
+
+                if (_isVisible)
+                  SafeArea(
+                    child: Stack(
+                      children: [
+                        // Top Bar
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Colors.black54, Colors.transparent],
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                                const SizedBox(width: 8),
+                                if (!_isLocked)
+                                  Expanded(
+                                    child: Text(
+                                      widget.lesson?.getLocalizedTitle(
+                                        Provider.of<LocaleProvider>(context, listen: false).locale
+                                      ) ?? '',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Cairo',
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                if (!_isLocked) ...[
+                                  _buildSpeedButton(),
+                                ],
+                                IconButton(
+                                  icon: Icon(_isLocked ? Icons.lock : Icons.lock_open,
+                                      color: Colors.white),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isLocked = !_isLocked;
+                                      if (!_isLocked) _startHideTimer();
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        // Center Controls
+                        if (!_isLocked)
+                          Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _buildControlButton(
+                                    Icons.replay_10, () => _seekRelative(-10)),
+                                const SizedBox(width: 40),
+                                _buildPlayPauseButton(),
+                                const SizedBox(width: 40),
+                                _buildControlButton(
+                                    Icons.forward_10, () => _seekRelative(10)),
+                              ],
+                            ),
+                          ),
+
+                        // Bottom Progress Bar
+                        Positioned(
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                colors: [Colors.black54, Colors.transparent],
+                              ),
+                            ),
+                            child: _buildControlBar(isFullScreen),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),

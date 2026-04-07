@@ -42,7 +42,7 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
         (int viewId) {
           final iframe = html.IFrameElement()
             ..src =
-                'https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=0&rel=0&modestbranding=1&fs=0&controls=0&disablekb=1&iv_load_policy=3'
+                'https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=0&rel=0&modestbranding=1&fs=1&controls=1&disablekb=0&iv_load_policy=3'
             ..style.border = 'none'
             ..style.width = '100%'
             ..style.height = '100%';
@@ -79,7 +79,7 @@ class _YoutubePlayerWebWindowsState extends State<YoutubePlayerWebWindows> {
         child: InAppWebView(
           initialUrlRequest: URLRequest(
             url: WebUri(
-                'https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=0&rel=0&modestbranding=1&fs=0&controls=0&disablekb=1&iv_load_policy=3'),
+                'https://www.youtube-nocookie.com/embed/${widget.videoId}?autoplay=0&rel=0&modestbranding=1&fs=1&controls=1&disablekb=0&iv_load_policy=3'),
           ),
           initialSettings: InAppWebViewSettings(
             useWideViewPort: true,

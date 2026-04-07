@@ -1161,7 +1161,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             label: Text(_t((_course!.deliveryMode == 'recorded') ? 'course_content' : 'sessions_tab')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
-              foregroundColor: Colors.white,
+              foregroundColor: AppColors.primaryPurple,
               minimumSize: Size(double.infinity, 60),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),

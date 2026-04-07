@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../models/course.dart';
@@ -54,14 +55,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
       ),
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0F0F1E),
-              Color(0xFF1A1A2E),
-            ],
-          ),
+          gradient: AppColors.getBackgroundGradient(context),
         ),
         child: SafeArea(
           child: SingleChildScrollView(
@@ -149,6 +143,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     required bool isRTL,
   }) {
     final isExpanded = _expandedSections[sectionIndex] ?? false;
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
@@ -159,9 +154,12 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
+              colors: isDark ? [
                 Colors.white.withOpacity(0.15),
                 Colors.white.withOpacity(0.05),
+              ] : [
+                Colors.white.withOpacity(0.8),
+                Colors.white.withOpacity(0.4),
               ],
             ),
             borderRadius: BorderRadius.circular(20),
@@ -226,9 +224,10 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
 
   Widget _buildLessonItem(Lesson lesson, bool isLast, bool isRTL) {
     final canAccess = lesson.isFree || widget.isEnrolled;
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     return Column(
       children: [
-        Divider(height: 1, color: AppColors.getMutedTextColor(context)),
+        Divider(height: 1, color: AppColors.getMutedTextColor(context).withOpacity(isDark ? 0.3 : 0.15)),
         Material(
           color: Colors.transparent,
           child: InkWell(
@@ -267,12 +266,12 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
                     decoration: BoxDecoration(
                       color: canAccess 
                           ? AppColors.primaryPurple.withOpacity(0.2)
-                          : Colors.white.withOpacity(0.1),
+                          : (isDark ? Colors.white.withOpacity(0.1) : Colors.black.withOpacity(0.05)),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       canAccess ? Icons.play_arrow_rounded : Icons.lock_outline,
-                      color: canAccess ? AppColors.primaryPurple : Colors.white.withOpacity(0.4),
+                      color: canAccess ? AppColors.primaryPurple : (isDark ? Colors.white.withOpacity(0.4) : Colors.black.withOpacity(0.4)),
                       size: 20,
                     ),
                   ),
