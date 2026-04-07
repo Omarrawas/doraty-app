@@ -739,31 +739,41 @@ class _LessonScreenState extends State<LessonScreen>
                   ),
                 ),
               ),
-              SliverPersistentHeader(
-                pinned: true,
-                delegate: LessonSliverAppBarDelegate(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.getBackgroundColor(context),
-                      border: Border(bottom: BorderSide(color: AppColors.getBorderColor(context), width: 1)),
-                    ),
-                    child: TabBar(
-                      controller: _tabController,
-                      isScrollable: true,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      indicatorColor: AppColors.primaryPurple,
-                      indicatorWeight: 3,
-                      labelColor: AppColors.primaryPurple,
-                      unselectedLabelColor: AppColors.getTextColor(context, secondary: true),
-                      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, fontFamily: 'Cairo'),
-                      tabs: [
-                        Tab(text: _t('description_tab')),
-                        Tab(text: _t('attachments_tab')),
-                        Tab(text: _t('interactive_tab')),
-                        Tab(text: _t('exams_tab')),
-                        Tab(text: _t('notes_tab')),
-                        Tab(text: _t('questions_tab')),
-                      ],
+              SliverOverlapAbsorber(
+                handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                sliver: SliverPersistentHeader(
+                  pinned: true,
+                  delegate: LessonSliverAppBarDelegate(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.getBackgroundColor(context),
+                        border: Border(
+                          bottom: BorderSide(
+                              color: AppColors.getBorderColor(context), width: 1),
+                        ),
+                      ),
+                      child: TabBar(
+                        controller: _tabController,
+                        isScrollable: true,
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        indicatorColor: AppColors.primaryPurple,
+                        indicatorWeight: 3,
+                        labelColor: AppColors.primaryPurple,
+                        unselectedLabelColor:
+                            AppColors.getTextColor(context, secondary: true),
+                        labelStyle: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            fontFamily: 'Cairo'),
+                        tabs: [
+                          Tab(text: _t('description_tab')),
+                          Tab(text: _t('attachments_tab')),
+                          Tab(text: _t('interactive_tab')),
+                          Tab(text: _t('exams_tab')),
+                          Tab(text: _t('notes_tab')),
+                          Tab(text: _t('questions_tab')),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -2568,22 +2578,19 @@ class LessonSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   final Widget child;
 
   @override
-  double get minExtent => 80;
+  double get minExtent => 48;
 
   @override
-  double get maxExtent => 80;
+  double get maxExtent => 48;
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return SizedBox(
-      height: 80,
-      child: child,
-    );
+    return SizedBox.expand(child: child);
   }
 
   @override
-  bool shouldRebuild(SliverPersistentHeaderDelegate oldDelegate) {
+  bool shouldRebuild(LessonSliverAppBarDelegate oldDelegate) {
     return true;
   }
 }
