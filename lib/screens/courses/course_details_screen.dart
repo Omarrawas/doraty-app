@@ -45,6 +45,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   // Lessons data
   List<Map<String, dynamic>> _lessons = [];
   List<Chapter> _chapters = [];
+  bool _isLoadingLessons = false;
+  bool _isLoadingChapters = false;
 
   // Reviews data
   List<Map<String, dynamic>> _reviews = [];
@@ -66,6 +68,14 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 
   bool _isLoadingCourse = false;
   Course? _course;
+
+  bool get _isContentLoading {
+    if (_course == null) return false;
+    if (_course!.deliveryMode == 'recorded') {
+      return _isLoadingLessons || _isLoadingChapters;
+    }
+    return _isLoadingLessons;
+  }
 
   @override
   void initState() {
@@ -244,12 +254,18 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 
   Future<void> _loadLessons() async {
     if (_course == null) return;
+    if (mounted) {
+      setState(() {
+        _isLoadingLessons = true;
+      });
+    }
     try {
       if (_course!.deliveryMode == 'live' || _course!.deliveryMode == 'in_person') {
         final sessions = await _databaseService.getCourseSessions(_course!.id);
         if (mounted) {
           setState(() {
             _lessons = sessions;
+            _isLoadingLessons = false;
           });
         }
       } else {
@@ -257,26 +273,43 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         if (mounted) {
           setState(() {
             _lessons = lessons;
+            _isLoadingLessons = false;
           });
         }
       }
     } catch (e) {
       debugPrint('Error loading lessons or sessions: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingLessons = false;
+        });
+      }
     }
   }
 
   Future<void> _loadChapters() async {
     if (_course == null) return;
+    if (mounted) {
+      setState(() {
+        _isLoadingChapters = true;
+      });
+    }
     try {
       final chapters = await _databaseService.getChapters(_course!.id);
 
       if (mounted) {
         setState(() {
           _chapters = chapters;
+          _isLoadingChapters = false;
         });
       }
     } catch (e) {
       debugPrint('Error loading chapters: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingChapters = false;
+        });
+      }
     }
   }
 
@@ -1138,14 +1171,19 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   Widget _buildCourseContentButton(bool isRTL) {
+    final isRecorded = _course!.deliveryMode == 'recorded';
+    final buttonText = _isContentLoading
+        ? 'جاري تحميل المحتوى...'
+        : _t(isRecorded ? 'course_content' : 'sessions_tab');
+
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Column(
         crossAxisAlignment:
             isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          ElevatedButton.icon(
-            onPressed: () {
+          ElevatedButton(
+            onPressed: _isContentLoading ? null : () {
               final id = _course?.slug ?? _course?.id;
               if (id == null) return;
               
@@ -1157,8 +1195,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                 'isEnrolled': _isEnrolled,
               });
             },
-            icon: Icon((_course!.deliveryMode == 'recorded') ? Icons.list_alt_rounded : Icons.calendar_month_rounded),
-            label: Text(_t((_course!.deliveryMode == 'recorded') ? 'course_content' : 'sessions_tab')),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
               foregroundColor: AppColors.primaryPurple,
@@ -1169,6 +1205,32 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                     BorderSide(color: AppColors.primaryPurple.withOpacity(0.5)),
               ),
               elevation: 0,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isContentLoading) ...[
+                  SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        AppColors.primaryPurple,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                ] else ...[
+                  Icon(
+                    isRecorded
+                        ? Icons.list_alt_rounded
+                        : Icons.calendar_month_rounded,
+                  ),
+                  SizedBox(width: 8),
+                ],
+                Text(buttonText),
+              ],
             ),
           ),
         ],

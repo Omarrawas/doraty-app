@@ -1,4 +1,5 @@
 
+import 'dart:ui';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -78,9 +79,16 @@ class _HomeScreenState extends State<HomeScreen> {
     return [];
   }
 
+  late ScrollController _scrollController;
+  final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0.0);
+
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
+    _scrollController.addListener(() {
+      _scrollOffset.value = _scrollController.offset;
+    });
     // Use a dynamic viewport fraction based on screen size (estimated at init)
     _bannerController = PageController(viewportFraction: 0.85);
     _bottomBannerController =
@@ -173,6 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
     SyncService().removeListener(_onSyncUpdate);
     _bannerController.dispose();
     _bottomBannerController.dispose();
+    _scrollController.dispose();
+    _scrollOffset.dispose();
     super.dispose();
   }
 
@@ -521,23 +531,31 @@ class _HomeScreenState extends State<HomeScreen> {
         child: DynamicGradientBackground(
           child: SafeArea(
             child: CustomScrollView(
+              controller: _scrollController,
               physics: AlwaysScrollableScrollPhysics(),
               slivers: [
                 // Premium Sticky Header
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _HomeHeaderDelegate(
-                    userName: (authService.userProfile?['full_name'] ??
-                            authService.userProfile?['name'])
-                        ?.toString(),
-                    hasUnreadNotifications: _hasUnreadNotifications,
-                    t: _t,
-                    isAuthenticated: authService.isAuthenticated,
-                    isLoadingProfile: authService.isLoadingProfile,
-                    isDarkMode: Provider.of<ThemeProvider>(context).isDarkMode,
-                    onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
-                    onNotificationTap: () => context.push('/notifications'),
-                  ),
+                ValueListenableBuilder<double>(
+                  valueListenable: _scrollOffset,
+                  builder: (context, offset, _) {
+                    final theme = Provider.of<ThemeProvider>(context);
+                    return SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _HomeHeaderDelegate(
+                        userName: (authService.userProfile?['full_name'] ??
+                                authService.userProfile?['name'])
+                            ?.toString(),
+                        hasUnreadNotifications: _hasUnreadNotifications,
+                        t: _t,
+                        isAuthenticated: authService.isAuthenticated,
+                        isLoadingProfile: authService.isLoadingProfile,
+                        isDarkMode: theme.isDarkMode,
+                        scrollOffset: offset,
+                        onMenuTap: () => _scaffoldKey.currentState?.openDrawer(),
+                        onNotificationTap: () => context.push('/notifications'),
+                      ),
+                    );
+                  },
                 ),
 
                 // Loading State (Shimmer)
@@ -2132,6 +2150,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
   final bool isAuthenticated;
   final bool isLoadingProfile;
   final bool isDarkMode;
+  final double scrollOffset;
 
   _HomeHeaderDelegate({
     required this.userName,
@@ -2142,201 +2161,205 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.isAuthenticated,
     required this.isLoadingProfile,
     required this.isDarkMode,
+    required this.scrollOffset,
   });
 
   @override
   Widget build(
       BuildContext context, double shrinkOffset, bool overlapsContent) {
     final double topPadding = MediaQuery.of(context).padding.top;
-    final bool isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Safety check to avoid division by zero if maxExtent equals minExtent
-    final double range = maxExtent - minExtent;
-    final double currentOpacity =
-        range <= 0 ? 1.0 : (shrinkOffset / range).clamp(0.0, 1.0);
-    final Color headerBackgroundColor = isDark
-        ? AppColors.darkCardSurface.withOpacity(overlapsContent ? 0.98 : 0.92)
-        : Colors.white.withOpacity(overlapsContent ? 1.0 : 0.96);
+    // Smooth opacity transition over the first 40 pixels
+    final double opacity = (scrollOffset / 40).clamp(0.0, 1.0);
 
-    return Container(
-      height: maxExtent,
-      decoration: BoxDecoration(
-        color: Color.lerp(
-            Colors.transparent, headerBackgroundColor, currentOpacity),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-        boxShadow: shrinkOffset > 20
-            ? [
-                BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: Offset(0, 5))
-              ]
-            : [],
-      ),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(20, topPadding + 10, 20, 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // --- Right (Leading): Drawer Menu ---
-            GestureDetector(
-              onTap: onMenuTap,
-              child: Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.07),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(Icons.menu,
-                    color: AppColors.getTextColor(context), size: 24),
-              ),
+    final Color glassColor = isDarkMode
+        ? AppColors.darkCardSurface.withOpacity(0.8)
+        : Colors.white.withOpacity(0.85);
+
+    final Color borderAccent = isDarkMode
+        ? Colors.white.withOpacity(0.12)
+        : Colors.black.withOpacity(0.08);
+
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12 * opacity, sigmaY: 12 * opacity),
+        child: Container(
+          height: maxExtent,
+          decoration: BoxDecoration(
+            color: glassColor.withOpacity(opacity * glassColor.opacity),
+            borderRadius:
+                const BorderRadius.vertical(bottom: Radius.circular(20)),
+            border: Border.all(
+              color: borderAccent.withOpacity(opacity * 0.5),
+              width: 1,
             ),
-
-            // --- Center: App Logo and Name ---
-            Expanded(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Image.asset(
-                    'assets/images/logo.png',
-                    width: 32,
-                    height: 32,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    t('app_name') == 'app_name'
-                        ? 'دوراتي'
-                        : t('app_name'), // Simple fallback
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.getTextColor(context),
-                      fontFamily: 'Cairo', // Preferred custom font if available
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // --- Left (Trailing): Icons (Cart, Theme Toggle, Notifications, Login) ---
-            Row(
-              mainAxisSize: MainAxisSize.min,
+            boxShadow: opacity > 0.8
+                ? [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.1 * opacity),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5))
+                  ]
+                : [],
+          ),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(20, topPadding + 10, 20, 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                if (!isAuthenticated) ...[
-                  // If not logged in, we can either hide or show icons limit. Let's show theme and login.
-                  IconButton(
-                    icon: Icon(
+                // --- Right (Leading): Drawer Menu ---
+                GestureDetector(
+                  onTap: onMenuTap,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isDarkMode
+                          ? Colors.white.withOpacity(0.1)
+                          : Colors.black.withOpacity(0.07),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.menu,
+                        color: AppColors.getTextColor(context), size: 24),
+                  ),
+                ),
+
+                // --- Center: App Logo and Name ---
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        'assets/images/logo.png',
+                        width: 32,
+                        height: 32,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        t('app_name') == 'app_name' ? 'دوراتي' : t('app_name'),
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.getTextColor(context),
+                          fontFamily: 'Cairo',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // --- Left (Trailing): Icons ---
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (!isAuthenticated) ...[
+                      IconButton(
+                        icon: Icon(
+                            Provider.of<ThemeProvider>(context).isDarkMode
+                                ? Icons.light_mode_rounded
+                                : Icons.dark_mode_rounded,
+                            color: AppColors.getTextColor(context),
+                            size: 22),
+                        onPressed: () {
+                          Provider.of<ThemeProvider>(context, listen: false)
+                              .toggleTheme();
+                        },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 12),
+                      TextButton(
+                        onPressed: () => context.push('/login'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor:
+                              AppColors.primaryPurple.withOpacity(0.3),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: Text(t('login_title')),
+                      ),
+                    ] else ...[
+                      // Cart Icon
+                      _buildHeaderIcon(
+                        context,
+                        Icons.shopping_cart_outlined,
+                        () => context.push('/cart'),
+                      ),
+                      const SizedBox(width: 12),
+                      // Theme Toggle
+                      _buildHeaderIcon(
+                        context,
                         Provider.of<ThemeProvider>(context).isDarkMode
                             ? Icons.light_mode_rounded
                             : Icons.dark_mode_rounded,
-                        color: AppColors.getTextColor(context),
-                        size: 22),
-                    onPressed: () {
-                      Provider.of<ThemeProvider>(context, listen: false)
-                          .toggleTheme();
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(),
-                  ),
-                  SizedBox(width: 12),
-                  TextButton(
-                    onPressed: () {
-                      context.push('/login');
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: AppColors.primaryPurple.withOpacity(0.3),
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: Text(t('login_title')),
-                  ),
-                ] else ...[
-                  // Cart Icon
-                  GestureDetector(
-                    onTap: () {
-                      context.push('/cart');
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.07),
-                        shape: BoxShape.circle,
+                        () => Provider.of<ThemeProvider>(context, listen: false)
+                            .toggleTheme(),
                       ),
-                      child: Icon(Icons.shopping_cart_outlined,
-                          color: AppColors.getTextColor(context), size: 22),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  // Theme Toggle
-                  GestureDetector(
-                    onTap: () {
-                      Provider.of<ThemeProvider>(context, listen: false)
-                          .toggleTheme();
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.07),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                          Provider.of<ThemeProvider>(context).isDarkMode
-                              ? Icons.light_mode_rounded
-                              : Icons.dark_mode_rounded,
-                          color: AppColors.getTextColor(context),
-                          size: 22),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  // Notifications
-                  GestureDetector(
-                    onTap: onNotificationTap,
-                    child: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.1)
-                            : Colors.black.withOpacity(0.07),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Stack(
-                        children: [
-                          Icon(Icons.notifications_outlined,
-                              color: AppColors.getTextColor(context), size: 22),
-                          if (hasUnreadNotifications)
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  color: Colors.redAccent,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: AppColors.getSurfaceColor(context),
-                                      width: 1.5),
+                      const SizedBox(width: 12),
+                      // Notifications
+                      GestureDetector(
+                        onTap: onNotificationTap,
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: isDarkMode
+                                ? Colors.white.withOpacity(0.1)
+                                : Colors.black.withOpacity(0.07),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Stack(
+                            children: [
+                              Icon(Icons.notifications_outlined,
+                                  color: AppColors.getTextColor(context),
+                                  size: 22),
+                              if (hasUnreadNotifications)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: Colors.redAccent,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                          color: AppColors.getSurfaceColor(
+                                              context),
+                                          width: 1.5),
+                                    ),
+                                  ),
                                 ),
-                              ),
-                            ),
-                        ],
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                ],
+                    ],
+                  ],
+                ),
               ],
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderIcon(
+      BuildContext context, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isDarkMode
+              ? Colors.white.withOpacity(0.1)
+              : Colors.black.withOpacity(0.07),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: AppColors.getTextColor(context), size: 22),
       ),
     );
   }
@@ -2353,6 +2376,7 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
         oldDelegate.isAuthenticated != isAuthenticated ||
         oldDelegate.isLoadingProfile != isLoadingProfile ||
         oldDelegate.hasUnreadNotifications != hasUnreadNotifications ||
-        oldDelegate.isDarkMode != isDarkMode;
+        oldDelegate.isDarkMode != isDarkMode ||
+        oldDelegate.scrollOffset != scrollOffset;
   }
 }

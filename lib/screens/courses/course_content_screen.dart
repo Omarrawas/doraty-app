@@ -12,6 +12,7 @@ import '../../models/lesson.dart';
 import '../lesson/lesson_screen.dart' as lesson_ui;
 import '../../widgets/empty_state.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/database_service.dart';
 import '../../core/utils/safe_parser.dart';
 import '../../core/providers/cart_provider.dart';
 import '../../models/session.dart';
@@ -38,9 +39,83 @@ class CourseContentScreen extends StatefulWidget {
 
 class _CourseContentScreenState extends State<CourseContentScreen> {
   final Map<int, bool> _expandedSections = {0: true};
+  final DatabaseService _databaseService = DatabaseService();
+  late List<Map<String, dynamic>> _lessonsData;
+  late List<Chapter> _chapters;
+  bool _isLoadingContent = false;
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
+
+  @override
+  void initState() {
+    super.initState();
+    _lessonsData = List<Map<String, dynamic>>.from(widget.lessonsData);
+    _chapters = List<Chapter>.from(widget.chapters);
+    _ensureContentLoaded();
+  }
+
+  @override
+  void didUpdateWidget(CourseContentScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final hasNewLessons =
+        widget.lessonsData.isNotEmpty && widget.lessonsData != oldWidget.lessonsData;
+    final hasNewChapters =
+        widget.chapters.isNotEmpty && widget.chapters != oldWidget.chapters;
+
+    if (hasNewLessons || hasNewChapters) {
+      setState(() {
+        if (hasNewLessons) {
+          _lessonsData = List<Map<String, dynamic>>.from(widget.lessonsData);
+        }
+        if (hasNewChapters) {
+          _chapters = List<Chapter>.from(widget.chapters);
+        }
+      });
+    }
+  }
+
+  Future<void> _ensureContentLoaded() async {
+    if (_lessonsData.isNotEmpty) return;
+
+    setState(() {
+      _isLoadingContent = true;
+    });
+
+    try {
+      if (widget.course.deliveryMode == 'live' ||
+          widget.course.deliveryMode == 'in_person') {
+        final sessions =
+            await _databaseService.getCourseSessions(widget.course.id);
+        if (!mounted) return;
+        setState(() {
+          _lessonsData = sessions;
+        });
+        return;
+      }
+
+      final results = await Future.wait([
+        _databaseService.getLessons(widget.course.id),
+        _databaseService.getChapters(widget.course.id),
+      ]);
+
+      if (!mounted) return;
+
+      setState(() {
+        _lessonsData = SafeParser.safeMapList(results[0]);
+        _chapters = results[1] as List<Chapter>;
+      });
+    } catch (e) {
+      debugPrint('Error loading course content: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingContent = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +143,29 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
   }
 
   Widget _buildContentList(bool isRTL) {
-    if (widget.lessonsData.isEmpty) {
+    if (_isLoadingContent && _lessonsData.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 48),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                _t('course_content'),
+                style: TextStyle(
+                  color: AppColors.getTextColor(context, secondary: true),
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_lessonsData.isEmpty) {
       return ProfessionalEmptyState(
         title: (widget.course.deliveryMode == 'live' || widget.course.deliveryMode == 'in_person') 
             ? _t('no_sessions_yet') 
@@ -85,12 +182,12 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     // Group lessons by chapters
     final sections = <Map<String, dynamic>>[];
 
-    if (widget.chapters.isNotEmpty) {
-      final sortedChapters = List<Chapter>.from(widget.chapters);
+    if (_chapters.isNotEmpty) {
+      final sortedChapters = List<Chapter>.from(_chapters);
       sortedChapters.sort((a, b) => a.orderIndex.compareTo(b.orderIndex));
 
       for (var chapter in sortedChapters) {
-        final chapterLessons = widget.lessonsData.where((l) {
+        final chapterLessons = _lessonsData.where((l) {
           return l['chapter_id'] == chapter.id;
         }).toList();
 
@@ -102,7 +199,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
         }
       }
 
-      final uncategorizedLessons = widget.lessonsData.where((l) {
+      final uncategorizedLessons = _lessonsData.where((l) {
         return l['chapter_id'] == null;
       }).toList();
 
@@ -115,7 +212,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
     } else {
       sections.add({
         'title': _t('course_content'),
-        'lessons': widget.lessonsData,
+        'lessons': _lessonsData,
       });
     }
 
@@ -403,7 +500,7 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
   }
 
   Widget _buildSessionsList(bool isRTL) {
-    if (widget.lessonsData.isEmpty) {
+    if (_lessonsData.isEmpty) {
       return ProfessionalEmptyState(
         title: _t('no_sessions_yet'),
         message: _t('course_content_working'),
@@ -430,10 +527,10 @@ class _CourseContentScreenState extends State<CourseContentScreen> {
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           padding: EdgeInsets.zero,
-          itemCount: widget.lessonsData.length,
+          itemCount: _lessonsData.length,
           separatorBuilder: (context, index) => SizedBox(height: 12),
           itemBuilder: (context, index) {
-            final sessionMap = widget.lessonsData[index];
+            final sessionMap = _lessonsData[index];
             final session = Session.fromJson(sessionMap);
             return _buildSessionItem(session, isRTL);
           },
