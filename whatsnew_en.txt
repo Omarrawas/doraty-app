@@ -1,25 +1,6 @@
 What's New in Version 1.1.6:
-
-1. Custom Video Player: A premium, 
-branded control interface
- replacing the default YouTube 
- player for a professional
-  learning experience.
-2. Equation Drawer: New dedicated 
-side drawer to quickly
- access and review math formulas and 
- equations during lessons.
-3. Enhanced Navigation: Stable top 
-navigation bar 
-displaying lesson titles with a 
-persistent and 
-responsive back button.
-4. Premium Visuals: Introduced 
-soft gradient 
-backgrounds for Light Mode to 
-improve visual 
-comfort and design parity.
-5. Optimization & Stability: 
-Significant code 
-cleanup and performance tuning to ensure a smooth 
-experience across all platforms.
+1. Custom Video Player: Premium interface replacing default YouTube player.
+2. Equation Drawer: Quick access to math formulas during lessons.
+3. Enhanced Navigation: Stable top bar with lesson titles and back button.
+4. Premium Visuals: Soft gradients for Light Mode for better visual comfort.
+5. Optimization: Performance tuning for a smoother experience.
