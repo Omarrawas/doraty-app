@@ -539,16 +539,29 @@ class _LessonScreenState extends State<LessonScreen>
       );
     }
 
-    // For mobile YouTube we wrap the player widget in a minimal YoutubePlayerBuilder
-    // so the YoutubePlayer has the required ancestor. Fullscreen is handled by our
-    // own _YoutubeFullscreenPage (pushed manually) to keep control overlay visible.
-    final Widget playerWidget = _buildVideoPlayer();
-    return _buildScaffold(
-      context,
-      videoPlayer: _buildVideoWithOverlay(
-        player: playerWidget,
-        onToggleFullScreen: () => _handleToggleFullScreen(),
-      ),
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        final bool isLandscape = orientation == Orientation.landscape;
+        
+        final Widget playerWidget = _buildVideoPlayer();
+        final Widget videoWithOverlay = _buildVideoWithOverlay(
+          player: playerWidget,
+          onToggleFullScreen: () => _handleToggleFullScreen(),
+        );
+
+        if (isLandscape) {
+          // In landscape, we show the video player in full screen mode automatically
+          return Scaffold(
+            backgroundColor: Colors.black,
+            body: videoWithOverlay,
+          );
+        }
+
+        return _buildScaffold(
+          context,
+          videoPlayer: videoWithOverlay,
+        );
+      },
     );
   }
 
@@ -651,23 +664,11 @@ class _LessonScreenState extends State<LessonScreen>
                 backgroundColor: AppColors.getBackgroundColor(context),
                 elevation: 0,
                 automaticallyImplyLeading: false,
-                leading: PointerInterceptor(
-                  child: Center(
-                    child: Container(
-                      margin: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.3),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white24, width: 1),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
-                        onPressed: () => Navigator.pop(context),
-                        tooltip: 'رجوع',
-                      ),
-                    ),
-                  ),
-                ),
+                leading: kIsWeb
+                    ? PointerInterceptor(
+                        child: _buildBackButton(context),
+                      )
+                    : _buildBackButton(context),
                 // Removed actions containing equations button as requested
                 flexibleSpace: FlexibleSpaceBar(
                   stretchModes: const [
@@ -2568,8 +2569,23 @@ class _LessonScreenState extends State<LessonScreen>
     );
   }
 
-
-
+  Widget _buildBackButton(BuildContext context) {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white24, width: 1),
+        ),
+        child: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+          onPressed: () => Navigator.pop(context),
+          tooltip: 'رجوع',
+        ),
+      ),
+    );
+  }
 }
 
 class LessonSliverAppBarDelegate extends SliverPersistentHeaderDelegate {

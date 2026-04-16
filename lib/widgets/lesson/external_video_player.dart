@@ -54,8 +54,10 @@ class _ExternalVideoPlayerState extends State<ExternalVideoPlayer> {
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isLandscape = size.width > size.height;
     final double playerHeight = widget.height ?? 
-        (MediaQuery.of(context).size.width * 9 / 16).clamp(200, 500);
+        (isLandscape ? size.height : (size.width * 9 / 16).clamp(200, 500));
 
     if (kIsWeb) {
       return SizedBox(

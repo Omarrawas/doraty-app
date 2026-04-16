@@ -1,0 +1,6 @@
+{
+    "env": {
+        "CLAUDE_CODE_USE_OPENROUTER": "1",
+        "OPENROUTER_API_KEY": "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"
+    }
+}
