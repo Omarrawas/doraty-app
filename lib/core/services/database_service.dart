@@ -993,7 +993,7 @@ class DatabaseService {
   /// Get all courses
   /// Selective columns for listing to reduce data transfer
   static const String liteCourseColumns = '''
-    id, title, slug, image_url, price, discount_percentage, 
+    id, title, slug, description, image_url, price, discount_percentage, 
     rating, students_count, lessons_count, instructor_id, instructor_name, 
     instructor_photo, subject, level, is_published, is_featured,
     featured_order, created_at, delivery_mode,

@@ -89,77 +89,111 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedTeacherId =
-        widget.preselectedInstructorId ?? widget.courseData?['instructor_id'];
 
-    _titleController = TextEditingController(
-      text: widget.courseData?['title'] ?? '',
-    );
-    _slugController = TextEditingController(
-      text: widget.courseData?['slug'] ?? '',
-    );
-    _descriptionController = TextEditingController(
-      text: widget.courseData?['description'] ?? '',
-    );
-    _subjectController = TextEditingController(
-      text: widget.courseData?['subject'] ?? '', // Load subject from DB
-    );
-    _levelController = TextEditingController(
-      text: widget.courseData?['level'] ?? 'beginner',
-    );
-    _imageUrlController = TextEditingController(
-      text: widget.courseData?['image_url'] ?? '',
-    );
-    _priceController = TextEditingController(
-      text: widget.courseData?['price']?.toString() ?? '0',
-    );
-    // Instructor Name will be handled by selection, but keep controller for fallback or display
-    _instructorController = TextEditingController(
-      text: widget.courseData?['instructor_name'] ?? '',
-    );
-    _displayInstructorController = TextEditingController(
-      text: _selectedTeacherId == null
-          ? _t('unspecified')
-          : (widget.courseData?['instructor_name'] ?? ''),
-    );
-    
-    // If we have a preselected instructor but no name in data, we'll wait for _loadTeachers
-    // to populate the name properly in the controllers.
-    
-    // If we have a preselected instructor but no name in data, we'll wait for _loadTeachers
-    // to populate the name properly in the controllers.
-    _durationController = TextEditingController(
-      text: widget.courseData?['duration_hours']?.toString() ?? '0',
-    );
-    _videoUrlController = TextEditingController(
-      text: widget.courseData?['video_url'] ?? '',
-    );
-    _discountController = TextEditingController(
-      text: widget.courseData?['discount_percentage']?.toString() ?? '0',
-    );
-
-    _isPublished = widget.courseData?['is_published'] ?? false;
-    _selectedCurrency = widget.courseData?['currency'] ?? 'ل.س';
-    _selectedDeliveryMode = widget.courseData?['delivery_mode'] ?? 'recorded';
-
-    // Calculate _isFree based on price
-    final priceValue = double.tryParse(_priceController.text) ?? 0.0;
-    _isFree = priceValue == 0;
-
-    // Multi-category support
-    final categoryIds = widget.courseData?['category_ids'] as List?;
-    if (categoryIds != null) {
-      _selectedCategoryIds = List<String>.from(categoryIds);
-    } else {
-      final singleId = widget.courseData?['category_id'] as String?;
-      if (singleId != null) {
-        _selectedCategoryIds = [singleId];
-      }
-    }
+    // Initialize with whatever data was passed (may be lite/partial for edit mode)
+    _initControllersFromData(widget.courseData);
 
     _loadTeachers();
     _loadCategories();
     _loadCourseTags();
+
+    // When editing, always fetch the full course data from the DB to ensure all
+    // fields are populated (liteCourseColumns omits some fields like duration_hours,
+    // currency, video_url which are needed in the edit form).
+    if (widget.courseId != null && widget.courseId!.isNotEmpty) {
+      _loadFullCourseData();
+    }
+  }
+
+  /// Initializes all controllers from a data map (may be partial).
+  void _initControllersFromData(Map<String, dynamic>? data) {
+    _selectedTeacherId =
+        widget.preselectedInstructorId ?? data?['instructor_id'];
+
+    _titleController = TextEditingController(text: data?['title'] ?? '');
+    _slugController = TextEditingController(text: data?['slug'] ?? '');
+    _descriptionController =
+        TextEditingController(text: data?['description'] ?? '');
+    _subjectController =
+        TextEditingController(text: data?['subject'] ?? '');
+    _levelController =
+        TextEditingController(text: data?['level'] ?? 'beginner');
+    _imageUrlController =
+        TextEditingController(text: data?['image_url'] ?? '');
+    _priceController =
+        TextEditingController(text: data?['price']?.toString() ?? '0');
+    _instructorController =
+        TextEditingController(text: data?['instructor_name'] ?? '');
+    _displayInstructorController = TextEditingController(
+      text: _selectedTeacherId == null
+          ? _t('unspecified')
+          : (data?['instructor_name'] ?? ''),
+    );
+    _durationController =
+        TextEditingController(text: data?['duration_hours']?.toString() ?? '0');
+    _videoUrlController =
+        TextEditingController(text: data?['video_url'] ?? '');
+    _discountController = TextEditingController(
+        text: data?['discount_percentage']?.toString() ?? '0');
+
+    _isPublished = data?['is_published'] ?? false;
+    _selectedCurrency = data?['currency'] ?? 'ل.س';
+    _selectedDeliveryMode = data?['delivery_mode'] ?? 'recorded';
+
+    final priceValue = double.tryParse(_priceController.text) ?? 0.0;
+    _isFree = priceValue == 0;
+
+    final categoryIds = data?['category_ids'] as List?;
+    if (categoryIds != null) {
+      _selectedCategoryIds = List<String>.from(categoryIds);
+    } else {
+      final singleId = data?['category_id'] as String?;
+      if (singleId != null) {
+        _selectedCategoryIds = [singleId];
+      }
+    }
+  }
+
+  /// Fetches the complete course data from the database when editing.
+  Future<void> _loadFullCourseData() async {
+    try {
+      final fullData = await _db.getCourseById(widget.courseId!, forceRefresh: true);
+      if (fullData == null || !mounted) return;
+
+      // Re-populate fields that might have been empty in lite mode
+      if (_descriptionController.text.isEmpty && fullData['description'] != null) {
+        _descriptionController.text = fullData['description'];
+      }
+      if (_videoUrlController.text.isEmpty && fullData['video_url'] != null) {
+        _videoUrlController.text = fullData['video_url'];
+      }
+      if ((_durationController.text == '0' || _durationController.text.isEmpty) &&
+          fullData['duration_hours'] != null) {
+        _durationController.text = fullData['duration_hours'].toString();
+      }
+      if ((_discountController.text == '0' || _discountController.text.isEmpty) &&
+          fullData['discount_percentage'] != null) {
+        _discountController.text = fullData['discount_percentage'].toString();
+      }
+      if (_subjectController.text.isEmpty && fullData['subject'] != null) {
+        _subjectController.text = fullData['subject'];
+      }
+
+      // Update currency and delivery mode
+      if (fullData['currency'] != null) {
+        setState(() => _selectedCurrency = fullData['currency']);
+      }
+
+      // Update categories from full data
+      final categoryIds = fullData['category_ids'] as List?;
+      if (categoryIds != null && categoryIds.isNotEmpty) {
+        setState(() {
+          _selectedCategoryIds = List<String>.from(categoryIds);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading full course data: $e');
+    }
   }
 
   Future<void> _loadCourseTags() async {
