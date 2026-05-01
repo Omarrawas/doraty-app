@@ -1,4 +1,4 @@
-What's New in Version 1.1.6:
+What's New in Version 1.1.8:
 1. Custom Video Player: Premium interface replacing default YouTube player.
 2. Equation Drawer: Quick access to math formulas during lessons.
 3. Enhanced Navigation: Stable top bar with lesson titles and back button.
