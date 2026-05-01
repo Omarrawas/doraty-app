@@ -120,8 +120,14 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     _displayInstructorController = TextEditingController(
       text: _selectedTeacherId == null
           ? _t('unspecified')
-          : widget.courseData?['instructor_name'] ?? '',
+          : (widget.courseData?['instructor_name'] ?? ''),
     );
+    
+    // If we have a preselected instructor but no name in data, we'll wait for _loadTeachers
+    // to populate the name properly in the controllers.
+    
+    // If we have a preselected instructor but no name in data, we'll wait for _loadTeachers
+    // to populate the name properly in the controllers.
     _durationController = TextEditingController(
       text: widget.courseData?['duration_hours']?.toString() ?? '0',
     );
@@ -231,8 +237,9 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
             );
             if (selectedTeacher.isNotEmpty) {
               final userData = selectedTeacher['users'] as Map<String, dynamic>;
-              _instructorController.text =
-                  userData['full_name'] ?? userData['name'] ?? '';
+              final name = userData['full_name'] ?? userData['name'] ?? '';
+              _instructorController.text = name;
+              _displayInstructorController.text = name;
             }
           }
 
@@ -873,11 +880,7 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
                                       : TextFormField(
                                           key: ValueKey(_selectedTeacherId),
                                           readOnly: true,
-                                          onTap:
-                                              widget.preselectedInstructorId !=
-                                                      null
-                                                  ? null
-                                                  : _showTeacherPicker,
+                                          onTap: widget.preselectedInstructorId != null ? null : _showTeacherPicker, enabled: widget.preselectedInstructorId == null,
                                           controller:
                                               _displayInstructorController,
                                           decoration: _inputDecoration(
