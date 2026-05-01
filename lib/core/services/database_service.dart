@@ -118,6 +118,51 @@ class DatabaseService {
     }
   }
 
+  /// Check if a course slug is unique
+  Future<bool> isCourseSlugUnique(String slug, {String? excludeId}) async {
+    try {
+      var query = _client.from('courses').select('id').eq('slug', slug);
+      if (excludeId != null) {
+        query = query.neq('id', excludeId);
+      }
+      final response = await query.maybeSingle();
+      return response == null;
+    } catch (e) {
+      debugPrint('Error checking course slug uniqueness: $e');
+      return true;
+    }
+  }
+
+  /// Check if a lesson slug is unique
+  Future<bool> isLessonSlugUnique(String slug, {String? excludeId}) async {
+    try {
+      var query = _client.from('lessons').select('id').eq('slug', slug);
+      if (excludeId != null) {
+        query = query.neq('id', excludeId);
+      }
+      final response = await query.maybeSingle();
+      return response == null;
+    } catch (e) {
+      debugPrint('Error checking lesson slug uniqueness: $e');
+      return true;
+    }
+  }
+
+  /// Check if a category slug is unique
+  Future<bool> isCategorySlugUnique(String slug, {String? excludeId}) async {
+    try {
+      var query = _client.from('categories').select('id').eq('slug', slug);
+      if (excludeId != null) {
+        query = query.neq('id', excludeId);
+      }
+      final response = await query.maybeSingle();
+      return response == null;
+    } catch (e) {
+      debugPrint('Error checking category slug uniqueness: $e');
+      return true;
+    }
+  }
+
   /// Create a new category
   Future<void> createCategory({
     required String name,
@@ -126,9 +171,21 @@ class DatabaseService {
     String? iconUrl,
   }) async {
     try {
+      // Ensure unique slug
+      String finalSlug = slug;
+      if (finalSlug.isEmpty) {
+        finalSlug = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+      }
+      if (finalSlug.isEmpty) finalSlug = 'cat-${DateTime.now().millisecondsSinceEpoch}';
+
+      int suffix = 1;
+      while (!(await isCategorySlugUnique(finalSlug))) {
+        finalSlug = '$slug-${suffix++}';
+      }
+
       await _client.from('categories').insert({
         'name': name,
-        'slug': slug,
+        'slug': finalSlug,
         'parent_id': parentId,
         'icon_url': iconUrl,
       });
@@ -150,7 +207,26 @@ class DatabaseService {
     try {
       final updates = <String, dynamic>{};
       if (name != null) updates['name'] = name;
-      if (slug != null) updates['slug'] = slug;
+      
+      if (slug != null && slug.isNotEmpty) {
+        String finalSlug = slug;
+        int suffix = 1;
+        while (!(await isCategorySlugUnique(finalSlug, excludeId: id))) {
+          finalSlug = '$slug-${suffix++}';
+        }
+        updates['slug'] = finalSlug;
+      } else if (slug != null && slug.isEmpty && name != null) {
+        // Generate from name if slug is being cleared
+        String baseSlug = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+        if (baseSlug.isEmpty) baseSlug = 'cat-${DateTime.now().millisecondsSinceEpoch}';
+        
+        String finalSlug = baseSlug;
+        int suffix = 1;
+        while (!(await isCategorySlugUnique(finalSlug, excludeId: id))) {
+          finalSlug = '$baseSlug-${suffix++}';
+        }
+        updates['slug'] = finalSlug;
+      }
 
       // Explicitly check for parentId to allow null (removing parent)
       if (parentId != null) {

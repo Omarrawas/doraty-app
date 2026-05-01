@@ -1037,43 +1037,49 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         duration = int.tryParse(durationText) ?? 0;
       }
 
-      if (widget.lessonId != null) {
-        final slug = _slugController.text.isNotEmpty 
-            ? _slugController.text.trim() 
-            : _titleController.text.trim().toLowerCase()
-                .replaceAll(RegExp(r'[^\w\s\u0600-\u06FF-]'), '')
-                .replaceAll(RegExp(r'\s+'), '-');
-                
-        await _db.updateLesson(widget.lessonId!, {
-          'chapter_id': _selectedChapterId,
-          'title': _titleController.text.trim(),
-          'slug': slug,
-          'description': _descriptionHtml,
-          'video_url': _videoUrlController.text.trim(),
-          'duration': duration,
-          'content': _contentHtml,
-          'is_free': _isFree,
-          'resources': _attachments,
-        });
-      } else {
-        final slug = _slugController.text.isNotEmpty 
-            ? _slugController.text.trim() 
-            : _titleController.text.trim().toLowerCase()
-                .replaceAll(RegExp(r'[^\w\s\u0600-\u06FF-]'), '')
-                .replaceAll(RegExp(r'\s+'), '-');
+      String baseSlug = _slugController.text.trim();
+      if (baseSlug.isEmpty) {
+        // More robust slug generation: allow Arabic characters, replace symbols/spaces with hyphens
+        baseSlug = _titleController.text.trim().toLowerCase()
+            .replaceAll(RegExp(r'[^\w\s\u0600-\u06FF-]'), '')
+            .replaceAll(RegExp(r'[\s_]+'), '-')
+            .replaceAll(RegExp(r'-+'), '-');
+      }
 
-        await _db.createLesson({
-          'course_id': widget.courseId,
-          'chapter_id': _selectedChapterId,
-          'title': _titleController.text.trim(),
-          'slug': slug,
-          'description': _descriptionHtml,
-          'video_url': _videoUrlController.text.trim(),
-          'duration': duration,
-          'content': _contentHtml,
-          'is_free': _isFree,
-          'resources': _attachments,
-        });
+      // Fallback if slug is still empty or invalid
+      if (baseSlug.isEmpty || baseSlug == '-') {
+        baseSlug = 'lesson-${DateTime.now().millisecondsSinceEpoch}';
+      }
+
+      // Check for uniqueness and append suffix if needed
+      String finalSlug = baseSlug;
+      int suffix = 1;
+      bool isUnique = false;
+
+      while (!isUnique) {
+        isUnique = await _db.isLessonSlugUnique(finalSlug, excludeId: widget.lessonId);
+        if (!isUnique) {
+          finalSlug = '$baseSlug-${suffix++}';
+        }
+      }
+
+      final lessonData = {
+        'chapter_id': _selectedChapterId,
+        'title': _titleController.text.trim(),
+        'slug': finalSlug,
+        'description': _descriptionHtml,
+        'video_url': _videoUrlController.text.trim(),
+        'duration': duration,
+        'content': _contentHtml,
+        'is_free': _isFree,
+        'resources': _attachments,
+      };
+
+      if (widget.lessonId != null) {
+        await _db.updateLesson(widget.lessonId!, lessonData);
+      } else {
+        lessonData['course_id'] = widget.courseId;
+        await _db.createLesson(lessonData);
       }
 
       if (mounted) {

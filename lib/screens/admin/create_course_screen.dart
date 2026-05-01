@@ -1332,14 +1332,37 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
     setState(() => _isSaving = true);
 
     try {
+      String slug = _slugController.text.trim();
+      if (slug.isEmpty) {
+        // More robust slug generation: allow Arabic characters, replace symbols/spaces with hyphens
+        slug = _titleController.text
+            .toLowerCase()
+            .replaceAll(RegExp(r'[^\w\s\u0600-\u06FF-]+'), '')
+            .trim()
+            .replaceAll(RegExp(r'[\s_]+'), '-')
+            .replaceAll(RegExp(r'-+'), '-');
+      }
+
+      // Fallback if slug is still empty or invalid
+      if (slug.isEmpty || slug == '-') {
+        slug = 'course-${DateTime.now().millisecondsSinceEpoch}';
+      }
+
+      // Check for uniqueness and append suffix if needed
+      String finalSlug = slug;
+      int suffix = 1;
+      bool isUnique = false;
+
+      while (!isUnique) {
+        isUnique = await _db.isCourseSlugUnique(finalSlug, excludeId: widget.courseId);
+        if (!isUnique) {
+          finalSlug = '$slug-${suffix++}';
+        }
+      }
+
       final courseData = {
         'title': _titleController.text,
-        'slug': _slugController.text.isNotEmpty
-            ? _slugController.text
-            : _titleController.text
-                .toLowerCase()
-                .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-                .replaceAll(RegExp(r'^-+|-+$'), ''),
+        'slug': finalSlug,
         'description': _descriptionController.text,
         'category_id':
             _selectedCategoryIds.first, // Fallback for single category
