@@ -78,7 +78,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
         if (!kIsWeb && defaultTargetPlatform != TargetPlatform.windows) {
           _youtubeController = YoutubePlayerController(
             initialVideoId: _videoId!,
-            flags: YoutubePlayerFlags(
+            flags: const YoutubePlayerFlags(
               autoPlay: false,
               mute: false,
               forceHD: true,
@@ -87,6 +87,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
               disableDragSeek: false,
               hideControls: true, 
               hideThumbnail: true,
+              useHybridComposition: true, // Improved Android compatibility
             ),
           )..addListener(_onControllerChange);
         } else {

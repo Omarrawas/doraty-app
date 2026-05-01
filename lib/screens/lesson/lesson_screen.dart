@@ -86,6 +86,7 @@ class _LessonScreenState extends State<LessonScreen>
   Lesson? _currentLesson;
   String? _effectiveCourseTitle;
   bool _effectiveIsEnrolled = false;
+  bool _isInFullScreenPage = false; // Track if we are in a separate fullscreen route
 
   Lesson get lesson => _currentLesson!;
   String get courseTitle => _effectiveCourseTitle ?? '';
@@ -378,6 +379,7 @@ class _LessonScreenState extends State<LessonScreen>
             disableDragSeek: false,
             hideControls: true, // Hide default controls
             hideThumbnail: true,
+            useHybridComposition: true,
           ),
         )..addListener(() {
             if (mounted) setState(() {});
@@ -574,6 +576,7 @@ class _LessonScreenState extends State<LessonScreen>
         DeviceOrientation.landscapeRight,
       ]);
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+      setState(() => _isInFullScreenPage = true);
       Navigator.push(
         context,
         PageRouteBuilder(
@@ -587,6 +590,9 @@ class _LessonScreenState extends State<LessonScreen>
         ),
       ).then((_) {
         if (mounted) {
+          setState(() {
+            _isInFullScreenPage = false;
+          });
           SystemChrome.setPreferredOrientations([
             DeviceOrientation.portraitUp,
             DeviceOrientation.portraitDown,
@@ -850,6 +856,15 @@ class _LessonScreenState extends State<LessonScreen>
       // Mobile: wrap with minimal YoutubePlayerBuilder so YoutubePlayer has
       // a valid ancestor. Fullscreen is handled via _YoutubeFullscreenPage.
       if (_youtubePlayerController != null) {
+        if (_isInFullScreenPage) {
+          return Container(
+            height: 250,
+            color: Colors.black,
+            child: const Center(
+              child: CircularProgressIndicator(color: AppColors.primaryPurple),
+            ),
+          );
+        }
         return YoutubePlayerBuilder(
           player: YoutubePlayer(
             controller: _youtubePlayerController!,
