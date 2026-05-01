@@ -38,4 +38,9 @@ abstract class Env {
       varName: 'DORATY_GITHUB_TOKEN',
       defaultValue: '')
   static const String githubToken = _Env.githubToken;
+
+  @EnviedField(
+      varName: 'YouTube_Data_API_v3',
+      defaultValue: '')
+  static const String youtubeDataApiKey = _Env.youtubeDataApiKey;
 }

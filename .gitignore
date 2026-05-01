@@ -52,3 +52,6 @@ android/app/key.jks
 android/app/*.jks
 android/app/*.keystore
 android/key.properties
+
+# Generated code
+*.g.dart

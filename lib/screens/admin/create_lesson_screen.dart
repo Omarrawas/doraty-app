@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:flutter/foundation.dart';
+import 'dart:convert';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_provider.dart';
@@ -18,6 +20,8 @@ import '../../core/utils/error_utils.dart';
 import '../../widgets/rich_text_editor.dart';
 import '../../services/youtube_upload_service.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import '../../core/env/multi_env.dart';
 
 class CreateLessonScreen extends StatefulWidget {
   final String courseId;
@@ -60,6 +64,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   bool _isLoadingChapters = false;
 
   Timer? _debounce;
+  final http.Client _httpClient = http.Client();
 
   @override
   void initState() {
@@ -122,26 +127,112 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     
     _debounce = Timer(const Duration(milliseconds: 1000), () async {
-      try {
-        final yt = YoutubeExplode();
-        final video = await yt.videos.get(url);
-        final duration = video.duration;
-        yt.close();
+      if (kIsWeb) {
+        // On Web, youtube_explode_dart is blocked by CORS.
+        // We use YouTube Data API v3 instead (CORS-safe).
+        await _fetchDurationViaYouTubeApi(url);
+      } else {
+        // On native platforms, use youtube_explode_dart directly.
+        try {
+          final yt = YoutubeExplode();
+          final video = await yt.videos.get(url);
+          final duration = video.duration;
+          yt.close();
 
-        if (duration != null && duration.inSeconds > 0 && mounted) {
-          setState(() {
-            final h = duration.inHours;
-            final m = duration.inMinutes % 60;
-            final s = duration.inSeconds % 60;
-            if (h > 0) {
-              _durationController.text = '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-            } else {
-              _durationController.text = '$m:${s.toString().padLeft(2, '0')}';
-            }
-          });
+          if (duration != null && duration.inSeconds > 0 && mounted) {
+            _applyDuration(duration);
+          }
+        } catch (e) {
+          debugPrint('Failed to fetch youtube duration: $e');
         }
-      } catch (e) {
-        debugPrint('Failed to fetch youtube duration: $e');
+      }
+    });
+  }
+
+  /// Extracts the YouTube video ID from a full URL.
+  String? _extractVideoId(String url) {
+    final regExp = RegExp(
+      r'(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([a-zA-Z0-9_-]{11})',
+    );
+    final match = regExp.firstMatch(url);
+    return match?.group(1);
+  }
+
+  /// Fetches video duration via YouTube Data API v3 (CORS-safe for Web).
+  /// Returns the ISO 8601 duration (e.g. PT1H2M3S) and converts it to seconds.
+  Future<void> _fetchDurationViaYouTubeApi(String url) async {
+    final videoId = _extractVideoId(url);
+    if (videoId == null) {
+      debugPrint('⚠️ Could not extract video ID from URL: $url');
+      return;
+    }
+
+    final apiKey = Env.youtubeDataApiKey;
+    if (apiKey.isEmpty) {
+      debugPrint('⚠️ YouTube Data API key not configured.');
+      return;
+    }
+
+    try {
+      final apiUrl = Uri.parse(
+        'https://www.googleapis.com/youtube/v3/videos'
+        '?part=contentDetails'
+        '&id=$videoId'
+        '&key=$apiKey',
+      );
+      final response = await _httpClient.get(
+        apiUrl,
+        headers: {'Accept': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        final items = data['items'] as List<dynamic>?;
+        if (items == null || items.isEmpty) {
+          debugPrint('⚠️ YouTube API returned no items for video: $videoId');
+          return;
+        }
+        final iso8601Duration =
+            items[0]['contentDetails']['duration'] as String?;
+        if (iso8601Duration != null) {
+          final duration = _parseIso8601Duration(iso8601Duration);
+          if (duration.inSeconds > 0) {
+            _applyDuration(duration);
+            debugPrint('✅ YouTube duration fetched: $iso8601Duration → ${duration.inSeconds}s');
+          }
+        }
+      } else {
+        debugPrint('❌ YouTube API error ${response.statusCode}: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('❌ Failed to fetch duration via YouTube API: $e');
+    }
+  }
+
+  /// Converts ISO 8601 duration string (e.g. PT1H2M30S) to a [Duration].
+  Duration _parseIso8601Duration(String iso) {
+    final pattern = RegExp(
+      r'P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?',
+    );
+    final match = pattern.firstMatch(iso);
+    if (match == null) return Duration.zero;
+    final days    = int.tryParse(match.group(1) ?? '0') ?? 0;
+    final hours   = int.tryParse(match.group(2) ?? '0') ?? 0;
+    final minutes = int.tryParse(match.group(3) ?? '0') ?? 0;
+    final seconds = int.tryParse(match.group(4) ?? '0') ?? 0;
+    return Duration(days: days, hours: hours, minutes: minutes, seconds: seconds);
+  }
+
+  void _applyDuration(Duration duration) {
+    if (!mounted) return;
+    setState(() {
+      final h = duration.inHours;
+      final m = duration.inMinutes % 60;
+      final s = duration.inSeconds % 60;
+      if (h > 0) {
+        _durationController.text = '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+      } else {
+        _durationController.text = '$m:${s.toString().padLeft(2, '0')}';
       }
     });
   }
@@ -233,6 +324,7 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _httpClient.close();
     _titleController.dispose();
     _slugController.dispose();
     _videoUrlController.dispose();
@@ -241,6 +333,23 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   }
 
   Future<void> _pickAndUploadToYoutube() async {
+    // 1. Sign in FIRST to prevent popup blocker issues on Flutter Web
+    try {
+      final bool signedIn = await _youtubeService.signIn();
+      if (!signedIn) return;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ فشل تسجيل الدخول بـ Google. تأكد من إعداد OAuth.'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+      return;
+    }
+
+    // 2. Now pick the video
     final ImagePicker picker = ImagePicker();
     final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
     
@@ -248,28 +357,74 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
 
     setState(() => _isUploadingToYoutube = true);
     try {
+      // Show progress snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                SizedBox(width: 12),
+                Text('جاري الرفع إلى يوتيوب...'),
+              ],
+            ),
+            duration: Duration(minutes: 5),
+          ),
+        );
+      }
+
       final String? ytUrl = await _youtubeService.uploadUnlistedVideo(
         video, 
-        _titleController.text.isEmpty ? "New Lesson" : _titleController.text,
-        "Lesson uploaded from Doraty App"
+        _titleController.text.isEmpty ? 'New Lesson' : _titleController.text,
+        'Lesson uploaded from Doraty App',
       );
       
+      // Dismiss the progress snackbar
+      if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
       if (ytUrl != null) {
         setState(() {
           _videoUrlController.text = ytUrl;
         });
+        // Auto-fetch the duration of the uploaded video
+        _durationController.clear();
+        _fetchYoutubeDuration(ytUrl);
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('تم الرفع إلى يوتيوب بنجاح!')),
+            SnackBar(
+              content: Text('✅ تم الرفع إلى يوتيوب بنجاح!'),
+              backgroundColor: Colors.green.shade700,
+              duration: Duration(seconds: 4),
+            ),
           );
         }
       } else {
-        throw Exception('فشل الحصول على رابط يوتيوب');
+        throw Exception('لم يتم الحصول على رابط الفيديو من يوتيوب');
       }
     } catch (e) {
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        // Show friendly message
+        String message = 'خطأ في الرفع';
+        final errStr = e.toString();
+        if (errStr.contains('sign_in_failed') || errStr.contains('access_denied')) {
+          message = '❌ فشل تسجيل الدخول بـ Google. تأكد من إعداد OAuth.';
+        } else if (errStr.contains('quotaExceeded') || errStr.contains('403')) {
+          message = '❌ تجاوزت حصة YouTube API اليومية.';
+        } else if (errStr.contains('insufficientPermissions')) {
+          message = '❌ صلاحيات غير كافية. تأكد من منح إذن الرفع.';
+        } else if (errStr.contains('cancelled')) {
+          message = 'تم إلغاء العملية.';
+        } else {
+          message = '❌ خطأ: ${errStr.length > 80 ? errStr.substring(0, 80) : errStr}';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في الرفع: $e')),
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red.shade700,
+            duration: Duration(seconds: 6),
+          ),
         );
       }
     } finally {
@@ -509,9 +664,12 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
                                     icon: Icons.access_time,
                                   ).copyWith(
                                     helperText: 'يمكن تعديلها يدوياً إذا لزم الأمر',
-                                    helperStyle: TextStyle(color: Colors.blueAccent, fontSize: 10),
+                                    helperStyle: TextStyle(
+                                      color: Colors.blueAccent,
+                                      fontSize: 10,
+                                    ),
                                   ),
-                                  keyboardType: TextInputType.number,
+                                  keyboardType: TextInputType.text,
                                   validator: (value) {
                                     if (value == null || value.isEmpty) {
                                       return 'الرجاء إدخال مدة الفيديو';

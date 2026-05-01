@@ -320,6 +320,23 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
   }
 
   Future<void> _pickAndUploadToYoutube() async {
+    // 1. Sign in FIRST to prevent popup blocker issues on Flutter Web
+    try {
+      final bool signedIn = await _youtubeService.signIn();
+      if (!signedIn) return;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ فشل تسجيل الدخول بـ Google. تأكد من إعداد OAuth.'),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+      return;
+    }
+
+    // 2. Now pick the video
     final ImagePicker picker = ImagePicker();
     final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
 
@@ -327,6 +344,22 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     setState(() => _isUploadingToYoutube = true);
     try {
+      // Show progress snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
+                SizedBox(width: 12),
+                Text('جاري الرفع إلى يوتيوب...'),
+              ],
+            ),
+            duration: Duration(minutes: 5),
+          ),
+        );
+      }
+
       final String? ytUrl = await _youtubeService.uploadUnlistedVideo(
           video,
           _titleController.text.isEmpty
@@ -334,23 +367,49 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
               : "${_titleController.text} Preview",
           "Course preview uploaded from Doraty App");
 
+      // Dismiss the progress snackbar
+      if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
       if (ytUrl != null) {
         setState(() {
           _videoUrlController.text = ytUrl;
         });
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('تم الرفع إلى يوتيوب بنجاح!')),
+            SnackBar(
+              content: Text('✅ تم الرفع إلى يوتيوب بنجاح!'),
+              backgroundColor: Colors.green.shade700,
+              duration: Duration(seconds: 4),
+            ),
           );
         }
       } else {
-        throw Exception('فشل الحصول على رابط يوتيوب');
+        throw Exception('لم يتم الحصول على رابط الفيديو من يوتيوب');
       }
     } catch (e) {
       debugPrint("YouTube Upload Error: $e");
       if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        // Show friendly message
+        String message = 'خطأ في الرفع';
+        final errStr = e.toString();
+        if (errStr.contains('sign_in_failed') || errStr.contains('access_denied')) {
+          message = '❌ فشل تسجيل الدخول بـ Google. تأكد من إعداد OAuth.';
+        } else if (errStr.contains('quotaExceeded') || errStr.contains('403')) {
+          message = '❌ تجاوزت حصة YouTube API اليومية.';
+        } else if (errStr.contains('insufficientPermissions')) {
+          message = '❌ صلاحيات غير كافية. تأكد من منح إذن الرفع.';
+        } else if (errStr.contains('cancelled')) {
+          message = 'تم إلغاء العملية.';
+        } else {
+          message = '❌ خطأ: ${errStr.length > 80 ? errStr.substring(0, 80) : errStr}';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطأ في الرفع: $e')),
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red.shade700,
+            duration: Duration(seconds: 6),
+          ),
         );
       }
     } finally {

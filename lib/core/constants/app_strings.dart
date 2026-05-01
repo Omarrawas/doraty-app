@@ -664,6 +664,7 @@ class AppStrings {
       'print_report': 'طباعة التقرير',
       'revenue': 'الدخل',
       'total_students': 'إجمالي الطلاب',
+      'total_students_stat': 'إجمالي الطلاب',
       'search_subscription_hint': 'بحث باسم الطالب أو الدورة...',
       'filter_by_date_all': 'تصفية حسب التاريخ: الكل',
       'filter_prefix': 'تصفية: ',
