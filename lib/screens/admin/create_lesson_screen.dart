@@ -1197,40 +1197,26 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
 
       String baseSlug = _slugController.text.trim();
       if (baseSlug.isEmpty) {
-        // More robust slug generation: allow Arabic characters, replace symbols/spaces with hyphens
         baseSlug = _titleController.text.trim().toLowerCase()
             .replaceAll(RegExp(r'[^\w\s\u0600-\u06FF-]'), '')
             .replaceAll(RegExp(r'[\s_]+'), '-')
             .replaceAll(RegExp(r'-+'), '-');
       }
 
-      // Fallback if slug is still empty or invalid
       if (baseSlug.isEmpty || baseSlug == '-') {
         baseSlug = 'lesson-${DateTime.now().millisecondsSinceEpoch}';
-      }
-
-      // Check for uniqueness and append suffix if needed
-      String finalSlug = baseSlug;
-      int suffix = 1;
-      bool isUnique = false;
-
-      while (!isUnique) {
-        isUnique = await _db.isLessonSlugUnique(finalSlug, excludeId: widget.lessonId);
-        if (!isUnique) {
-          finalSlug = '$baseSlug-${suffix++}';
-        }
       }
 
       final lessonData = {
         'chapter_id': _selectedChapterId,
         'title': _titleController.text.trim(),
-        'slug': finalSlug,
         'description': _descriptionHtml,
         'video_url': _videoUrlController.text.trim(),
-        'duration': duration,
+        'duration': durationText, // Send string instead of int for DB
         'content': _contentHtml,
         'is_free': _isFree,
         'resources': _attachments,
+        'order_index': _chapters.length, // Ensure order_index is provided
       };
 
       if (widget.lessonId != null) {

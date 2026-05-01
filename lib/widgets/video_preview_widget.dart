@@ -9,6 +9,7 @@ import 'dart:ui';
 import 'lesson/video_player_controls.dart';
 import 'lesson/youtube_player_web_windows.dart';
 import 'package:flutter/foundation.dart';
+import 'package:youtube_explode_dart/youtube_explode_dart.dart' as yt_explode;
 
 class VideoPreviewWidget extends StatefulWidget {
   final String videoUrl;
@@ -69,6 +70,9 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     if (url.contains('youtu.be') || url.contains('youtube.com')) {
       _isYoutube = true;
       _videoId = YoutubePlayer.convertUrlToId(url);
+      if (_videoId != null && _videoId!.contains('?')) {
+        _videoId = _videoId!.split('?').first;
+      }
       
       if (_videoId != null) {
         if (!kIsWeb && defaultTargetPlatform != TargetPlatform.windows) {
@@ -85,6 +89,8 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
               hideThumbnail: true,
             ),
           )..addListener(_onControllerChange);
+        } else {
+          _fetchYoutubeDurationWeb();
         }
       }
       return;
@@ -154,6 +160,20 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
         _youtubeController!.value.isReady && 
         _youtubeController!.metadata.duration.inSeconds > 0) {
       widget.onDurationFetched?.call(_youtubeController!.metadata.duration);
+    }
+  }
+
+  Future<void> _fetchYoutubeDurationWeb() async {
+    if (_videoId == null) return;
+    try {
+      final yt = yt_explode.YoutubeExplode();
+      final video = await yt.videos.get(_videoId!);
+      if (video.duration != null && mounted) {
+        widget.onDurationFetched?.call(video.duration!);
+      }
+      yt.close();
+    } catch (e) {
+      debugPrint('Error fetching youtube duration: $e');
     }
   }
 
