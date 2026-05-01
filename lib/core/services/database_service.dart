@@ -1406,7 +1406,7 @@ class DatabaseService {
       return (response as List).map((json) => Chapter.fromJson(json)).toList();
     } catch (e) {
       debugPrint('Error getting chapters: $e');
-      return [];
+      rethrow;
     }
   }
 
@@ -2625,12 +2625,13 @@ class DatabaseService {
 
   /// Get all exams for a course (including drafts)
   Future<List<Map<String, dynamic>>> getAllExamsForCourse(
-      String courseId) async {
+      String courseId, {bool includeQuestions = true}) async {
     if (courseId.trim().isEmpty) return [];
     try {
+      final selectStr = includeQuestions ? '*, questions(*)' : '*';
       final response = await _client
           .from('exams')
-          .select('*, questions(*)')
+          .select(selectStr)
           .eq('course_id', courseId)
           .order('created_at', ascending: false);
 

@@ -36,6 +36,7 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
   List<Chapter> _chapters = [];
   List<Map<String, dynamic>> _exams = [];
   bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -48,11 +49,14 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
 
   Future<void> _loadLessons() async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
     try {
       final lessons = await _db.getCourseLessons(widget.courseId);
       final chapters = await _db.getChapters(widget.courseId);
-      final exams = await _db.getAllExamsForCourse(widget.courseId);
+      final exams = await _db.getAllExamsForCourse(widget.courseId, includeQuestions: false);
 
       if (mounted) {
         setState(() {
@@ -64,12 +68,11 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
-              backgroundColor: Colors.red),
-        );
+        setState(() {
+          _isLoading = false;
+          _errorMessage = ErrorUtils.getFriendlyErrorMessage(e);
+        });
+        debugPrint('Error loading lessons: $e');
       }
     }
   }
@@ -97,12 +100,14 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
                             color: AppColors.primaryPurple,
                           ),
                         )
-                      : RefreshIndicator(
-                          onRefresh: _loadLessons,
-                          child: isSmallScreen
-                              ? _buildMobileView()
-                              : _buildDesktopView(),
-                        ),
+                      : _errorMessage != null
+                          ? _buildErrorState()
+                          : RefreshIndicator(
+                              onRefresh: _loadLessons,
+                              child: isSmallScreen
+                                  ? _buildMobileView()
+                                  : _buildDesktopView(),
+                            ),
                 ),
               ],
             ),
@@ -264,24 +269,60 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
     return Center(
       child: Padding(
         padding: EdgeInsets.all(20),
-        child: GlassCard(
-          opacity: 0.15,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.video_library, color: AppColors.getTextColor(context).withOpacity(0.4), size: 64),
-              SizedBox(height: 16),
-              Text(
-                _t('no_lessons'),
-                style: TextStyle(fontSize: 18, color: AppColors.getTextColor(context)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.video_library_outlined, color: AppColors.getTextColor(context).withOpacity(0.3), size: 80),
+            SizedBox(height: 16),
+            Text(
+              _t('no_lessons'),
+              style: TextStyle(fontSize: 20, color: AppColors.getTextColor(context), fontWeight: FontWeight.normal),
+            ),
+            SizedBox(height: 8),
+            Text(
+              _t('start_adding_first_lesson'),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: AppColors.getTextColor(context).withOpacity(0.5)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              SizedBox(height: 8),
-              Text(
-                _t('start_adding_first_lesson'),
-                style: TextStyle(fontSize: 14, color: AppColors.getTextColor(context, secondary: true)),
+              child: Icon(Icons.error_outline, color: Colors.redAccent, size: 60),
+            ),
+            SizedBox(height: 24),
+            Text(
+              _errorMessage ?? _t('error_loading'),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: AppColors.getTextColor(context)),
+            ),
+            SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadLessons,
+              icon: Icon(Icons.refresh),
+              label: Text(_t('retry') ?? 'Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

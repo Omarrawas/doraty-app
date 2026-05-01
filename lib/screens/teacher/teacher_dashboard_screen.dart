@@ -8,6 +8,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../admin/courses_management_screen.dart';
 import 'manage_exams_screen.dart';
 import 'students_results_screen.dart';
+import '../admin/create_course_screen.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -372,6 +373,30 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             Expanded(
               child: _buildActionCard(
                 context: context,
+                icon: Icons.school,
+                label: _t('create_new_course'),
+                color: Colors.purpleAccent,
+                onTap: () {
+                  final userId = SupabaseService.instance.currentUserId;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CreateCourseScreen(
+                        preselectedInstructorId: userId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                context: context,
                 icon: Icons.people,
                 label: _t('student_results'),
                 color: Colors.orange,
@@ -385,25 +410,27 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 },
               ),
             ),
-          ],
-        ),
-        SizedBox(height: 12),
-        _buildActionCard(
-          context: context,
-          icon: Icons.school,
-          label: _t('manage_my_courses'),
-          color: Colors.blue,
-          onTap: () {
-            final userId = SupabaseService.instance.currentUserId;
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CoursesManagementScreen(
-                  instructorId: userId,
-                ),
+            SizedBox(width: 12),
+            Expanded(
+              child: _buildActionCard(
+                context: context,
+                icon: Icons.library_books,
+                label: _t('manage_my_courses'),
+                color: Colors.blue,
+                onTap: () {
+                  final userId = SupabaseService.instance.currentUserId;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CoursesManagementScreen(
+                        instructorId: userId,
+                      ),
+                    ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ],
         ),
       ],
     );

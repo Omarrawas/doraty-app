@@ -172,6 +172,12 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
       if (mounted) {
         setState(() => _isLoadingChapters = false);
         debugPrint('Error loading chapters: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }

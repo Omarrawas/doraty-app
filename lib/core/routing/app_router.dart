@@ -83,6 +83,15 @@ final GoRouter appRouter = GoRouter(
 
       // 3- Admin Protection
       if (isAdminRoute && role != 'admin' && role != 'owner' && role != 'super_admin') {
+        // Allow teachers to access specific management routes
+        final bool isTeacherAllowedRoute = path.startsWith('/admin/courses') ||
+            path.startsWith('/admin/exams') ||
+            path.startsWith('/admin/lessons');
+
+        if (role == 'teacher' && isTeacherAllowedRoute) {
+          return null;
+        }
+
         // Here we could throw them to an unauthorized error page, or home
         return AppRoutes.root; 
       }

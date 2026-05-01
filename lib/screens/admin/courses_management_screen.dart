@@ -32,6 +32,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
   String _searchQuery = '';
   String _filter = 'published'; // all, published, draft
   String _typeFilter = 'all'; // all, recorded, live, in_person
+  String? _errorMessage;
 
   String _t(String key) => AppStrings.get(
       key, Provider.of<LocaleProvider>(context, listen: false).locale);
@@ -65,15 +66,15 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
       setState(() {
         _courses = courses;
         _isLoading = false;
+        _errorMessage = null;
       });
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
-              backgroundColor: Colors.red),
-        );
+        setState(() {
+          _isLoading = false;
+          _errorMessage = ErrorUtils.getFriendlyErrorMessage(e);
+        });
+        debugPrint('Error loading courses: $e');
       }
     }
   }
@@ -124,25 +125,27 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                       ? Center(
                           child: CircularProgressIndicator(color: AppColors.primaryPurple),
                         )
-                      : _filteredCourses.isEmpty
-                          ? _buildEmptyState(context)
-                          : RefreshIndicator(
-                              onRefresh: () => _loadCourses(forceRefresh: true),
-                              displacement: 20,
-                              color: AppColors.primaryPurple,
-                              child: ListView.builder(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 10),
-                                itemCount: _filteredCourses.length,
-                                itemBuilder: (context, index) {
-                                  return Padding(
-                                    padding: const EdgeInsets.only(bottom: 16),
-                                    child: _buildCourseCard(
-                                        context, _filteredCourses[index]),
-                                  );
-                                },
-                              ),
-                            ),
+                      : _errorMessage != null
+                          ? _buildErrorState()
+                          : _filteredCourses.isEmpty
+                              ? _buildEmptyState(context)
+                              : RefreshIndicator(
+                                  onRefresh: () => _loadCourses(forceRefresh: true),
+                                  displacement: 20,
+                                  color: AppColors.primaryPurple,
+                                  child: ListView.builder(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 20, vertical: 10),
+                                    itemCount: _filteredCourses.length,
+                                    itemBuilder: (context, index) {
+                                      return Padding(
+                                        padding: const EdgeInsets.only(bottom: 16),
+                                        child: _buildCourseCard(
+                                            context, _filteredCourses[index]),
+                                      );
+                                    },
+                                  ),
+                                ),
                 ),
               ],
             ),
@@ -712,7 +715,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             Container(
               padding: const EdgeInsets.all(30),
               decoration: BoxDecoration(
-                color: AppColors.getMutedTextColor(context),
+                color: AppColors.getMutedTextColor(context).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -737,6 +740,44 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
               style: TextStyle(
                 fontSize: 14,
                 color: AppColors.getTextColor(context).withOpacity(0.5),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.error_outline, color: Colors.redAccent, size: 60),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              _errorMessage ?? _t('error_loading'),
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: AppColors.getTextColor(context)),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _loadCourses(forceRefresh: true),
+              icon: const Icon(Icons.refresh),
+              label: Text(_t('retry') ?? 'Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
