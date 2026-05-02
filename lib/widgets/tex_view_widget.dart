@@ -37,11 +37,12 @@ class TexViewWidget extends StatelessWidget {
                    ));
     
     bool hasHtml = trimmedContent.contains('<') && trimmedContent.contains('>');
+    bool hasMathML = trimmedContent.contains('<math') || trimmedContent.contains('</math>');
 
     // 2. اختيار الويدجت الأنسب
     
     // الحالة الأولى: نص عادي بدون أي أكواد
-    if (!hasLatex && !hasHtml) {
+    if (!hasLatex && !hasHtml && !hasMathML) {
       return Text(
         content,
         style: style,
@@ -50,8 +51,8 @@ class TexViewWidget extends StatelessWidget {
       );
     }
 
-    // الحالة الثانية: يحتوي على HTML (مثل النصوص القادمة من Word) ولا يحتاج معادلات معقدة
-    if (hasHtml && !hasLatex) {
+    // الحالة الثانية: يحتوي على HTML ولا يحتاج معادلات معقدة ولا يحتوي على MathML
+    if (hasHtml && !hasLatex && !hasMathML) {
       return HtmlWidget(
         content,
         textStyle: style?.copyWith(
@@ -63,16 +64,17 @@ class TexViewWidget extends StatelessWidget {
       );
     }
 
-    // الحالة الثالثة: معادلات رياضية (استخدام TeXView)
+    // الحالة الثالثة: معادلات رياضية (LaTeX أو MathML)
     String processedContent = content;
     
     // تأمين المحتوى ليتناسب مع TeXViewDocument
-    // إذا لم يكن محاطاً بمحددات، نحيطه بـ $$ فقط إذا كان نصاً رياضياً صرفاً
+    // إذا لم يكن محاطاً بمحددات، نحيطه بـ $$ فقط إذا كان نصاً رياضياً صرفاً ولاتيكس
     bool alreadyDelimited = trimmedContent.startsWith(r'$') || 
                           trimmedContent.startsWith(r'\( ') || 
-                          trimmedContent.startsWith(r'\[ ');
+                          trimmedContent.startsWith(r'\[ ') ||
+                          trimmedContent.startsWith('<math');
                           
-    if (!alreadyDelimited && hasLatex) {
+    if (!alreadyDelimited && hasLatex && !hasMathML) {
         // إذا كان هناك علامات لاتيكس متفرقة، نتركها لـ TeXView ليتعامل معها
         // أو إذا كان المحتوى كله معادلة، نحيطه
         if (!trimmedContent.contains(' ')) { 

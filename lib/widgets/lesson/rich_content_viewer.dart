@@ -4,6 +4,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../tex_view_widget.dart';
 
 class RichContentViewer extends StatelessWidget {
   final String? htmlContent;
@@ -66,70 +67,14 @@ class RichContentViewer extends StatelessWidget {
               ),
               SizedBox(height: 16),
               if (htmlContent != null)
-                HtmlWidget(
+                TexViewWidget(
                   htmlContent!,
-                  textStyle: TextStyle(
+                  style: TextStyle(
                     color: AppColors.getTextColor(context),
                     fontSize: 16,
                     height: 1.6,
                     fontFamily: 'Cairo',
                   ),
-                  onTapUrl: (url) async {
-                    final uri = Uri.parse(url);
-                    if (await canLaunchUrl(uri)) {
-                      await launchUrl(uri);
-                      return true;
-                    }
-                    return false;
-                  },
-                  customStylesBuilder: (element) {
-                    if (element.localName == 'h1') {
-                      return {
-                        'font-size': '24px',
-                        'font-weight': 'bold',
-                        'margin-top': '16px',
-                        'margin-bottom': '12px'
-                      };
-                    }
-                    if (element.localName == 'h2') {
-                      return {
-                        'font-size': '20px',
-                        'font-weight': 'bold',
-                        'margin-top': '14px',
-                        'margin-bottom': '10px'
-                      };
-                    }
-                    if (element.localName == 'h3') {
-                      return {
-                        'font-size': '18px',
-                        'font-weight': 'bold',
-                        'margin-top': '12px',
-                        'margin-bottom': '8px'
-                      };
-                    }
-                    if (element.localName == 'a') {
-                      return {
-                        'color': '#9C27B0',
-                        'text-decoration': 'underline'
-                      }; // Primary Purple
-                    }
-                    if (element.localName == 'code') {
-                      return {
-                        'font-family': 'monospace',
-                        'background-color': 'rgba(0, 0, 0, 0.26)',
-                        'color': '#69F0AE',
-                        'padding': '2px 6px'
-                      };
-                    }
-                    if (element.localName == 'pre') {
-                      return {
-                        'background-color': 'rgba(0, 0, 0, 0.26)',
-                        'padding': '12px',
-                        'border-radius': '8px'
-                      };
-                    }
-                    return null;
-                  },
                 )
               else if (markdownContent != null)
                 MarkdownBody(

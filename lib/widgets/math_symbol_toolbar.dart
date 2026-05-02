@@ -57,6 +57,8 @@ class MathSymbolToolbar extends StatelessWidget {
             children: [
               // ── Quick Equation Insert (Word-like) ──
               _buildEquationButton(context),
+              // ── MathML Insert ──
+              _buildMathMLButton(context),
           _buildCategoryMenu(
             context,
             'الرموز',
@@ -286,6 +288,232 @@ class MathSymbolToolbar extends StatelessWidget {
   ),
 );
 }
+
+  /// ─── MathML Insert Button ───
+  Widget _buildMathMLButton(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final accent = isDark ? const Color(0xFF64FFDA) : const Color(0xFF00897B);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: InkWell(
+        onTap: () => _showMathMLDialog(context),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          width: 84,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [accent.withValues(alpha: 0.15), accent.withValues(alpha: 0.05)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: accent.withValues(alpha: 0.4)),
+          ),
+          child: Center(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.code, color: accent, size: 24),
+                  const SizedBox(height: 2),
+                  Text(
+                    'MathML',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// ─── MathML Input Dialog ───
+  void _showMathMLDialog(BuildContext context) {
+    final controller = TextEditingController();
+    String previewMathML = '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.all(16),
+            child: Container(
+              constraints: const BoxConstraints(maxWidth: 520, maxHeight: 600),
+              decoration: BoxDecoration(
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? const Color(0xFF1E1E1E)
+                    : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 24,
+                    spreadRadius: 4,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF00897B).withValues(alpha: 0.1),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(16)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.code,
+                            color: Color(0xFF00897B), size: 24),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'إدراج كود MathML',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text('أدخل كود MathML (يبدأ بـ <math>):',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14)),
+                          const SizedBox(height: 8),
+                          Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: TextField(
+                              controller: controller,
+                              maxLines: 8,
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 12,
+                              ),
+                              decoration: InputDecoration(
+                                hintText:
+                                    '<math>\n  <mfrac>\n    <mi>a</mi>\n    <mi>b</mi>\n  </mfrac>\n</math>',
+                                hintStyle: TextStyle(
+                                    color: Colors.grey.withValues(alpha: 0.5),
+                                    fontSize: 11),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey.withValues(alpha: 0.05),
+                              ),
+                              onChanged: (val) {
+                                setDialogState(() => previewMathML = val);
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text('المعاينة:',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14)),
+                          const SizedBox(height: 8),
+                          Container(
+                            constraints: const BoxConstraints(minHeight: 100),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color:
+                                      const Color(0xFF00897B).withValues(alpha: 0.3)),
+                            ),
+                            child: previewMathML.isEmpty
+                                ? const Center(
+                                    child: Text(
+                                      'المعاينة ستظهر هنا',
+                                      style: TextStyle(
+                                          color: Colors.grey, fontSize: 13),
+                                    ),
+                                  )
+                                : TeXView(
+                                    child: TeXViewDocument(
+                                      previewMathML,
+                                      style: const TeXViewStyle(
+                                        contentColor: Colors.black,
+                                        textAlign: TeXViewTextAlign.center,
+                                        padding: TeXViewPadding.all(16),
+                                      ),
+                                    ),
+                                    style: const TeXViewStyle(
+                                      backgroundColor: Colors.white,
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border(
+                          top: BorderSide(color: Colors.grey.withValues(alpha: 0.2))),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text('إلغاء'),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton.icon(
+                          onPressed: previewMathML.isEmpty
+                              ? null
+                              : () {
+                                  Navigator.pop(ctx);
+                                  onSymbolSelected(controller.text);
+                                },
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text('إدراج'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF00897B),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   /// ─── Equation Builder Button (Word-Like) ───
   Widget _buildEquationButton(BuildContext context) {

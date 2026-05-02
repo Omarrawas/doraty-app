@@ -577,37 +577,35 @@ class _LessonScreenState extends State<LessonScreen>
   }
 
   void _handleToggleFullScreen() {
-    // YouTube on mobile: use the controller's toggle so YoutubePlayerBuilder handles it.
-    if (_isYoutube && !kIsWeb && defaultTargetPlatform != TargetPlatform.windows) {
-      if (_youtubePlayerController == null) return;
-      _youtubePlayerController!.toggleFullScreenMode();
-      return;
-    }
+    final bool isCurrentlyLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
 
-    // Non-YouTube (direct video via Chewie)
-    final bool isCurrentlyFullScreen = _chewieController?.isFullScreen ?? false;
-    if (isCurrentlyFullScreen) {
-      _chewieController?.exitFullScreen();
+    if (isCurrentlyLandscape) {
+      // Exit Fullscreen: Reset orientation to portrait and show system UI.
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
       ]);
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     } else {
+      // Enter Fullscreen: Determine optimal orientation based on aspect ratio.
       double aspectRatio = 16 / 9;
-      if (_videoPlayerController != null &&
+      if (!_isYoutube &&
+          _videoPlayerController != null &&
           _videoPlayerController!.value.isInitialized) {
         aspectRatio = _videoPlayerController!.value.aspectRatio;
       }
+
       if (aspectRatio < 1.0) {
+        // Vertical video: keep in portrait but hide system UI.
         SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
       } else {
+        // Horizontal video: force landscape and hide system UI.
         SystemChrome.setPreferredOrientations([
           DeviceOrientation.landscapeLeft,
           DeviceOrientation.landscapeRight,
         ]);
       }
-      _chewieController?.enterFullScreen();
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     }
   }

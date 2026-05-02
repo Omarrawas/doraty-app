@@ -222,19 +222,19 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
   }
 
   void _enterFullScreen() {
-    if (_isYoutube) {
-      _youtubeController?.toggleFullScreenMode();
-    } else {
-      _chewieController?.enterFullScreen();
-    }
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   void _exitFullScreen() {
-    if (_isYoutube) {
-      _youtubeController?.toggleFullScreenMode();
-    } else {
-      _chewieController?.exitFullScreen();
-    }
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   String get _thumbnailUrl =>
@@ -248,21 +248,24 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
       return _buildErrorWidget();
     }
 
-    final bool useExternalYoutube = _isYoutube && (kIsWeb || defaultTargetPlatform == TargetPlatform.windows);
+    final bool useExternalYoutube =
+        _isYoutube && (kIsWeb || defaultTargetPlatform == TargetPlatform.windows);
 
     return OrientationBuilder(
       builder: (context, orientation) {
-        final bool isFullScreen = _isYoutube
-            ? (_youtubeController?.value.isFullScreen ?? false)
-            : (_chewieController?.isFullScreen ?? false);
+        final bool isLandscape = orientation == Orientation.landscape;
 
         Widget playerWidget;
         if (_isYoutube && !useExternalYoutube && _youtubeController != null) {
-          playerWidget = YoutubePlayer(
-            key: _youtubePlayerKey,
-            controller: _youtubeController!,
-            showVideoProgressIndicator: false,
-            aspectRatio: 16 / 9,
+          playerWidget = Center(
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: YoutubePlayer(
+                key: _youtubePlayerKey,
+                controller: _youtubeController!,
+                showVideoProgressIndicator: false,
+              ),
+            ),
           );
         } else if (useExternalYoutube) {
           playerWidget = YoutubePlayerWebWindows(
@@ -274,38 +277,36 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
           if (_chewieController != null &&
               _videoController != null &&
               _isInitialized) {
-            playerWidget = AspectRatio(
-              aspectRatio: _videoController!.value.aspectRatio,
-              child: Chewie(controller: _chewieController!),
+            playerWidget = Center(
+              child: AspectRatio(
+                aspectRatio: _videoController!.value.aspectRatio,
+                child: Chewie(controller: _chewieController!),
+              ),
             );
           } else {
             playerWidget = Container(
               color: Colors.black,
-              child: Center(
+              child: const Center(
                   child:
                       CircularProgressIndicator(color: AppColors.primaryPurple)),
             );
           }
         }
 
-        return _buildMainLayout(context, playerWidget);
+        return _buildMainLayout(context, playerWidget, isLandscape);
       },
     );
   }
 
-  Widget _buildMainLayout(BuildContext context, Widget player,
+  Widget _buildMainLayout(BuildContext context, Widget player, bool isFullScreen,
       {bool showThumbnailOverlay = true}) {
-    final bool isFullScreen = _isYoutube
-        ? (_youtubeController?.value.isFullScreen ?? false)
-        : (_chewieController?.isFullScreen ?? false);
-
     if (isFullScreen) {
       return Scaffold(
         backgroundColor: Colors.black,
         body: Stack(
           fit: StackFit.expand,
           children: [
-            Center(child: player),
+            player,
             VideoPlayerControls(
               isYoutube: _isYoutube,
               youtubeController: _youtubeController,
@@ -368,7 +369,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
-                      player,
+                      if (_hasStarted || !showThumbnailOverlay) player,
                       if (_hasStarted && showThumbnailOverlay)
                         VideoPlayerControls(
                           isYoutube: _isYoutube,
