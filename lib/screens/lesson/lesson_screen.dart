@@ -541,16 +541,6 @@ class _LessonScreenState extends State<LessonScreen>
       );
     }
 
-  @override
-  Widget build(BuildContext context) {
-    if (_isLoading || _currentLesson == null) {
-      return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.primaryPurple),
-        ),
-      );
-    }
-
     return OrientationBuilder(
       builder: (context, orientation) {
         final bool isLandscape = orientation == Orientation.landscape;
