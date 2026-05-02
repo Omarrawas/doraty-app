@@ -86,7 +86,6 @@ class _LessonScreenState extends State<LessonScreen>
   Lesson? _currentLesson;
   String? _effectiveCourseTitle;
   bool _effectiveIsEnrolled = false;
-  bool _isInFullScreenPage = false; // Track if we are in a separate fullscreen route
 
   Lesson get lesson => _currentLesson!;
   String get courseTitle => _effectiveCourseTitle ?? '';
@@ -541,10 +540,53 @@ class _LessonScreenState extends State<LessonScreen>
       );
     }
 
+    // YouTube Mobile: Use YoutubePlayerBuilder as the top-level wrapper.
+    // This ensures that the video player (and our custom controls stack)
+    // stays alive and moves to the fullscreen overlay correctly without freezing.
+    if (_isYoutube &&
+        !kIsWeb &&
+        defaultTargetPlatform != TargetPlatform.windows &&
+        _youtubePlayerController != null) {
+      return YoutubePlayerBuilder(
+        onEnterFullScreen: () {
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+        },
+        onExitFullScreen: () {
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+          SystemChrome.setPreferredOrientations([
+            DeviceOrientation.portraitUp,
+            DeviceOrientation.portraitDown,
+          ]);
+        },
+        player: _buildVideoWithOverlay(
+          player: YoutubePlayer(
+            controller: _youtubePlayerController!,
+            showVideoProgressIndicator: false,
+          ),
+          onToggleFullScreen: () {
+            _youtubePlayerController!.toggleFullScreenMode();
+          },
+        ),
+        builder: (context, player) {
+          // 'player' here is our custom stack containing the YoutubePlayer and controls.
+          return PopScope(
+            canPop: !(_youtubePlayerController?.value.isFullScreen ?? false),
+            onPopInvokedWithResult: (didPop, result) {
+              if (!didPop && (_youtubePlayerController?.value.isFullScreen ?? false)) {
+                _youtubePlayerController?.toggleFullScreenMode();
+              }
+            },
+            child: _buildScaffold(context, videoPlayer: player),
+          );
+        },
+      );
+    }
+
+    // Fallback for non-YouTube or other platforms (Web/Windows/Chewie)
     return OrientationBuilder(
       builder: (context, orientation) {
         final bool isLandscape = orientation == Orientation.landscape;
-        
+
         final Widget playerWidget = _buildVideoPlayer();
         final Widget videoWithOverlay = _buildVideoWithOverlay(
           player: playerWidget,
@@ -552,10 +594,18 @@ class _LessonScreenState extends State<LessonScreen>
         );
 
         if (isLandscape) {
-          // In landscape, we show the video player in full screen mode automatically
-          return Scaffold(
-            backgroundColor: Colors.black,
-            body: videoWithOverlay,
+          // Direct network videos (Chewie) handle their own fullscreen via the orientation change.
+          return PopScope(
+            canPop: false,
+            onPopInvokedWithResult: (didPop, result) {
+              if (!didPop && isLandscape) {
+                _handleToggleFullScreen();
+              }
+            },
+            child: Scaffold(
+              backgroundColor: Colors.black,
+              body: videoWithOverlay,
+            ),
           );
         }
 
@@ -568,38 +618,10 @@ class _LessonScreenState extends State<LessonScreen>
   }
 
   void _handleToggleFullScreen() {
-    // YouTube on mobile: push our own fullscreen page so controls remain visible.
+    // YouTube on mobile: use the controller's toggle so YoutubePlayerBuilder handles it.
     if (_isYoutube && !kIsWeb && defaultTargetPlatform != TargetPlatform.windows) {
       if (_youtubePlayerController == null) return;
-      SystemChrome.setPreferredOrientations([
-        DeviceOrientation.landscapeLeft,
-        DeviceOrientation.landscapeRight,
-      ]);
-      SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-      setState(() => _isInFullScreenPage = true);
-      Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (_, __, ___) => _YoutubeFullscreenPage(
-            controller: _youtubePlayerController!,
-            lesson: lesson,
-            courseTitle: courseTitle,
-          ),
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-        ),
-      ).then((_) {
-        if (mounted) {
-          setState(() {
-            _isInFullScreenPage = false;
-          });
-          SystemChrome.setPreferredOrientations([
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-          ]);
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-        }
-      });
+      _youtubePlayerController!.toggleFullScreenMode();
       return;
     }
 
@@ -856,21 +878,9 @@ class _LessonScreenState extends State<LessonScreen>
       // Mobile: wrap with minimal YoutubePlayerBuilder so YoutubePlayer has
       // a valid ancestor. Fullscreen is handled via _YoutubeFullscreenPage.
       if (_youtubePlayerController != null) {
-        if (_isInFullScreenPage) {
-          return Container(
-            height: 250,
-            color: Colors.black,
-            child: const Center(
-              child: CircularProgressIndicator(color: AppColors.primaryPurple),
-            ),
-          );
-        }
-        return YoutubePlayerBuilder(
-          player: YoutubePlayer(
-            controller: _youtubePlayerController!,
-            showVideoProgressIndicator: false,
-          ),
-          builder: (_, player) => player,
+        return YoutubePlayer(
+          controller: _youtubePlayerController!,
+          showVideoProgressIndicator: false,
         );
       }
 
@@ -2626,56 +2636,3 @@ class LessonSliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Custom fullscreen page for YouTube on mobile.
-// Shown by _handleToggleFullScreen() so our VideoPlayerControls overlay is
-// always visible (play/pause, progress bar, fullscreen-exit button).
-// ─────────────────────────────────────────────────────────────────────────────
-class _YoutubeFullscreenPage extends StatelessWidget {
-  final YoutubePlayerController controller;
-  final Lesson lesson;
-  final String courseTitle;
-
-  const _YoutubeFullscreenPage({
-    required this.controller,
-    required this.lesson,
-    this.courseTitle = '',
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    // Wrap in YoutubePlayerBuilder so internal YoutubePlayer lookups work.
-    return YoutubePlayerBuilder(
-      player: YoutubePlayer(
-        controller: controller,
-        showVideoProgressIndicator: false,
-      ),
-      builder: (context, player) {
-        return Scaffold(
-          backgroundColor: Colors.black,
-          body: Stack(
-            fit: StackFit.expand,
-            children: [
-              // Centre the 16:9 video inside the landscape screen.
-              Center(
-                child: AspectRatio(
-                  aspectRatio: 16 / 9,
-                  child: player,
-                ),
-              ),
-              // Our custom controls overlay.
-              VideoPlayerControls(
-                isYoutube: true,
-                youtubeController: controller,
-                lesson: lesson,
-                courseTitle: courseTitle,
-                // Pressing the fullscreen toggle or the back arrow closes the page.
-                onToggleFullScreen: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}

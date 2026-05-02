@@ -62,6 +62,24 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     );
   }
 
+  @override
+  void didUpdateWidget(VideoPreviewWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.videoUrl != widget.videoUrl) {
+      _youtubeController?.removeListener(_onControllerChange);
+      _youtubeController?.dispose();
+      _videoController?.dispose();
+      _chewieController?.dispose();
+      _youtubeController = null;
+      _videoController = null;
+      _chewieController = null;
+      _isInitialized = false;
+      _hasStarted = false;
+      _initPlayer();
+      if (mounted) setState(() {});
+    }
+  }
+
   void _initPlayer() {
     final url = widget.videoUrl;
     if (url.isEmpty) return;
@@ -202,14 +220,6 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     }
   }
 
-  void _enterFullScreen() {
-    if (_isYoutube) {
-      _youtubeController?.toggleFullScreenMode();
-    } else {
-      _chewieController?.enterFullScreen();
-    }
-  }
-
   void _exitFullScreen() {
     if (_isYoutube) {
       _youtubeController?.toggleFullScreenMode();
@@ -234,20 +244,14 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     if (_isYoutube && !useExternalYoutube && _youtubeController != null) {
       return YoutubePlayerBuilder(
         onEnterFullScreen: () {
-          setState(() => _isFullScreen = true);
-          SystemChrome.setPreferredOrientations([
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ]);
           SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
         },
         onExitFullScreen: () {
-          setState(() => _isFullScreen = false);
+          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
           SystemChrome.setPreferredOrientations([
             DeviceOrientation.portraitUp,
             DeviceOrientation.portraitDown,
           ]);
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
         },
         player: YoutubePlayer(
           controller: _youtubeController!,
@@ -285,29 +289,27 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     return _buildMainLayout(context, playerWidget);
   }
 
-  Widget _buildMainLayout(BuildContext context, Widget player, {bool showThumbnailOverlay = true}) {
-    if (_isFullScreen) {
-      return PopScope(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, _) {
-          if (!didPop) _exitFullScreen();
-        },
-        child: Scaffold(
-          backgroundColor: Colors.black,
-          body: Stack(
-            fit: StackFit.expand,
-            children: [
-              Center(child: player),
-              if (_hasStarted)
-                VideoPlayerControls(
-                  isYoutube: _isYoutube,
-                  youtubeController: _youtubeController,
-                  videoController: _videoController,
-                  onToggleFullScreen: _exitFullScreen,
-                  courseTitle: 'معاينة الفيديو',
-                ),
-            ],
-          ),
+  Widget _buildMainLayout(BuildContext context, Widget player,
+      {bool showThumbnailOverlay = true}) {
+    final bool isFullScreen = _isYoutube
+        ? (_youtubeController?.value.isFullScreen ?? false)
+        : (_chewieController?.isFullScreen ?? false);
+
+    if (isFullScreen) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Center(child: player),
+            VideoPlayerControls(
+              isYoutube: _isYoutube,
+              youtubeController: _youtubeController,
+              videoController: _videoController,
+              onToggleFullScreen: _exitFullScreen,
+              courseTitle: 'معاينة الفيديو',
+            ),
+          ],
         ),
       );
     }

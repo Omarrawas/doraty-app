@@ -78,7 +78,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
   void _startHideTimer() {
     _hideTimer?.cancel();
-    _hideTimer = Timer(Duration(seconds: 3), () {
+    _hideTimer = Timer(Duration(seconds: 5), () {
       if (mounted && _isVisible) {
         setState(() => _isVisible = false);
       }
@@ -116,6 +116,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
   }
 
   void _seekRelative(int seconds) {
+    HapticFeedback.lightImpact();
     if (widget.isYoutube) {
       final controller = widget.youtubeController;
       if (controller == null) return;
@@ -153,6 +154,16 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
 
     final Widget content = GestureDetector(
       onTap: _toggleVisibility,
+      onLongPress: () {
+        HapticFeedback.mediumImpact();
+        setState(() {
+          _isLocked = !_isLocked;
+          if (!_isLocked) {
+            _isVisible = true;
+            _startHideTimer();
+          }
+        });
+      },
       behavior: HitTestBehavior.opaque,
       onDoubleTapDown: (details) {
         if (_isLocked) return;
@@ -198,7 +209,13 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                             IconButton(
                               icon: const Icon(Icons.arrow_back,
                                   color: Colors.white),
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: () {
+                                if (isFullScreen && widget.onToggleFullScreen != null) {
+                                  widget.onToggleFullScreen!();
+                                } else {
+                                  Navigator.pop(context);
+                                }
+                              },
                             ),
                             const SizedBox(width: 8),
                             if (!_isLocked)
@@ -218,9 +235,9 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                            if (!_isLocked) ...[
-                              _buildSpeedButton(),
-                            ],
+                              if (!_isLocked && !widget.isYoutube) ...[
+                                _buildSpeedButton(),
+                              ],
                             IconButton(
                               icon: Icon(_isLocked ? Icons.lock : Icons.lock_open,
                                   color: Colors.white),
@@ -278,10 +295,9 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
       ),
     );
 
-    if (kIsWeb) {
-      return PointerInterceptor(child: content);
-    }
-    return content;
+    // Always use PointerInterceptor to block interactions with the underlying
+    // PlatformView (YouTube WebView) on Android/iOS/Web.
+    return PointerInterceptor(child: content);
   }
 
   Widget _buildControlBar(bool isFullScreen) {
