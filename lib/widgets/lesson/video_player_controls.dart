@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../models/lesson.dart';
 import 'package:provider/provider.dart';
 import '../../core/localization/locale_provider.dart';
+import 'package:flutter/services.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart';
 
 
