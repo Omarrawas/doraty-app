@@ -43,6 +43,7 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
   bool _isFullScreen = false;
   bool _hasStarted = false;
   bool _isInitialized = false;
+  final GlobalKey _youtubePlayerKey = GlobalKey();
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -220,6 +221,14 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     }
   }
 
+  void _enterFullScreen() {
+    if (_isYoutube) {
+      _youtubeController?.toggleFullScreenMode();
+    } else {
+      _chewieController?.enterFullScreen();
+    }
+  }
+
   void _exitFullScreen() {
     if (_isYoutube) {
       _youtubeController?.toggleFullScreenMode();
@@ -241,52 +250,47 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
 
     final bool useExternalYoutube = _isYoutube && (kIsWeb || defaultTargetPlatform == TargetPlatform.windows);
 
-    if (_isYoutube && !useExternalYoutube && _youtubeController != null) {
-      return YoutubePlayerBuilder(
-        onEnterFullScreen: () {
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-        },
-        onExitFullScreen: () {
-          SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-          SystemChrome.setPreferredOrientations([
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-          ]);
-        },
-        player: YoutubePlayer(
-          controller: _youtubeController!,
-          showVideoProgressIndicator: false,
-          aspectRatio: 16 / 9,
-        ),
-        builder: (context, player) {
-          return _buildMainLayout(context, player);
-        },
-      );
-    }
+    return OrientationBuilder(
+      builder: (context, orientation) {
+        final bool isFullScreen = _isYoutube
+            ? (_youtubeController?.value.isFullScreen ?? false)
+            : (_chewieController?.isFullScreen ?? false);
 
-    if (useExternalYoutube) {
-      final playerWidget = YoutubePlayerWebWindows(
-        videoId: _videoId!,
-        height: widget.height,
-      );
-      return _buildMainLayout(context, playerWidget, showThumbnailOverlay: false);
-    }
+        Widget playerWidget;
+        if (_isYoutube && !useExternalYoutube && _youtubeController != null) {
+          playerWidget = YoutubePlayer(
+            key: _youtubePlayerKey,
+            controller: _youtubeController!,
+            showVideoProgressIndicator: false,
+            aspectRatio: 16 / 9,
+          );
+        } else if (useExternalYoutube) {
+          playerWidget = YoutubePlayerWebWindows(
+            videoId: _videoId!,
+            height: widget.height,
+          );
+        } else {
+          // Regular Video
+          if (_chewieController != null &&
+              _videoController != null &&
+              _isInitialized) {
+            playerWidget = AspectRatio(
+              aspectRatio: _videoController!.value.aspectRatio,
+              child: Chewie(controller: _chewieController!),
+            );
+          } else {
+            playerWidget = Container(
+              color: Colors.black,
+              child: Center(
+                  child:
+                      CircularProgressIndicator(color: AppColors.primaryPurple)),
+            );
+          }
+        }
 
-    // Regular Video
-    Widget playerWidget;
-    if (_chewieController != null && _videoController != null && _isInitialized) {
-      playerWidget = AspectRatio(
-        aspectRatio: _videoController!.value.aspectRatio,
-        child: Chewie(controller: _chewieController!),
-      );
-    } else {
-      playerWidget = Container(
-        color: Colors.black,
-        child: Center(child: CircularProgressIndicator(color: AppColors.primaryPurple)),
-      );
-    }
-    
-    return _buildMainLayout(context, playerWidget);
+        return _buildMainLayout(context, playerWidget);
+      },
+    );
   }
 
   Widget _buildMainLayout(BuildContext context, Widget player,
