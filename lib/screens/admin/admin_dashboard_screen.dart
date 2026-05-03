@@ -489,10 +489,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => context.push('/admin/subscriptions/teacher/$_userId?name=${Uri.encodeComponent(_userName ?? "")}'),
         },
         {
-          'icon': Icons.account_balance_wallet_rounded,
-          'title': 'التقارير المالية',
-          'subtitle': 'متابعة الأرباح والمدفوعات',
-          'color': Colors.greenAccent,
+          'icon': Icons.assessment_rounded,
+          'title': _t('manage_reports'),
+          'subtitle': 'تقارير الأرباح والتسجيلات الخاصة بي',
+          'color': Colors.deepPurpleAccent,
           'onTap': () => context.push('/admin/reports/financial?instructorId=$_userId'),
         },
         {

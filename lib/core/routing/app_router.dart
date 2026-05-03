@@ -89,7 +89,8 @@ final GoRouter appRouter = GoRouter(
             path.startsWith('/admin/lessons') ||
             path.startsWith('/admin/results') ||
             path.startsWith('/admin/subscribers') ||
-            path.startsWith('/admin/subscriptions/teacher');
+            path.startsWith('/admin/subscriptions/teacher') ||
+            path.startsWith('/admin/reports/financial');
 
         if (role == 'teacher' && isTeacherAllowedRoute) {
           return null;

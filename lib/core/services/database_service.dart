@@ -2270,6 +2270,23 @@ class DatabaseService {
         user:users(full_name)
       ''');
 
+      // SECURITY: Role-based enforcement
+      final currentUserId = SupabaseService.instance.currentUserId;
+      if (currentUserId == null) return {'totalEarnings': 0.0, 'totalEnrollments': 0, 'items': []};
+      
+      final currentRole = await getUserRole(currentUserId);
+      final isTeacher = currentRole == 'teacher';
+      final isAdmin = currentRole == 'admin' || currentRole == 'super_admin';
+
+      // If teacher, force teacherId to be their own ID
+      String? effectiveTeacherId = teacherId;
+      if (isTeacher) {
+        effectiveTeacherId = currentUserId;
+      } else if (!isAdmin) {
+        // If not admin and not teacher (e.g. student), deny access
+        return {'totalEarnings': 0.0, 'totalEnrollments': 0, 'items': []};
+      }
+
       if (startDate != null) {
         query = query.gte('enrolled_at', startDate.toIso8601String());
       }
@@ -2282,23 +2299,19 @@ class DatabaseService {
         query = query.eq('course_id', courseId);
       }
 
-      // Filter by teacher (need to filter on joined table, which is tricky in simple syntax)
-      // Best to do post-filtering or use !inner join if possible.
-      // Let's fetch and filter in Dart for flexibility if volume is not huge.
-      // Or use filtering on join:
-      if (teacherId != null) {
-        query = query.eq('course.instructor_id',
-            teacherId); // Use dot notation for embedded resource if supported
+      // Filter by teacher
+      if (effectiveTeacherId != null) {
+        query = query.eq('course.instructor_id', effectiveTeacherId);
       }
 
       var data = await query;
       var enrollments = SafeParser.safeMapList(data);
 
-      // Filter by teacher
-      if (teacherId != null) {
+      // Filter by teacher (Dart side)
+      if (effectiveTeacherId != null) {
         enrollments = enrollments.where((e) {
           final course = e['course'] as Map?;
-          return course?['instructor_id'] == teacherId;
+          return course?['instructor_id'] == effectiveTeacherId;
         }).toList();
       }
 

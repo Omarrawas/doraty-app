@@ -1,6 +1,8 @@
-import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../utils/safe_parser.dart';
 
 /// Production-grade Local Database using Hive.
@@ -13,6 +15,8 @@ class LocalDatabase {
   bool _isInitialized = false;
   Future<void>? _initFuture;
   final Map<String, Box> _boxes = {};
+  Uint8List? _encryptionKey;
+  static const _secureStorage = FlutterSecureStorage();
   
   // ELITE MODE: Memory Cache Layer
   static final Map<String, dynamic> _memoryCache = {};
@@ -21,7 +25,8 @@ class LocalDatabase {
   static const String boxGeneral = 'app_local_database';
   static const String boxMetadata = 'app_metadata_box';
   static const String boxVersions = 'app_versions_box'; 
-  static const String boxSyncQueue = 'sync_queue'; // ELITE: Ensure this is always available
+  static const String boxSyncQueue = 'sync_queue';
+  static const String boxSecure = 'app_secure_box'; // New Secure Box
 
   /// Initialize Hive and open all required boxes
   Future<void> init() async {
@@ -32,14 +37,20 @@ class LocalDatabase {
     }
 
     _initFuture = () async {
+      // 1. Prepare Encryption Key
+      _encryptionKey = await _getEncryptionKey();
+
       final boxes = <String>[boxGeneral, boxMetadata, boxVersions, boxSyncQueue];
 
       for (final name in boxes) {
         await _openBox(name);
       }
+      
+      // 2. Open Secure Box
+      await _openSecureBox();
 
       _isInitialized = true;
-      debugPrint('🚀 LocalDatabase: Elite Version initialized');
+      debugPrint('🚀 LocalDatabase: Elite Version initialized with Encryption');
     }();
 
     try {
@@ -64,8 +75,53 @@ class LocalDatabase {
         _boxes[name] = box;
         return box;
       }
-      rethrow;
+      // If box is corrupted, delete and recreate
+      debugPrint('⚠️ LocalDatabase: Box "$name" corrupted, recreating...');
+      await Hive.deleteBoxFromDisk(name);
+      final Box box = await Hive.openBox(name);
+      _boxes[name] = box;
+      return box;
     }
+  }
+
+  Future<void> _openSecureBox() async {
+    if (_boxes.containsKey(boxSecure)) return;
+    if (_encryptionKey == null) return;
+
+    try {
+      final Box box = await Hive.openBox(
+        boxSecure,
+        encryptionCipher: HiveAesCipher(_encryptionKey!),
+      );
+      _boxes[boxSecure] = box;
+      debugPrint('🔒 LocalDatabase: Secure Box opened');
+    } catch (e) {
+      debugPrint('🚨 LocalDatabase: Failed to open secure box: $e');
+      // If encryption key failed or box is corrupted, we might need to clear it
+      await Hive.deleteBoxFromDisk(boxSecure);
+      try {
+        final Box box = await Hive.openBox(
+          boxSecure,
+          encryptionCipher: HiveAesCipher(_encryptionKey!),
+        );
+        _boxes[boxSecure] = box;
+      } catch (_) {}
+    }
+  }
+
+  Future<Uint8List> _getEncryptionKey() async {
+    const keyName = 'hive_encryption_key';
+    String? base64Key = await _secureStorage.read(key: keyName);
+
+    if (base64Key == null) {
+      debugPrint('🔑 Generating new Hive encryption key...');
+      final key = Hive.generateSecureKey();
+      base64Key = base64Encode(key);
+      await _secureStorage.write(key: keyName, value: base64Key);
+      return Uint8List.fromList(key);
+    }
+
+    return base64Decode(base64Key);
   }
 
   /// Ensure a custom box is open (for use by SyncQueue and other services)
@@ -251,8 +307,9 @@ class LocalDatabase {
       await init();
       await _getBox(boxGeneral).clear();
       await _getBox(boxMetadata).clear();
+      await _getBox(boxSecure).clear();
       _memoryCache.clear();
-      debugPrint('🧹 LocalDatabase: All boxes cleared');
+      debugPrint('🧹 LocalDatabase: All boxes (including secure) cleared');
     } catch (e) {
       debugPrint('❌ LocalDatabase Error clearing all boxes: $e');
     }

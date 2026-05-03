@@ -130,7 +130,10 @@ class AuthService extends ChangeNotifier {
       } catch (roleErr) {
         debugPrint('Could not fetch role, attempting to use cached role: $roleErr');
         // Try to get role from cached profile if network fails
-        final cached = LocalDatabase().get<Map<String, dynamic>>(CacheKeys.userProfile(currentUser!.id));
+        final cached = LocalDatabase().get<Map<String, dynamic>>(
+          CacheKeys.userProfile(currentUser!.id),
+          boxName: LocalDatabase.boxSecure,
+        );
         if (cached != null && cached['role'] != null) {
           role = cached['role'];
         }
@@ -147,8 +150,12 @@ class AuthService extends ChangeNotifier {
       // Apply screen security policy based on the new role
       await ScreenSecurityService().applySecurityPolicy(role: role);
 
-      // 4. CACHE: Save profile for offline use
-      await LocalDatabase().set(CacheKeys.userProfile(currentUser!.id), _userProfile);
+      // 4. CACHE: Save profile for offline use (SECURELY)
+      await LocalDatabase().set(
+        CacheKeys.userProfile(currentUser!.id), 
+        _userProfile, 
+        boxName: LocalDatabase.boxSecure
+      );
 
         _isOffline = false;
       } catch (e) {
@@ -157,7 +164,10 @@ class AuthService extends ChangeNotifier {
         
         // Try to load from cache if network fails
         if (currentUser != null) {
-          final cached = LocalDatabase().get<Map<String, dynamic>>(CacheKeys.userProfile(currentUser!.id));
+          final cached = LocalDatabase().get<Map<String, dynamic>>(
+            CacheKeys.userProfile(currentUser!.id),
+            boxName: LocalDatabase.boxSecure,
+          );
           if (cached != null) {
             _userProfile = SafeParser.safeMap(cached);
             _userRole = _userProfile?['role'] ?? 'student';

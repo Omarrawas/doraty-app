@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import '../../core/services/auth_service.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../widgets/dynamic_gradient_background.dart';
@@ -225,12 +226,16 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final isTeacher = authService.userRole == 'teacher';
+    final title = isTeacher ? _t('my_financial_report') : _t('financial_reports');
+
     return Scaffold(
       body: DynamicGradientBackground(
         child: SafeArea(
           child: Column(
             children: [
-              _buildHeader(),
+              _buildHeader(title),
               Expanded(
                 child: _isLoadingFilters 
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primaryPurple))
@@ -254,7 +259,7 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(String title) {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -265,7 +270,7 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
           ),
           const SizedBox(width: 12),
           Text(
-            widget.instructorId != null ? 'تقاريري المالية' : _t('admin_financial_reports'),
+            title,
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
