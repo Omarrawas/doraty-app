@@ -283,7 +283,10 @@ List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
         ),
         GoRoute(
           path: 'reports/financial',
-          builder: (context, state) => const FinancialReportsScreen(),
+          builder: (context, state) {
+            final instructorId = state.uri.queryParameters['instructorId'];
+            return FinancialReportsScreen(instructorId: instructorId);
+          },
           routes: [
             GoRoute(
               path: 'preview',

@@ -475,46 +475,32 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     final List<Map<String, dynamic>> actions = [
       if (_userRole == 'teacher') ...[
         {
-          'icon': Icons.people_alt_rounded,
-          'title': 'نتائج الطلاب',
-          'subtitle': 'متابعة نتائج الاختبارات والدرجات',
-          'color': Colors.orangeAccent,
-          'onTap': () => context.push('/admin/results'),
-        },
-        {
-          'icon': Icons.people_rounded,
-          'title': 'مشتركو الدورات',
-          'subtitle': 'قائمة المشتركين في دوراتك',
-          'color': Colors.pinkAccent,
-          'onTap': () => context.push('/admin/courses?instructorId=$_userId'),
-        },
-        {
-          'icon': Icons.assignment_rounded,
-          'title': _t('manage_exams'),
-          'subtitle': 'إدارة الاختبارات والأسئلة',
-          'color': Colors.deepOrangeAccent,
-          'onTap': () => context.push('/admin/exams/create'),
-        },
-        {
           'icon': Icons.library_books_rounded,
-          'title': _userRole == 'teacher' ? _t('my_courses') : _t('manage_courses'),
-          'subtitle': _t('admin_courses_desc'),
+          'title': 'إدارة دوراتي',
+          'subtitle': 'إضافة وتعديل دروس دوراتك',
           'color': Colors.tealAccent,
           'onTap': () => context.push('/admin/courses?instructorId=$_userId'),
         },
         {
           'icon': Icons.analytics_rounded,
-          'title': 'إحصائيات الأداء',
-          'subtitle': 'تقارير مفصلة عن دوراتك',
+          'title': 'الإحصائيات',
+          'subtitle': 'نظرة شاملة على الأداء والطلاب',
           'color': Colors.indigoAccent,
-          'onTap': () => context.push('/admin/subscriptions/teacher/$_userId?name=${Uri.encodeComponent(_userName ?? '')}'),
+          'onTap': () => context.push('/admin/subscriptions/teacher/$_userId?name=${Uri.encodeComponent(_userName ?? "")}'),
         },
         {
           'icon': Icons.account_balance_wallet_rounded,
           'title': 'التقارير المالية',
           'subtitle': 'متابعة الأرباح والمدفوعات',
           'color': Colors.greenAccent,
-          'onTap': () => context.push('/admin/reports/financial'),
+          'onTap': () => context.push('/admin/reports/financial?instructorId=$_userId'),
+        },
+        {
+          'icon': Icons.people_alt_rounded,
+          'title': 'نتائج الطلاب',
+          'subtitle': 'متابعة نتائج الاختبارات والدرجات',
+          'color': Colors.orangeAccent,
+          'onTap': () => context.push('/admin/results'),
         },
       ] else ...[
         // Full Admin Actions

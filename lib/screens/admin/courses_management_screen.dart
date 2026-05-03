@@ -200,7 +200,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
               children: [
                 Text(
                   widget.instructorId != null
-                      ? _t('manage_my_courses')
+                      ? 'إدارة دوراتي'
                       : _t('manage_courses'),
                   style: TextStyle(
                     fontSize: 22,
@@ -570,6 +570,14 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                             },
                           ),
                           IconButton(
+                            icon: Icon(Icons.people_outline,
+                                color: AppColors.getTextColor(context, secondary: true), size: 20),
+                            onPressed: () {
+                              context.push('/admin/subscribers?courseId=${course['id']}&courseTitle=${Uri.encodeComponent(course['title'] ?? '')}');
+                            },
+                            tooltip: 'مشتركو الدورة',
+                          ),
+                          IconButton(
                             icon: Icon(Icons.quiz_outlined,
                                 color: AppColors.getTextColor(context, secondary: true), size: 20),
                             onPressed: () async {
@@ -578,6 +586,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                               );
                               if (result == true) _loadCourses();
                             },
+                            tooltip: 'الاختبارات',
                           ),
                           PopupMenuButton<String>(
                             icon: Icon(Icons.more_vert,
@@ -585,6 +594,9 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                             onSelected: (value) {
                               if (value == 'delete') _deleteCourse(course);
                               if (value == 'stats') _showStatistics(course);
+                              if (value == 'subscribers') {
+                                context.push('/admin/subscribers?courseId=${course['id']}&courseTitle=${Uri.encodeComponent(course['title'] ?? '')}');
+                              }
                               if (value == 'sessions') {
                                 final mode = course['delivery_mode'] ?? 'recorded';
                                 if (mode == 'live' || mode == 'in_person') {
@@ -615,6 +627,16 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
                                     ],
                                   ),
                                 ),
+                              PopupMenuItem(
+                                value: 'subscribers',
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.people_outline, size: 20),
+                                    const SizedBox(width: 8),
+                                    const Text('مشتركو الدورة'),
+                                  ],
+                                ),
+                              ),
                               PopupMenuItem(
                                 value: 'stats',
                                 child: Row(

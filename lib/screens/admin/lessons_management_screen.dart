@@ -174,30 +174,62 @@ class _LessonsManagementScreenState extends State<LessonsManagementScreen> {
   Widget _buildTopActions(BuildContext context) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: _buildHeaderActionButton(
-              context: context,
-              icon: Icons.create_new_folder_rounded,
-              label: _t('add_chapter'),
-              color: Colors.blueAccent,
-              onTap: _addChapter,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _buildHeaderActionButton(
+                  context: context,
+                  icon: Icons.create_new_folder_rounded,
+                  label: _t('add_chapter'),
+                  color: Colors.blueAccent,
+                  onTap: _addChapter,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _buildHeaderActionButton(
+                  context: context,
+                  icon: Icons.video_call_rounded,
+                  label: _t('add_lesson'),
+                  color: AppColors.primaryPurple,
+                  onTap: () async {
+                    final result = await context
+                        .push('/admin/lessons/create/${widget.courseId}');
+                    if (result == true) _loadLessons();
+                  },
+                ),
+              ),
+            ],
           ),
-          SizedBox(width: 12),
-          Expanded(
-            child: _buildHeaderActionButton(
-              context: context,
-              icon: Icons.video_call_rounded,
-              label: _t('add_lesson'),
-              color: AppColors.primaryPurple,
-              onTap: () async {
-                final result = await context
-                    .push('/admin/lessons/create/${widget.courseId}');
-                if (result == true) _loadLessons();
-              },
-            ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildHeaderActionButton(
+                  context: context,
+                  icon: Icons.people_outline,
+                  label: 'المشتركون',
+                  color: Colors.tealAccent,
+                  onTap: () {
+                    context.push('/admin/subscribers?courseId=${widget.courseId}&courseTitle=${Uri.encodeComponent(widget.courseTitle)}');
+                  },
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: _buildHeaderActionButton(
+                  context: context,
+                  icon: Icons.bar_chart_rounded,
+                  label: 'الإحصائيات',
+                  color: Colors.orangeAccent,
+                  onTap: () {
+                    context.push('/admin/enrollment-stats?courseId=${widget.courseId}&courseTitle=${Uri.encodeComponent(widget.courseTitle)}');
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),

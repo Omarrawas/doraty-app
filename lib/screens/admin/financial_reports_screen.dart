@@ -12,7 +12,8 @@ import '../../core/localization/locale_provider.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 
 class FinancialReportsScreen extends StatefulWidget {
-  const FinancialReportsScreen({super.key});
+  final String? instructorId;
+  const FinancialReportsScreen({super.key, this.instructorId});
 
   @override
   State<FinancialReportsScreen> createState() => _FinancialReportsScreenState();
@@ -40,6 +41,7 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedTeacherId = widget.instructorId;
     _loadFilters();
   }
 
@@ -263,7 +265,7 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
           ),
           const SizedBox(width: 12),
           Text(
-            _t('admin_financial_reports'),
+            widget.instructorId != null ? 'تقاريري المالية' : _t('admin_financial_reports'),
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
@@ -294,29 +296,31 @@ class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
             onTap: _pickDateRange,
           ),
           _buildDivider(),
-          _buildFilterItem(
-            icon: Icons.person_outline,
-            title: 'تصفية حسب المدرس',
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _selectedTeacherId,
-                isExpanded: true,
-                hint: Text('كل المدرسين', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.5), fontSize: 13)),
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('جميع المدرسين')),
-                  ..._teachers.map((t) => DropdownMenuItem(
-                    value: t['id'] as String,
-                    child: Text(t['full_name'] ?? 'مدرس', overflow: TextOverflow.ellipsis),
-                  )),
-                ],
-                onChanged: (val) => setState(() {
-                  _selectedTeacherId = val;
-                  if (val != null) _selectedCourseId = null; // Clear course if teacher selected
-                }),
+          if (widget.instructorId == null) ...[
+            _buildFilterItem(
+              icon: Icons.person_outline,
+              title: 'تصفية حسب المدرس',
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _selectedTeacherId,
+                  isExpanded: true,
+                  hint: Text('كل المدرسين', style: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.5), fontSize: 13)),
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('جميع المدرسين')),
+                    ..._teachers.map((t) => DropdownMenuItem(
+                      value: t['id'] as String,
+                      child: Text(t['full_name'] ?? 'مدرس', overflow: TextOverflow.ellipsis),
+                    )),
+                  ],
+                  onChanged: (val) => setState(() {
+                    _selectedTeacherId = val;
+                    if (val != null) _selectedCourseId = null; // Clear course if teacher selected
+                  }),
+                ),
               ),
             ),
-          ),
-          _buildDivider(),
+            _buildDivider(),
+          ],
           _buildFilterItem(
             icon: Icons.book_outlined,
             title: 'تصفية حسب الدورة',
