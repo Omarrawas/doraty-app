@@ -31,6 +31,8 @@ class _RichTextEditorState extends State<RichTextEditor> {
   late quill.QuillController _controller;
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
+  bool _showPreview = false;
+  String _currentHtml = '';
 
   @override
   void initState() {
@@ -84,13 +86,12 @@ class _RichTextEditorState extends State<RichTextEditor> {
     _controller.addListener(_onContentChanged);
   }
 
-  void _onContentChanged() {
-    final delta = _controller.document.toDelta();
-    final converter = QuillDeltaToHtmlConverter(
-      delta.toJson(),
-      ConverterOptions.forEmail(),
-    );
     final html = converter.convert();
+    if (mounted) {
+      setState(() {
+        _currentHtml = html;
+      });
+    }
     widget.onContentChanged(html);
   }
 
@@ -240,48 +241,115 @@ class _RichTextEditorState extends State<RichTextEditor> {
                             height: 1,
                             color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
                           ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.remove_red_eye_outlined, size: 16, color: Colors.grey),
+                                const SizedBox(width: 8),
+                                const Expanded(
+                                  child: Text(
+                                    'معاينة حية للمحتوى',
+                                    style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                Switch(
+                                  value: _showPreview,
+                                  onChanged: (val) => setState(() => _showPreview = val),
+                                  activeColor: AppColors.brandPrimary,
+                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            height: 1,
+                            color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
+                          ),
                         ],
                       ),
                     ),
                   ],
-                  Container(
-                    height: widget.height,
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    color: isDark ? Colors.transparent : Colors.white,
-                    child: quill.QuillEditor.basic(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      config: quill.QuillEditorConfig(
-                        placeholder: widget.placeholder,
-                        padding: const EdgeInsets.all(12),
-                        expands: false,
-                        scrollable: true,
-                        autoFocus: false,
-                        customStyles: quill.DefaultStyles(
-                          placeHolder: quill.DefaultTextBlockStyle(
-                            TextStyle(
-                              color: isDark ? Colors.white38 : Colors.black38,
-                              fontSize: 16,
+                  Column(
+                    children: [
+                      Container(
+                        height: widget.height,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        color: isDark ? Colors.transparent : Colors.white,
+                        child: quill.QuillEditor.basic(
+                          controller: _controller,
+                          focusNode: _focusNode,
+                          config: quill.QuillEditorConfig(
+                            placeholder: widget.placeholder,
+                            padding: const EdgeInsets.all(12),
+                            expands: false,
+                            scrollable: true,
+                            autoFocus: false,
+                            customStyles: quill.DefaultStyles(
+                              placeHolder: quill.DefaultTextBlockStyle(
+                                TextStyle(
+                                  color: isDark ? Colors.white38 : Colors.black38,
+                                  fontSize: 16,
+                                ),
+                                const quill.HorizontalSpacing(0, 0),
+                                const quill.VerticalSpacing(0, 0),
+                                const quill.VerticalSpacing(0, 0),
+                                null,
+                              ),
+                              paragraph: quill.DefaultTextBlockStyle(
+                                TextStyle(
+                                  color: widget.textColor ?? (isDark ? Colors.white : Colors.black87),
+                                  fontSize: 16,
+                                  height: 1.5,
+                                ),
+                                const quill.HorizontalSpacing(0, 0),
+                                const quill.VerticalSpacing(0, 0),
+                                const quill.VerticalSpacing(0, 0),
+                                null,
+                              ),
                             ),
-                            const quill.HorizontalSpacing(0, 0),
-                            const quill.VerticalSpacing(0, 0),
-                            const quill.VerticalSpacing(0, 0),
-                            null,
-                          ),
-                          paragraph: quill.DefaultTextBlockStyle(
-                            TextStyle(
-                              color: widget.textColor ?? (isDark ? Colors.white : Colors.black87),
-                              fontSize: 16,
-                              height: 1.5,
-                            ),
-                            const quill.HorizontalSpacing(0, 0),
-                            const quill.VerticalSpacing(0, 0),
-                            const quill.VerticalSpacing(0, 0),
-                            null,
                           ),
                         ),
                       ),
-                    ),
+                      if (_showPreview && _currentHtml.isNotEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.black26 : Colors.grey[50],
+                            border: Border(
+                              top: BorderSide(color: AppColors.getBorderColor(context).withValues(alpha: 0.3)),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Text(
+                                'معاينة المعادلات:',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.getMutedTextColor(context),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TeXView(
+                                renderingEngine: const TeXViewRenderingEngine.mathjax(),
+                                child: TeXViewDocument(
+                                  _currentHtml,
+                                  style: TeXViewStyle(
+                                    contentColor: isDark ? Colors.white : Colors.black87,
+                                    backgroundColor: Colors.transparent,
+                                    padding: const TeXViewPadding.all(8),
+                                  ),
+                                ),
+                                style: const TeXViewStyle(
+                                  backgroundColor: Colors.transparent,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
                   ),
                 ],
               ),
