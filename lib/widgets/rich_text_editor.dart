@@ -28,6 +28,7 @@ class MathEmbedBuilder extends quill.EmbedBuilder {
         ),
       ),
       child: TeXView(
+        key: ValueKey('tex_$latex'),
         child: TeXViewDocument(
           '\\($latex\\)',
           style: TeXViewStyle(
@@ -36,8 +37,8 @@ class MathEmbedBuilder extends quill.EmbedBuilder {
             padding: const TeXViewPadding.all(4),
           ),
         ),
-        style: const TeXViewStyle(
-          backgroundColor: Colors.transparent,
+        style: TeXViewStyle(
+          backgroundColor: isDark ? Colors.black26 : Colors.grey[50],
         ),
       ),
     );
