@@ -38,6 +38,7 @@ import '../../screens/teacher/create_exam_screen.dart';
 import '../../screens/teacher/manage_questions_screen.dart';
 import '../../screens/admin/admin_social_links_screen.dart';
 import '../../screens/teacher/course_subscribers_screen.dart';
+import '../../screens/teacher/students_results_screen.dart';
 
 List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
   return [
@@ -55,6 +56,13 @@ List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
               courseId: courseId,
               courseTitle: courseTitle,
             );
+          },
+        ),
+        GoRoute(
+          path: 'results',
+          builder: (context, state) {
+            final examId = state.uri.queryParameters['examId'];
+            return StudentsResultsScreen(examId: examId);
           },
         ),
         GoRoute(

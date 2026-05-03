@@ -180,10 +180,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.getMutedTextColor(context),
+                    color: AppColors.getGlassColor(context, opacity: 0.15),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.getMutedTextColor(context),
+                      color: AppColors.getGlassColor(context, opacity: 0.2),
                       width: 1,
                     ),
                   ),
@@ -383,7 +383,17 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               icon: Icons.people_alt_rounded,
               label: _t('student_results'),
               color: Colors.orangeAccent,
-              onTap: () => context.push('/admin/subscribers'),
+              onTap: () => context.push('/admin/results'),
+            ),
+            _buildActionCard(
+              context: context,
+              icon: Icons.people_rounded,
+              label: 'مشتركو الدورات',
+              color: Colors.pinkAccent,
+              onTap: () {
+                final userId = SupabaseService.instance.currentUserId;
+                context.push('/admin/courses?instructorId=$userId');
+              },
             ),
             _buildActionCard(
               context: context,
@@ -411,6 +421,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 final userId = SupabaseService.instance.currentUserId;
                 context.push('/admin/courses?instructorId=$userId');
               },
+            ),
+            _buildActionCard(
+              context: context,
+              icon: Icons.settings_rounded,
+              label: 'الإعدادات',
+              color: Colors.grey,
+              onTap: () => context.push('/settings'),
             ),
           ],
         ),
@@ -528,10 +545,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         child: Container(
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.getMutedTextColor(context),
+            color: AppColors.getGlassColor(context, opacity: 0.1),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.getMutedTextColor(context),
+              color: AppColors.getGlassColor(context, opacity: 0.2),
               width: 1,
             ),
           ),

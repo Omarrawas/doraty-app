@@ -477,9 +477,16 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         {
           'icon': Icons.people_alt_rounded,
           'title': 'نتائج الطلاب',
-          'subtitle': 'متابعة المشتركين وتقدمهم',
+          'subtitle': 'متابعة نتائج الاختبارات والدرجات',
           'color': Colors.orangeAccent,
-          'onTap': () => context.push('/admin/subscribers'),
+          'onTap': () => context.push('/admin/results'),
+        },
+        {
+          'icon': Icons.people_rounded,
+          'title': 'مشتركو الدورات',
+          'subtitle': 'قائمة المشتركين في دوراتك',
+          'color': Colors.pinkAccent,
+          'onTap': () => context.push('/admin/courses?instructorId=$_userId'),
         },
         {
           'icon': Icons.assignment_rounded,
@@ -537,7 +544,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'title': 'نتائج الطلاب',
           'subtitle': 'متابعة كافة المشتركين',
           'color': Colors.orangeAccent,
-          'onTap': () => context.push('/admin/subscribers'),
+          'onTap': () => context.push('/admin/results'),
         },
         {
           'icon': Icons.library_books_rounded,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
+import 'package:intl/intl.dart' as intl;
 import 'exam_stats_screen.dart';
 
 class StudentsResultsScreen extends StatefulWidget {
@@ -18,8 +19,12 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
 
   List<Map<String, dynamic>> _attempts = [];
   List<Map<String, dynamic>> _exams = [];
+  List<Map<String, dynamic>> _filteredAttempts = [];
   String? _selectedExamId;
+  String _searchQuery = '';
   bool _isLoading = true;
+  String _sortBy = 'date'; // 'date', 'score', 'name'
+  bool _sortAscending = false;
 
   @override
   void initState() {
@@ -39,11 +44,47 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
       setState(() {
         _exams = exams;
         _attempts = attempts;
+        _filterAttempts();
         _isLoading = false;
       });
     } catch (e) {
-      setState(() => _isLoading = false);
+      debugPrint('Error loading data: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _filterAttempts() {
+    setState(() {
+      _filteredAttempts = _attempts.where((attempt) {
+        final name = attempt['users']?['full_name']?.toString().toLowerCase() ?? '';
+        final email = attempt['users']?['email']?.toString().toLowerCase() ?? '';
+        final examTitle = attempt['exams']?['title']?.toString().toLowerCase() ?? '';
+        final search = _searchQuery.toLowerCase();
+        
+        return name.contains(search) || 
+               email.contains(search) || 
+               examTitle.contains(search);
+      }).toList();
+
+      // Apply Sorting
+      _filteredAttempts.sort((a, b) {
+        int result = 0;
+        if (_sortBy == 'date') {
+          final dateA = DateTime.tryParse(a['created_at'] ?? '') ?? DateTime(0);
+          final dateB = DateTime.tryParse(b['created_at'] ?? '') ?? DateTime(0);
+          result = dateA.compareTo(dateB);
+        } else if (_sortBy == 'score') {
+          final scoreA = a['percentage'] as num? ?? 0;
+          final scoreB = b['percentage'] as num? ?? 0;
+          result = scoreA.compareTo(scoreB);
+        } else if (_sortBy == 'name') {
+          final nameA = a['users']?['full_name']?.toString().toLowerCase() ?? '';
+          final nameB = b['users']?['full_name']?.toString().toLowerCase() ?? '';
+          result = nameA.compareTo(nameB);
+        }
+        return _sortAscending ? result : -result;
+      });
+    });
   }
 
   @override
@@ -62,6 +103,10 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
               if (_exams.isNotEmpty) ...[
                 _buildExamFilter(),
                 SizedBox(height: 12),
+                _buildSearchAndSort(),
+                SizedBox(height: 12),
+                _buildSummaryStats(),
+                SizedBox(height: 12),
                 _buildAnalyticsButton(),
               ],
               Expanded(
@@ -72,17 +117,17 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
                               AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
-                    : _attempts.isEmpty
+                    : _filteredAttempts.isEmpty
                         ? _buildEmptyState()
                         : RefreshIndicator(
                             onRefresh: _loadData,
                             child: ListView.builder(
                               padding: EdgeInsets.all(20),
-                              itemCount: _attempts.length,
+                              itemCount: _filteredAttempts.length,
                               itemBuilder: (context, index) {
                                 return Padding(
                                   padding: EdgeInsets.only(bottom: 12),
-                                  child: _buildAttemptCard(_attempts[index]),
+                                  child: _buildAttemptCard(_filteredAttempts[index]),
                                 );
                               },
                             ),
@@ -106,10 +151,10 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
               child: Container(
                 decoration: BoxDecoration(
-                  color: AppColors.getMutedTextColor(context),
+                  color: AppColors.getGlassColor(context, opacity: 0.1),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: AppColors.getMutedTextColor(context), width: 1),
+                      color: AppColors.getGlassColor(context, opacity: 0.2), width: 1),
                 ),
                 child: IconButton(
                   icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
@@ -144,10 +189,10 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              color: AppColors.getMutedTextColor(context),
+              color: AppColors.getGlassColor(context, opacity: 0.1),
               borderRadius: BorderRadius.circular(16),
               border:
-                  Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+                  Border.all(color: AppColors.getGlassColor(context, opacity: 0.2), width: 1),
             ),
             child: DropdownButtonFormField<String>(
               value: _selectedExamId,
@@ -266,6 +311,15 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
                     ),
                   ],
                 ),
+                SizedBox(height: 12),
+                if (attempt['created_at'] != null)
+                  Text(
+                    'تاريخ المحاولة: ${intl.DateFormat('yyyy/MM/dd HH:mm').format(DateTime.parse(attempt['created_at']).toLocal())}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.getTextColor(context).withOpacity(0.5),
+                    ),
+                  ),
                 SizedBox(height: 16),
                 Row(
                   children: [
@@ -292,8 +346,9 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: AppColors.getMutedTextColor(context),
+        color: AppColors.getGlassColor(context, opacity: 0.1),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.2), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -381,6 +436,190 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchAndSort() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.getGlassColor(context, opacity: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.2), width: 1),
+                  ),
+                  child: TextField(
+                    style: TextStyle(color: AppColors.getTextColor(context)),
+                    onChanged: (value) {
+                      _searchQuery = value;
+                      _filterAttempts();
+                    },
+                    decoration: InputDecoration(
+                      icon: Icon(Icons.search, color: AppColors.getTextColor(context).withOpacity(0.5)),
+                      hintText: 'ابحث عن طالب...',
+                      hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.5)),
+                      border: InputBorder.none,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 12),
+          _buildSortButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSortButton() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.getGlassColor(context, opacity: 0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.getGlassColor(context, opacity: 0.2), width: 1),
+          ),
+          child: PopupMenuButton<String>(
+            icon: Icon(Icons.sort_rounded, color: AppColors.getTextColor(context)),
+            color: AppColors.getSurfaceColor(context),
+            onSelected: (value) {
+              if (_sortBy == value) {
+                _sortAscending = !_sortAscending;
+              } else {
+                _sortBy = value;
+                _sortAscending = false;
+              }
+              _filterAttempts();
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'date',
+                child: Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 18),
+                    SizedBox(width: 8),
+                    Text('حسب التاريخ'),
+                    if (_sortBy == 'date') ...[
+                      Spacer(),
+                      Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 14),
+                    ],
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'score',
+                child: Row(
+                  children: [
+                    Icon(Icons.score_rounded, size: 18),
+                    SizedBox(width: 8),
+                    Text('حسب الدرجة'),
+                    if (_sortBy == 'score') ...[
+                      Spacer(),
+                      Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 14),
+                    ],
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'name',
+                child: Row(
+                  children: [
+                    Icon(Icons.person, size: 18),
+                    SizedBox(width: 8),
+                    Text('حسب الاسم'),
+                    if (_sortBy == 'name') ...[
+                      Spacer(),
+                      Icon(_sortAscending ? Icons.arrow_upward : Icons.arrow_downward, size: 14),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryStats() {
+    if (_attempts.isEmpty) return SizedBox.shrink();
+
+    final totalAttempts = _attempts.length;
+    final uniqueStudents = _attempts.map((a) => a['user_id']).toSet().length;
+    final passedAttempts = _attempts.where((a) => a['is_passed'] == true).length;
+    final passRate = totalAttempts > 0 ? (passedAttempts / totalAttempts) * 100 : 0.0;
+    final avgScore = totalAttempts > 0 ? _attempts.fold<double>(0, (prev, a) => prev + (a['percentage'] as num? ?? 0)) / totalAttempts : 0.0;
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 20),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildSummaryCard('المحاولات', '$totalAttempts', Colors.blue, Icons.history),
+            SizedBox(width: 12),
+            _buildSummaryCard('الطلاب', '$uniqueStudents', Colors.purple, Icons.people),
+            SizedBox(width: 12),
+            _buildSummaryCard('نسبة النجاح', '${passRate.toStringAsFixed(1)}%', Colors.green, Icons.check_circle_outline),
+            SizedBox(width: 12),
+            _buildSummaryCard('متوسط الدرجة', '${avgScore.toStringAsFixed(1)}%', Colors.orange, Icons.analytics),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard(String label, String value, Color color, IconData icon) {
+    return Container(
+      width: 110,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: color.withOpacity(0.3), width: 1),
+            ),
+            child: Column(
+              children: [
+                Icon(icon, color: color, size: 20),
+                SizedBox(height: 8),
+                Text(
+                  value,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
         ),

@@ -3242,32 +3242,39 @@ class DatabaseService {
 
   /// Get current user's role
   Future<String> getUserRole([String? userId]) async {
-    try {
-      final targetUserId = userId ?? SupabaseService.instance.currentUserId;
-      if (targetUserId == null) return 'student';
+    final targetUserId = userId ?? SupabaseService.instance.currentUserId;
+    if (targetUserId == null) return 'student';
 
-      // Join user_roles with roles table to get role name
-      final response = await _client
-          .from('user_roles')
-          .select('role_id, roles(name)')
-          .eq('user_id', targetUserId)
-          .maybeSingle();
+    return fetchWithCache(
+      key: 'user_role_$targetUserId',
+      duration: const Duration(hours: 1),
+      fetcher: () async {
+        try {
+          // Join user_roles with roles table to get role name
+          final response = await _client
+              .from('user_roles')
+              .select('role_id, roles(name)')
+              .eq('user_id', targetUserId)
+              .maybeSingle();
 
-      if (response == null) {
-        debugPrint('⚠️ No role found for user, defaulting to student');
-        return 'student';
-      }
+          if (response == null) {
+            debugPrint('⚠️ No role found for user, defaulting to student');
+            return 'student';
+          }
 
-      // Extract role name from joined data
-      final rolesData = response['roles'] as Map<String, dynamic>?;
-      final role = rolesData?['name'] as String?;
+          // Extract role name from joined data
+          final rolesData = response['roles'] as Map<String, dynamic>?;
+          final role = rolesData?['name'] as String?;
 
-      debugPrint('✅ User role loaded: $role (role_id: ${response['role_id']})');
-      return role ?? 'student';
-    } catch (e) {
-      debugPrint('❌ Error getting user role: $e');
-      return 'student';
-    }
+          debugPrint(
+              '✅ User role loaded: $role (role_id: ${response['role_id']})');
+          return role ?? 'student';
+        } catch (e) {
+          debugPrint('❌ Error getting user role: $e');
+          return 'student';
+        }
+      },
+    );
   }
 
   /// Check if user is teacher or higher
@@ -3735,24 +3742,28 @@ class DatabaseService {
       final userId = SupabaseService.instance.currentUserId;
       if (userId == null) return [];
 
-      // Get teacher's courses
-      final teacherCourses = await _client
-          .from('teacher_courses')
-          .select('course_id')
-          .eq('teacher_id', userId);
+      // Check role first
+      final role = await getUserRole(userId);
+      final isAdmin = role == 'admin' || role == 'super_admin' || role == 'owner';
 
-      if (teacherCourses.isEmpty) return [];
-
-      final courseIds =
-          teacherCourses.map((tc) => tc['course_id'] as String).toList();
-
-      // Build query
+      // Build query base
       var query = _client.from('exam_attempts').select(
           '*, exams(title, course_id, courses(title)), users(full_name, email)');
 
       if (examId != null) {
         query = query.eq('exam_id', examId);
-      } else {
+      } else if (!isAdmin) {
+        // Teachers only: Get teacher's courses
+        final teacherCourses = await _client
+            .from('teacher_courses')
+            .select('course_id')
+            .eq('teacher_id', userId);
+
+        if (teacherCourses.isEmpty) return [];
+
+        final courseIds =
+            teacherCourses.map((tc) => tc['course_id'] as String).toList();
+
         // Get exams for teacher's courses
         final exams = await _client
             .from('exams')

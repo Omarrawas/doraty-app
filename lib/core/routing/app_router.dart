@@ -86,7 +86,10 @@ final GoRouter appRouter = GoRouter(
         // Allow teachers to access specific management routes
         final bool isTeacherAllowedRoute = path.startsWith('/admin/courses') ||
             path.startsWith('/admin/exams') ||
-            path.startsWith('/admin/lessons');
+            path.startsWith('/admin/lessons') ||
+            path.startsWith('/admin/results') ||
+            path.startsWith('/admin/subscribers') ||
+            path.startsWith('/admin/subscriptions/teacher');
 
         if (role == 'teacher' && isTeacherAllowedRoute) {
           return null;
