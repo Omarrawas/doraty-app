@@ -19,12 +19,13 @@ class TexViewWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     // 1. اكتشاف نوع المحتوى بشكل أكثر دقة
     final String trimmedContent = content.trim();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // LaTeX markers check - be stricter
+    // LaTeX markers check - include the tags used by our editor
     bool hasLatex = trimmedContent.contains(r'$$') || 
                    trimmedContent.contains(r'$') || 
-                   trimmedContent.contains(r'\( ') || 
-                   trimmedContent.contains(r'\[ ') ||
+                   trimmedContent.contains(r'\(') || 
+                   trimmedContent.contains(r'\[') ||
                    (trimmedContent.contains(r'\\') && (
                      trimmedContent.contains(r'frac') || 
                      trimmedContent.contains(r'sqrt') || 
@@ -37,56 +38,39 @@ class TexViewWidget extends StatelessWidget {
                    ));
     
     bool hasHtml = trimmedContent.contains('<') && trimmedContent.contains('>');
-    bool hasMathML = trimmedContent.contains('<math') || trimmedContent.contains('</math>');
 
     // 2. اختيار الويدجت الأنسب
     
     // الحالة الأولى: نص عادي بدون أي أكواد
-    if (!hasLatex && !hasHtml && !hasMathML) {
+    if (!hasLatex && !hasHtml) {
       return Text(
         content,
         style: style,
         textAlign: isTitle ? TextAlign.center : TextAlign.start,
-        textDirection: TextDirection.rtl, // دعم العربية الافتراضي
+        textDirection: TextDirection.rtl,
       );
     }
 
-    // الحالة الثانية: يحتوي على HTML ولا يحتاج معادلات معقدة ولا يحتوي على MathML
-    if (hasHtml && !hasLatex && !hasMathML) {
+    // الحالة الثانية: يحتوي على HTML ولا يحتاج معادلات معقدة
+    if (hasHtml && !hasLatex) {
       return HtmlWidget(
         content,
         textStyle: style?.copyWith(
           fontFamily: 'Cairo',
           height: 1.5,
-          color: style?.color ?? Colors.white,
+          color: style?.color ?? (isDark ? Colors.white : Colors.black87),
         ) ?? TextStyle(color: AppColors.getTextColor(context), fontSize: 16),
         renderMode: RenderMode.column,
       );
     }
 
-    // الحالة الثالثة: معادلات رياضية (LaTeX أو MathML)
-    String processedContent = content;
-    
-    // تأمين المحتوى ليتناسب مع TeXViewDocument
-    // إذا لم يكن محاطاً بمحددات، نحيطه بـ $$ فقط إذا كان نصاً رياضياً صرفاً ولاتيكس
-    bool alreadyDelimited = trimmedContent.startsWith(r'$') || 
-                          trimmedContent.startsWith(r'\( ') || 
-                          trimmedContent.startsWith(r'\[ ') ||
-                          trimmedContent.startsWith('<math');
-                          
-    if (!alreadyDelimited && hasLatex && !hasMathML) {
-        // إذا كان هناك علامات لاتيكس متفرقة، نتركها لـ TeXView ليتعامل معها
-        // أو إذا كان المحتوى كله معادلة، نحيطه
-        if (!trimmedContent.contains(' ')) { 
-          processedContent = r'$$' + trimmedContent + r'$$';
-        }
-    }
-
+    // الحالة الثالثة: معادلات رياضية (LaTeX) باستخدام TeXView
     return TeXView(
+      key: ValueKey('display_${content.hashCode}'),
       child: TeXViewDocument(
-        processedContent,
+        content,
         style: TeXViewStyle(
-          contentColor: style?.color ?? Colors.white,
+          contentColor: style?.color ?? (isDark ? Colors.white : Colors.black87),
           backgroundColor: Colors.transparent,
           fontStyle: TeXViewFontStyle(
             fontSize: (style?.fontSize ?? 16).toInt(),
@@ -99,10 +83,11 @@ class TexViewWidget extends StatelessWidget {
         ),
       ),
       style: TeXViewStyle(
-        backgroundColor: Colors.transparent,
+        // Use a slight background in dark mode to prevent black-box glitches on some platforms
+        backgroundColor: isDark ? Colors.black.withValues(alpha: 0.01) : Colors.transparent,
       ),
       loadingWidgetBuilder: (context) => Padding(
-        padding: EdgeInsets.all(10),
+        padding: const EdgeInsets.all(10),
         child: Text(content, style: style),
       ),
     );
