@@ -11,16 +11,9 @@ class MathEmbedBuilder extends quill.EmbedBuilder {
   String get key => 'math';
 
   @override
-  Widget build(
-    BuildContext context,
-    quill.QuillController controller,
-    quill.Embed node,
-    bool readOnly,
-    bool inline,
-    TextStyle textStyle,
-  ) {
-    final latex = node.value.data as String;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+  Widget build(quill.EmbedContext context) {
+    final latex = context.node.value.data as String;
+    final isDark = Theme.of(context.context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -29,11 +22,10 @@ class MathEmbedBuilder extends quill.EmbedBuilder {
         color: isDark ? Colors.black26 : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.getBorderColor(context).withValues(alpha: 0.3),
+          color: AppColors.getBorderColor(context.context).withValues(alpha: 0.3),
         ),
       ),
       child: TeXView(
-        renderingEngine: const TeXViewRenderingEngine.mathjax(),
         child: TeXViewDocument(
           '\\($latex\\)',
           style: TeXViewStyle(
@@ -132,21 +124,20 @@ class _RichTextEditorState extends State<RichTextEditor> {
 
   void _onContentChanged() {
     final delta = _controller.document.toDelta();
-    final deltaJson = delta.toJson();
+    final List<dynamic> deltaJson = delta.toJson();
+
+    // Pre-process Delta ops to convert 'math' embeds to HTML-friendly LaTeX strings
+    for (var op in deltaJson) {
+      if (op['insert'] is Map && op['insert']['math'] != null) {
+        final latex = op['insert']['math'];
+        op['insert'] = '\\($latex\\)';
+      }
+    }
+
     final converter = QuillDeltaToHtmlConverter(
       deltaJson,
       ConverterOptions.forEmail(),
     );
-
-    converter.beforeConvert((ops) {
-      for (var op in ops) {
-        if (op.insert.isCustom && op.insert.customDict['type'] == 'math') {
-          final latex = op.insert.customDict['data'];
-          op.insert.value = '\\($latex\\)';
-        }
-      }
-      return ops;
-    });
 
     final html = converter.convert();
     widget.onContentChanged(html);
