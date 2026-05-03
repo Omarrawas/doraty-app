@@ -27,8 +27,8 @@ class DatabaseService {
   // Getter for accessing the client from other classes
   SupabaseClient get supabaseClient => _client;
 
-  // Quick access to current user ID
-  String? get currentUserId => _client.auth.currentUser?.id;
+  // Quick access to current user ID safely
+  String? get currentUserId => SupabaseService.instance.currentUserId;
 
   // Helper to check if a string is a valid UUID
   bool _isUuid(String? id) {

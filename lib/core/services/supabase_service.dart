@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseService {
@@ -18,39 +19,54 @@ class SupabaseService {
     }
   }
   
+  /// Get the Supabase client safely. 
+  /// Note: Only call this when you are sure Supabase is initialized.
   SupabaseClient get client {
     if (!isInitialized) {
-      throw Exception(
+      // Return the underlying client if possible, it might throw its own error
+      // which is often more descriptive in the debugger, but we prefer ours.
+      try {
+        return Supabase.instance.client;
+      } catch (_) {
+        throw Exception(
           'Supabase has not been initialized. Please call SupabaseService.initialize() first.');
+      }
     }
     return Supabase.instance.client;
   }
+
+  /// Check if user is authenticated safely
+  bool get isAuthenticated => isInitialized ? Supabase.instance.client.auth.currentUser != null : false;
+
+  /// Get current user safely
+  User? get currentUser => isInitialized ? Supabase.instance.client.auth.currentUser : null;
+
+  /// Get current user ID safely
+  String? get currentUserId => isInitialized ? Supabase.instance.client.auth.currentUser?.id : null;
 
   static Future<void> initialize({
     required String supabaseUrl,
     required String supabaseAnonKey,
   }) async {
-    await Supabase.initialize(
-      url: supabaseUrl,
-      anonKey: supabaseAnonKey,
-      authOptions: const FlutterAuthClientOptions(
-        authFlowType: AuthFlowType.pkce,
-      ),
-      debug: true, // Set to false in production
-    );
+    try {
+      await Supabase.initialize(
+        url: supabaseUrl,
+        anonKey: supabaseAnonKey,
+        authOptions: const FlutterAuthClientOptions(
+          authFlowType: AuthFlowType.pkce,
+        ),
+        debug: kDebugMode,
+      );
+    } catch (e) {
+      debugPrint('🚨 Supabase initialization error: $e');
+      rethrow;
+    }
   }
-
-  /// Check if user is authenticated
-  bool get isAuthenticated => client.auth.currentUser != null;
-
-  /// Get current user
-  User? get currentUser => client.auth.currentUser;
-
-  /// Get current user ID
-  String? get currentUserId => client.auth.currentUser?.id;
 
   /// Sign out
   Future<void> signOut() async {
-    await client.auth.signOut();
+    if (isInitialized) {
+      await client.auth.signOut();
+    }
   }
 }

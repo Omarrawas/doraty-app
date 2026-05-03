@@ -586,7 +586,7 @@ class _StudentsResultsScreenState extends State<StudentsResultsScreen> {
   }
 
   Widget _buildSummaryCard(String label, String value, Color color, IconData icon) {
-    return Container(
+    return SizedBox(
       width: 110,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),

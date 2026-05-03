@@ -70,6 +70,11 @@ class AppUpdateService {
       final packageInfo = await PackageInfo.fromPlatform();
       final currentVersion = packageInfo.version;
 
+      if (!SupabaseService.instance.isInitialized) {
+        debugPrint('⏭️ Skipping update check: Supabase not initialized');
+        return;
+      }
+
       final response = await SupabaseService.instance.client
           .from('app_updates')
           .select()

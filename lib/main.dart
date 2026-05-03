@@ -72,31 +72,43 @@ Future<void> _initServicesInBackground() async {
     debugPrint('🚨 [StorageError] $e');
   }
 
-  try {
-    await dotenv.load(fileName: ".env").timeout(Duration(seconds: 3));
-    debugPrint('✅ Environment loaded');
-  } catch (e) {
-    debugPrint('⚠️ [EnvError] $e');
-  }
-
+  // Optimize environment loading: Prefer build-time defines, then Envied, then .env
   const String ciUrl = String.fromEnvironment('SUPABASE_URL');
   const String ciAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  
+  bool skipDotEnv = kIsWeb && ciUrl.isNotEmpty && ciAnonKey.isNotEmpty;
+
+  if (!skipDotEnv) {
+    try {
+      // Faster timeout for .env on Web to avoid perceived hang
+      await dotenv.load(fileName: ".env").timeout(Duration(seconds: kIsWeb ? 1 : 3));
+      debugPrint('✅ Environment loaded');
+    } catch (e) {
+      debugPrint('⚠️ [EnvNote] .env load skipped or timed out: $e');
+    }
+  }
+
   final String url = (ciUrl.isNotEmpty ? ciUrl : Env.supabaseUrl).trim();
-  final String anonKey =
-      (ciAnonKey.isNotEmpty ? ciAnonKey : Env.supabaseAnonKey).trim();
+  final String anonKey = (ciAnonKey.isNotEmpty ? ciAnonKey : Env.supabaseAnonKey).trim();
 
   try {
-    await SupabaseService.initialize(
-      supabaseUrl: url,
-      supabaseAnonKey: anonKey,
-    ).timeout(Duration(seconds: 10));
-    debugPrint('✅ Supabase initialized');
+    // Essential: Initialize Supabase before signaling ready
+    if (url.isNotEmpty && anonKey.isNotEmpty) {
+      await SupabaseService.initialize(
+        supabaseUrl: url,
+        supabaseAnonKey: anonKey,
+      ).timeout(Duration(seconds: 10));
+      debugPrint('✅ Supabase initialized');
+    } else {
+      debugPrint('🚨 Supabase credentials missing!');
+    }
   } catch (e) {
     debugPrint('⚠️ Supabase Init failed or timed out: $e');
   }
 
   AppInitState.servicesReady = true;
 
+  // Background tasks
   SyncService().init(skipInitialSync: kIsWeb);
   if (!kIsWeb) {
     NotificationService().init();
