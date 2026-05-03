@@ -198,50 +198,54 @@ class _RichTextEditorState extends State<RichTextEditor> {
                                 ),
                               ),
                             ),
-                          ),
-                          Container(
+                                                 Container(
                             height: 1,
                             color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
                           ),
                           MathSymbolToolbar(
                             onSymbolSelected: (symbol) {
-                              // Ensure editor has focus or was recently focused
-                              final index = _controller.selection.extentOffset;
-                              final length = _controller.selection.end -
-                                  _controller.selection.start;
-
-                              // Insert at current cursor or at the end if no focus
-                              final insertIndex = index >= 0 ? index : _controller.document.length - 1;
-
-                              _controller.replaceText(
-                                insertIndex,
-                                length > 0 ? length : 0,
-                                symbol,
-                                null,
-                              );
-
-                              // Handle cursor placement for templates like \frac{}{}
-                              int newOffset = insertIndex + symbol.length;
-                              if (symbol.contains('{}')) {
-                                newOffset = insertIndex + symbol.indexOf('{}') + 1;
-                              } else if (symbol.contains('[]')) {
-                                newOffset = insertIndex + symbol.indexOf('[]') + 1;
-                              }
-
-                              _controller.updateSelection(
-                                TextSelection.collapsed(offset: newOffset),
-                                quill.ChangeSource.local,
-                              );
-
-                              // Regain focus immediately
+                              // Ensure editor has focus to get correct selection
                               _focusNode.requestFocus();
+
+                              // Small delay to allow focus to settle and handle popup menu closing
+                              Future.delayed(const Duration(milliseconds: 50), () {
+                                if (!mounted) return;
+
+                                final index = _controller.selection.extentOffset;
+                                final length = _controller.selection.end -
+                                    _controller.selection.start;
+
+                                // If no selection, insert at the end (before last newline)
+                                final insertIndex = index >= 0
+                                    ? index
+                                    : (_controller.document.length - 1).clamp(0, 999999);
+
+                                _controller.replaceText(
+                                  insertIndex,
+                                  length > 0 ? length : 0,
+                                  symbol,
+                                  null,
+                                );
+
+                                // Handle cursor placement for templates like \frac{}{}
+                                int newOffset = insertIndex + symbol.length;
+                                if (symbol.contains('{}')) {
+                                  newOffset = insertIndex + symbol.indexOf('{}') + 1;
+                                } else if (symbol.contains('[]')) {
+                                  newOffset = insertIndex + symbol.indexOf('[]') + 1;
+                                }
+
+                                _controller.updateSelection(
+                                  TextSelection.collapsed(offset: newOffset),
+                                  quill.ChangeSource.local,
+                                );
+                              });
                             },
                           ),
                           Container(
                             height: 1,
                             color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
                           ),
-                          Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                             child: Row(
                               children: [
