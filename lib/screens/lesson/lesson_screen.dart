@@ -541,13 +541,30 @@ class _LessonScreenState extends State<LessonScreen>
       );
     }
 
+    // Use YoutubePlayerBuilder for YouTube on mobile to handle fullscreen transitions stably.
+    // This helps maintain the player state and avoids pauses when the widget tree rebuilds for orientation changes.
+    if (_isYoutube && !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)) {
+      final Widget playerWidget = _buildVideoPlayer();
+      if (playerWidget is YoutubePlayer) {
+        return YoutubePlayerBuilder(
+          player: playerWidget,
+          builder: (context, player) {
+            return _buildLessonContent(context, player);
+          },
+        );
+      }
+    }
+
+    return _buildLessonContent(context, _buildVideoPlayer());
+  }
+
+  Widget _buildLessonContent(BuildContext context, Widget videoPlayerWidget) {
     return OrientationBuilder(
       builder: (context, orientation) {
         final bool isLandscape = orientation == Orientation.landscape;
 
-        final Widget playerWidget = _buildVideoPlayer();
         final Widget videoWithOverlay = _buildVideoWithOverlay(
-          player: playerWidget,
+          player: videoPlayerWidget,
           onToggleFullScreen: () => _handleToggleFullScreen(),
         );
 
@@ -607,6 +624,17 @@ class _LessonScreenState extends State<LessonScreen>
         ]);
       }
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    }
+
+    // Force player wake-up after orientation change to prevent stalling.
+    // Orientation changes can suspend the underlying YouTube webview on some devices.
+    if (_isYoutube && _youtubePlayerController != null) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted && _youtubePlayerController!.value.isPlaying) {
+          // Re-triggering play ensures the webview resumes correctly if it was stalled.
+          _youtubePlayerController!.play();
+        }
+      });
     }
   }
 
@@ -832,8 +860,9 @@ class _LessonScreenState extends State<LessonScreen>
         }
       }
 
-      // Mobile: wrap with minimal YoutubePlayerBuilder so YoutubePlayer has
-      // a valid ancestor. Fullscreen is handled via _YoutubeFullscreenPage.
+      // Mobile: Return the player widget.
+      // Note: On mobile, we now wrap this in YoutubePlayerBuilder within the build method
+      // to ensure state persistence and stability during orientation changes.
       if (_youtubePlayerController != null) {
         return YoutubePlayer(
           key: _youtubePlayerKey,

@@ -121,21 +121,21 @@ class _RichTextEditorState extends State<RichTextEditor> {
           Container(
             decoration: BoxDecoration(
               color: isDark
-                  ? AppColors.getGlassColor(context, opacity: 0.05)
+                  ? AppColors.getSurfaceColor(context)
                   : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _isFocused
-                    ? Colors.blueAccent
-                    : (isDark ? AppColors.getGlassColor(context, opacity: 0.1) : Colors.black12),
-                width: _isFocused ? 2.0 : 1.0,
+                    ? AppColors.brandPrimary
+                    : AppColors.getBorderColor(context),
+                width: _isFocused ? 1.5 : 1.0,
               ),
               boxShadow: [
                 if (_isFocused)
                   BoxShadow(
-                    color: AppColors.primaryPurple.withValues(alpha: 0.1),
-                    blurRadius: 8,
-                    offset: Offset(0, 2),
+                    color: AppColors.brandPrimary.withValues(alpha: 0.15),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
               ],
             ),
@@ -187,10 +187,10 @@ class _RichTextEditorState extends State<RichTextEditor> {
                                 base: quill.QuillToolbarBaseButtonOptions(
                                   iconTheme: quill.QuillIconTheme(
                                     iconButtonSelectedData: quill.IconButtonData(
-                                      color: AppColors.primaryPurple,
+                                      color: AppColors.brandPrimary,
                                       style: IconButton.styleFrom(
                                         foregroundColor: Colors.white,
-                                        backgroundColor: AppColors.primaryPurple,
+                                        backgroundColor: AppColors.brandPrimary,
                                       ),
                                     ),
                                   ),
@@ -198,30 +198,33 @@ class _RichTextEditorState extends State<RichTextEditor> {
                               ),
                             ),
                           ),
-                          Divider(height: 1, color: Colors.black12),
+                          Container(
+                            height: 1,
+                            color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
+                          ),
                           MathSymbolToolbar(
                             onSymbolSelected: (symbol) {
+                              // Ensure editor has focus or was recently focused
                               final index = _controller.selection.extentOffset;
                               final length = _controller.selection.end -
                                   _controller.selection.start;
 
+                              // Insert at current cursor or at the end if no focus
+                              final insertIndex = index >= 0 ? index : _controller.document.length - 1;
+
                               _controller.replaceText(
-                                index >= 0 ? index : 0,
+                                insertIndex,
                                 length > 0 ? length : 0,
                                 symbol,
                                 null,
                               );
 
-                              int newOffset =
-                                  (index >= 0 ? index : 0) + symbol.length;
+                              // Handle cursor placement for templates like \frac{}{}
+                              int newOffset = insertIndex + symbol.length;
                               if (symbol.contains('{}')) {
-                                newOffset = (index >= 0 ? index : 0) +
-                                    symbol.indexOf('{}') +
-                                    1;
+                                newOffset = insertIndex + symbol.indexOf('{}') + 1;
                               } else if (symbol.contains('[]')) {
-                                newOffset = (index >= 0 ? index : 0) +
-                                    symbol.indexOf('[]') +
-                                    1;
+                                newOffset = insertIndex + symbol.indexOf('[]') + 1;
                               }
 
                               _controller.updateSelection(
@@ -229,14 +232,14 @@ class _RichTextEditorState extends State<RichTextEditor> {
                                 quill.ChangeSource.local,
                               );
 
-                              Future.delayed(Duration.zero, () {
-                                if (mounted) {
-                                  _focusNode.requestFocus();
-                                }
-                              });
+                              // Regain focus immediately
+                              _focusNode.requestFocus();
                             },
                           ),
-                          Divider(height: 1, color: Colors.black12),
+                          Container(
+                            height: 1,
+                            color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
+                          ),
                         ],
                       ),
                     ),
