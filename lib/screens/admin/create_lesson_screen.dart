@@ -119,7 +119,6 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   Future<void> _fetchYoutubeDuration(String url) async {
     if (url.isEmpty || (!url.contains('youtube.com') && !url.contains('youtu.be'))) return;
     
-    // Check if we already have duration to avoid overwriting unless it's empty
     if (_durationController.text.isNotEmpty && _durationController.text != '0' && _durationController.text != '0:00') {
       return;
     }
@@ -128,11 +127,8 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     
     _debounce = Timer(const Duration(milliseconds: 1000), () async {
       if (kIsWeb) {
-        // On Web, youtube_explode_dart is blocked by CORS.
-        // We use YouTube Data API v3 instead (CORS-safe).
         await _fetchDurationViaYouTubeApi(url);
       } else {
-        // On native platforms, use youtube_explode_dart directly.
         try {
           final yt = YoutubeExplode();
           final video = await yt.videos.get(url);
@@ -149,7 +145,6 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     });
   }
 
-  /// Extracts the YouTube video ID from a full URL.
   String? _extractVideoId(String url) {
     final regExp = RegExp(
       r'(?:youtube\.com/(?:watch\?v=|embed/|shorts/)|youtu\.be/)([a-zA-Z0-9_-]{11})',
@@ -158,8 +153,6 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     return match?.group(1);
   }
 
-  /// Fetches video duration via YouTube Data API v3 (CORS-safe for Web).
-  /// Returns the ISO 8601 duration (e.g. PT1H2M3S) and converts it to seconds.
   Future<void> _fetchDurationViaYouTubeApi(String url) async {
     final videoId = _extractVideoId(url);
     if (videoId == null) {
@@ -209,7 +202,6 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     }
   }
 
-  /// Converts ISO 8601 duration string (e.g. PT1H2M30S) to a [Duration].
   Duration _parseIso8601Duration(String iso) {
     final pattern = RegExp(
       r'P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?',
@@ -248,13 +240,12 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
 
           final lessonChapterId = widget.lessonData?['chapter_id']?.toString();
           if (lessonChapterId != null) {
-            // Safety: Only set _selectedChapterId if it exists in the chapters list
             final chapterExists = chapters.any((c) => c.id == lessonChapterId);
             if (chapterExists) {
               _selectedChapterId = lessonChapterId;
             } else {
               debugPrint('⚠️ Chapter ID $lessonChapterId from lesson data not found in chapters list');
-              _selectedChapterId = null; // Fallback to general
+              _selectedChapterId = null; 
             }
           }
         });
@@ -296,7 +287,6 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
             onPressed: () async {
               if (titleController.text.trim().isEmpty) return;
               try {
-                // Show local loading if needed, or just await
                 await _db.createChapter(
                   Chapter(
                     id: '',
@@ -333,7 +323,6 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
   }
 
   Future<void> _pickAndUploadToYoutube() async {
-    // 1. Sign in FIRST to prevent popup blocker issues on Flutter Web
     try {
       final bool signedIn = await _youtubeService.signIn();
       if (!signedIn) return;
@@ -349,7 +338,6 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
       return;
     }
 
-    // 2. Now pick the video
     final ImagePicker picker = ImagePicker();
     final XFile? video = await picker.pickVideo(source: ImageSource.gallery);
     
@@ -357,7 +345,6 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
 
     setState(() => _isUploadingToYoutube = true);
     try {
-      // Show progress snackbar
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -379,14 +366,12 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         'Lesson uploaded from Doraty App',
       );
       
-      // Dismiss the progress snackbar
       if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
       if (ytUrl != null) {
         setState(() {
           _videoUrlController.text = ytUrl;
         });
-        // Auto-fetch the duration of the uploaded video
         _durationController.clear();
         _fetchYoutubeDuration(ytUrl);
 
@@ -405,7 +390,6 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        // Show friendly message
         String message = 'خطأ في الرفع';
         final errStr = e.toString();
         if (errStr.contains('sign_in_failed') || errStr.contains('access_denied')) {
@@ -491,7 +475,6 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                          // Chapter Selection
                           _buildGlassContainer(
                             title: 'الفصل',
                             action: TextButton.icon(
@@ -1179,20 +1162,9 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
 
     try {
       final durationText = _durationController.text.trim();
-      int duration;
-      if (durationText.contains(':')) {
-        final parts = durationText.split(':');
-        if (parts.length == 2) {
-          duration = int.parse(parts[0]) * 60 + int.parse(parts[1]);
-        } else if (parts.length == 3) {
-          duration = int.parse(parts[0]) * 3600 +
-              int.parse(parts[1]) * 60 +
-              int.parse(parts[2]);
-        } else {
-          duration = 0; // Invalid format, default to 0
-        }
-      } else {
-        duration = int.tryParse(durationText) ?? 0;
+      // We use durationText directly in lessonData as a string
+      if (durationText.isEmpty) {
+        // Handle empty duration if needed
       }
 
       String slug = _slugController.text.trim();

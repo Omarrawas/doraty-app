@@ -27,6 +27,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<Map<String, dynamic>> _recentAttempts = [];
   String? _userRole;
   String? _userId;
+  String? _userName;
 
   @override
   void initState() {
@@ -39,6 +40,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       final user = SupabaseService.instance.currentUser;
       if (user != null) {
         _userId = user.id;
+        _userName = user.userMetadata?['full_name'] ?? user.email?.split('@').first ?? 'مستخدم';
         final role = await _db.getUserRole(user.id);
         setState(() {
           _userRole = role;
@@ -212,7 +214,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             _userRole == 'teacher'
                 ? _t('teacher_dashboard')
                 : _userRole == 'super_admin'
-                    ? _t('admin_dashboard') + ' (المدير العام)'
+                    ? '${_t('admin_dashboard')} (المدير العام)'
                     : _t('admin_dashboard'),
             style: TextStyle(
               fontSize: 28,

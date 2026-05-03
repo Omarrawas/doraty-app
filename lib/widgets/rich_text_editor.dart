@@ -71,7 +71,6 @@ class _RichTextEditorState extends State<RichTextEditor> {
   late quill.QuillController _controller;
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
-  String _currentHtml = '';
 
   @override
   void initState() {

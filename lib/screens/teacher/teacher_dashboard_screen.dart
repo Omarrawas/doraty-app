@@ -5,11 +5,8 @@ import '../../core/services/database_service.dart';
 import '../../core/services/supabase_service.dart';
 import '../../core/utils/error_utils.dart';
 import '../../widgets/dynamic_gradient_background.dart';
-import '../admin/courses_management_screen.dart';
 import 'manage_exams_screen.dart';
-import 'students_results_screen.dart';
 import 'course_subscribers_screen.dart';
-import '../admin/create_course_screen.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -17,6 +14,7 @@ import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
+import 'package:go_router/go_router.dart';
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -415,7 +413,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               },
             ),
           ],
-        ),
         ),
       ],
     );

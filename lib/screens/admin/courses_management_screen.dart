@@ -773,7 +773,7 @@ class _CoursesManagementScreenState extends State<CoursesManagementScreen> {
             ElevatedButton.icon(
               onPressed: () => _loadCourses(forceRefresh: true),
               icon: const Icon(Icons.refresh),
-              label: Text(_t('retry') ?? 'Retry'),
+              label: Text(_t('retry')),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPurple,
                 foregroundColor: Colors.white,

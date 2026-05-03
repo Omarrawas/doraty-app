@@ -40,7 +40,6 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
   
   String? _videoId;
   bool _isYoutube = false;
-  bool _isFullScreen = false;
   bool _hasStarted = false;
   bool _isInitialized = false;
   final GlobalKey _youtubePlayerKey = GlobalKey();
