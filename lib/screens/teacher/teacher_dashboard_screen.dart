@@ -8,6 +8,7 @@ import '../../widgets/dynamic_gradient_background.dart';
 import '../admin/courses_management_screen.dart';
 import 'manage_exams_screen.dart';
 import 'students_results_screen.dart';
+import 'course_subscribers_screen.dart';
 import '../admin/create_course_screen.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:pdf/pdf.dart';
@@ -348,87 +349,103 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       children: [
         Text(
           _t('quick_actions'),
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.getTextColor(context)),
+          style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: AppColors.getTextColor(context)),
         ),
         SizedBox(height: 16),
-        Row(
+        GridView.count(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.4,
           children: [
-            Expanded(
-              child: _buildActionCard(
-                context: context,
-                icon: Icons.add_circle,
-                label: _t('create_exam'),
-                color: Colors.green,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ManageExamsScreen(),
-                    ),
-                  );
-                },
-              ),
+            _buildActionCard(
+              context: context,
+              icon: Icons.add_task_rounded,
+              label: _t('create_exam'),
+              color: Colors.greenAccent,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ManageExamsScreen(),
+                  ),
+                );
+              },
             ),
-            SizedBox(width: 12),
-            Expanded(
-              child: _buildActionCard(
-                context: context,
-                icon: Icons.school,
-                label: _t('create_new_course'),
-                color: Colors.purpleAccent,
-                onTap: () {
-                  final userId = SupabaseService.instance.currentUserId;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CreateCourseScreen(
-                        preselectedInstructorId: userId,
-                      ),
+            _buildActionCard(
+              context: context,
+              icon: Icons.add_business_rounded,
+              label: _t('create_new_course'),
+              color: Colors.purpleAccent,
+              onTap: () {
+                final userId = SupabaseService.instance.currentUserId;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CreateCourseScreen(
+                      preselectedInstructorId: userId,
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
-          ],
-        ),
-        SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildActionCard(
-                context: context,
-                icon: Icons.people,
-                label: _t('student_results'),
-                color: Colors.orange,
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => StudentsResultsScreen(),
-                    ),
-                  );
-                },
-              ),
+            _buildActionCard(
+              context: context,
+              icon: Icons.analytics_rounded,
+              label: _t('statistics'),
+              color: Colors.tealAccent,
+              onTap: () {
+                // Navigate to Manage Exams to see stats per exam
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ManageExamsScreen(),
+                  ),
+                );
+              },
             ),
-            SizedBox(width: 12),
-            Expanded(
-              child: _buildActionCard(
-                context: context,
-                icon: Icons.library_books,
-                label: _t('manage_my_courses'),
-                color: Colors.blue,
-                onTap: () {
-                  final userId = SupabaseService.instance.currentUserId;
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => CoursesManagementScreen(
-                        instructorId: userId,
-                      ),
+            _buildActionCard(
+              context: context,
+              icon: Icons.people_alt_rounded,
+              label: _t('student_results'), // Or "إدارة الطلاب"
+              color: Colors.orangeAccent,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CourseSubscribersScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildActionCard(
+              context: context,
+              icon: Icons.account_balance_wallet_rounded,
+              label: _t('total_revenue'), // Or "الأموال"
+              color: Colors.amberAccent,
+              onTap: _showMonthSelectionDialog, // Reuse report generation for financials
+            ),
+            _buildActionCard(
+              context: context,
+              icon: Icons.view_module_rounded,
+              label: _t('manage_my_courses'),
+              color: Colors.lightBlueAccent,
+              onTap: () {
+                final userId = SupabaseService.instance.currentUserId;
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CoursesManagementScreen(
+                      instructorId: userId,
                     ),
-                  );
-                },
-              ),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -444,36 +461,54 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     required VoidCallback onTap,
   }) {
     return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.getMutedTextColor(context),
-            borderRadius: BorderRadius.circular(16),
+            color: AppColors.getGlassColor(context, opacity: 0.12),
+            borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: AppColors.getMutedTextColor(context),
-              width: 1,
+              color: color.withOpacity(0.3),
+              width: 1.5,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.05),
+                blurRadius: 10,
+                offset: Offset(0, 4),
+              ),
+            ],
           ),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               onTap: onTap,
               child: Padding(
                 padding: EdgeInsets.all(16),
                 child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(icon, color: color, size: 32),
-                    SizedBox(height: 8),
+                    Container(
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: color, size: 28),
+                    ),
+                    SizedBox(height: 10),
                     Text(
                       label,
                       textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: AppColors.getTextColor(context),
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.2,
                       ),
                     ),
                   ],
@@ -638,7 +673,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
         child: Container(
-          padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.getGlassColor(context, opacity: 0.15),
             borderRadius: BorderRadius.circular(20),
@@ -647,96 +681,116 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               width: 1.5,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryPurple.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(12),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CourseSubscribersScreen(
+                      courseId: course['id'],
+                      courseTitle: course['title'],
                     ),
-                    child: Icon(Icons.school, color: Colors.blue[300], size: 24),
                   ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                );
+              },
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
                       children: [
-                        Text(
-                          course['title'] ?? 'دورة',
-                          style: TextStyle(
-                            color: AppColors.getTextColor(context),
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
+                        Container(
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryPurple.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          child: Icon(Icons.school, color: Colors.blue[300], size: 24),
                         ),
-                        SizedBox(height: 4),
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: (isPublished ? Colors.green : Colors.orange)
-                                    .withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                isPublished ? 'منشور' : 'مسودة',
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                course['title'] ?? 'دورة',
                                 style: TextStyle(
-                                  color: isPublished
-                                      ? Colors.green[300]
-                                      : Colors.orange[300],
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.getTextColor(context),
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
-                          ],
+                              SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: (isPublished ? Colors.green : Colors.orange)
+                                          .withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      isPublished ? 'منشور' : 'مسودة',
+                                      style: TextStyle(
+                                        color: isPublished
+                                            ? Colors.green[300]
+                                            : Colors.orange[300],
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
+                        Icon(Icons.chevron_left, color: Colors.white54),
                       ],
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 20),
-
-              // Progress Section
-              Text(
-                'متوسط تقدم الطلاب: ${avgProgress.toStringAsFixed(1)}%',
-                style: TextStyle(
-                  color: AppColors.getTextColor(context).withOpacity(0.7),
-                  fontSize: 12,
+                    SizedBox(height: 20),
+    
+                    // Progress Section
+                    Text(
+                      'متوسط تقدم الطلاب: ${avgProgress.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        color: AppColors.getTextColor(context).withOpacity(0.7),
+                        fontSize: 12,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: avgProgress / 100,
+                        backgroundColor: Colors.white.withOpacity(0.1),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[400]!),
+                        minHeight: 6,
+                      ),
+                    ),
+    
+                    SizedBox(height: 20),
+    
+                    // Stats Grid
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildMiniStat(context, Icons.people, '$studentCount', 'طالب'),
+                        _buildMiniStat(
+                            context, Icons.assignment, '$examCount', 'اختبار'),
+                        _buildMiniStat(context, Icons.payments,
+                            _currencyFormat.format(revenue), 'دخل'),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: avgProgress / 100,
-                  backgroundColor: Colors.white.withOpacity(0.1),
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[400]!),
-                  minHeight: 6,
-                ),
-              ),
-
-              SizedBox(height: 20),
-
-              // Stats Grid
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _buildMiniStat(context, Icons.people, '$studentCount', 'طالب'),
-                  _buildMiniStat(
-                      context, Icons.assignment, '$examCount', 'اختبار'),
-                  _buildMiniStat(context, Icons.payments,
-                      _currencyFormat.format(revenue), 'دخل'),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),

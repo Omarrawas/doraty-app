@@ -21,27 +21,17 @@ class TexViewWidget extends StatelessWidget {
     final String trimmedContent = content.trim();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     
-    // LaTeX markers check - include the tags used by our editor
-    bool hasLatex = trimmedContent.contains(r'$$') || 
-                   trimmedContent.contains(r'$') || 
-                   trimmedContent.contains(r'\(') || 
-                   trimmedContent.contains(r'\[') ||
-                   (trimmedContent.contains(r'\\') && (
-                     trimmedContent.contains(r'frac') || 
-                     trimmedContent.contains(r'sqrt') || 
-                     trimmedContent.contains(r'alpha') || 
-                     trimmedContent.contains(r'begin') ||
-                     trimmedContent.contains(r'matrix') ||
-                     trimmedContent.contains(r'vector') ||
-                     trimmedContent.contains(r'sum') ||
-                     trimmedContent.contains(r'int')
-                   ));
-    
+    // 1. استخدام RegExp دقيق لاكتشاف المعادلات الرياضية (نصيحة ذهبية)
+    final latexRegex = RegExp(
+      r'(\$\$.*?\$\$|\$.*?\$|\\\(.*?\\\)|\\\[.*?\\\])',
+      dotAll: true,
+    );
+    bool hasLatex = latexRegex.hasMatch(trimmedContent);
     bool hasHtml = trimmedContent.contains('<') && trimmedContent.contains('>');
 
-    // 2. اختيار الويدجت الأنسب
+    // 2. اختيار الويدجت الأنسب - التحول إلى المعمارية الهجينة (Hybrid Architecture)
     
-    // الحالة الأولى: نص عادي بدون أي أكواد
+    // الحالة الأولى: نص عادي تماماً
     if (!hasLatex && !hasHtml) {
       return Text(
         content,
@@ -51,45 +41,41 @@ class TexViewWidget extends StatelessWidget {
       );
     }
 
-    // الحالة الثانية: يحتوي على HTML ولا يحتاج معادلات معقدة
-    if (hasHtml && !hasLatex) {
-      return HtmlWidget(
-        content,
-        textStyle: style?.copyWith(
-          fontFamily: 'Cairo',
-          height: 1.5,
-          color: style?.color ?? (isDark ? Colors.white : Colors.black87),
-        ) ?? TextStyle(color: AppColors.getTextColor(context), fontSize: 16),
-        renderMode: RenderMode.column,
-      );
-    }
-
-    // الحالة الثالثة: معادلات رياضية (LaTeX) باستخدام TeXView
-    return TeXView(
-      key: ValueKey('display_${content.hashCode}'),
-      child: TeXViewDocument(
-        content,
-        style: TeXViewStyle(
-          contentColor: style?.color ?? (isDark ? Colors.white : Colors.black87),
-          backgroundColor: Colors.transparent,
-          fontStyle: TeXViewFontStyle(
-            fontSize: (style?.fontSize ?? 16).toInt(),
-            fontWeight: style?.fontWeight == FontWeight.bold
-                ? TeXViewFontWeight.bold
-                : TeXViewFontWeight.normal,
-          ),
-          textAlign: isTitle ? TeXViewTextAlign.center : TeXViewTextAlign.right,
-          padding: const TeXViewPadding.all(10),
-        ),
-      ),
-      style: TeXViewStyle(
-        // Use a slight background in dark mode to prevent black-box glitches on some platforms
-        backgroundColor: isDark ? Colors.black.withValues(alpha: 0.01) : Colors.transparent,
-      ),
-      loadingWidgetBuilder: (context) => Padding(
-        padding: const EdgeInsets.all(10),
-        child: Text(content, style: style),
-      ),
+    // الحالة الثانية: خليط من HTML و LaTeX (المعمارية الاحترافية)
+    // نستخدم HtmlWidget كمحرك أساسي وندمج TeXView بداخله فقط عند الحاجة
+    return HtmlWidget(
+      content,
+      textStyle: style?.copyWith(
+        fontFamily: 'Cairo',
+        height: 1.5,
+        color: style?.color ?? (isDark ? Colors.white : Colors.black87),
+      ) ?? TextStyle(color: AppColors.getTextColor(context), fontSize: 16),
+      renderMode: RenderMode.column,
+      
+      // هنا السحر: نقوم بتحويل أي جزء يحتوي على معادلة إلى TeXView بشكل مستقل
+      customWidgetBuilder: (element) {
+        // إذا وجدنا معادلة داخل النص، نستخدم TeXView لهذا العنصر فقط
+        if (latexRegex.hasMatch(element.innerHtml)) {
+          return TeXView(
+            key: ValueKey('math_${element.innerHtml.hashCode}'),
+            child: TeXViewDocument(
+              element.outerHtml, // نمرر الـ HTML الخاص بهذا العنصر فقط لضمان التنسيق
+              style: TeXViewStyle(
+                contentColor: style?.color ?? (isDark ? Colors.white : Colors.black87),
+                backgroundColor: Colors.transparent,
+                fontStyle: TeXViewFontStyle(
+                  fontSize: (style?.fontSize ?? 16).toInt(),
+                ),
+                textAlign: isTitle ? TeXViewTextAlign.center : TeXViewTextAlign.right,
+              ),
+            ),
+            style: TeXViewStyle(
+              backgroundColor: isDark ? Colors.black.withValues(alpha: 0.01) : Colors.transparent,
+            ),
+          );
+        }
+        return null; // نترك الباقي لـ HtmlWidget ليعرضه بشكل Native
+      },
     );
   }
 }

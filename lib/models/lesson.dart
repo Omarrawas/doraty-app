@@ -69,7 +69,7 @@ class Lesson {
         courseId: SafeParser.toStringSafe(json['course_id']),
         chapterId: SafeParser.toStringSafe(json['chapter_id']),
         title: SafeParser.toStringSafe(json['title']),
-        slug: SafeParser.toStringSafe(json['slug'], fallback: ''),
+        slug: json['slug']?.toString(),
         description: SafeParser.toStringSafe(json['description']),
         videoUrl: SafeParser.toStringSafe(json['video_url']),
         duration: SafeParser.toStringSafe(json['duration'], fallback: '0:00'),

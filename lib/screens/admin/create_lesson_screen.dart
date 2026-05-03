@@ -1195,28 +1195,46 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         duration = int.tryParse(durationText) ?? 0;
       }
 
-      String baseSlug = _slugController.text.trim();
-      if (baseSlug.isEmpty) {
-        baseSlug = _titleController.text.trim().toLowerCase()
+      String slug = _slugController.text.trim();
+      if (slug.isEmpty) {
+        // Generate slug from title: support Arabic characters but replace spaces/special chars with dashes
+        slug = _titleController.text.trim().toLowerCase()
             .replaceAll(RegExp(r'[^\w\s\u0600-\u06FF-]'), '')
             .replaceAll(RegExp(r'[\s_]+'), '-')
             .replaceAll(RegExp(r'-+'), '-');
+        
+        // Trim leading/trailing dashes
+        if (slug.startsWith('-')) slug = slug.substring(1);
+        if (slug.endsWith('-')) slug = slug.substring(0, slug.length - 1);
       }
 
-      if (baseSlug.isEmpty || baseSlug == '-') {
-        baseSlug = 'lesson-${DateTime.now().millisecondsSinceEpoch}';
+      if (slug.isEmpty || slug == '-') {
+        slug = 'lesson-${DateTime.now().millisecondsSinceEpoch}';
+      }
+
+      // Ensure slug is unique
+      String finalSlug = slug;
+      int suffix = 1;
+      bool isUnique = false;
+      while (!isUnique) {
+        isUnique = await _db.isLessonSlugUnique(finalSlug, excludeId: widget.lessonId);
+        if (!isUnique) {
+          finalSlug = '$slug-${suffix++}';
+        }
       }
 
       final lessonData = {
+        'course_id': widget.courseId,
         'chapter_id': _selectedChapterId,
         'title': _titleController.text.trim(),
+        'slug': finalSlug,
         'description': _descriptionHtml,
         'video_url': _videoUrlController.text.trim(),
-        'duration': durationText, // Send string instead of int for DB
+        'duration': durationText,
         'content': _contentHtml,
         'is_free': _isFree,
         'resources': _attachments,
-        'order_index': _chapters.length, // Ensure order_index is provided
+        'order_index': _chapters.length,
       };
 
       if (widget.lessonId != null) {

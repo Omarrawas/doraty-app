@@ -107,9 +107,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           _course = Course.fromJson(json);
           _isLoadingCourse = false;
         });
-
-        // Redirection removed to prevent redundant re-mounts and navigation errors.
-        // The router will handle the display. We only fetch if needed.
         _initCourseData();
       }
     } catch (e) {
@@ -137,9 +134,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 
     debugPrint(
         '🏁 CourseDetailsScreen initialized for Course ID: ${_course!.id}');
-    debugPrint('👨‍🏫 Instructor ID: ${_course!.instructorId}');
-    debugPrint(
-        '👨‍🏫 Instructor Name (passed): ${_course!.instructorName}');
   }
 
   Future<void> _checkUserReview() async {
@@ -183,7 +177,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               : null;
           _instructorName = StringUtils.cleanTeacherName(
               profile['full_name'] ?? _instructorName);
-          debugPrint('📸 Instructor Photo URL: $_instructorPhoto');
         });
       }
     } catch (e) {
@@ -334,11 +327,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     bool isRTL = Provider.of<LocaleProvider>(context).locale == 'ar';
 
@@ -360,7 +348,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       );
     }
 
-    // Direct redirection to Content Screen if requested via route
     if (widget.startAtContent) {
       return CourseContentScreen(
         course: _course!,
@@ -425,13 +412,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Left Actions Group
           Row(
             children:
                 isRTL ? [_buildActionButtons(isRTL)] : [_buildNavBackButton()],
           ),
-
-          // Logo
           Image.asset(
             'assets/images/logo.png',
             height: 30,
@@ -443,8 +427,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                   fontSize: 18),
             ),
           ),
-
-          // Right Actions Group
           Row(
             children:
                 isRTL ? [_buildNavBackButton()] : [_buildActionButtons(isRTL)],
@@ -573,8 +555,8 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           _course!.videoUrl != null && _course!.videoUrl!.isNotEmpty
               ? VideoPreviewWidget(
                   videoUrl: _course!.videoUrl!,
-                  showHeader: !isSquare, // Hide header if square (side-by-side)
-                  thumbnailUrl: _course!.imageUrl, // تمرير صورة الدورة
+                  showHeader: !isSquare,
+                  thumbnailUrl: _course!.imageUrl,
                 )
               : _buildCourseImagePlaceholder(isSquare: isSquare),
     );
@@ -664,11 +646,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
               '${_course!.durationHours ?? "0"} ${_t("hours_short")}'),
           SizedBox(width: 12),
         ],
-        // عداد الفصول
         _buildStatBadge(Icons.grid_view_rounded,
             '${_chapters.isNotEmpty ? _chapters.length : 0} ${_t("chapters")}'),
         SizedBox(width: 12),
-        // عداد الدروس أو الجلسات
         _buildStatBadge(
             (_course!.deliveryMode == 'recorded') ? Icons.play_circle_outline_rounded : Icons.calendar_today_outlined,
             '${_lessons.isNotEmpty ? _lessons.length : _course!.lessonsCount} ${_t((_course!.deliveryMode == 'recorded') ? "lessons" : "live_sessions")}'),
@@ -791,7 +771,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 
         SizedBox(height: 30),
 
-        // Main Subscribe/Start Button
         ElevatedButton(
           onPressed: _handleEnrollment,
           style: ElevatedButton.styleFrom(
@@ -942,7 +921,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             isRTL ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
           Text(
-            _t('course_content'), // Using 'course_content' or similar for 'About'
+            _t('course_content'),
             style: TextStyle(
                 color: AppColors.getTextColor(context), fontSize: 20, fontWeight: FontWeight.bold),
           ),
@@ -1125,7 +1104,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     );
   }
 
-
   Widget _buildListSection(String title, List<String> items, bool isRTL) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -1184,10 +1162,11 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
         children: [
           ElevatedButton(
             onPressed: _isContentLoading ? null : () {
-              final id = _course?.slug ?? _course?.id;
-              if (id == null) return;
+              final courseSlug = _course?.slug;
+              final courseId = (courseSlug != null && courseSlug.isNotEmpty) ? courseSlug : _course?.id;
+              if (courseId == null) return;
               
-              final path = Uri.encodeFull('/course/$id/content');
+              final path = Uri.encodeFull('/course/$courseId/content');
               context.push(path, extra: {
                 'course': _course,
                 'lessonsData': _lessons,
@@ -1276,18 +1255,22 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
   Future<void> _handleEnrollment() async {
     if (!_checkAuthAndShowDialog()) return;
 
-    // Check if enrolled first to jump to lessons or sessions
     if (_isEnrolled) {
       if (_course!.deliveryMode == 'recorded' && _lessons.isNotEmpty) {
         final firstLesson = Lesson.fromJson(_lessons.first);
-        final courseId = _course?.slug ?? _course?.id;
+        final lessonSlug = firstLesson.slug;
+        final lessonId = (lessonSlug != null && lessonSlug.isNotEmpty) ? lessonSlug : firstLesson.id;
+        
+        final courseSlug = _course?.slug;
+        final courseId = (courseSlug != null && courseSlug.isNotEmpty) ? courseSlug : _course?.id;
+        
         if (courseId == null) return;
         
-        final path = Uri.encodeFull('/course/$courseId/lesson/${firstLesson.slug ?? firstLesson.id}');
+        final path = Uri.encodeFull('/course/$courseId/lesson/$lessonId');
         context.push(path);
       } else {
-        // For Live or In-Person, go to content overview to see sessions list
-        final courseId = _course?.slug ?? _course?.id;
+        final courseSlug = _course?.slug;
+        final courseId = (courseSlug != null && courseSlug.isNotEmpty) ? courseSlug : _course?.id;
         if (courseId == null) return;
         
         final path = Uri.encodeFull('/course/$courseId/content');
@@ -1301,7 +1284,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       return;
     }
 
-    // New Behavior: Add to Cart and Go to Cart Screen
     final cart = Provider.of<CartProvider>(context, listen: false);
     cart.addItem(
       id: _course!.id,
@@ -1333,8 +1315,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 
     return Column(
       children: [
-        // Add Review Button (Only if enrolled)
-        // Add Review Button (Only if enrolled)
         if (_isEnrolled)
           if (_userReview == null)
             Container(
@@ -1516,7 +1496,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                 try {
                   Navigator.pop(dialogContext); // Close dialog
 
-                  // Show loading
                   scaffoldMessenger.showSnackBar(
                     SnackBar(content: Text(_t('adding_review'))),
                   );
@@ -1527,7 +1506,6 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                     comment: commentController.text,
                   );
 
-                  // Reload and show success
                   await _loadReviews();
                   await _refreshCourseData();
                   await _checkUserReview();

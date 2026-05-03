@@ -934,6 +934,41 @@ class DatabaseService {
         }
       },
     );
+  /// Get all unique students enrolled in any of the teacher's courses
+  Future<List<Map<String, dynamic>>> getTeacherSubscribers(String teacherId) async {
+    try {
+      final courses = await getCoursesByTeacherId(teacherId);
+      if (courses.isEmpty) return [];
+      
+      final courseIds = courses.map((c) => c['id']).toList();
+      
+      final response = await _client
+          .from('enrollments')
+          .select('*, users!inner(full_name, avatar_url, email), courses(title)')
+          .inFilter('course_id', courseIds)
+          .order('enrolled_at', ascending: false);
+          
+      return SafeParser.safeMapList(response);
+    } catch (e) {
+      debugPrint('Error getting teacher subscribers: $e');
+      return [];
+    }
+  }
+
+  /// Get students enrolled in a specific course
+  Future<List<Map<String, dynamic>>> getCourseSubscribers(String courseId) async {
+    try {
+      final response = await _client
+          .from('enrollments')
+          .select('*, users!inner(full_name, avatar_url, email)')
+          .eq('course_id', courseId)
+          .order('enrolled_at', ascending: false);
+          
+      return SafeParser.safeMapList(response);
+    } catch (e) {
+      debugPrint('Error getting course subscribers: $e');
+      return [];
+    }
   }
 
   /// Get teacher exams
