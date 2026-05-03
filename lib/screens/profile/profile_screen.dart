@@ -383,6 +383,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // Quick Actions Row
                         Row(
                           children: [
+                            if (_userRole == 'teacher' || _userRole == 'admin' || _userRole == 'super_admin' || _userRole == 'owner') ...[
+                              Expanded(
+                                child: _buildQuickActionCard(
+                                  icon: Icons.dashboard_rounded,
+                                  label: 'لوحة التحكم',
+                                  iconColor: Colors.blueAccent,
+                                  onTap: () {
+                                    if (_userRole == 'teacher') {
+                                      context.push('/teacher_dashboard');
+                                    } else {
+                                      context.push('/admin');
+                                    }
+                                  },
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                            ],
                             Expanded(
                               child: _buildQuickActionCard(
                                 icon: Icons.favorite_rounded,

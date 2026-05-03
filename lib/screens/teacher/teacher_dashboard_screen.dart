@@ -204,10 +204,10 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: AppColors.getMutedTextColor(context),
+                    color: AppColors.getGlassColor(context, opacity: 0.15),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppColors.getMutedTextColor(context),
+                      color: AppColors.getGlassColor(context, opacity: 0.3),
                       width: 1,
                     ),
                   ),
@@ -350,7 +350,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         Text(
           _t('quick_actions'),
           style: TextStyle(
-              fontSize: 20,
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: AppColors.getTextColor(context)),
         ),
@@ -359,95 +359,63 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
           crossAxisCount: 2,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.4,
+          mainAxisSpacing: 16,
+          crossAxisSpacing: 16,
+          childAspectRatio: 1.1,
           children: [
             _buildActionCard(
               context: context,
-              icon: Icons.add_task_rounded,
-              label: _t('create_exam'),
-              color: Colors.greenAccent,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ManageExamsScreen(),
-                  ),
-                );
-              },
+              icon: Icons.assignment_rounded,
+              label: _t('manage_exams'),
+              color: Colors.deepOrangeAccent,
+              onTap: () => context.push('/admin/exams/create'),
             ),
             _buildActionCard(
               context: context,
-              icon: Icons.add_business_rounded,
-              label: _t('create_new_course'),
-              color: Colors.purpleAccent,
+              icon: Icons.video_library_rounded,
+              label: 'إضافة درس جديد',
+              color: Colors.lightBlueAccent,
               onTap: () {
                 final userId = SupabaseService.instance.currentUserId;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CreateCourseScreen(
-                      preselectedInstructorId: userId,
-                    ),
-                  ),
-                );
-              },
-            ),
-            _buildActionCard(
-              context: context,
-              icon: Icons.analytics_rounded,
-              label: _t('statistics'),
-              color: Colors.tealAccent,
-              onTap: () {
-                // Navigate to Manage Exams to see stats per exam
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ManageExamsScreen(),
-                  ),
-                );
+                context.push('/admin/courses?instructorId=$userId');
               },
             ),
             _buildActionCard(
               context: context,
               icon: Icons.people_alt_rounded,
-              label: _t('student_results'), // Or "إدارة الطلاب"
+              label: _t('student_results'),
               color: Colors.orangeAccent,
+              onTap: () => context.push('/admin/subscribers'),
+            ),
+            _buildActionCard(
+              context: context,
+              icon: Icons.analytics_rounded,
+              label: _t('statistics'),
+              color: Colors.indigoAccent,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CourseSubscribersScreen(),
-                  ),
-                );
+                final userId = SupabaseService.instance.currentUserId;
+                context.push('/admin/subscriptions/teacher/$userId');
               },
             ),
             _buildActionCard(
               context: context,
               icon: Icons.account_balance_wallet_rounded,
-              label: _t('total_revenue'), // Or "الأموال"
-              color: Colors.amberAccent,
-              onTap: _showMonthSelectionDialog, // Reuse report generation for financials
+              label: 'التقارير المالية',
+              color: Colors.greenAccent,
+              onTap: _showMonthSelectionDialog,
             ),
             _buildActionCard(
               context: context,
               icon: Icons.view_module_rounded,
               label: _t('manage_my_courses'),
-              color: Colors.lightBlueAccent,
+              color: Colors.tealAccent,
               onTap: () {
                 final userId = SupabaseService.instance.currentUserId;
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CoursesManagementScreen(
-                      instructorId: userId,
-                    ),
-                  ),
-                );
+                context.push('/admin/courses?instructorId=$userId');
               },
             ),
           ],
+        ),
         ),
       ],
     );
@@ -466,17 +434,17 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.getGlassColor(context, opacity: 0.12),
+            color: AppColors.getGlassColor(context, opacity: 0.18), // Increased opacity
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: color.withOpacity(0.3),
+              color: color.withOpacity(0.4), // Increased border vibrancy
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.05),
-                blurRadius: 10,
-                offset: Offset(0, 4),
+                color: color.withOpacity(0.1),
+                blurRadius: 15,
+                offset: Offset(0, 6),
               ),
             ],
           ),

@@ -37,6 +37,7 @@ import '../../screens/admin/financial_reports_screen.dart';
 import '../../screens/teacher/create_exam_screen.dart';
 import '../../screens/teacher/manage_questions_screen.dart';
 import '../../screens/admin/admin_social_links_screen.dart';
+import '../../screens/teacher/course_subscribers_screen.dart';
 
 List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
   return [
@@ -45,6 +46,17 @@ List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
       parentNavigatorKey: parentKey, // Force admin screens out of bottom nav shell
       builder: (context, state) => const AdminDashboardScreen(),
       routes: [
+        GoRoute(
+          path: 'subscribers',
+          builder: (context, state) {
+            final courseId = state.uri.queryParameters['courseId'];
+            final courseTitle = state.uri.queryParameters['courseTitle'] ?? '';
+            return CourseSubscribersScreen(
+              courseId: courseId,
+              courseTitle: courseTitle,
+            );
+          },
+        ),
         GoRoute(
           path: 'users',
           builder: (context, state) => const UsersManagementScreen(),

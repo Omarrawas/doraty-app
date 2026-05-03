@@ -934,6 +934,8 @@ class DatabaseService {
         }
       },
     );
+  }
+
   /// Get all unique students enrolled in any of the teacher's courses
   Future<List<Map<String, dynamic>>> getTeacherSubscribers(String teacherId) async {
     try {

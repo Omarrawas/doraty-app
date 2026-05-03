@@ -88,6 +88,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
                       _buildDrawerItem(
                         context,
                         icon: Icons.dashboard_outlined,
+                        iconColor: (authService.userRole == 'teacher') ? Colors.orangeAccent : AppColors.primaryPurple,
                         title: (authService.userRole == 'teacher')
                             ? _t(context, 'teacher_dashboard')
                             : _t(context, 'admin_dashboard'),
@@ -518,11 +519,12 @@ class _HomeDrawerState extends State<HomeDrawer> {
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    Color? iconColor,
     Widget? trailing,
   }) {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     return ListTile(
-      leading: Icon(icon, color: isDark ? Colors.white70 : Colors.black87),
+      leading: Icon(icon, color: iconColor ?? (isDark ? Colors.white70 : Colors.black87)),
       title: Text(
         title,
         style: TextStyle(
