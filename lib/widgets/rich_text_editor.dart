@@ -11,9 +11,9 @@ class MathEmbedBuilder extends quill.EmbedBuilder {
   String get key => 'math';
 
   @override
-  Widget build(quill.EmbedContext context) {
-    final latex = context.node.value.data as String;
-    final isDark = Theme.of(context.context).brightness == Brightness.dark;
+  Widget build(BuildContext context, quill.EmbedContext embedContext) {
+    final latex = embedContext.node.value.data as String;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
@@ -22,7 +22,7 @@ class MathEmbedBuilder extends quill.EmbedBuilder {
         color: isDark ? Colors.black26 : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.getBorderColor(context.context).withValues(alpha: 0.3),
+          color: AppColors.getBorderColor(context).withValues(alpha: 0.3),
         ),
       ),
       child: TeXView(
@@ -124,7 +124,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
 
   void _onContentChanged() {
     final delta = _controller.document.toDelta();
-    final List<dynamic> deltaJson = delta.toJson();
+    final deltaJson = List<Map<String, dynamic>>.from(delta.toJson());
 
     // Pre-process Delta ops to convert 'math' embeds to HTML-friendly LaTeX strings
     for (var op in deltaJson) {
