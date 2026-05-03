@@ -2,8 +2,53 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:vsc_quill_delta_to_html/vsc_quill_delta_to_html.dart';
 import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart';
+import 'package:flutter_tex/flutter_tex.dart';
 import '../../core/theme/app_colors.dart';
 import 'math_symbol_toolbar.dart';
+
+class MathEmbedBuilder extends quill.EmbedBuilder {
+  @override
+  String get key => 'math';
+
+  @override
+  Widget build(
+    BuildContext context,
+    quill.QuillController controller,
+    quill.Embed node,
+    bool readOnly,
+    bool inline,
+    TextStyle textStyle,
+  ) {
+    final latex = node.value.data as String;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black26 : Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: AppColors.getBorderColor(context).withValues(alpha: 0.3),
+        ),
+      ),
+      child: TeXView(
+        renderingEngine: const TeXViewRenderingEngine.mathjax(),
+        child: TeXViewDocument(
+          '\\($latex\\)',
+          style: TeXViewStyle(
+            contentColor: isDark ? Colors.white : Colors.black87,
+            textAlign: TeXViewTextAlign.center,
+            padding: const TeXViewPadding.all(4),
+          ),
+        ),
+        style: const TeXViewStyle(
+          backgroundColor: Colors.transparent,
+        ),
+      ),
+    );
+  }
+}
 
 class RichTextEditor extends StatefulWidget {
   final String? initialHtml;
@@ -31,7 +76,6 @@ class _RichTextEditorState extends State<RichTextEditor> {
   late quill.QuillController _controller;
   final FocusNode _focusNode = FocusNode();
   bool _isFocused = false;
-  bool _showPreview = false;
   String _currentHtml = '';
 
   @override
@@ -86,12 +130,25 @@ class _RichTextEditorState extends State<RichTextEditor> {
     _controller.addListener(_onContentChanged);
   }
 
+  void _onContentChanged() {
+    final delta = _controller.document.toDelta();
+    final deltaJson = delta.toJson();
+    final converter = QuillDeltaToHtmlConverter(
+      deltaJson,
+      ConverterOptions.forEmail(),
+    );
+
+    converter.beforeConvert((ops) {
+      for (var op in ops) {
+        if (op.insert.isCustom && op.insert.customDict['type'] == 'math') {
+          final latex = op.insert.customDict['data'];
+          op.insert.value = '\\($latex\\)';
+        }
+      }
+      return ops;
+    });
+
     final html = converter.convert();
-    if (mounted) {
-      setState(() {
-        _currentHtml = html;
-      });
-    }
     widget.onContentChanged(html);
   }
 
@@ -198,73 +255,36 @@ class _RichTextEditorState extends State<RichTextEditor> {
                                 ),
                               ),
                             ),
-                                                 Container(
-                            height: 1,
-                            color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
-                          ),
-                          MathSymbolToolbar(
-                            onSymbolSelected: (symbol) {
-                              // Ensure editor has focus to get correct selection
-                              _focusNode.requestFocus();
-
-                              // Small delay to allow focus to settle and handle popup menu closing
-                              Future.delayed(const Duration(milliseconds: 50), () {
-                                if (!mounted) return;
-
-                                final index = _controller.selection.extentOffset;
-                                final length = _controller.selection.end -
-                                    _controller.selection.start;
-
-                                // If no selection, insert at the end (before last newline)
-                                final insertIndex = index >= 0
-                                    ? index
-                                    : (_controller.document.length - 1).clamp(0, 999999);
-
-                                _controller.replaceText(
-                                  insertIndex,
-                                  length > 0 ? length : 0,
-                                  symbol,
-                                  null,
-                                );
-
-                                // Handle cursor placement for templates like \frac{}{}
-                                int newOffset = insertIndex + symbol.length;
-                                if (symbol.contains('{}')) {
-                                  newOffset = insertIndex + symbol.indexOf('{}') + 1;
-                                } else if (symbol.contains('[]')) {
-                                  newOffset = insertIndex + symbol.indexOf('[]') + 1;
-                                }
-
-                                _controller.updateSelection(
-                                  TextSelection.collapsed(offset: newOffset),
-                                  quill.ChangeSource.local,
-                                );
-                              });
-                            },
                           ),
                           Container(
                             height: 1,
                             color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
                           ),
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.remove_red_eye_outlined, size: 16, color: Colors.grey),
-                                const SizedBox(width: 8),
-                                const Expanded(
-                                  child: Text(
-                                    'معاينة حية للمحتوى',
-                                    style: TextStyle(fontSize: 12, color: Colors.grey, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                Switch(
-                                  value: _showPreview,
-                                  onChanged: (val) => setState(() => _showPreview = val),
-                                  activeColor: AppColors.brandPrimary,
-                                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                ),
-                              ],
-                            ),
+                          MathSymbolToolbar(
+                            onSymbolSelected: (symbol) {
+                              _focusNode.requestFocus();
+                              Future.delayed(const Duration(milliseconds: 50), () {
+                                if (!mounted) return;
+                                final index = _controller.selection.extentOffset;
+                                final length = _controller.selection.end - _controller.selection.start;
+                                final insertIndex = index >= 0 ? index : (_controller.document.length - 1).clamp(0, 999999);
+                                if (symbol.contains('\\') || symbol.startsWith(r'\(')) {
+                                  String cleanLatex = symbol;
+                                  if (cleanLatex.startsWith(r'\(') && cleanLatex.endsWith(r'\)')) {
+                                    cleanLatex = cleanLatex.substring(2, cleanLatex.length - 2);
+                                  }
+                                  _controller.replaceText(
+                                    insertIndex,
+                                    length > 0 ? length : 0,
+                                    quill.BlockEmbed.custom(quill.CustomBlockEmbed('math', cleanLatex)),
+                                    null,
+                                  );
+                                } else {
+                                  _controller.replaceText(insertIndex, length > 0 ? length : 0, symbol, null);
+                                }
+                                _controller.updateSelection(TextSelection.collapsed(offset: insertIndex + 1), quill.ChangeSource.local);
+                              });
+                            },
                           ),
                           Container(
                             height: 1,
@@ -289,6 +309,9 @@ class _RichTextEditorState extends State<RichTextEditor> {
                             expands: false,
                             scrollable: true,
                             autoFocus: false,
+                            embedBuilders: [
+                              MathEmbedBuilder(),
+                            ],
                             customStyles: quill.DefaultStyles(
                               placeHolder: quill.DefaultTextBlockStyle(
                                 TextStyle(
@@ -315,44 +338,6 @@ class _RichTextEditorState extends State<RichTextEditor> {
                           ),
                         ),
                       ),
-                      if (_showPreview && _currentHtml.isNotEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isDark ? Colors.black26 : Colors.grey[50],
-                            border: Border(
-                              top: BorderSide(color: AppColors.getBorderColor(context).withValues(alpha: 0.3)),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                'معاينة المعادلات:',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.getMutedTextColor(context),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              TeXView(
-                                renderingEngine: const TeXViewRenderingEngine.mathjax(),
-                                child: TeXViewDocument(
-                                  _currentHtml,
-                                  style: TeXViewStyle(
-                                    contentColor: isDark ? Colors.white : Colors.black87,
-                                    backgroundColor: Colors.transparent,
-                                    padding: const TeXViewPadding.all(8),
-                                  ),
-                                ),
-                                style: const TeXViewStyle(
-                                  backgroundColor: Colors.transparent,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                     ],
                   ),
                 ],
