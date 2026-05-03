@@ -16,8 +16,10 @@ class MathEmbedBuilder extends quill.EmbedBuilder {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
+      key: ValueKey('math_$latex'),
       margin: const EdgeInsets.symmetric(vertical: 8),
       padding: const EdgeInsets.all(8),
+      constraints: const BoxConstraints(minHeight: 50),
       decoration: BoxDecoration(
         color: isDark ? Colors.black26 : Colors.grey[50],
         borderRadius: BorderRadius.circular(8),
@@ -193,8 +195,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (_isFocused) ...[
-                    Container(
+                  Container(
                       color: isDark
                           ? Colors.black.withValues(alpha: 0.3)
                           : Colors.grey.withValues(alpha: 0.05),
@@ -217,7 +218,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
                               showColorButton: true,
                               showBackgroundColorButton: true,
                               showClearFormat: true,
-                              showAlignmentButtons: false,
+                              showAlignmentButtons: true,
                               showLeftAlignment: true,
                               showCenterAlignment: true,
                               showRightAlignment: true,
@@ -273,18 +274,22 @@ class _RichTextEditorState extends State<RichTextEditor> {
                                 } else {
                                   _controller.replaceText(insertIndex, length > 0 ? length : 0, symbol, null);
                                 }
-                                _controller.updateSelection(TextSelection.collapsed(offset: insertIndex + 1), quill.ChangeSource.local);
-                              });
-                            },
-                          ),
+                                 _controller.updateSelection(
+                                   TextSelection.collapsed(
+                                     offset: insertIndex + (symbol.contains('\\') ? 1 : symbol.length),
+                                   ),
+                                   quill.ChangeSource.local,
+                                 );
+                               });
+                             },
+                           ),
                           Container(
                             height: 1,
                             color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                  ),
                   Column(
                     children: [
                       Container(
