@@ -113,14 +113,11 @@ class TexViewWidget extends StatelessWidget {
         final textSegment = mathAwareText.substring(cursor, match.start).trim();
         if (textSegment.isNotEmpty) {
           children.add(
-            Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                textSegment,
-                style: baseStyle,
-                textAlign: isTitle ? TextAlign.center : TextAlign.start,
-                textDirection: TextDirection.rtl,
-              ),
+            Text(
+              textSegment,
+              style: baseStyle,
+              textAlign: isTitle ? TextAlign.center : TextAlign.start,
+              textDirection: TextDirection.rtl,
             ),
           );
         }
@@ -129,30 +126,24 @@ class TexViewWidget extends StatelessWidget {
       final token = match.group(0)!;
       final latex = _stripMathDelimiters(token);
       children.add(
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Align(
-            alignment: isTitle ? Alignment.center : Alignment.centerRight,
-            child: Directionality(
-              textDirection: TextDirection.ltr,
-              child: Math.tex(
-                latex,
-                mathStyle:
-                    _isDisplayMath(token) ? MathStyle.display : MathStyle.text,
-                textStyle: TextStyle(
-                  color: textColor,
-                  fontSize: (baseStyle.fontSize ?? 16) + 2,
-                ),
-                onErrorFallback: (error) => Text(
-                  token,
-                  style: baseStyle.copyWith(
-                    color: Colors.redAccent,
-                    fontFamily: 'monospace',
-                    fontSize: 13,
-                  ),
-                  textDirection: TextDirection.ltr,
-                ),
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Math.tex(
+            latex,
+            mathStyle:
+                _isDisplayMath(token) ? MathStyle.display : MathStyle.text,
+            textStyle: TextStyle(
+              color: textColor,
+              fontSize: (baseStyle.fontSize ?? 16) + 2,
+            ),
+            onErrorFallback: (error) => Text(
+              token,
+              style: baseStyle.copyWith(
+                color: Colors.redAccent,
+                fontFamily: 'monospace',
+                fontSize: 13,
               ),
+              textDirection: TextDirection.ltr,
             ),
           ),
         ),
@@ -165,23 +156,21 @@ class TexViewWidget extends StatelessWidget {
       final trailing = mathAwareText.substring(cursor).trim();
       if (trailing.isNotEmpty) {
         children.add(
-          Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(
-              trailing,
-              style: baseStyle,
-              textAlign: isTitle ? TextAlign.center : TextAlign.start,
-              textDirection: TextDirection.rtl,
-            ),
+          Text(
+            trailing,
+            style: baseStyle,
+            textAlign: isTitle ? TextAlign.center : TextAlign.start,
+            textDirection: TextDirection.rtl,
           ),
         );
       }
     }
 
-    return Column(
-      crossAxisAlignment:
-          isTitle ? CrossAxisAlignment.center : CrossAxisAlignment.stretch,
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      alignment: isTitle ? WrapAlignment.center : WrapAlignment.start,
+      runSpacing: 4,
+      spacing: 4,
       children: children,
     );
   }

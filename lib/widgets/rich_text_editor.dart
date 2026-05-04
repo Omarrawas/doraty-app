@@ -20,34 +20,69 @@ class MathEmbedBuilder extends quill.EmbedBuilder {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
 
-    return Container(
-      key: ValueKey('math_$latex'),
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      constraints: const BoxConstraints(minHeight: 50),
-      decoration: BoxDecoration(
-        color: isDark ? Colors.black26 : Colors.grey[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: AppColors.getBorderColor(context).withValues(alpha: 0.3),
-        ),
-      ),
-      child: Center(
-        child: Directionality(
-          textDirection: TextDirection.ltr,
-          child: Math.tex(
-            latex,
-            textStyle: TextStyle(
-              fontSize: 18,
-              color: textColor,
-            ),
-            onErrorFallback: (err) => Text(
-              latex,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'monospace',
-                fontSize: 13,
-                color: textColor.withOpacity(0.7),
+    return Tooltip(
+      message: 'معادلة: $latex (انقر للتعديل)',
+      child: SelectionArea(
+        child: InkWell(
+          onTap: () async {
+            final TextEditingController editController = TextEditingController(text: latex);
+            final newLatex = await showDialog<String>(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text('تعديل المعادلة'),
+                content: Directionality(
+                  textDirection: TextDirection.ltr,
+                  child: TextField(
+                    controller: editController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'LaTeX...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: const Text('إلغاء'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx, editController.text.trim()),
+                    child: const Text('حفظ'),
+                  ),
+                ],
+              ),
+            );
+
+            if (newLatex != null && newLatex != latex) {
+              final offset = embedContext.node.offset;
+              embedContext.controller.replaceText(
+                offset,
+                1,
+                quill.Embeddable('math', newLatex),
+                null,
+              );
+            }
+          },
+          borderRadius: BorderRadius.circular(2),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2),
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Math.tex(
+                latex,
+                textStyle: TextStyle(
+                  fontSize: 16,
+                  color: textColor,
+                ),
+                onErrorFallback: (err) => Text(
+                  latex,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    color: textColor.withOpacity(0.7),
+                  ),
+                ),
               ),
             ),
           ),
@@ -496,42 +531,82 @@ class _RichTextEditorState extends State<RichTextEditor> {
       itemBuilder: (context) => [
         PopupMenuItem<Color?>(
           value: null,
-          child: Row(
-            children: [
-              const Icon(Icons.format_color_reset, size: 18),
-              const SizedBox(width: 12),
-              Text(isBackground ? 'بلا لون (شفاف)' : 'تلقائي (بلا لون)'),
-            ],
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.withOpacity(0.5)),
+                    borderRadius: BorderRadius.circular(3),
+                    color: isBackground ? Colors.transparent : Colors.black,
+                  ),
+                  child: isBackground 
+                    ? const Center(child: Icon(Icons.close, size: 14, color: Colors.red))
+                    : null,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  isBackground ? 'بلا لون' : 'تلقائي',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
           ),
         ),
         const PopupMenuDivider(),
         PopupMenuItem<Color?>(
           enabled: false,
-          child: SizedBox(
-            width: 210,
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: _toolbarColors.map((color) {
-                return InkWell(
-                  onTap: () {
-                    onSelected(color);
-                    Navigator.pop(context);
-                  },
-                  child: Container(
-                    width: 24,
-                    height: 24,
-                    decoration: BoxDecoration(
-                      color: color,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(
-                        color: Colors.grey.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'ألوان المظهر',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: 210,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _toolbarColors.map((color) {
+                      return MouseRegion(
+                        cursor: SystemMouseCursors.click,
+                        child: GestureDetector(
+                          onTap: () {
+                            onSelected(color);
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              color: color,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(
+                                color: Colors.black.withOpacity(0.1),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 2,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
-                );
-              }).toList(),
+                ),
+              ],
             ),
           ),
         ),
@@ -884,9 +959,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
                                 _controller.replaceText(
                                   insertIndex,
                                   length > 0 ? length : 0,
-                                  quill.BlockEmbed.custom(
-                                    quill.CustomBlockEmbed('math', cleanLatex),
-                                  ),
+                                  quill.Embeddable('math', cleanLatex),
                                   null,
                                 );
                               } else {
