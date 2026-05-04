@@ -52,19 +52,10 @@ class TexViewWidget extends StatelessWidget {
     }
 
     // ── HTML path ──────────────────────────────────────────────────────────
-    // IMPORTANT: Do NOT pass `color` in textStyle to HtmlWidget.
-    // When a color is set in textStyle, flutter_widget_from_html uses it as the
-    // "resolved" color and ignores inline CSS `color:` / `background-color:` on
-    // child elements. Stripping it here lets inline HTML colors take effect.
-    // We inject the default color via customStylesBuilder instead, only on
-    // elements that have no explicit inline color.
     final htmlBaseStyle = defaultStyle.copyWith(color: null);
     final defaultCssColor = _colorToCss(defaultStyle.color ?? AppColors.getTextColor(context));
 
     return Directionality(
-      // Wrap in RTL so that `text-align:center` on <p> tags renders correctly
-      // for Arabic content. Without this wrapper, alignment is resolved against
-      // the ambient LTR direction and center/right may appear wrong.
       textDirection: TextDirection.rtl,
       child: HtmlWidget(
         normalizedContent,
@@ -72,28 +63,19 @@ class TexViewWidget extends StatelessWidget {
         renderMode: RenderMode.column,
         customStylesBuilder: (element) {
           final inlineStyle = element.attributes['style'] ?? '';
-          // Only inject default text color when the element has no explicit
-          // color rule. This preserves inline color / background-color values
-          // that were set in the Quill editor.
           if (!inlineStyle.contains('color')) {
             return {'color': defaultCssColor};
           }
           return null;
         },
         customWidgetBuilder: (element) {
-          if (element.children.isNotEmpty) {
-            return null;
+          if (element.children.isEmpty) {
+            final text = element.text;
+            if (_latexRegex.hasMatch(text)) {
+              return _buildMathText(context, text, defaultStyle);
+            }
           }
-
-          final text = MathUtils.normalizeMathContent(element.text.trim());
-          if (text.isEmpty || !_latexRegex.hasMatch(text)) {
-            return null;
-          }
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: _buildMathText(context, text, defaultStyle),
-          );
+          return null;
         },
       ),
     );

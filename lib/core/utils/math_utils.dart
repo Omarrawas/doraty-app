@@ -14,7 +14,20 @@ class MathUtils {
   static String normalizeMathContent(String raw) {
     if (raw.trim().isEmpty) return raw;
 
-    final decodedRaw = decodeHtmlEntities(raw);
+    // Decode and normalize colors first (8-digit hex to 6-digit)
+    var processed = raw;
+    processed = processed.replaceAllMapped(
+      RegExp(r'#([0-9a-fA-F]{2})([0-9a-fA-F]{6})\b'),
+      (match) {
+        final alpha = match.group(1)!.toLowerCase();
+        final rgb = match.group(2)!;
+        // If it's a Flutter-style #AARRGGBB where AA is ff (opaque), convert to #RRGGBB
+        if (alpha == 'ff') return '#$rgb';
+        return match.group(0)!;
+      }
+    );
+
+    final decodedRaw = decodeHtmlEntities(processed);
     // Split by HTML tags to avoid normalizing tag names or attributes
     final combinedRegex = RegExp(r'(<[^>]+>|[^<]+)');
     final matches = combinedRegex.allMatches(decodedRaw);

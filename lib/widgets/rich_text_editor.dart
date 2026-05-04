@@ -404,9 +404,13 @@ class _RichTextEditorState extends State<RichTextEditor> {
   }
 
   String _toHexColor(Color color) {
-    // Return an 8-character hex string (including alpha) which is more 
-    // reliably recognized by flutter_quill as a color attribute.
-    return '#${color.value.toRadixString(16).padLeft(8, '0')}';
+    // Return a standard 6-character hex string (#RRGGBB) for CSS compatibility.
+    // CSS 8-digit hex is RRGGBBAA, while Flutter is AARRGGBB. 
+    // Using 6-digit hex is safer for general compatibility.
+    final r = color.red.toRadixString(16).padLeft(2, '0');
+    final g = color.green.toRadixString(16).padLeft(2, '0');
+    final b = color.blue.toRadixString(16).padLeft(2, '0');
+    return '#$r$g$b';
   }
 
   Widget _buildToolbarButton({

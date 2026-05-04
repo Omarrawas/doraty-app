@@ -1203,7 +1203,8 @@ class _CreateLessonScreenState extends State<CreateLessonScreen> {
         'description': _descriptionHtml,
         'video_url': _videoUrlController.text.trim(),
         'duration': durationText,
-        'content': _contentHtml,
+        'content': _contentHtml, // Keep for backward compatibility/search
+        'content_html': _contentHtml, // Store rich content here
         'is_free': _isFree,
         'resources': _attachments,
         'order_index': _chapters.length,

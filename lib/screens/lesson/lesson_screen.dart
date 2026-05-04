@@ -895,9 +895,12 @@ class _LessonScreenState extends State<LessonScreen>
   }
 
   Widget _buildDescriptionTab() {
+    final hasRichContent = lesson.contentHtml != null && lesson.contentHtml!.isNotEmpty;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Always show description using TexView (it handles potential math in description too)
         TexViewWidget(
           lesson.description,
           style: TextStyle(
@@ -905,10 +908,21 @@ class _LessonScreenState extends State<LessonScreen>
               height: 1.8,
               color: AppColors.getTextColor(context)),
         ),
-        if (lesson.content != null &&
+        
+        // Show main content: prioritize HTML version for rich formatting and math
+        if (hasRichContent) ...[
+          const SizedBox(height: 24),
+          TexViewWidget(
+            lesson.contentHtml!,
+            style: TextStyle(
+                fontSize: 16,
+                height: 1.8,
+                color: AppColors.getTextColor(context)),
+          ),
+        ] else if (lesson.content != null &&
             lesson.content != lesson.description &&
             lesson.content!.isNotEmpty) ...[
-          SizedBox(height: 24),
+          const SizedBox(height: 24),
           TexViewWidget(
             lesson.content!,
             style: TextStyle(
