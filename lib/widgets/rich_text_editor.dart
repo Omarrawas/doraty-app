@@ -118,15 +118,37 @@ class _RichTextEditorState extends State<RichTextEditor> {
         // Normalize HTML first (handles Word equations and fix style attributes)
         String html = MathUtils.normalizeMathContent(widget.initialHtml!);
         
-        // Ensure consistent style formatting for the converter
+        // Normalize color/background formatting: lowercase hex, space after colon
         html = html.replaceAllMapped(RegExp(r'style="([^"]*)"'), (match) {
           String style = match.group(1)!;
-          // Normalize color/background formatting: lowercase hex, space after colon
           style = style.toLowerCase()
               .replaceAll(RegExp(r':\s*'), ': ')
               .replaceAll(RegExp(r';\s*'), '; ');
           return 'style="$style"';
         });
+
+        // CRITICAL: Wrap colored text in block elements (h1-h6, p) with <span> 
+        // to ensure the HTML-to-Delta converter picks up the color attribute.
+        html = html.replaceAllMapped(
+          RegExp(r'<(h[1-6]|p)([^>]*)style="([^"]*color:\s*(#[0-9a-f]{3,6}|rgb\([^\)]+\))[^"]*)"([^>]*)>(.*?)</\1>', 
+          caseSensitive: false, dotAll: true),
+          (match) {
+            String tag = match.group(1)!;
+            String attr1 = match.group(2)!;
+            String style = match.group(3)!;
+            String attr2 = match.group(4)!;
+            String content = match.group(5)!;
+            
+            // Extract the specific color value
+            RegExp colorReg = RegExp(r'color:\s*(#[0-9a-f]{3,6}|rgb\([^\)]+\))', caseSensitive: false);
+            String colorValue = colorReg.firstMatch(style)?.group(1) ?? '';
+            
+            if (colorValue.isNotEmpty) {
+              return '<$tag$attr1 style="$style"$attr2><span style="color: $colorValue">$content</span></$tag>';
+            }
+            return match.group(0)!;
+          }
+        );
 
         // Convert HTML -> Delta
         var delta = HtmlToDelta().convert(html);
@@ -772,8 +794,6 @@ class _RichTextEditorState extends State<RichTextEditor> {
     // their own admin theme wrappers.
     final isDark = context.watch<ThemeProvider>().isDarkMode;
     final baseStyles = quill.DefaultStyles.getInstance(context);
-    final defaultTextColor =
-        widget.textColor ?? (isDark ? Colors.white : Colors.black87);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -910,12 +930,15 @@ class _RichTextEditorState extends State<RichTextEditor> {
                           MathEmbedBuilder(),
                         ],
                         customStyles: quill.DefaultStyles(
-                          h1: baseStyles.h1,
-                          h2: baseStyles.h2,
-                          h3: baseStyles.h3,
-                          h4: baseStyles.h4,
-                          h5: baseStyles.h5,
-                          h6: baseStyles.h6,
+                          h1: baseStyles.h1?.copyWith(
+                            style: baseStyles.h1!.style.copyWith(color: null),
+                          ),
+                          h2: baseStyles.h2?.copyWith(
+                            style: baseStyles.h2!.style.copyWith(color: null),
+                          ),
+                          h3: baseStyles.h3?.copyWith(
+                            style: baseStyles.h3!.style.copyWith(color: null),
+                          ),
                           lineHeightNormal: baseStyles.lineHeightNormal,
                           lineHeightTight: baseStyles.lineHeightTight,
                           lineHeightOneAndHalf: baseStyles.lineHeightOneAndHalf,
@@ -968,7 +991,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
                             style: (baseStyles.paragraph?.style ??
                                     const TextStyle(fontSize: 16, height: 1.5))
                                 .copyWith(
-                              color: defaultTextColor,
+                              // color: defaultTextColor, // Removed to allow custom colors to show in editor
                               fontSize: 16,
                               height: 1.5,
                             ),
