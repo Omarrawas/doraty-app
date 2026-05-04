@@ -253,29 +253,24 @@ class _RichTextEditorState extends State<RichTextEditor> {
       if (op.key == 'insert' && op.value is String) {
         final text = op.value as String;
         
-        // We only want to convert if the WHOLE string segment looks like math
-        // and doesn't have spaces at start/end (typical for pasted equations)
-        // OR we can use a more complex regex to find math within text.
-        
-        // Let's look for specific patterns: (a+b)/(c+d) or x^2=y
-        final trimmed = text.trim();
-        if (trimmed.length > 3 && MathUtils.isMathLike(trimmed) && !trimmed.contains('\n')) {
+        // We look for patterns like 1/λ = R(...) or 2πr^2
+        // Only convert if it's a "math-like" line
+        if (MathUtils.isMathLike(text) && !text.contains('\n')) {
+          final trimmed = text.trim();
           final latex = MathParser.convertToLatex(trimmed);
-          if (latex != trimmed) {
+          
+          if (latex != trimmed && latex.isNotEmpty) {
             newDelta.insert(quill.Embeddable('math', latex), op.attributes);
             changed = true;
             continue;
           }
         }
-        newDelta.push(op);
-      } else {
-        newDelta.push(op);
       }
+      newDelta.insert(op.value, op.attributes);
     }
 
     if (changed) {
       final selection = _controller.selection;
-      _controller.updateSelection(const TextSelection.collapsed(offset: 0), quill.ChangeSource.local);
       _controller.document.replace(0, _controller.document.length, "");
       _controller.document.compose(newDelta, quill.ChangeSource.local);
       _controller.updateSelection(selection, quill.ChangeSource.local);
@@ -608,29 +603,33 @@ class _RichTextEditorState extends State<RichTextEditor> {
       onSelected: onSelected,
       offset: const Offset(0, 40),
       color: isDark ? AppColors.getSurfaceColor(context) : Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       itemBuilder: (context) => [
         PopupMenuItem<Color?>(
           value: null,
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(vertical: 6),
             child: Row(
               children: [
                 Container(
-                  width: 20,
-                  height: 20,
+                  width: 24,
+                  height: 24,
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.withOpacity(0.5)),
-                    borderRadius: BorderRadius.circular(3),
+                    border: Border.all(color: Colors.grey.withOpacity(0.3)),
+                    borderRadius: BorderRadius.circular(4),
                     color: isBackground ? Colors.transparent : Colors.black,
                   ),
                   child: isBackground 
-                    ? const Center(child: Icon(Icons.close, size: 14, color: Colors.red))
+                    ? const Center(child: Icon(Icons.format_color_reset, size: 16, color: Colors.red))
                     : null,
                 ),
                 const SizedBox(width: 12),
                 Text(
                   isBackground ? 'بلا لون' : 'تلقائي',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
                 ),
               ],
             ),
@@ -644,16 +643,27 @@ class _RichTextEditorState extends State<RichTextEditor> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'ألوان المظهر',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                Row(
+                  children: [
+                    Icon(Icons.palette_outlined, size: 14, color: Colors.grey[600]),
+                    const SizedBox(width: 8),
+                    Text(
+                      'ألوان القياسية',
+                      style: TextStyle(
+                        fontSize: 11, 
+                        fontWeight: FontWeight.w600, 
+                        color: Colors.grey[600],
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: 210,
                   child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                    spacing: 10,
+                    runSpacing: 10,
                     children: _toolbarColors.map((color) {
                       return MouseRegion(
                         cursor: SystemMouseCursors.click,
@@ -663,20 +673,20 @@ class _RichTextEditorState extends State<RichTextEditor> {
                             Navigator.pop(context);
                           },
                           child: Container(
-                            width: 22,
-                            height: 22,
+                            width: 24,
+                            height: 24,
                             decoration: BoxDecoration(
                               color: color,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(6),
                               border: Border.all(
                                 color: Colors.black.withOpacity(0.1),
                                 width: 1,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
-                                  blurRadius: 2,
-                                  offset: const Offset(0, 1),
+                                  color: color.withOpacity(0.3),
+                                  blurRadius: 3,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),

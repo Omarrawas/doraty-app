@@ -63,7 +63,7 @@ class MathUtils {
 
   /// Detects if a string looks like a mathematical equation
   static bool isMathLike(String text) {
-    if (text.length < 3) return false;
+    if (text.trim().length < 3) return false;
     
     // Patterns indicative of Word linear math or equations
     final mathPatterns = [
@@ -73,12 +73,24 @@ class MathUtils {
       r'[=<>≤≥≠≈]',      // Comparisons
       r'/',              // Fractions
       r'[×÷±√∞]',        // Math operators
-      r'〖|〗',            // Word specific brackets
+      r'〖|〗|【|】',        // Word specific brackets
+      r'\(.*\/.*\)',      // Parentheses with a slash inside (likely fraction)
       r'\d+(\.\d+)?\s*[×*]\s*10' // Scientific notation
     ];
 
     final combinedRegex = RegExp(mathPatterns.join('|'));
-    return combinedRegex.hasMatch(text);
+    
+    // Also check for multiple mathy characters in a row
+    // If it has at least 2 math-indicative symbols/operators, it's likely math
+    int hits = 0;
+    if (text.contains('/')) hits++;
+    if (text.contains('^')) hits++;
+    if (text.contains('_')) hits++;
+    if (text.contains('=')) hits++;
+    if (text.contains('〖')) hits += 2;
+    if (RegExp(r'[a-zA-Z]').hasMatch(text) && hits > 0) hits++;
+
+    return hits >= 2 || combinedRegex.hasMatch(text);
   }
 
   static String decodeHtmlEntities(String input) {

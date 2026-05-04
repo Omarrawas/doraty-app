@@ -18,77 +18,67 @@ class MathParser {
       return "";
     }
 
-    // Process Fractions (/)
-    int slashIndex = _findTopLevelOperator(text, '/');
+    // Process Fractions (/) - Highest priority to find first
+    int slashIndex = _findNextOperator(text, '/');
     if (slashIndex != -1) {
-      String left = text.substring(0, slashIndex);
-      String right = text.substring(slashIndex + 1);
-
-      String numerator = _extractLeftOperand(left);
-      String denominator = _extractRightOperand(right);
-
-      String remainingLeft = left.substring(0, left.length - numerator.length);
-      String remainingRight = right.substring(denominator.length);
-
-      // Remove surrounding parentheses if they were used for grouping the fraction
-      String cleanNum = _stripOuterParentheses(numerator);
-      String cleanDen = _stripOuterParentheses(denominator);
-
-      return "${_parse(remainingLeft)}\\frac{${_parse(cleanNum)}}{${_parse(cleanDen)}}${_parse(remainingRight)}";
+      return _processOperator(text, slashIndex, (left, right) => "\\frac{$left}{$right}");
     }
 
     // Process Powers (^)
-    int caretIndex = _findTopLevelOperator(text, '^');
+    int caretIndex = _findNextOperator(text, '^');
     if (caretIndex != -1) {
-      String left = text.substring(0, caretIndex);
-      String right = text.substring(caretIndex + 1);
-
-      String base = _extractLeftOperand(left);
-      String exponent = _extractRightOperand(right);
-
-      String remainingLeft = left.substring(0, left.length - base.length);
-      String remainingRight = right.substring(exponent.length);
-
-      String cleanExp = _stripOuterParentheses(exponent);
-
-      return "${_parse(remainingLeft)}${_parse(base)}^{${_parse(cleanExp)}}${_parse(remainingRight)}";
+      return _processOperator(text, caretIndex, (left, right) => "$left^{$right}");
     }
 
     // Process Subscripts (_)
-    int subIndex = _findTopLevelOperator(text, '_');
+    int subIndex = _findNextOperator(text, '_');
     if (subIndex != -1) {
-      String left = text.substring(0, subIndex);
-      String right = text.substring(subIndex + 1);
-
-      String base = _extractLeftOperand(left);
-      String subscript = _extractRightOperand(right);
-
-      String remainingLeft = left.substring(0, left.length - base.length);
-      String remainingRight = right.substring(subscript.length);
-
-      String cleanSub = _stripOuterParentheses(subscript);
-
-      return "${_parse(remainingLeft)}${_parse(base)}_{${_parse(cleanSub)}}${_parse(remainingRight)}";
+      return _processOperator(text, subIndex, (left, right) => "${left}_{$right}");
     }
 
-    // Handle standard parentheses \left( \right)
+    // Handle standard parentheses \left( \right) ONLY if they wrap the WHOLE remaining text
     if (text.startsWith('(') && text.endsWith(')')) {
-      // Check if it's a single balanced group
-      if (_isBalanced(text.substring(1, text.length - 1))) {
-        return "\\left( ${_parse(text.substring(1, text.length - 1))} \\right)";
+      String inner = text.substring(1, text.length - 1);
+      if (_isBalanced(inner, '(', ')')) {
+        return "\\left( ${_parse(inner)} \\right)";
       }
     }
+    
+    // Handle LaTeX groups { } (already converted from Word brackets)
+    if (text.startsWith('{') && text.endsWith('}')) {
+       String inner = text.substring(1, text.length - 1);
+       if (_isBalanced(inner, '{', '}')) {
+         return "{${_parse(inner)}}";
+       }
+    }
 
-    // If no operators, return as is (Greek letters already handled by normalizer)
     return _handleImplicitMultiplication(text);
   }
 
-  static int _findTopLevelOperator(String text, String op) {
+  static String _processOperator(String text, int index, String Function(String left, String right) formatter) {
+    String leftPart = text.substring(0, index);
+    String rightPart = text.substring(index + 1);
+
+    String leftOp = _extractLeftOperand(leftPart);
+    String rightOp = _extractRightOperand(rightPart);
+
+    String remainingLeft = leftPart.substring(0, leftPart.length - leftOp.length);
+    String remainingRight = rightPart.substring(rightOp.length);
+
+    String cleanLeft = _stripOuterBrackets(leftOp);
+    String cleanRight = _stripOuterBrackets(rightOp);
+
+    return "${_parse(remainingLeft)}${formatter(_parse(cleanLeft), _parse(cleanRight))}${_parse(remainingRight)}";
+  }
+
+  static int _findNextOperator(String text, String op) {
     int bracketLevel = 0;
+    // We only respect { } for top-level separation because { } are our internal groups.
+    // ( ) are often part of the math expression like R(1/n) where we DO want to find /
     for (int i = 0; i < text.length; i++) {
-      if (text[i] == '(') {
+      if (text[i] == '{') {
         bracketLevel++;
-      } else if (text[i] == ')') {
+      } else if (text[i] == '}') {
         bracketLevel--;
       } else if (bracketLevel == 0 && text[i] == op) {
         return i;
@@ -101,24 +91,26 @@ class MathParser {
     if (text.isEmpty) {
       return "";
     }
-    text = text.trim();
-    if (text.endsWith(')')) {
+    String t = text.trimRight();
+    if (t.endsWith('}') || t.endsWith(')')) {
+      String open = t.endsWith('}') ? '{' : '(';
+      String close = t.endsWith('}') ? '}' : ')';
       int level = 1;
-      int i = text.length - 2;
+      int i = t.length - 2;
       while (i >= 0 && level > 0) {
-        if (text[i] == ')') {
+        if (t[i] == close) {
           level++;
-        } else if (text[i] == '(') {
+        } else if (t[i] == open) {
           level--;
         }
         i--;
       }
-      return text.substring(i + 1);
+      return t.substring(i + 1);
     } else {
-      // Find the last "word" or number
-      final regex = RegExp(r'([a-zA-Z\\]+|[0-9.]+)$');
-      final match = regex.firstMatch(text);
-      return match?.group(0) ?? text.substring(text.length - 1);
+      // Find the last "word" or number, allowing for LaTeX commands starting with \
+      final regex = RegExp(r'(\\[a-zA-Z]+|[a-zA-Z]+|[0-9.]+|.)$');
+      final match = regex.firstMatch(t);
+      return match?.group(0) ?? t.substring(t.length - 1);
     }
   }
 
@@ -126,44 +118,48 @@ class MathParser {
     if (text.isEmpty) {
       return "";
     }
-    text = text.trim();
-    if (text.startsWith('(')) {
+    String t = text.trimLeft();
+    if (t.startsWith('{') || t.startsWith('(')) {
+      String open = t.startsWith('{') ? '{' : '(';
+      String close = t.startsWith('{') ? '}' : ')';
       int level = 1;
       int i = 1;
-      while (i < text.length && level > 0) {
-        if (text[i] == '(') {
+      while (i < t.length && level > 0) {
+        if (t[i] == open) {
           level++;
-        } else if (text[i] == ')') {
+        } else if (t[i] == close) {
           level--;
         }
         i++;
       }
-      return text.substring(0, i);
+      return t.substring(0, i);
     } else {
       // Find the first "word" or number
-      final regex = RegExp(r'^([a-zA-Z\\]+|[0-9.]+)');
-      final match = regex.firstMatch(text);
-      return match?.group(0) ?? text.substring(0, 1);
+      final regex = RegExp(r'^(\\[a-zA-Z]+|[a-zA-Z]+|[0-9.]+)');
+      final match = regex.firstMatch(t);
+      return match?.group(0) ?? t.substring(0, 1);
     }
   }
 
-  static String _stripOuterParentheses(String text) {
-    text = text.trim();
-    if (text.startsWith('(') && text.endsWith(')')) {
-      String inner = text.substring(1, text.length - 1);
-      if (_isBalanced(inner)) {
+  static String _stripOuterBrackets(String text) {
+    String t = text.trim();
+    if ((t.startsWith('(') && t.endsWith(')')) || (t.startsWith('{') && t.endsWith('}'))) {
+      String open = t[0];
+      String close = t[t.length - 1];
+      String inner = t.substring(1, t.length - 1);
+      if (_isBalanced(inner, open, close)) {
         return inner;
       }
     }
-    return text;
+    return t;
   }
 
-  static bool _isBalanced(String text) {
+  static bool _isBalanced(String text, String open, String close) {
     int level = 0;
     for (int i = 0; i < text.length; i++) {
-      if (text[i] == '(') {
+      if (text[i] == open) {
         level++;
-      } else if (text[i] == ')') {
+      } else if (text[i] == close) {
         level--;
       }
       if (level < 0) {

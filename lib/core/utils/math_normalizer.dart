@@ -15,8 +15,8 @@ class MathNormalizer {
     'Δ': r'\Delta',
     'Ω': r'\Omega',
     'Φ': r'\Phi',
-    '〖': '(',
-    '〗': ')',
+    '〖': '{',
+    '〗': '}',
     '±': r'\pm',
     '÷': r'\div',
     '≤': r'\le',
@@ -36,14 +36,14 @@ class MathNormalizer {
       result = result.replaceAll(unicode, replacement);
     });
 
-    // 2. Remove Word specific artifacts
-    result = result.replaceAll('〖', '(').replaceAll('〗', ')');
+    // 2. Extra Word artifact cleanup (sometimes they appear differently)
+    result = result.replaceAll('〖', '{').replaceAll('〗', '}');
+    result = result.replaceAll('【', '{').replaceAll('】', '}');
 
-    // 3. Normalize spaces but keep necessary ones
+    // 3. Normalize spaces around common operators to make parsing easier
+    // But be careful not to break LaTeX commands.
+    // Let's just trim for now.
     result = result.trim();
-    
-    // 4. Handle scientific notation variants (e.g., 10^-3)
-    // We'll let the parser handle the caret, but normalize the symbol if needed
     
     return result;
   }
