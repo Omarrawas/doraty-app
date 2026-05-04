@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tex/flutter_tex.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 
 import '../core/theme/app_colors.dart';
@@ -85,45 +85,119 @@ class TexViewWidget extends StatelessWidget {
     String mathAwareText,
     TextStyle baseStyle,
   ) {
-    final fontSize = baseStyle.fontSize ?? 16;
     final textColor = baseStyle.color ?? AppColors.getTextColor(context);
+    final matches = _latexRegex.allMatches(mathAwareText).toList();
 
-    return Directionality(
-      textDirection: TextDirection.ltr,
-      child: TeXWidget(
-        key: ValueKey('tex_${mathAwareText.hashCode}'),
-        content: mathAwareText,
-        textWidgetBuilder: (context, text) => TextSpan(
-          text: text,
-          style: baseStyle,
-        ),
-        inlineFormulaWidgetBuilder: (context, inlineFormula) => Math2SVG(
-          key: ValueKey('inline_${inlineFormula.hashCode}'),
-          math: inlineFormula,
-          formulaWidgetBuilder: (context, svg) => SvgPicture.string(
-            svg,
-            height: fontSize * 1.2,
-            fit: BoxFit.contain,
-          ),
-        ),
-        displayFormulaWidgetBuilder: (context, displayFormula) => Padding(
+    if (matches.isEmpty) {
+      return Text(
+        mathAwareText,
+        style: baseStyle,
+        textAlign: isTitle ? TextAlign.center : TextAlign.start,
+        textDirection: TextDirection.rtl,
+      );
+    }
+
+    final children = <Widget>[];
+    var cursor = 0;
+
+    for (final match in matches) {
+      if (match.start > cursor) {
+        final textSegment = mathAwareText.substring(cursor, match.start).trim();
+        if (textSegment.isNotEmpty) {
+          children.add(
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                textSegment,
+                style: baseStyle,
+                textAlign: isTitle ? TextAlign.center : TextAlign.start,
+                textDirection: TextDirection.rtl,
+              ),
+            ),
+          );
+        }
+      }
+
+      final token = match.group(0)!;
+      final latex = _stripMathDelimiters(token);
+      children.add(
+        Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Align(
             alignment: isTitle ? Alignment.center : Alignment.centerRight,
-            child: Math2SVG(
-              key: ValueKey('display_${displayFormula.hashCode}'),
-              math: displayFormula,
-              formulaWidgetBuilder: (context, svg) => SvgPicture.string(
-                svg,
-                width: MediaQuery.of(context).size.width * 0.9,
-                colorFilter: ColorFilter.mode(textColor, BlendMode.srcIn),
-                fit: BoxFit.scaleDown,
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Math.tex(
+                latex,
+                mathStyle:
+                    _isDisplayMath(token) ? MathStyle.display : MathStyle.text,
+                textStyle: TextStyle(
+                  color: textColor,
+                  fontSize: (baseStyle.fontSize ?? 16) + 2,
+                ),
+                onErrorFallback: (error) => Text(
+                  token,
+                  style: baseStyle.copyWith(
+                    color: Colors.redAccent,
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                  ),
+                  textDirection: TextDirection.ltr,
+                ),
               ),
             ),
           ),
         ),
-      ),
+      );
+
+      cursor = match.end;
+    }
+
+    if (cursor < mathAwareText.length) {
+      final trailing = mathAwareText.substring(cursor).trim();
+      if (trailing.isNotEmpty) {
+        children.add(
+          Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              trailing,
+              style: baseStyle,
+              textAlign: isTitle ? TextAlign.center : TextAlign.start,
+              textDirection: TextDirection.rtl,
+            ),
+          ),
+        );
+      }
+    }
+
+    return Column(
+      crossAxisAlignment:
+          isTitle ? CrossAxisAlignment.center : CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: children,
     );
+  }
+
+  static bool _isDisplayMath(String token) {
+    return token.startsWith(r'\[') ||
+        token.startsWith('\$\$') ||
+        token.startsWith(r'\(') == false && token.startsWith('\$') == false;
+  }
+
+  static String _stripMathDelimiters(String token) {
+    if (token.startsWith(r'\[') && token.endsWith(r'\]')) {
+      return token.substring(2, token.length - 2);
+    }
+    if (token.startsWith(r'\(') && token.endsWith(r'\)')) {
+      return token.substring(2, token.length - 2);
+    }
+    if (token.startsWith('\$\$') && token.endsWith('\$\$')) {
+      return token.substring(2, token.length - 2);
+    }
+    if (token.startsWith('\$') && token.endsWith('\$')) {
+      return token.substring(1, token.length - 1);
+    }
+    return token;
   }
 
   static String _normalizeMathContent(String raw) {
