@@ -118,13 +118,13 @@ class _RichTextEditorState extends State<RichTextEditor> {
         // Normalize HTML first (handles Word equations and fix style attributes)
         String html = MathUtils.normalizeMathContent(widget.initialHtml!);
         
-        // Fix for color persistence: Ensure style attributes are in a format 
-        // that flutter_quill_delta_from_html can parse correctly.
-        // It often prefers a space after the colon and lowercase hex.
+        // Ensure consistent style formatting for the converter
         html = html.replaceAllMapped(RegExp(r'style="([^"]*)"'), (match) {
           String style = match.group(1)!;
-          // Ensure space after colons in styles
-          style = style.replaceAll(RegExp(r':\s*'), ': ');
+          // Normalize color/background formatting: lowercase hex, space after colon
+          style = style.toLowerCase()
+              .replaceAll(RegExp(r':\s*'), ': ')
+              .replaceAll(RegExp(r';\s*'), '; ');
           return 'style="$style"';
         });
 
@@ -280,24 +280,32 @@ class _RichTextEditorState extends State<RichTextEditor> {
     );
   }
 
-  void _applyColor(Color color) {
+  void _applyColor(Color? color) {
     _focusNode.requestFocus();
-    _controller.formatSelection(
-      quill.Attribute.fromKeyValue(
-        quill.Attribute.color.key,
-        _toHexColor(color),
-      )!,
-    );
+    if (color == null) {
+      _controller.formatSelection(quill.Attribute.clone(quill.Attribute.color, null));
+    } else {
+      _controller.formatSelection(
+        quill.Attribute.fromKeyValue(
+          quill.Attribute.color.key,
+          _toHexColor(color),
+        )!,
+      );
+    }
   }
 
-  void _applyBackground(Color color) {
+  void _applyBackground(Color? color) {
     _focusNode.requestFocus();
-    _controller.formatSelection(
-      quill.Attribute.fromKeyValue(
-        quill.Attribute.background.key,
-        _toHexColor(color),
-      )!,
-    );
+    if (color == null) {
+      _controller.formatSelection(quill.Attribute.clone(quill.Attribute.background, null));
+    } else {
+      _controller.formatSelection(
+        quill.Attribute.fromKeyValue(
+          quill.Attribute.background.key,
+          _toHexColor(color),
+        )!,
+      );
+    }
   }
 
   void _clearFormatting() {
@@ -418,6 +426,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
       child: PopupMenuButton<T>(
         tooltip: tooltip,
         onSelected: onSelected,
+        offset: const Offset(0, 40),
         color: isDark ? AppColors.getSurfaceColor(context) : Colors.white,
         itemBuilder: (_) => items,
         child: Container(
@@ -428,6 +437,79 @@ class _RichTextEditorState extends State<RichTextEditor> {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 18, color: foreground),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorPickerMenu({
+    required BuildContext context,
+    required bool isBackground,
+    required bool isActive,
+    required void Function(Color?) onSelected,
+  }) {
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+    
+    return PopupMenuButton<Color?>(
+      tooltip: isBackground ? 'لون الخلفية' : 'لون النص',
+      onSelected: onSelected,
+      offset: const Offset(0, 40),
+      color: isDark ? AppColors.getSurfaceColor(context) : Colors.white,
+      itemBuilder: (context) => [
+        PopupMenuItem<Color?>(
+          value: null,
+          child: Row(
+            children: [
+              const Icon(Icons.format_color_reset, size: 18),
+              const SizedBox(width: 12),
+              Text(isBackground ? 'بلا لون (شفاف)' : 'تلقائي (بلا لون)'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<Color?>(
+          enabled: false,
+          child: SizedBox(
+            width: 210,
+            child: Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: _toolbarColors.map((color) {
+                return InkWell(
+                  onTap: () {
+                    onSelected(color);
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(
+                        color: Colors.grey.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ],
+      child: Container(
+        width: 34,
+        height: 34,
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        decoration: BoxDecoration(
+          color: isActive ? AppColors.brandPrimary : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          isBackground ? Icons.format_color_fill : Icons.format_color_text,
+          size: 18,
+          color: isActive ? Colors.white : (isDark ? Colors.white : AppColors.getTextColor(context)),
         ),
       ),
     );
@@ -465,6 +547,8 @@ class _RichTextEditorState extends State<RichTextEditor> {
         _selectionStyle.attributes.containsKey(quill.Attribute.color.key);
     final backgroundActive =
         _selectionStyle.attributes.containsKey(quill.Attribute.background.key);
+    final sizeAttribute = _selectionStyle.attributes[quill.Attribute.size.key];
+    final scriptAttribute = _selectionStyle.attributes[quill.Attribute.script.key];
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -498,6 +582,41 @@ class _RichTextEditorState extends State<RichTextEditor> {
             tooltip: 'يتوسطه خط',
             isSelected: _hasInlineStyle(quill.Attribute.strikeThrough),
             onPressed: () => _toggleInlineStyle(quill.Attribute.strikeThrough),
+          ),
+          const VerticalDivider(width: 12, thickness: 1, indent: 8, endIndent: 8),
+          _buildToolbarButton(
+            context: context,
+            icon: Icons.superscript,
+            tooltip: 'أس علوي',
+            isSelected: scriptAttribute?.value == 'super',
+            onPressed: () => _toggleInlineStyle(quill.Attribute.superscript),
+          ),
+          _buildToolbarButton(
+            context: context,
+            icon: Icons.subscript,
+            tooltip: 'أس سفلي',
+            isSelected: scriptAttribute?.value == 'sub',
+            onPressed: () => _toggleInlineStyle(quill.Attribute.subscript),
+          ),
+          const VerticalDivider(width: 12, thickness: 1, indent: 8, endIndent: 8),
+          _buildToolbarMenuButton<String>(
+            context: context,
+            icon: Icons.format_size,
+            tooltip: 'حجم الخط',
+            isSelected: sizeAttribute != null,
+            onSelected: (value) {
+              if (value == 'normal') {
+                _controller.formatSelection(quill.Attribute.fromKeyValue('size', null));
+              } else {
+                _controller.formatSelection(quill.Attribute.fromKeyValue('size', value));
+              }
+            },
+            items: [
+              _menuItem('small', 'صغير'),
+              _menuItem('normal', 'عادي'),
+              _menuItem('large', 'كبير'),
+              _menuItem('huge', 'ضخم للغاية'),
+            ],
           ),
           _buildToolbarMenuButton<String>(
             context: context,
@@ -581,34 +700,17 @@ class _RichTextEditorState extends State<RichTextEditor> {
             tooltip: 'اتجاه النص',
             isSelected: directionAttribute?.value == quill.Attribute.rtl.value,
             onPressed: _toggleDirection,
-          ),
-          _buildToolbarMenuButton<Color>(
+          ),          _buildColorPickerMenu(
             context: context,
-            icon: Icons.format_color_text,
-            tooltip: 'لون النص',
-            isSelected: colorActive,
+            isBackground: false,
+            isActive: colorActive,
             onSelected: _applyColor,
-            items: _toolbarColors
-                .map((color) => _menuItem(
-                      color,
-                      _colorName(color),
-                      trailing: CircleAvatar(backgroundColor: color, radius: 8),
-                    ))
-                .toList(),
           ),
-          _buildToolbarMenuButton<Color>(
+          _buildColorPickerMenu(
             context: context,
-            icon: Icons.format_color_fill,
-            tooltip: 'لون الخلفية',
-            isSelected: backgroundActive,
+            isBackground: true,
+            isActive: backgroundActive,
             onSelected: _applyBackground,
-            items: _toolbarColors
-                .map((color) => _menuItem(
-                      color,
-                      _colorName(color),
-                      trailing: CircleAvatar(backgroundColor: color, radius: 8),
-                    ))
-                .toList(),
           ),
           _buildToolbarButton(
             context: context,
@@ -643,25 +745,14 @@ class _RichTextEditorState extends State<RichTextEditor> {
     );
   }
 
-  String _colorName(Color color) {
-    if (color == Colors.black) return 'أسود';
-    if (color == Colors.red) return 'أحمر';
-    if (color == Colors.blue) return 'أزرق';
-    if (color == Colors.green) return 'أخضر';
-    if (color == Colors.orange) return 'برتقالي';
-    if (color == Colors.purple) return 'بنفسجي';
-    if (color == Colors.yellow) return 'أصفر';
-    return 'لون';
-  }
 
   static const List<Color> _toolbarColors = [
-    Colors.black,
-    Colors.red,
-    Colors.blue,
-    Colors.green,
-    Colors.orange,
-    Colors.purple,
-    Colors.yellow,
+    Colors.black, Colors.white, Colors.grey,
+    Colors.red, Colors.pink, Colors.purple, Colors.deepPurple,
+    Colors.indigo, Colors.blue, Colors.lightBlue, Colors.cyan,
+    Colors.teal, Colors.green, Colors.lightGreen, Colors.lime,
+    Colors.yellow, Colors.amber, Colors.orange, Colors.deepOrange,
+    Colors.brown, Colors.blueGrey,
   ];
 
   @override
@@ -838,7 +929,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
                           strikeThrough: baseStyles.strikeThrough,
                           inlineCode: baseStyles.inlineCode,
                           link: baseStyles.link,
-                          color: defaultTextColor,
+                          // color: defaultTextColor, // Removed global override to fix custom color persistence
                           lists: baseStyles.lists,
                           quote: baseStyles.quote,
                           code: baseStyles.code,
