@@ -48,62 +48,105 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
   Future<void> _loadStats() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
+
     try {
-      // Use the same detailed stats logic for the main screen data
       final stats = await _db.getTeacherDetailedStats(widget.teacherId);
-      if (!mounted) return;
-      setState(() {
-        _stats = stats;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _stats = stats;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+      debugPrint('Error loading stats: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
             content: Text(ErrorUtils.getFriendlyErrorMessage(e)),
-            backgroundColor: Colors.red),
-      );
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = context.watch<ThemeProvider>().isDarkMode;
-
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDark = themeProvider.isDarkMode;
+    
     return Theme(
       data: isDark ? AppTheme.adminDarkTheme : AppTheme.adminLightTheme,
       child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBodyBehindAppBar: true,
         body: DynamicGradientBackground(
           child: SafeArea(
             child: Column(
               children: [
                 _buildHeader(),
-                Expanded(
-                  child: _isLoading
-                      ? Center(child: CircularProgressIndicator(color: AppColors.getTextColor(context)))
-                      : RefreshIndicator(
-                          onRefresh: _loadStats,
-                          color: AppColors.primaryPurple,
-                          child: ListView(
-                            padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                            children: [
-                              _buildStatsGrid(),
-                              SizedBox(height: 24),
-                              _buildSectionTitle('أداء الكورسات'),
-                              SizedBox(height: 12),
-                              ...(_stats['courses_breakdown'] as List? ?? [])
-                                  .map((course) => _buildCourseStatCard(course)),
-                              SizedBox(height: 24),
-                              _buildSectionTitle('أحدث الاشتراكات (آخر 10)'),
-                              SizedBox(height: 12),
-                              ...(_stats['recent_enrollments'] as List? ?? [])
-                                  .map((enrollment) => _buildRecentEnrollmentCard(enrollment)),
-                              SizedBox(height: 30),
-                            ],
+                if (_isLoading)
+                  const Expanded(
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                  )
+                else if (_stats.isEmpty)
+                  Expanded(
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.analytics_outlined,
+                            size: 64,
+                            color: AppColors.getTextColor(context).withOpacity(0.3),
                           ),
-                        ),
-                ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'لا توجد بيانات متاحة حالياً',
+                            style: TextStyle(
+                              color: AppColors.getTextColor(context),
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextButton(
+                            onPressed: _loadStats,
+                            child: const Text('إعادة المحاولة'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: _loadStats,
+                      color: AppColors.primaryPurple,
+                      child: ListView(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        children: [
+                          _buildStatsGrid(),
+                          const SizedBox(height: 24),
+                          _buildSectionTitle('أداء الكورسات'),
+                          const SizedBox(height: 12),
+                          ...(_stats['courses_breakdown'] as List? ?? [])
+                              .map((course) => _buildCourseStatCard(course)),
+                          const SizedBox(height: 24),
+                          _buildSectionTitle('أحدث الاشتراكات (آخر 10)'),
+                          const SizedBox(height: 12),
+                          ...(_stats['recent_enrollments'] as List? ?? [])
+                              .map((enrollment) => _buildRecentEnrollmentCard(enrollment)),
+                          const SizedBox(height: 30),
+                        ],
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
