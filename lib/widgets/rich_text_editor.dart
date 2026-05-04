@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_provider.dart';
 import 'math_symbol_toolbar.dart';
 import '../../core/utils/math_utils.dart';
+import '../../core/utils/math_parser.dart';
 
 class MathEmbedBuilder extends quill.EmbedBuilder {
   @override
@@ -211,6 +212,74 @@ class _RichTextEditorState extends State<RichTextEditor> {
     }
 
     _controller.addListener(_onContentChanged);
+
+    // Smart Math Conversion Listener (handles paste and typing)
+    _controller.changes.listen((event) {
+      if (event.source != quill.ChangeSource.local) return;
+      
+      final delta = event.change;
+      for (final op in delta.toList()) {
+        if (op.key == 'insert' && op.value is String) {
+          final text = op.value as String;
+          final trimmed = text.trim();
+          
+          // Only trigger for "pasted" chunks or specific math-like structures
+          if (trimmed.length > 2 && MathUtils.isMathLike(trimmed)) {
+            // Find the offset of this insertion
+            // Note: This is simplified. For a robust solution, we'd track offsets carefully.
+            // But since this is a paste/insert event, we can try to find the segment.
+            
+            // We use a small delay to not interfere with the current delta processing
+            Future.delayed(const Duration(milliseconds: 10), () {
+              if (!mounted) return;
+              
+              // We re-process the whole document or just the area?
+              // For simplicity and correctness, let's look for linear math strings in the doc
+              // that are NOT yet embedded.
+              _convertLinearMathInDoc();
+            });
+          }
+        }
+      }
+    });
+  }
+
+  void _convertLinearMathInDoc() {
+    final delta = _controller.document.toDelta();
+    bool changed = false;
+    final newDelta = quill_delta.Delta();
+
+    for (final op in delta.toList()) {
+      if (op.key == 'insert' && op.value is String) {
+        final text = op.value as String;
+        
+        // We only want to convert if the WHOLE string segment looks like math
+        // and doesn't have spaces at start/end (typical for pasted equations)
+        // OR we can use a more complex regex to find math within text.
+        
+        // Let's look for specific patterns: (a+b)/(c+d) or x^2=y
+        final trimmed = text.trim();
+        if (trimmed.length > 3 && MathUtils.isMathLike(trimmed) && !trimmed.contains('\n')) {
+          final latex = MathParser.convertToLatex(trimmed);
+          if (latex != trimmed) {
+            newDelta.insert(quill.Embeddable('math', latex), op.attributes);
+            changed = true;
+            continue;
+          }
+        }
+        newDelta.push(op);
+      } else {
+        newDelta.push(op);
+      }
+    }
+
+    if (changed) {
+      final selection = _controller.selection;
+      _controller.updateSelection(const TextSelection.collapsed(offset: 0), quill.ChangeSource.local);
+      _controller.document.replace(0, _controller.document.length, "");
+      _controller.document.compose(newDelta, quill.ChangeSource.local);
+      _controller.updateSelection(selection, quill.ChangeSource.local);
+    }
   }
 
   quill_delta.Delta _processMathEmbeds(quill_delta.Delta delta) {
@@ -218,33 +287,44 @@ class _RichTextEditorState extends State<RichTextEditor> {
     for (final op in delta.toList()) {
       if (op.key == 'insert' && op.value is String) {
         final text = op.value as String;
-        final matches = MathUtils.latexRegex.allMatches(text);
-
-        if (matches.isEmpty) {
-          newDelta.push(op);
+        
+        // 1. Check for standard LaTeX delimiters
+        final latexMatches = MathUtils.latexRegex.allMatches(text);
+        if (latexMatches.isNotEmpty) {
+          int lastIndex = 0;
+          for (final match in latexMatches) {
+            if (match.start > lastIndex) {
+              newDelta.insert(text.substring(lastIndex, match.start), op.attributes);
+            }
+            final rawMatch = match.group(0)!;
+            final cleanLatex = _stripMathDelimiters(rawMatch);
+            newDelta.insert(
+              quill.Embeddable('math', cleanLatex),
+              op.attributes,
+            );
+            lastIndex = match.end;
+          }
+          if (lastIndex < text.length) {
+            newDelta.insert(text.substring(lastIndex), op.attributes);
+          }
           continue;
         }
 
-        int lastIndex = 0;
-        for (final match in matches) {
-          if (match.start > lastIndex) {
+        // 2. Check if the entire string looks like a single linear math equation (Word format)
+        // We trim to avoid issues with surrounding spaces
+        final trimmed = text.trim();
+        if (trimmed.length > 2 && MathUtils.isMathLike(trimmed) && !trimmed.contains('\n')) {
+          final latex = MathParser.convertToLatex(trimmed);
+          if (latex != trimmed) {
             newDelta.insert(
-                text.substring(lastIndex, match.start), op.attributes);
+              quill.Embeddable('math', latex),
+              op.attributes,
+            );
+            continue;
           }
-
-          final rawMatch = match.group(0)!;
-          final cleanLatex = _stripMathDelimiters(rawMatch);
-
-          newDelta.insert(
-            quill.BlockEmbed.custom(quill.CustomBlockEmbed('math', cleanLatex)),
-            op.attributes,
-          );
-          lastIndex = match.end;
         }
 
-        if (lastIndex < text.length) {
-          newDelta.insert(text.substring(lastIndex), op.attributes);
-        }
+        newDelta.push(op);
       } else {
         newDelta.push(op);
       }
