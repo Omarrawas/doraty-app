@@ -582,6 +582,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => context.push('/admin/payments'),
         },
         {
+          'icon': Icons.account_balance_wallet_rounded,
+          'title': _t('admin_payment_settings_side'),
+          'subtitle': _t('admin_payment_settings_desc'),
+          'color': Colors.lightGreenAccent,
+          'onTap': () => context.push('/admin/payment-settings'),
+        },
+        {
           'icon': Icons.assessment_rounded,
           'title': _t('manage_reports'),
           'subtitle': _t('admin_reports_desc'),

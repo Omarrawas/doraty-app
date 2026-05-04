@@ -528,7 +528,6 @@ class MathSymbolToolbar extends StatelessWidget {
                                     ),
                                   )
                                 : TeXView(
-                                    key: ValueKey('preview_$previewLatex'),
                                     child: TeXViewDocument(
                                       '\\($previewLatex\\)',
                                       style: TeXViewStyle(

@@ -13,6 +13,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:flutter/services.dart';
 import '../../core/utils/error_utils.dart';
+import 'package:go_router/go_router.dart';
 
 class TeacherEnrollmentStatsScreen extends StatefulWidget {
   final String teacherId;
@@ -128,7 +129,7 @@ class _TeacherEnrollmentStatsScreenState extends State<TeacherEnrollmentStatsScr
                 ),
                 child: IconButton(
                   icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => context.pop(),
                 ),
               ),
             ),

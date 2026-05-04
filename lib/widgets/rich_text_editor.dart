@@ -3,7 +3,9 @@ import 'package:flutter_quill/flutter_quill.dart' as quill;
 import 'package:vsc_quill_delta_to_html/vsc_quill_delta_to_html.dart';
 import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart';
 import 'package:flutter_tex/flutter_tex.dart';
+import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/theme_provider.dart';
 import 'math_symbol_toolbar.dart';
 
 class MathEmbedBuilder extends quill.EmbedBuilder {
@@ -156,8 +158,10 @@ class _RichTextEditorState extends State<RichTextEditor> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    // Use ThemeProvider as the single source of truth for dark mode.
+    // Theme.of(context).brightness can mismatch when parent screens apply
+    // their own admin theme wrappers.
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
 
     return TapRegion(
       onTapOutside: (event) {
@@ -198,7 +202,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
                   Container(
                       color: isDark
                           ? Colors.black.withValues(alpha: 0.3)
-                          : Colors.grey.withValues(alpha: 0.05),
+                          : Colors.white.withValues(alpha: 0.05),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -295,7 +299,9 @@ class _RichTextEditorState extends State<RichTextEditor> {
                       Container(
                         height: widget.height,
                         padding: const EdgeInsets.symmetric(horizontal: 4),
-                        color: isDark ? Colors.transparent : Colors.white,
+                        color: isDark
+                            ? Colors.black.withValues(alpha: 0.15)
+                            : Colors.transparent,
                         child: quill.QuillEditor.basic(
                           controller: _controller,
                           focusNode: _focusNode,

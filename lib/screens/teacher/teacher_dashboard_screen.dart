@@ -30,6 +30,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Map<String, dynamic> _stats = {};
   List<Map<String, dynamic>> _recentExams = [];
   List<Map<String, dynamic>> _teacherCourses = [];
+  String _userName = '';
 
   final intl.NumberFormat _currencyFormat =
       intl.NumberFormat.currency(symbol: 'ل.س ', decimalDigits: 0);
@@ -50,6 +51,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final user = SupabaseService.instance.currentUser;
+      _userName = user?.userMetadata?['full_name'] ?? user?.email?.split('@').first ?? '';
+
       // Load teacher's courses
       final courses = await _db.getTeacherCourses();
 
@@ -342,6 +346,41 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _buildQuickActions(BuildContext context) {
+    // Only keep the 4 most useful actions for teachers
+    final actions = [
+      {
+        'icon': Icons.view_module_rounded,
+        'label': _t('manage_my_courses'),
+        'color': Colors.tealAccent,
+        'onTap': () {
+          final userId = SupabaseService.instance.currentUserId;
+          context.push('/admin/courses?instructorId=$userId');
+        },
+      },
+      {
+        'icon': Icons.analytics_rounded,
+        'label': _t('statistics'),
+        'color': Colors.indigoAccent,
+        'onTap': () {
+          final userId = SupabaseService.instance.currentUserId;
+          final encodedName = Uri.encodeComponent(_userName);
+          context.push('/admin/subscriptions/teacher/$userId?name=$encodedName');
+        },
+      },
+      {
+        'icon': Icons.account_balance_wallet_rounded,
+        'label': 'التقارير المالية',
+        'color': Colors.greenAccent,
+        'onTap': _showMonthSelectionDialog,
+      },
+      {
+        'icon': Icons.people_alt_rounded,
+        'label': _t('student_results'),
+        'color': Colors.orangeAccent,
+        'onTap': () => context.push('/admin/results'),
+      },
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -353,83 +392,27 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               color: AppColors.getTextColor(context)),
         ),
         SizedBox(height: 16),
-        GridView.count(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 16,
-          crossAxisSpacing: 16,
-          childAspectRatio: 1.1,
-          children: [
-            _buildActionCard(
-              context: context,
-              icon: Icons.assignment_rounded,
-              label: _t('manage_exams'),
-              color: Colors.deepOrangeAccent,
-              onTap: () => context.push('/admin/exams/create'),
-            ),
-            _buildActionCard(
-              context: context,
-              icon: Icons.video_library_rounded,
-              label: 'إضافة درس جديد',
-              color: Colors.lightBlueAccent,
-              onTap: () {
-                final userId = SupabaseService.instance.currentUserId;
-                context.push('/admin/courses?instructorId=$userId');
-              },
-            ),
-            _buildActionCard(
-              context: context,
-              icon: Icons.people_alt_rounded,
-              label: _t('student_results'),
-              color: Colors.orangeAccent,
-              onTap: () => context.push('/admin/results'),
-            ),
-            _buildActionCard(
-              context: context,
-              icon: Icons.people_rounded,
-              label: 'مشتركو الدورات',
-              color: Colors.pinkAccent,
-              onTap: () {
-                final userId = SupabaseService.instance.currentUserId;
-                context.push('/admin/courses?instructorId=$userId');
-              },
-            ),
-            _buildActionCard(
-              context: context,
-              icon: Icons.analytics_rounded,
-              label: _t('statistics'),
-              color: Colors.indigoAccent,
-              onTap: () {
-                final userId = SupabaseService.instance.currentUserId;
-                context.push('/admin/subscriptions/teacher/$userId');
-              },
-            ),
-            _buildActionCard(
-              context: context,
-              icon: Icons.account_balance_wallet_rounded,
-              label: 'التقارير المالية',
-              color: Colors.greenAccent,
-              onTap: _showMonthSelectionDialog,
-            ),
-            _buildActionCard(
-              context: context,
-              icon: Icons.view_module_rounded,
-              label: _t('manage_my_courses'),
-              color: Colors.tealAccent,
-              onTap: () {
-                final userId = SupabaseService.instance.currentUserId;
-                context.push('/admin/courses?instructorId=$userId');
-              },
-            ),
-            _buildActionCard(
-              context: context,
-              icon: Icons.settings_rounded,
-              label: 'الإعدادات',
-              color: Colors.grey,
-              onTap: () => context.push('/settings'),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final width = constraints.maxWidth;
+            final int crossAxisCount = width > 900 ? 4 : 2;
+            final double aspectRatio = width > 900 ? 2.2 : 1.1;
+            return GridView.count(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              crossAxisCount: crossAxisCount,
+              mainAxisSpacing: 12,
+              crossAxisSpacing: 12,
+              childAspectRatio: aspectRatio,
+              children: actions.map((a) => _buildActionCard(
+                context: context,
+                icon: a['icon'] as IconData,
+                label: a['label'] as String,
+                color: a['color'] as Color,
+                onTap: a['onTap'] as VoidCallback,
+              )).toList(),
+            );
+          },
         ),
       ],
     );

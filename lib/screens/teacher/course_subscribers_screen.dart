@@ -16,7 +16,8 @@ class CourseSubscribersScreen extends StatefulWidget {
   });
 
   @override
-  State<CourseSubscribersScreen> createState() => _CourseSubscribersScreenState();
+  State<CourseSubscribersScreen> createState() =>
+      _CourseSubscribersScreenState();
 }
 
 class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
@@ -51,6 +52,54 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
     }
   }
 
+  Future<void> _removeStudent(
+      String userId, String courseId, String studentName) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('حذف الطالب', textAlign: TextAlign.right),
+        content: Text('هل أنت متأكد من حذف الطالب $studentName من الدورة؟',
+            textAlign: TextAlign.right),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('إلغاء', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text('حذف'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isLoading = true);
+      try {
+        await _db.removeStudentFromCourse(userId, courseId);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('تم حذف الطالب بنجاح'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        await _loadSubscribers();
+      } catch (e) {
+        debugPrint('Error removing student: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('حدث خطأ أثناء حذف الطالب'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          setState(() => _isLoading = false);
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,7 +110,8 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
               _buildHeader(context),
               Expanded(
                 child: _isLoading
-                    ? Center(child: CircularProgressIndicator(color: Colors.white))
+                    ? Center(
+                        child: CircularProgressIndicator(color: Colors.white))
                     : _subscribers.isEmpty
                         ? _buildEmptyState(context)
                         : RefreshIndicator(
@@ -70,7 +120,8 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
                               padding: EdgeInsets.all(20),
                               itemCount: _subscribers.length,
                               itemBuilder: (context, index) {
-                                return _buildSubscriberCard(context, _subscribers[index]);
+                                return _buildSubscriberCard(
+                                    context, _subscribers[index]);
                               },
                             ),
                           ),
@@ -101,7 +152,8 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
                   ),
                 ),
                 child: IconButton(
-                  icon: Icon(Icons.arrow_back, color: AppColors.getTextColor(context)),
+                  icon: Icon(Icons.arrow_back,
+                      color: AppColors.getTextColor(context)),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -136,16 +188,28 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
     );
   }
 
-  Widget _buildSubscriberCard(BuildContext context, Map<String, dynamic> subscriber) {
+  Widget _buildSubscriberCard(
+      BuildContext context, Map<String, dynamic> subscriber) {
     final user = subscriber['users'] as Map<String, dynamic>? ?? {};
     final fullName = user['full_name'] ?? 'طالب';
     final email = user['email'] ?? '';
     final avatarUrl = user['avatar_url'];
-    final enrolledAt = subscriber['enrolled_at'] != null 
-        ? DateTime.parse(subscriber['enrolled_at']).toLocal() 
+    final enrolledAt = subscriber['enrolled_at'] != null
+        ? DateTime.parse(subscriber['enrolled_at']).toLocal()
         : null;
-    final progress = (subscriber['progress_percentage'] as num? ?? 0).toDouble();
+    final progress =
+        (subscriber['progress_percentage'] as num? ?? 0).toDouble();
     final courseTitle = subscriber['courses']?['title'];
+
+    final userId = subscriber['user_id']?.toString() ?? '';
+    final courseId = subscriber['course_id']?.toString() ?? '';
+    final paidAmount = subscriber['paid_amount'] as num?;
+    final status = subscriber['status']?.toString() ?? 'active';
+
+    String subscriptionType = 'مجاني';
+    if (paidAmount != null && paidAmount > 0) {
+      subscriptionType = 'مدفوع ($paidAmount ل.س)';
+    }
 
     return Padding(
       padding: EdgeInsets.only(bottom: 12),
@@ -166,31 +230,54 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
             child: Column(
               children: [
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: AppColors.primaryPurple.withOpacity(0.2),
-                      backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                      child: avatarUrl == null ? Icon(Icons.person, color: Colors.white) : null,
+                      backgroundImage:
+                          avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                      child: avatarUrl == null
+                          ? Icon(Icons.person, color: Colors.white)
+                          : null,
                     ),
                     SizedBox(width: 16),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            fullName,
-                            style: TextStyle(
-                              color: AppColors.getTextColor(context),
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  fullName,
+                                  style: TextStyle(
+                                    color: AppColors.getTextColor(context),
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (userId.isNotEmpty && courseId.isNotEmpty)
+                                IconButton(
+                                  icon: Icon(Icons.delete_outline,
+                                      color: Colors.redAccent, size: 22),
+                                  constraints: BoxConstraints(),
+                                  padding: EdgeInsets.zero,
+                                  onPressed: () => _removeStudent(
+                                      userId, courseId, fullName),
+                                ),
+                            ],
                           ),
                           if (email.isNotEmpty)
                             Text(
                               email,
                               style: TextStyle(
-                                color: AppColors.getTextColor(context).withOpacity(0.6),
+                                color: AppColors.getTextColor(context)
+                                    .withOpacity(0.6),
                                 fontSize: 13,
                               ),
                             ),
@@ -206,33 +293,69 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
                                 ),
                               ),
                             ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color:
+                                        (paidAmount != null && paidAmount > 0)
+                                            ? Colors.orange.withOpacity(0.2)
+                                            : Colors.green.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color:
+                                          (paidAmount != null && paidAmount > 0)
+                                              ? Colors.orange.withOpacity(0.5)
+                                              : Colors.green.withOpacity(0.5),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    subscriptionType,
+                                    style: TextStyle(
+                                      color:
+                                          (paidAmount != null && paidAmount > 0)
+                                              ? Colors.orange
+                                              : Colors.greenAccent,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                if (status != 'active')
+                                  Container(
+                                    padding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                          color: Colors.red.withOpacity(0.5)),
+                                    ),
+                                    child: Text(
+                                      status,
+                                      style: TextStyle(
+                                        color: Colors.redAccent,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    if (enrolledAt != null)
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'انضم في',
-                            style: TextStyle(
-                              color: AppColors.getTextColor(context).withOpacity(0.5),
-                              fontSize: 11,
-                            ),
-                          ),
-                          Text(
-                            _dateFormat.format(enrolledAt),
-                            style: TextStyle(
-                              color: AppColors.getTextColor(context),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
                   ],
                 ),
-                SizedBox(height: 16),
+                SizedBox(height: 12),
+                Divider(color: Colors.white.withOpacity(0.1)),
+                SizedBox(height: 8),
                 Row(
                   children: [
                     Expanded(
@@ -245,7 +368,8 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
                               Text(
                                 'التقدم في الدورة',
                                 style: TextStyle(
-                                  color: AppColors.getTextColor(context).withOpacity(0.7),
+                                  color: AppColors.getTextColor(context)
+                                      .withOpacity(0.7),
                                   fontSize: 12,
                                 ),
                               ),
@@ -265,13 +389,38 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
                             child: LinearProgressIndicator(
                               value: progress / 100,
                               backgroundColor: Colors.white.withOpacity(0.1),
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.greenAccent),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.greenAccent),
                               minHeight: 6,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    if (enrolledAt != null) ...[
+                      SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'تاريخ الانضمام',
+                            style: TextStyle(
+                              color: AppColors.getTextColor(context)
+                                  .withOpacity(0.5),
+                              fontSize: 11,
+                            ),
+                          ),
+                          Text(
+                            _dateFormat.format(enrolledAt),
+                            style: TextStyle(
+                              color: AppColors.getTextColor(context),
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ],
@@ -287,7 +436,8 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.people_outline, size: 80, color: Colors.white.withOpacity(0.3)),
+          Icon(Icons.people_outline,
+              size: 80, color: Colors.white.withOpacity(0.3)),
           SizedBox(height: 16),
           Text(
             'لا يوجد طلاب مسجلين حالياً',

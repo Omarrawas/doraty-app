@@ -177,6 +177,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
       child: Container(
         color: Colors.transparent,
         child: Stack(
+          fit: StackFit.expand,
           children: [
             // Black fading overlay
             AnimatedOpacity(
@@ -188,6 +189,7 @@ class _VideoPlayerControlsState extends State<VideoPlayerControls> {
             if (_isVisible)
               SafeArea(
                 child: Stack(
+                  fit: StackFit.expand,
                   children: [
                     // Top Bar
                     Positioned(

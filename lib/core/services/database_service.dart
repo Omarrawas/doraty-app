@@ -973,6 +973,23 @@ class DatabaseService {
     }
   }
 
+  /// Remove a student from a course
+  Future<void> removeStudentFromCourse(String userId, String courseId) async {
+    try {
+      await _client
+          .from('enrollments')
+          .delete()
+          .eq('user_id', userId)
+          .eq('course_id', courseId);
+          
+      await _updateCourseEnrollmentCount(courseId);
+      await LocalDatabase().remove('user_${userId}_accessible_course_ids');
+    } catch (e) {
+      debugPrint('Error removing student from course: $e');
+      rethrow;
+    }
+  }
+
   /// Get teacher exams
   Future<List<Map<String, dynamic>>> getTeacherExams() async {
     try {
