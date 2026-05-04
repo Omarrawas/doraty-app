@@ -235,18 +235,23 @@ class _RichTextEditorState extends State<RichTextEditor> {
 
   void _onContentChanged() {
     final delta = _controller.document.toDelta();
-    final deltaJson = List<Map<String, dynamic>>.from(delta.toJson());
-
-    // Pre-process Delta ops to convert 'math' embeds to HTML-friendly LaTeX strings
-    for (var op in deltaJson) {
-      if (op['insert'] is Map && op['insert']['math'] != null) {
-        final latex = op['insert']['math'];
-        op['insert'] = '\\($latex\\)';
+    
+    // Pre-process Delta ops to convert 'math' embeds to LaTeX strings manually
+    // This is a foolproof way to ensure they are included in the HTML output.
+    final List<Map<String, dynamic>> processedDelta = delta.toJson().map((op) {
+      final insert = op['insert'];
+      if (insert is Map && insert.containsKey('math')) {
+        final latex = insert['math'];
+        return {
+          'insert': '\\($latex\\)',
+          'attributes': op['attributes'],
+        };
       }
-    }
+      return Map<String, dynamic>.from(op);
+    }).toList();
 
     final converter = QuillDeltaToHtmlConverter(
-      deltaJson,
+      processedDelta,
       ConverterOptions(
         converterOptions: OpConverterOptions(
           inlineStylesFlag: true,
@@ -255,6 +260,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
     );
 
     final html = converter.convert();
+    
     if (mounted) {
       setState(() {});
     }
