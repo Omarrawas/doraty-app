@@ -78,12 +78,14 @@ class _CourseSubscribersScreenState extends State<CourseSubscribersScreen> {
       setState(() => _isLoading = true);
       try {
         await _db.removeStudentFromCourse(userId, courseId);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('تم حذف الطالب بنجاح'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('تم إزالة الطالب من الدورة بنجاح'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
         await _loadSubscribers();
       } catch (e) {
         debugPrint('Error removing student: $e');

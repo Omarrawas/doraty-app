@@ -16,6 +16,7 @@ class MathEmbedBuilder extends quill.EmbedBuilder {
   Widget build(BuildContext context, quill.EmbedContext embedContext) {
     final latex = embedContext.node.value.data as String;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
 
     return Container(
       key: ValueKey('math_$latex'),
@@ -29,18 +30,28 @@ class MathEmbedBuilder extends quill.EmbedBuilder {
           color: AppColors.getBorderColor(context).withValues(alpha: 0.3),
         ),
       ),
-      child: TeXView(
-        key: ValueKey('tex_$latex'),
-        child: TeXViewDocument(
-          '\\($latex\\)',
-          style: TeXViewStyle(
-            contentColor: isDark ? Colors.white : Colors.black87,
-            textAlign: TeXViewTextAlign.center,
-            padding: const TeXViewPadding.all(4),
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: TeXWidget(
+          key: ValueKey('tex_$latex'),
+          content: '\\[$latex\\]',
+          displayFormulaWidgetBuilder: (context, displayFormula) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Center(
+              child: Math2SVG(
+                math: displayFormula,
+                formulaWidgetBuilder: (context, svg) => SvgPicture.string(
+                  svg,
+                  width: MediaQuery.of(context).size.width * 0.7,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
           ),
-        ),
-        style: TeXViewStyle(
-          backgroundColor: isDark ? Colors.black26 : Colors.grey[50],
+          textWidgetBuilder: (context, text) => TextSpan(
+            text: text,
+            style: TextStyle(color: textColor),
+          ),
         ),
       ),
     );
@@ -72,6 +83,7 @@ class RichTextEditor extends StatefulWidget {
 class _RichTextEditorState extends State<RichTextEditor> {
   late quill.QuillController _controller;
   final FocusNode _focusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
   bool _isFocused = false;
 
   @override
@@ -153,6 +165,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
     _controller.removeListener(_onContentChanged);
     _controller.dispose();
     _focusNode.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -163,191 +176,210 @@ class _RichTextEditorState extends State<RichTextEditor> {
     // their own admin theme wrappers.
     final isDark = context.watch<ThemeProvider>().isDarkMode;
 
-    return TapRegion(
-      onTapOutside: (event) {
-        if (_isFocused) {
-          _focusNode.unfocus();
-        }
-      },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              color: isDark
-                  ? AppColors.getSurfaceColor(context)
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _isFocused
-                    ? AppColors.brandPrimary
-                    : AppColors.getBorderColor(context),
-                width: _isFocused ? 1.5 : 1.0,
-              ),
-              boxShadow: [
-                if (_isFocused)
-                  BoxShadow(
-                    color: AppColors.brandPrimary.withValues(alpha: 0.15),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-              ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.getSurfaceColor(context) : Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: _isFocused
+                  ? AppColors.brandPrimary
+                  : AppColors.getBorderColor(context),
+              width: _isFocused ? 1.5 : 1.0,
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                      color: isDark
-                          ? Colors.black.withValues(alpha: 0.3)
-                          : Colors.white.withValues(alpha: 0.05),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          quill.QuillSimpleToolbar(
-                            controller: _controller,
-                            config: quill.QuillSimpleToolbarConfig(
-                              multiRowsDisplay: false,
-                              showSearchButton: false,
-                              showFontFamily: false,
-                              showFontSize: true,
-                              showHeaderStyle: false,
-                              showBoldButton: true,
-                              showItalicButton: true,
-                              showUnderLineButton: true,
-                              showStrikeThrough: false,
-                              showInlineCode: false,
-                              showColorButton: true,
-                              showBackgroundColorButton: true,
-                              showClearFormat: true,
-                              showAlignmentButtons: true,
-                              showLeftAlignment: true,
-                              showCenterAlignment: true,
-                              showRightAlignment: true,
-                              showJustifyAlignment: true,
-                              showListNumbers: false,
-                              showListBullets: false,
-                              showListCheck: false,
-                              showCodeBlock: false,
-                              showQuote: false,
-                              showIndent: false,
-                              showLink: false,
-                              showUndo: true,
-                              showRedo: true,
-                              showDirection: true,
-                              buttonOptions: quill.QuillSimpleToolbarButtonOptions(
-                                base: quill.QuillToolbarBaseButtonOptions(
-                                  iconTheme: quill.QuillIconTheme(
-                                    iconButtonSelectedData: quill.IconButtonData(
-                                      color: AppColors.brandPrimary,
-                                      style: IconButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        backgroundColor: AppColors.brandPrimary,
-                                      ),
+            boxShadow: [
+              if (_isFocused)
+                BoxShadow(
+                  color: AppColors.brandPrimary.withValues(alpha: 0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                    color: isDark
+                        ? Colors.black.withValues(alpha: 0.3)
+                        : Colors.white.withValues(alpha: 0.05),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        quill.QuillSimpleToolbar(
+                          controller: _controller,
+                          config: quill.QuillSimpleToolbarConfig(
+                            multiRowsDisplay: false,
+                            showSearchButton: false,
+                            showFontFamily: false,
+                            showFontSize: true,
+                            showHeaderStyle: false,
+                            showBoldButton: true,
+                            showItalicButton: true,
+                            showUnderLineButton: true,
+                            showStrikeThrough: false,
+                            showInlineCode: false,
+                            showColorButton: true,
+                            showBackgroundColorButton: true,
+                            showClearFormat: true,
+                            showAlignmentButtons: true,
+                            showLeftAlignment: true,
+                            showCenterAlignment: true,
+                            showRightAlignment: true,
+                            showJustifyAlignment: true,
+                            showListNumbers: false,
+                            showListBullets: false,
+                            showListCheck: false,
+                            showCodeBlock: false,
+                            showQuote: false,
+                            showIndent: false,
+                            showLink: false,
+                            showUndo: true,
+                            showRedo: true,
+                            showDirection: true,
+                            buttonOptions:
+                                quill.QuillSimpleToolbarButtonOptions(
+                              base: quill.QuillToolbarBaseButtonOptions(
+                                iconTheme: quill.QuillIconTheme(
+                                  iconButtonSelectedData: quill.IconButtonData(
+                                    color: AppColors.brandPrimary,
+                                    style: IconButton.styleFrom(
+                                      foregroundColor: Colors.white,
+                                      backgroundColor: AppColors.brandPrimary,
                                     ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
-                          Container(
-                            height: 1,
-                            color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
-                          ),
-                          MathSymbolToolbar(
-                            onSymbolSelected: (symbol) {
-                              _focusNode.requestFocus();
-                              Future.delayed(const Duration(milliseconds: 50), () {
-                                if (!mounted) return;
-                                final index = _controller.selection.extentOffset;
-                                final length = _controller.selection.end - _controller.selection.start;
-                                final insertIndex = index >= 0 ? index : (_controller.document.length - 1).clamp(0, 999999);
-                                if (symbol.contains('\\') || symbol.startsWith(r'\(')) {
-                                  String cleanLatex = symbol;
-                                  if (cleanLatex.startsWith(r'\(') && cleanLatex.endsWith(r'\)')) {
-                                    cleanLatex = cleanLatex.substring(2, cleanLatex.length - 2);
-                                  }
-                                  _controller.replaceText(
-                                    insertIndex,
-                                    length > 0 ? length : 0,
-                                    quill.BlockEmbed.custom(quill.CustomBlockEmbed('math', cleanLatex)),
-                                    null,
-                                  );
-                                } else {
-                                  _controller.replaceText(insertIndex, length > 0 ? length : 0, symbol, null);
+                        ),
+                        Container(
+                          height: 1,
+                          color: AppColors.getBorderColor(context)
+                              .withValues(alpha: 0.5),
+                        ),
+                        MathSymbolToolbar(
+                          onSymbolSelected: (symbol) {
+                            _focusNode.requestFocus();
+                            Future.delayed(const Duration(milliseconds: 50),
+                                () {
+                              if (!mounted) return;
+                              final index = _controller.selection.extentOffset;
+                              final length = _controller.selection.end -
+                                  _controller.selection.start;
+                              final insertIndex = index >= 0
+                                  ? index
+                                  : (_controller.document.length - 1)
+                                      .clamp(0, 999999);
+                              if (symbol.contains('\\') ||
+                                  symbol.startsWith(r'\(')) {
+                                String cleanLatex = symbol;
+                                if (cleanLatex.startsWith(r'\(') &&
+                                    cleanLatex.endsWith(r'\)')) {
+                                  cleanLatex = cleanLatex.substring(
+                                      2, cleanLatex.length - 2);
                                 }
-                                 _controller.updateSelection(
-                                   TextSelection.collapsed(
-                                     offset: insertIndex + (symbol.contains('\\') ? 1 : symbol.length),
-                                   ),
-                                   quill.ChangeSource.local,
-                                 );
-                               });
-                             },
-                           ),
-                          Container(
-                            height: 1,
-                            color: AppColors.getBorderColor(context).withValues(alpha: 0.5),
-                          ),
-                        ],
-                      ),
+                                _controller.replaceText(
+                                  insertIndex,
+                                  length > 0 ? length : 0,
+                                  quill.BlockEmbed.custom(
+                                    quill.CustomBlockEmbed('math', cleanLatex),
+                                  ),
+                                  null,
+                                );
+                              } else {
+                                _controller.replaceText(
+                                  insertIndex,
+                                  length > 0 ? length : 0,
+                                  symbol,
+                                  null,
+                                );
+                              }
+                              _controller.updateSelection(
+                                TextSelection.collapsed(
+                                  offset: insertIndex +
+                                      (symbol.contains('\\')
+                                          ? 1
+                                          : symbol.length),
+                                ),
+                                quill.ChangeSource.local,
+                              );
+                            });
+                          },
+                        ),
+                        Container(
+                          height: 1,
+                          color: AppColors.getBorderColor(context)
+                              .withValues(alpha: 0.5),
+                        ),
+                      ],
+                    )),
+                Container(
+                  constraints: BoxConstraints(
+                    minHeight: widget.height,
+                    maxHeight: widget.height,
                   ),
-                  Column(
-                    children: [
-                      Container(
-                        height: widget.height,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        color: isDark
-                            ? Colors.black.withValues(alpha: 0.15)
-                            : Colors.transparent,
-                        child: quill.QuillEditor.basic(
-                          controller: _controller,
-                          focusNode: _focusNode,
-                          config: quill.QuillEditorConfig(
-                            placeholder: widget.placeholder,
-                            padding: const EdgeInsets.all(12),
-                            expands: false,
-                            scrollable: true,
-                            autoFocus: false,
-                            embedBuilders: [
-                              MathEmbedBuilder(),
-                            ],
-                            customStyles: quill.DefaultStyles(
-                              placeHolder: quill.DefaultTextBlockStyle(
-                                TextStyle(
-                                  color: isDark ? Colors.white38 : Colors.black38,
-                                  fontSize: 16,
-                                ),
-                                const quill.HorizontalSpacing(0, 0),
-                                const quill.VerticalSpacing(0, 0),
-                                const quill.VerticalSpacing(0, 0),
-                                null,
-                              ),
-                              paragraph: quill.DefaultTextBlockStyle(
-                                TextStyle(
-                                  color: widget.textColor ?? (isDark ? Colors.white : Colors.black87),
-                                  fontSize: 16,
-                                  height: 1.5,
-                                ),
-                                const quill.HorizontalSpacing(0, 0),
-                                const quill.VerticalSpacing(0, 0),
-                                const quill.VerticalSpacing(0, 0),
-                                null,
-                              ),
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  color: isDark
+                      ? Colors.black.withValues(alpha: 0.15)
+                      : Colors.transparent,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onTap: _focusNode.requestFocus,
+                    child: quill.QuillEditor(
+                      controller: _controller,
+                      focusNode: _focusNode,
+                      scrollController: _scrollController,
+                      config: quill.QuillEditorConfig(
+                        placeholder: widget.placeholder,
+                        padding: const EdgeInsets.all(12),
+                        expands: false,
+                        scrollable: true,
+                        autoFocus: false,
+                        minHeight: widget.height,
+                        maxHeight: widget.height,
+                        onTapOutside: (_, focusNode) => focusNode.unfocus(),
+                        embedBuilders: [
+                          MathEmbedBuilder(),
+                        ],
+                        customStyles: quill.DefaultStyles(
+                          placeHolder: quill.DefaultTextBlockStyle(
+                            TextStyle(
+                              color: isDark ? Colors.white38 : Colors.black38,
+                              fontSize: 16,
                             ),
+                            const quill.HorizontalSpacing(0, 0),
+                            const quill.VerticalSpacing(0, 0),
+                            const quill.VerticalSpacing(0, 0),
+                            null,
+                          ),
+                          paragraph: quill.DefaultTextBlockStyle(
+                            TextStyle(
+                              color: widget.textColor ??
+                                  (isDark ? Colors.white : Colors.black87),
+                              fontSize: 16,
+                              height: 1.5,
+                            ),
+                            const quill.HorizontalSpacing(0, 0),
+                            const quill.VerticalSpacing(0, 0),
+                            const quill.VerticalSpacing(0, 0),
+                            null,
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
