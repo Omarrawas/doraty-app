@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' as quill;
+import 'package:flutter_quill/quill_delta.dart' as quill_delta;
 import 'package:vsc_quill_delta_to_html/vsc_quill_delta_to_html.dart';
 import 'package:flutter_quill_delta_from_html/flutter_quill_delta_from_html.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
@@ -7,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_provider.dart';
 import 'math_symbol_toolbar.dart';
+import '../../core/utils/math_utils.dart';
 
 class MathEmbedBuilder extends quill.EmbedBuilder {
   @override
@@ -113,8 +115,15 @@ class _RichTextEditorState extends State<RichTextEditor> {
   void _initializeController() {
     try {
       if (widget.initialHtml != null && widget.initialHtml!.isNotEmpty) {
+        // Normalize HTML first (handles Word equations etc.)
+        final normalizedHtml = MathUtils.normalizeMathContent(widget.initialHtml!);
+
         // Convert HTML -> Delta
-        final delta = HtmlToDelta().convert(widget.initialHtml!);
+        var delta = HtmlToDelta().convert(normalizedHtml);
+
+        // Post-process Delta to convert LaTeX strings to math embeds
+        delta = _processMathEmbeds(delta);
+
         _controller = quill.QuillController(
           document: quill.Document.fromDelta(delta),
           selection: const TextSelection.collapsed(offset: 0),
@@ -135,6 +144,61 @@ class _RichTextEditorState extends State<RichTextEditor> {
     }
 
     _controller.addListener(_onContentChanged);
+  }
+
+  quill_delta.Delta _processMathEmbeds(quill_delta.Delta delta) {
+    final newDelta = quill_delta.Delta();
+    for (final op in delta.toList()) {
+      if (op.key == 'insert' && op.value is String) {
+        final text = op.value as String;
+        final matches = MathUtils.latexRegex.allMatches(text);
+
+        if (matches.isEmpty) {
+          newDelta.push(op);
+          continue;
+        }
+
+        int lastIndex = 0;
+        for (final match in matches) {
+          if (match.start > lastIndex) {
+            newDelta.insert(
+                text.substring(lastIndex, match.start), op.attributes);
+          }
+
+          final rawMatch = match.group(0)!;
+          final cleanLatex = _stripMathDelimiters(rawMatch);
+
+          newDelta.insert(
+            quill.BlockEmbed.custom(quill.CustomBlockEmbed('math', cleanLatex)),
+            op.attributes,
+          );
+          lastIndex = match.end;
+        }
+
+        if (lastIndex < text.length) {
+          newDelta.insert(text.substring(lastIndex), op.attributes);
+        }
+      } else {
+        newDelta.push(op);
+      }
+    }
+    return newDelta;
+  }
+
+  String _stripMathDelimiters(String token) {
+    if (token.startsWith(r'\[') && token.endsWith(r'\]')) {
+      return token.substring(2, token.length - 2);
+    }
+    if (token.startsWith(r'\(') && token.endsWith(r'\)')) {
+      return token.substring(2, token.length - 2);
+    }
+    if (token.startsWith('\$\$') && token.endsWith('\$\$')) {
+      return token.substring(2, token.length - 2);
+    }
+    if (token.startsWith('\$') && token.endsWith('\$')) {
+      return token.substring(1, token.length - 1);
+    }
+    return token;
   }
 
   void _onContentChanged() {
@@ -661,13 +725,21 @@ class _RichTextEditorState extends State<RichTextEditor> {
                                   : (_controller.document.length - 1)
                                       .clamp(0, 999999);
                               if (symbol.contains('\\') ||
-                                  symbol.startsWith(r'\(')) {
+                                  symbol.startsWith(r'\(') ||
+                                  symbol.contains('^') ||
+                                  symbol.contains('_')) {
+                                // Clean the latex (remove delimiters if any)
                                 String cleanLatex = symbol;
                                 if (cleanLatex.startsWith(r'\(') &&
                                     cleanLatex.endsWith(r'\)')) {
                                   cleanLatex = cleanLatex.substring(
                                       2, cleanLatex.length - 2);
+                                } else if (cleanLatex.startsWith(r'\[') &&
+                                    cleanLatex.endsWith(r'\]')) {
+                                  cleanLatex = cleanLatex.substring(
+                                      2, cleanLatex.length - 2);
                                 }
+
                                 _controller.replaceText(
                                   insertIndex,
                                   length > 0 ? length : 0,
@@ -677,6 +749,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
                                   null,
                                 );
                               } else {
+                                // Plain symbol insert
                                 _controller.replaceText(
                                   insertIndex,
                                   length > 0 ? length : 0,
