@@ -1,7 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../core/theme/app_colors.dart';
-import 'package:flutter_tex/flutter_tex.dart';
+import 'package:flutter_math_fork/flutter_math.dart';
 
 class MathSymbolToolbar extends StatelessWidget {
   final Function(String) onSymbolSelected;
@@ -555,33 +555,10 @@ class MathSymbolToolbar extends StatelessWidget {
                                                 children: [
                                                   Expanded(
                                                     child: Center(
-                                                      child: Directionality(
-                                                        textDirection:
-                                                            TextDirection.ltr,
-                                                        child: TeXWidget(
-                                                          key: ValueKey(
-                                                            'template_${template.label}_${template.preview.hashCode}',
-                                                          ),
-                                                          content:
-                                                              '\\[${template.preview}\\]',
-                                                          displayFormulaWidgetBuilder:
-                                                              (context,
-                                                                      displayFormula) =>
-                                                                  Math2SVG(
-                                                            math:
-                                                                displayFormula,
-                                                            formulaWidgetBuilder:
-                                                                (context,
-                                                                        svg) =>
-                                                                    SvgPicture
-                                                                        .string(
-                                                              svg,
-                                                              width: 160,
-                                                              fit: BoxFit
-                                                                  .contain,
-                                                            ),
-                                                          ),
-                                                        ),
+                                                      child: _SafeMathPreview(
+                                                        latex: template.preview,
+                                                        textColor: textColor,
+                                                        mathSize: 16,
                                                       ),
                                                     ),
                                                   ),
@@ -728,33 +705,11 @@ class MathSymbolToolbar extends StatelessWidget {
                                   )
                                 : Padding(
                                     padding: const EdgeInsets.all(16),
-                                    child: Directionality(
-                                      textDirection: TextDirection.ltr,
-                                      child: TeXWidget(
-                                        key: ValueKey(
-                                            'preview_${previewLatex.hashCode}'),
-                                        content: '\\[$previewLatex\\]',
-                                        displayFormulaWidgetBuilder:
-                                            (context, displayFormula) => Center(
-                                          child: Math2SVG(
-                                            math: displayFormula,
-                                            formulaWidgetBuilder:
-                                                (context, svg) =>
-                                                    SvgPicture.string(
-                                              svg,
-                                              width: 360,
-                                              fit: BoxFit.contain,
-                                            ),
-                                          ),
-                                        ),
-                                        textWidgetBuilder: (context, text) =>
-                                            TextSpan(
-                                          text: text,
-                                          style: TextStyle(
-                                            color: textColor,
-                                            fontSize: 18,
-                                          ),
-                                        ),
+                                    child: Center(
+                                      child: _SafeMathPreview(
+                                        latex: previewLatex,
+                                        textColor: textColor,
+                                        mathSize: 22,
                                       ),
                                     ),
                                   ),
@@ -1195,4 +1150,66 @@ class _EquationGroup {
     required this.title,
     required this.templates,
   });
+}
+
+/// A safe, WebView-free LaTeX preview widget using flutter_math_fork.
+/// Falls back to a styled plain-text display if the formula can't be parsed.
+class _SafeMathPreview extends StatelessWidget {
+  final String latex;
+  final Color textColor;
+  final double mathSize;
+
+  const _SafeMathPreview({
+    required this.latex,
+    required this.textColor,
+    this.mathSize = 16,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (latex.trim().isEmpty) {
+      return const SizedBox.shrink();
+    }
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Math.tex(
+        latex,
+        textStyle: TextStyle(
+          fontSize: mathSize,
+          color: textColor,
+        ),
+        onErrorFallback: (err) => _LatexFallbackText(
+          latex: latex,
+          textColor: textColor,
+          fontSize: mathSize * 0.75,
+        ),
+      ),
+    );
+  }
+}
+
+class _LatexFallbackText extends StatelessWidget {
+  final String latex;
+  final Color textColor;
+  final double fontSize;
+
+  const _LatexFallbackText({
+    required this.latex,
+    required this.textColor,
+    required this.fontSize,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      latex,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontFamily: 'monospace',
+        fontSize: fontSize.clamp(9.0, 14.0),
+        color: textColor.withOpacity(0.7),
+        height: 1.3,
+      ),
+    );
+  }
 }

@@ -215,9 +215,10 @@ class _RichTextEditorState extends State<RichTextEditor> {
                           controller: _controller,
                           config: quill.QuillSimpleToolbarConfig(
                             multiRowsDisplay: false,
+                            axis: Axis.horizontal,
                             showSearchButton: false,
                             showFontFamily: false,
-                            showFontSize: true,
+                            showFontSize: false,
                             showHeaderStyle: false,
                             showBoldButton: true,
                             showItalicButton: true,
@@ -246,6 +247,18 @@ class _RichTextEditorState extends State<RichTextEditor> {
                                 quill.QuillSimpleToolbarButtonOptions(
                               base: quill.QuillToolbarBaseButtonOptions(
                                 iconTheme: quill.QuillIconTheme(
+                                  iconButtonUnselectedData:
+                                      quill.IconButtonData(
+                                    color: isDark
+                                        ? Colors.white
+                                        : AppColors.getTextColor(context),
+                                    style: IconButton.styleFrom(
+                                      foregroundColor: isDark
+                                          ? Colors.white
+                                          : AppColors.getTextColor(context),
+                                      backgroundColor: Colors.transparent,
+                                    ),
+                                  ),
                                   iconButtonSelectedData: quill.IconButtonData(
                                     color: AppColors.brandPrimary,
                                     style: IconButton.styleFrom(
