@@ -203,7 +203,8 @@ class TexViewWidget extends StatelessWidget {
   static String _normalizeMathContent(String raw) {
     if (raw.trim().isEmpty) return raw;
 
-    final parts = raw.split(RegExp(r'(<[^>]+>)'));
+    final decodedRaw = _decodeHtmlEntities(raw);
+    final parts = decodedRaw.split(RegExp(r'(<[^>]+>)'));
     final buffer = StringBuffer();
 
     for (final part in parts) {
@@ -219,7 +220,7 @@ class TexViewWidget extends StatelessWidget {
   }
 
   static String _normalizeTextSegment(String input) {
-    var text = input;
+    var text = _decodeHtmlEntities(input);
 
     if (!_wordEquationHintRegex.hasMatch(text) && !_latexRegex.hasMatch(text)) {
       return text;
@@ -433,6 +434,18 @@ class TexViewWidget extends StatelessWidget {
         .replaceAll('λ', r'\lambda')
         .replaceAll('Λ', r'\Lambda')
         .replaceAll('∞', r'\infty');
+  }
+
+  static String _decodeHtmlEntities(String input) {
+    return input
+        .replaceAll('&#47;', '/')
+        .replaceAll('&#92;', r'\')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&amp;', '&')
+        .replaceAll('&nbsp;', ' ')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&#39;', "'");
   }
 }
 

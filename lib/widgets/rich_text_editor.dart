@@ -602,6 +602,9 @@ class _RichTextEditorState extends State<RichTextEditor> {
     // Theme.of(context).brightness can mismatch when parent screens apply
     // their own admin theme wrappers.
     final isDark = context.watch<ThemeProvider>().isDarkMode;
+    final baseStyles = quill.DefaultStyles.getInstance(context);
+    final defaultTextColor =
+        widget.textColor ?? (isDark ? Colors.white : Colors.black87);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -729,27 +732,68 @@ class _RichTextEditorState extends State<RichTextEditor> {
                           MathEmbedBuilder(),
                         ],
                         customStyles: quill.DefaultStyles(
-                          placeHolder: quill.DefaultTextBlockStyle(
-                            TextStyle(
+                          h1: baseStyles.h1,
+                          h2: baseStyles.h2,
+                          h3: baseStyles.h3,
+                          h4: baseStyles.h4,
+                          h5: baseStyles.h5,
+                          h6: baseStyles.h6,
+                          lineHeightNormal: baseStyles.lineHeightNormal,
+                          lineHeightTight: baseStyles.lineHeightTight,
+                          lineHeightOneAndHalf: baseStyles.lineHeightOneAndHalf,
+                          lineHeightDouble: baseStyles.lineHeightDouble,
+                          bold: baseStyles.bold,
+                          subscript: baseStyles.subscript,
+                          superscript: baseStyles.superscript,
+                          italic: baseStyles.italic,
+                          small: baseStyles.small,
+                          underline: baseStyles.underline,
+                          strikeThrough: baseStyles.strikeThrough,
+                          inlineCode: baseStyles.inlineCode,
+                          link: baseStyles.link,
+                          color: defaultTextColor,
+                          lists: baseStyles.lists,
+                          quote: baseStyles.quote,
+                          code: baseStyles.code,
+                          indent: baseStyles.indent,
+                          align: baseStyles.align,
+                          leading: baseStyles.leading,
+                          sizeSmall: baseStyles.sizeSmall,
+                          sizeLarge: baseStyles.sizeLarge,
+                          sizeHuge: baseStyles.sizeHuge,
+                          palette: baseStyles.palette,
+                          placeHolder: (baseStyles.placeHolder ??
+                                  quill.DefaultTextBlockStyle(
+                                    const TextStyle(fontSize: 16),
+                                    const quill.HorizontalSpacing(0, 0),
+                                    const quill.VerticalSpacing(0, 0),
+                                    const quill.VerticalSpacing(0, 0),
+                                    null,
+                                  ))
+                              .copyWith(
+                            style: (baseStyles.placeHolder?.style ??
+                                    const TextStyle(fontSize: 16))
+                                .copyWith(
                               color: isDark ? Colors.white38 : Colors.black38,
                               fontSize: 16,
                             ),
-                            const quill.HorizontalSpacing(0, 0),
-                            const quill.VerticalSpacing(0, 0),
-                            const quill.VerticalSpacing(0, 0),
-                            null,
                           ),
-                          paragraph: quill.DefaultTextBlockStyle(
-                            TextStyle(
-                              color: widget.textColor ??
-                                  (isDark ? Colors.white : Colors.black87),
+                          paragraph: (baseStyles.paragraph ??
+                                  quill.DefaultTextBlockStyle(
+                                    const TextStyle(fontSize: 16, height: 1.5),
+                                    const quill.HorizontalSpacing(0, 0),
+                                    const quill.VerticalSpacing(0, 0),
+                                    const quill.VerticalSpacing(0, 0),
+                                    null,
+                                  ))
+                              .copyWith(
+                            style: (baseStyles.paragraph?.style ??
+                                    const TextStyle(fontSize: 16, height: 1.5))
+                                .copyWith(
+                              color: defaultTextColor,
                               fontSize: 16,
                               height: 1.5,
                             ),
-                            const quill.HorizontalSpacing(0, 0),
-                            const quill.VerticalSpacing(0, 0),
-                            const quill.VerticalSpacing(0, 0),
-                            null,
                           ),
                         ),
                       ),
