@@ -130,7 +130,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
         // CRITICAL: Wrap colored text in block elements (h1-h6, p) with <span> 
         // to ensure the HTML-to-Delta converter picks up the color attribute.
         html = html.replaceAllMapped(
-          RegExp(r'<(h[1-6]|p)([^>]*)style="([^"]*color:\s*(#[0-9a-f]{3,6}|rgb\([^\)]+\))[^"]*)"([^>]*)>(.*?)</\1>', 
+          RegExp(r'<(h[1-6]|p)([^>]*)style="([^"]*color:\s*(#[0-9a-f]{3,8}|rgb\([^\)]+\))[^"]*)"([^>]*)>(.*?)</\1>', 
           caseSensitive: false, dotAll: true),
           (match) {
             String tag = match.group(1)!;
@@ -140,7 +140,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
             String content = match.group(5)!;
             
             // Extract the specific color value
-            RegExp colorReg = RegExp(r'color:\s*(#[0-9a-f]{3,6}|rgb\([^\)]+\))', caseSensitive: false);
+            RegExp colorReg = RegExp(r'color:\s*(#[0-9a-f]{3,8}|rgb\([^\)]+\))', caseSensitive: false);
             String colorValue = colorReg.firstMatch(style)?.group(1) ?? '';
             
             if (colorValue.isNotEmpty) {
@@ -236,22 +236,24 @@ class _RichTextEditorState extends State<RichTextEditor> {
   void _onContentChanged() {
     final delta = _controller.document.toDelta();
     
-    // Pre-process Delta ops to convert 'math' embeds to LaTeX strings manually
-    // This is a foolproof way to ensure they are included in the HTML output.
-    final List<Map<String, dynamic>> processedDelta = delta.toJson().map((op) {
+    // Use unique markers to protect math formulas from HTML escaping/stripping
+    final List<Map<String, dynamic>> processedOps = [];
+    
+    for (final op in delta.toJson()) {
       final insert = op['insert'];
       if (insert is Map && insert.containsKey('math')) {
-        final latex = insert['math'];
-        return {
-          'insert': '\\($latex\\)',
+        final latex = insert['math'].toString();
+        processedOps.add({
+          'insert': 'MATH_LATEX_START$latex MATH_LATEX_END',
           'attributes': op['attributes'],
-        };
+        });
+      } else {
+        processedOps.add(Map<String, dynamic>.from(op));
       }
-      return Map<String, dynamic>.from(op);
-    }).toList();
+    }
 
     final converter = QuillDeltaToHtmlConverter(
-      processedDelta,
+      processedOps,
       ConverterOptions(
         converterOptions: OpConverterOptions(
           inlineStylesFlag: true,
@@ -259,7 +261,10 @@ class _RichTextEditorState extends State<RichTextEditor> {
       ),
     );
 
-    final html = converter.convert();
+    // Convert to HTML and then replace markers with proper LaTeX delimiters
+    String html = converter.convert();
+    html = html.replaceAll('MATH_LATEX_START', r'\(');
+    html = html.replaceAll('MATH_LATEX_END', r'\)');
     
     if (mounted) {
       setState(() {});
@@ -399,8 +404,9 @@ class _RichTextEditorState extends State<RichTextEditor> {
   }
 
   String _toHexColor(Color color) {
-    // Ensure we get a 6-character hex string without alpha channel
-    return '#${(color.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
+    // Return an 8-character hex string (including alpha) which is more 
+    // reliably recognized by flutter_quill as a color attribute.
+    return '#${color.value.toRadixString(16).padLeft(8, '0')}';
   }
 
   Widget _buildToolbarButton({
@@ -997,7 +1003,7 @@ class _RichTextEditorState extends State<RichTextEditor> {
                             style: (baseStyles.paragraph?.style ??
                                     const TextStyle(fontSize: 16, height: 1.5))
                                 .copyWith(
-                              // color: defaultTextColor, // Removed to allow custom colors to show in editor
+                              color: null, // Clear the color to let inline attributes take over
                               fontSize: 16,
                               height: 1.5,
                             ),
