@@ -115,11 +115,21 @@ class _RichTextEditorState extends State<RichTextEditor> {
   void _initializeController() {
     try {
       if (widget.initialHtml != null && widget.initialHtml!.isNotEmpty) {
-        // Normalize HTML first (handles Word equations etc.)
-        final normalizedHtml = MathUtils.normalizeMathContent(widget.initialHtml!);
+        // Normalize HTML first (handles Word equations and fix style attributes)
+        String html = MathUtils.normalizeMathContent(widget.initialHtml!);
+        
+        // Fix for color persistence: Ensure style attributes are in a format 
+        // that flutter_quill_delta_from_html can parse correctly.
+        // It often prefers a space after the colon and lowercase hex.
+        html = html.replaceAllMapped(RegExp(r'style="([^"]*)"'), (match) {
+          String style = match.group(1)!;
+          // Ensure space after colons in styles
+          style = style.replaceAll(RegExp(r':\s*'), ': ');
+          return 'style="$style"';
+        });
 
         // Convert HTML -> Delta
-        var delta = HtmlToDelta().convert(normalizedHtml);
+        var delta = HtmlToDelta().convert(html);
 
         // Post-process Delta to convert LaTeX strings to math embeds
         delta = _processMathEmbeds(delta);
@@ -215,7 +225,11 @@ class _RichTextEditorState extends State<RichTextEditor> {
 
     final converter = QuillDeltaToHtmlConverter(
       deltaJson,
-      ConverterOptions.forEmail(),
+      ConverterOptions(
+        converterOptions: OpConverterOptions(
+          inlineStylesFlag: true,
+        ),
+      ),
     );
 
     final html = converter.convert();
@@ -349,8 +363,8 @@ class _RichTextEditorState extends State<RichTextEditor> {
   }
 
   String _toHexColor(Color color) {
-    final rgb = color.value & 0x00FFFFFF;
-    return '#${rgb.toRadixString(16).padLeft(6, '0')}';
+    // Ensure we get a 6-character hex string without alpha channel
+    return '#${(color.value & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';
   }
 
   Widget _buildToolbarButton({
