@@ -6,7 +6,9 @@ import 'package:printing/printing.dart';
 import 'routes_names.dart';
 import '../../models/bundle.dart';
 import '../../models/tip.dart';
+import '../../core/theme/app_colors.dart';
 import '../../screens/error_screen.dart';
+
 import '../../screens/admin/admin_dashboard_screen.dart';
 import '../../screens/admin/users_management_screen.dart';
 import '../../screens/admin/categories_management_screen.dart';
@@ -26,6 +28,7 @@ import '../../screens/admin/create_lesson_screen.dart';
 import '../../screens/admin/subscriptions_management_screen.dart';
 import '../../screens/admin/course_enrollments_screen.dart';
 import '../../screens/admin/teacher_enrollment_stats_screen.dart';
+import '../../screens/admin/course_statistics_screen.dart';
 import '../../screens/admin/payment_receipts_screen.dart';
 import '../../screens/admin/payment_receipt_detail_screen.dart';
 import '../../screens/admin/payment_settings_screen.dart';
@@ -53,6 +56,18 @@ List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
             final courseId = state.uri.queryParameters['courseId'];
             final courseTitle = state.uri.queryParameters['courseTitle'] ?? '';
             return CourseSubscribersScreen(
+              courseId: courseId,
+              courseTitle: courseTitle,
+            );
+          },
+        ),
+        GoRoute(
+          path: 'enrollment-stats',
+          builder: (context, state) {
+            final courseId = state.uri.queryParameters['courseId'];
+            final courseTitle = state.uri.queryParameters['courseTitle'] ?? '';
+            if (courseId == null) return const ErrorScreen();
+            return CourseStatisticsScreen(
               courseId: courseId,
               courseTitle: courseTitle,
             );
@@ -280,6 +295,27 @@ List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
         GoRoute(
           path: 'social-links',
           builder: (context, state) => const AdminSocialLinksScreen(),
+        ),
+        GoRoute(
+          path: 'pdf-preview',
+          builder: (context, state) {
+            final extra = state.extra as Map<String, dynamic>?;
+            final generator = extra?['generator'] as Future<Uint8List> Function(PdfPageFormat);
+            final title = extra?['title'] as String? ?? 'معاينة الملف';
+            
+            return Scaffold(
+              appBar: AppBar(
+                title: Text(title, style: const TextStyle(fontFamily: 'Cairo')),
+                backgroundColor: AppColors.primaryPurple,
+                foregroundColor: Colors.white,
+              ),
+              body: PdfPreview(
+                build: generator,
+                canDebug: false,
+                pdfFileName: '${extra?['filename'] ?? 'report'}.pdf',
+              ),
+            );
+          },
         ),
         GoRoute(
           path: 'reports/financial',

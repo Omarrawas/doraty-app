@@ -52,10 +52,8 @@ class MathUtils {
     // Use our robust parser for potential Word linear math
     if (isMathLike(input)) {
       final latex = MathParser.convertToLatex(input);
-      // Only wrap if the parser actually did something useful or it's a known math structure
-      if (latex != input) {
-        return '\\($latex\\)';
-      }
+      // Always wrap if it's math-like to ensure the renderer picks it up
+      return '\\($latex\\)';
     }
     
     return input;
