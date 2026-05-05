@@ -11,6 +11,7 @@ import 'cache_service.dart';
 import 'local_database.dart';
 import '../utils/safe_parser.dart';
 import '../../models/course.dart';
+import 'image_upload_service.dart';
 
 class DatabaseService {
   // Singleton pattern
@@ -4654,7 +4655,25 @@ class DatabaseService {
   /// Delete course (Admin only)
   Future<void> deleteCourse(String courseId) async {
     try {
+      // Get the image URL before deleting the course
+      final response = await _client
+          .from('courses')
+          .select('image_url')
+          .eq('id', courseId)
+          .maybeSingle();
+      
+      final imageUrl = response?['image_url'] as String?;
+
       await _client.from('courses').delete().eq('id', courseId);
+
+      // If the image is on Supabase, delete it to save space
+      if (imageUrl != null && imageUrl.contains('supabase.co')) {
+        try {
+          await ImageUploadService().deleteImage(imageUrl, 'courses');
+        } catch (e) {
+          debugPrint('Error deleting course image: $e');
+        }
+      }
     } catch (e) {
       rethrow;
     }

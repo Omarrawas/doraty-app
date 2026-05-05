@@ -24,6 +24,8 @@ class MathNormalizer {
     '≠': r'\ne',
     '≈': r'\approx',
     '∞': r'\infty',
+    '²': '^2',
+    '³': '^3',
   };
 
   static String normalize(String input) {
@@ -40,9 +42,10 @@ class MathNormalizer {
     result = result.replaceAll('〖', '{').replaceAll('〗', '}');
     result = result.replaceAll('【', '{').replaceAll('】', '}');
 
-    // 3. Normalize spaces around common operators to make parsing easier
-    // But be careful not to break LaTeX commands.
-    // Let's just trim for now.
+    // 3. Fix common user typing errors in LaTeX (e.g. '\ frac' -> '\frac')
+    result = result.replaceAllMapped(RegExp(r'\\ +([a-zA-Z])'), (match) => '\\${match.group(1)}');
+
+    // 4. Normalize spaces around common operators to make parsing easier
     result = result.trim();
     
     return result;

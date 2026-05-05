@@ -72,10 +72,12 @@ class MathUtils {
       r'_',              // Subscripts
       r'[=<>≤≥≠≈]',      // Comparisons
       r'/',              // Fractions
-      r'[×÷±√∞]',        // Math operators
+      r'[×÷±√∞²³]',      // Math operators and superscripts
       r'〖|〗|【|】',        // Word specific brackets
       r'\(.*\/.*\)',      // Parentheses with a slash inside (likely fraction)
-      r'\d+(\.\d+)?\s*[×*]\s*10' // Scientific notation
+      r'\d+(\.\d+)?\s*[×*]\s*10', // Scientific notation
+      r'[²³⁴⁵⁶⁷⁸⁹⁰]',      // Superscripts
+      r'\\[a-zA-Z]+',     // LaTeX commands
     ];
 
     final combinedRegex = RegExp(mathPatterns.join('|'));

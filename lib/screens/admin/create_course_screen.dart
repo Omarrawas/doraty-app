@@ -1600,9 +1600,20 @@ class _CreateCourseScreenState extends State<CreateCourseScreen> {
 
     setState(() => _isUploadingImage = true);
     try {
-      final String url = await _imageUploadService.uploadImageToGitHub(
+      // Delete old image if it exists in Supabase to save space
+      final oldImageUrl = _imageUrlController.text;
+      if (oldImageUrl.isNotEmpty && oldImageUrl.contains('supabase.co')) {
+        try {
+          await _imageUploadService.deleteImage(oldImageUrl, 'courses');
+        } catch (e) {
+          debugPrint('Error deleting old image: $e');
+        }
+      }
+
+      final String url = await _imageUploadService.uploadImage(
         _courseImage!,
-        folder: 'courses/images',
+        'courses',
+        folder: 'images',
       );
 
       setState(() {

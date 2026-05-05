@@ -541,32 +541,23 @@ class _LessonScreenState extends State<LessonScreen>
       );
     }
 
-    // Use YoutubePlayerBuilder for YouTube on mobile to handle fullscreen transitions stably.
-    // This helps maintain the player state and avoids pauses when the widget tree rebuilds for orientation changes.
-    if (_isYoutube && !kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS)) {
-      final Widget playerWidget = _buildVideoPlayer();
-      if (playerWidget is YoutubePlayer) {
-        return YoutubePlayerBuilder(
-          player: playerWidget,
-          builder: (context, player) {
-            return _buildLessonContent(context, player);
-          },
-        );
-      }
-    }
+    final Widget rawPlayer = _buildVideoPlayer();
+    
+    // Create the overlayed version. 
+    // We handle fullscreen manually via OrientationBuilder and SystemChrome in _handleToggleFullScreen,
+    // so we avoid YoutubePlayerBuilder which would override our custom UI in landscape mode.
+    final Widget overlayedPlayer = _buildVideoWithOverlay(
+      player: rawPlayer,
+      onToggleFullScreen: () => _handleToggleFullScreen(),
+    );
 
-    return _buildLessonContent(context, _buildVideoPlayer());
+    return _buildLessonContent(context, overlayedPlayer);
   }
 
-  Widget _buildLessonContent(BuildContext context, Widget videoPlayerWidget) {
+  Widget _buildLessonContent(BuildContext context, Widget videoWithOverlay) {
     return OrientationBuilder(
       builder: (context, orientation) {
         final bool isLandscape = orientation == Orientation.landscape;
-
-        final Widget videoWithOverlay = _buildVideoWithOverlay(
-          player: videoPlayerWidget,
-          onToggleFullScreen: () => _handleToggleFullScreen(),
-        );
 
         if (isLandscape) {
           // Fullscreen (landscape) layout for all platforms.

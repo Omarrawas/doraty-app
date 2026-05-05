@@ -9,13 +9,18 @@ class ImageUploadService {
   final ImagePicker _picker = ImagePicker();
 
   /// Pick image from gallery or camera
-  Future<XFile?> pickImage({ImageSource source = ImageSource.gallery}) async {
+  Future<XFile?> pickImage({
+    ImageSource source = ImageSource.gallery,
+    double maxWidth = 1280,
+    double maxHeight = 720,
+    int imageQuality = 70,
+  }) async {
     try {
       final XFile? image = await _picker.pickImage(
         source: source,
-        maxWidth: 1920,
-        maxHeight: 1080,
-        imageQuality: 85,
+        maxWidth: maxWidth,
+        maxHeight: maxHeight,
+        imageQuality: imageQuality,
       );
 
       return image;
@@ -75,9 +80,11 @@ class ImageUploadService {
   /// Delete image from Supabase Storage
   Future<void> deleteImage(String imageUrl, String bucket) async {
     try {
-      // Extract file path from URL
-      final uri = Uri.parse(imageUrl);
-      final filePath = uri.pathSegments.last;
+      // Extract file path after the bucket name
+      final String bucketPathPart = '/$bucket/';
+      if (!imageUrl.contains(bucketPathPart)) return;
+      
+      final filePath = imageUrl.split(bucketPathPart).last.split('?').first;
 
       await _client.storage.from(bucket).remove([filePath]);
     } catch (e) {

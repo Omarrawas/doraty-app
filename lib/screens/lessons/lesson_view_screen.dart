@@ -10,7 +10,7 @@ import '../../models/lesson.dart';
 import '../../models/interactive_element.dart';
 import '../../core/services/database_service.dart';
 import 'lesson_exam_screen.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import '../../widgets/tex_view_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../widgets/lesson/youtube_player_web_windows.dart';
 import '../../core/utils/error_utils.dart';
@@ -645,45 +645,14 @@ class _LessonViewScreenState extends State<LessonViewScreen>
                 ],
               ),
               SizedBox(height: 16),
-              // Content Logic
               // Content Logic - Display ONLY description here to avoid duplication
-              Builder(
-                builder: (context) {
-                  final String description = widget.lesson.description;
-
-                  if (description.isEmpty) return SizedBox.shrink();
-
-                  // Check if description contains HTML
-                  final bool isHtml = description.trim().startsWith('<') ||
-                      description.contains('<p>') ||
-                      description.contains('<br>') ||
-                      description.contains('<b>') ||
-                      description.contains('<strong>');
-
-                  if (isHtml) {
-                    return HtmlWidget(
-                      description,
-                      textStyle: TextStyle(
-                        color: AppColors.getTextColor(context),
-                        fontSize: 14,
-                        height: 1.5,
-                        fontFamily: 'Cairo',
-                      ),
-                      customStylesBuilder: (element) {
-                        return {'color': 'white'};
-                      },
-                    );
-                  } else {
-                    return Text(
-                      description,
-                      style: TextStyle(
-                        color: AppColors.getTextColor(context, secondary: true),
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    );
-                  }
-                },
+              TexViewWidget(
+                widget.lesson.description,
+                style: TextStyle(
+                  color: AppColors.getTextColor(context, secondary: true),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
               ),
             ],
           ),
