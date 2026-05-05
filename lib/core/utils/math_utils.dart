@@ -76,6 +76,7 @@ class MathUtils {
       r'\d+(\.\d+)?\s*[×*]\s*10', // Scientific notation
       r'[²³⁴⁵⁶⁷⁸⁹⁰]',      // Superscripts
       r'\\[a-zA-Z]+',     // LaTeX commands
+      r'[⟹⇒°´′″]',        // Arrows, degrees, and primes
     ];
 
     final combinedRegex = RegExp(mathPatterns.join('|'));
@@ -87,6 +88,9 @@ class MathUtils {
     if (text.contains('^')) hits++;
     if (text.contains('_')) hits++;
     if (text.contains('=')) hits++;
+    if (text.contains('⟹') || text.contains('⇒')) hits += 2;
+    if (text.contains('°')) hits++;
+    if (text.contains('´') || text.contains('′')) hits++;
     if (text.contains('〖')) hits += 2;
     if (RegExp(r'[a-zA-Z]').hasMatch(text) && hits > 0) hits++;
 

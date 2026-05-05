@@ -55,10 +55,16 @@ class TexViewWidget extends StatelessWidget {
     final htmlBaseStyle = defaultStyle.copyWith(color: null);
     final defaultCssColor = _colorToCss(defaultStyle.color ?? AppColors.getTextColor(context));
 
+    // Wrap LaTeX formulas in <math-tex> so they can be parsed as standalone elements by HtmlWidget.
+    // This prevents them from being skipped if they share a parent node with other HTML tags.
+    final String processedHtml = normalizedContent.replaceAllMapped(_latexRegex, (match) {
+      return '<math-tex>${match.group(0)}</math-tex>';
+    });
+
     return Directionality(
       textDirection: TextDirection.rtl,
       child: HtmlWidget(
-        normalizedContent,
+        processedHtml,
         textStyle: htmlBaseStyle,
         renderMode: RenderMode.column,
         customStylesBuilder: (element) {
@@ -69,6 +75,10 @@ class TexViewWidget extends StatelessWidget {
           return null;
         },
         customWidgetBuilder: (element) {
+          if (element.localName == 'math-tex') {
+            return _buildMathText(context, element.text, defaultStyle);
+          }
+          
           if (element.children.isEmpty) {
             final text = element.text;
             if (_latexRegex.hasMatch(text)) {

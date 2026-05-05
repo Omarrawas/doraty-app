@@ -462,6 +462,12 @@ class _CourseStatisticsScreenState extends State<CourseStatisticsScreen> {
   }
 
   Widget _buildTrendChart() {
+    double maxY = 1;
+    if (_enrollmentTrend.isNotEmpty) {
+      final maxVal = _enrollmentTrend.map((e) => e.y).reduce((a, b) => a > b ? a : b);
+      if (maxVal > 0) maxY = (maxVal * 1.2).ceilToDouble();
+    }
+
     return GlassCard(
       padding: const EdgeInsets.all(20),
       child: Column(
@@ -538,6 +544,7 @@ class _CourseStatisticsScreenState extends State<CourseStatisticsScreen> {
                 minX: 0,
                 maxX: 6,
                 minY: 0,
+                maxY: maxY,
                 lineBarsData: [
                   LineChartBarData(
                     spots: _enrollmentTrend,

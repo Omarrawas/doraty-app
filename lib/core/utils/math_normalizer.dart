@@ -26,6 +26,14 @@ class MathNormalizer {
     '∞': r'\infty',
     '²': '^2',
     '³': '^3',
+    '⟹': r'\implies',
+    '⇒': r'\Rightarrow',
+    '°': r'^\circ',
+    '´': "'",
+    '′': "'",
+    '″': "''",
+    'Dmin': r'D_{min}',
+    'Dmax': r'D_{max}',
   };
 
   static String normalize(String input) {

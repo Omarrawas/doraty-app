@@ -588,6 +588,10 @@ class _LessonScreenState extends State<LessonScreen>
     final bool isCurrentlyLandscape =
         MediaQuery.of(context).orientation == Orientation.landscape;
 
+    final wasPlaying = _isYoutube && _youtubePlayerController != null
+        ? _youtubePlayerController!.value.isPlaying
+        : (_videoPlayerController?.value.isPlaying ?? false);
+
     if (isCurrentlyLandscape) {
       // Exit Fullscreen: Reset orientation to portrait and show system UI.
       SystemChrome.setPreferredOrientations([
@@ -620,10 +624,20 @@ class _LessonScreenState extends State<LessonScreen>
     // Force player wake-up after orientation change to prevent stalling.
     // Orientation changes can suspend the underlying YouTube webview on some devices.
     if (_isYoutube && _youtubePlayerController != null) {
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted && _youtubePlayerController!.value.isPlaying) {
-          // Re-triggering play ensures the webview resumes correctly if it was stalled.
-          _youtubePlayerController!.play();
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted && wasPlaying) {
+          // Sync state: The webview often pauses the video internally on rotation.
+          // By calling pause() then play(), we ensure the Flutter controller and JS sync up.
+          _youtubePlayerController!.pause();
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted) _youtubePlayerController!.play();
+          });
+        }
+      });
+    } else if (!_isYoutube && _videoPlayerController != null) {
+      Future.delayed(const Duration(milliseconds: 1000), () {
+        if (mounted && wasPlaying) {
+          _videoPlayerController!.play();
         }
       });
     }
