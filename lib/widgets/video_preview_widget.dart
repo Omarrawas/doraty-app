@@ -221,19 +221,21 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
   }
 
   void _enterFullScreen() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.landscapeLeft,
-      DeviceOrientation.landscapeRight,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => _FullScreenVideoPage(
+          isYoutube: _isYoutube,
+          youtubeController: _youtubeController,
+          videoController: _videoController,
+          chewieController: _chewieController,
+          youtubePlayerKey: _youtubePlayerKey,
+        ),
+      ),
+    );
   }
 
   void _exitFullScreen() {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    Navigator.of(context).pop();
   }
 
   String get _thumbnailUrl =>
@@ -297,27 +299,8 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     );
   }
 
-  Widget _buildMainLayout(BuildContext context, Widget player, bool isFullScreen,
+  Widget _buildMainLayout(BuildContext context, Widget player, bool isLandscape,
       {bool showThumbnailOverlay = true}) {
-    if (isFullScreen) {
-      return Scaffold(
-        backgroundColor: Colors.black,
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            player,
-            VideoPlayerControls(
-              isYoutube: _isYoutube,
-              youtubeController: _youtubeController,
-              videoController: _videoController,
-              onToggleFullScreen: _exitFullScreen,
-              courseTitle: 'معاينة الفيديو',
-            ),
-          ],
-        ),
-      );
-    }
-
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -454,6 +437,84 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
           SizedBox(width: 12),
           Expanded(child: Text('رابط الفيديو غير صحيح', style: TextStyle(color: Colors.red))),
         ],
+      ),
+    );
+  }
+}
+
+class _FullScreenVideoPage extends StatelessWidget {
+  final bool isYoutube;
+  final YoutubePlayerController? youtubeController;
+  final VideoPlayerController? videoController;
+  final ChewieController? chewieController;
+  final GlobalKey? youtubePlayerKey;
+
+  const _FullScreenVideoPage({
+    required this.isYoutube,
+    this.youtubeController,
+    this.videoController,
+    this.chewieController,
+    this.youtubePlayerKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bool useExternalYoutube = isYoutube && (kIsWeb || defaultTargetPlatform == TargetPlatform.windows);
+
+    Widget playerWidget;
+    if (isYoutube && !useExternalYoutube && youtubeController != null) {
+      playerWidget = Center(
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: YoutubePlayer(
+            key: youtubePlayerKey,
+            controller: youtubeController!,
+            showVideoProgressIndicator: false,
+          ),
+        ),
+      );
+    } else if (isYoutube && useExternalYoutube) {
+      final videoId = youtubeController?.initialVideoId;
+      if (videoId != null) {
+        playerWidget = YoutubePlayerWebWindows(videoId: videoId);
+      } else {
+        playerWidget = Container(color: Colors.black);
+      }
+    } else if (videoController != null && chewieController != null) {
+      playerWidget = Center(
+        child: AspectRatio(
+          aspectRatio: videoController!.value.isInitialized ? videoController!.value.aspectRatio : 16 / 9,
+          child: Chewie(controller: chewieController!),
+        ),
+      );
+    } else {
+      playerWidget = Container(color: Colors.black);
+    }
+
+    return WillPopScope(
+      onWillPop: () async {
+        if (isYoutube && youtubeController != null) {
+          youtubeController!.pause();
+        } else if (videoController != null) {
+          videoController!.pause();
+        }
+        return true;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            playerWidget,
+            VideoPlayerControls(
+              isYoutube: isYoutube,
+              youtubeController: youtubeController,
+              videoController: videoController,
+              onToggleFullScreen: () => Navigator.pop(context),
+              courseTitle: 'معاينة الفيديو',
+            ),
+          ],
+        ),
       ),
     );
   }

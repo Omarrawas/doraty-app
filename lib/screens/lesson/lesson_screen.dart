@@ -635,9 +635,16 @@ class _LessonScreenState extends State<LessonScreen>
         }
       });
     } else if (!_isYoutube && _videoPlayerController != null) {
+      final savedPosition = _videoPlayerController!.value.position;
       Future.delayed(const Duration(milliseconds: 1000), () {
         if (mounted && wasPlaying) {
-          _videoPlayerController!.play();
+          _videoPlayerController!.pause();
+          if (savedPosition > Duration.zero) {
+            _videoPlayerController!.seekTo(savedPosition);
+          }
+          Future.delayed(const Duration(milliseconds: 100), () {
+            if (mounted) _videoPlayerController!.play();
+          });
         }
       });
     }
