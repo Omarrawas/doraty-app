@@ -27,7 +27,6 @@ import '../../screens/settings/privacy_policy_screen.dart';
 import '../../screens/settings/terms_conditions_screen.dart';
 import '../../screens/favorites/favorites_screen.dart';
 import '../../screens/profile/order_history_screen.dart';
-import '../../screens/cart/cart_screen.dart';
 import '../../screens/notifications_screen.dart';
 import '../../screens/categories/category_courses_screen.dart';
 import '../../screens/teacher/teacher_profile_screen.dart';
@@ -61,7 +60,6 @@ final GoRouter appRouter = GoRouter(
       final isAdminRoute = path.startsWith(AppRoutes.admin);
 
       final isProtectedProfileRoute = path.startsWith(AppRoutes.profile) ||
-          path.startsWith(AppRoutes.cart) ||
           path.startsWith(AppRoutes.favorites) ||
           path.startsWith(AppRoutes.myCourses) ||
           path.startsWith(AppRoutes.orders) ||
@@ -258,11 +256,6 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.myCourses,
       parentNavigatorKey: rootNavigatorKey,
       builder: (context, state) => CoursesListScreen(showBackButton: true),
-    ),
-    GoRoute(
-      path: AppRoutes.cart,
-      parentNavigatorKey: rootNavigatorKey,
-      builder: (context, state) => CartScreen(),
     ),
     GoRoute(
       path: AppRoutes.notifications,

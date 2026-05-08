@@ -11,10 +11,11 @@ import '../../widgets/video_preview_widget.dart';
 import '../teacher/teacher_profile_screen.dart';
 import '../../widgets/shimmer_loader.dart';
 import '../../widgets/empty_state.dart';
-import '../../core/providers/cart_provider.dart';
+import '../../core/localization/locale_provider.dart';
+import '../subscription/payment_screen.dart';
+
 import 'package:provider/provider.dart';
 import '../../core/utils/error_utils.dart';
-import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/utils/string_utils.dart';
 import '../../core/services/auth_service.dart';
@@ -1284,20 +1285,16 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       return;
     }
 
-    final cart = Provider.of<CartProvider>(context, listen: false);
-    cart.addItem(
-      id: _course!.id,
-      title: _course!.title,
-      price: _course!.discountedPrice,
-      originalPrice: _course!.price.toDouble(),
-      discountAmount: _course!.hasDiscount
-          ? (_course!.price - _course!.discountedPrice).toDouble()
-          : 0,
-      imageUrl: _course!.imageUrl,
-      originalObject: _course!,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentScreen(
+          course: _course,
+          amount: _course!.discountedPrice.toDouble(),
+          title: _course!.title,
+        ),
+      ),
     );
-
-    context.push('/cart');
   }
 
   Widget _buildReviewsTab() {

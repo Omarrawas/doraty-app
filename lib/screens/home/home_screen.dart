@@ -2282,13 +2282,6 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
                         child: Text(t('login_title')),
                       ),
                     ] else ...[
-                      // Cart Icon
-                      _buildHeaderIcon(
-                        context,
-                        Icons.shopping_cart_outlined,
-                        () => context.push('/cart'),
-                      ),
-                      const SizedBox(width: 12),
                       // Theme Toggle
                       _buildHeaderIcon(
                         context,

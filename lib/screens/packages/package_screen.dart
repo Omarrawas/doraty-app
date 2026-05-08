@@ -10,8 +10,8 @@ import '../../widgets/course_card.dart';
 import '../../widgets/dynamic_gradient_background.dart';
 import '../../core/localization/locale_provider.dart';
 import '../../core/constants/app_strings.dart';
-import '../../core/providers/cart_provider.dart';
 import '../../core/services/database_service.dart';
+import '../subscription/payment_screen.dart';
 
 class PackageScreen extends StatefulWidget {
   final String packageTitle;
@@ -104,18 +104,16 @@ class _PackageScreenState extends State<PackageScreen> {
       return;
     }
 
-    final cart = Provider.of<CartProvider>(context, listen: false);
-    cart.addItem(
-      id: _displayBundle.id,
-      title: _displayBundle.title,
-      price: _displayBundle.discountedPrice,
-      originalPrice: _displayBundle.price,
-      discountAmount: _displayBundle.price - _displayBundle.discountedPrice,
-      imageUrl: _displayBundle.imageUrl,
-      isBundle: true,
-      originalObject: _displayBundle,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentScreen(
+          bundle: _displayBundle,
+          amount: _displayBundle.discountedPrice,
+          title: _displayBundle.title,
+        ),
+      ),
     );
-    context.push('/cart');
   }
 
   @override

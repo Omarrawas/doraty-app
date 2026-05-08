@@ -27,6 +27,7 @@ class DatabaseService {
 
   // Getter for accessing the client from other classes
   SupabaseClient get supabaseClient => _client;
+  SupabaseClient get client => _client;
 
   // Quick access to current user ID safely
   String? get currentUserId => SupabaseService.instance.currentUserId;
@@ -45,7 +46,9 @@ class DatabaseService {
     if (avatarUrl == null || avatarUrl.isEmpty) return null;
 
     // If it's already a full URL or a data URI, return it
-    if (avatarUrl.startsWith('http') || avatarUrl.startsWith('data:')) return avatarUrl;
+    if (avatarUrl.startsWith('http') || avatarUrl.startsWith('data:')) {
+      return avatarUrl;
+    }
 
     // If it's a relative path, assume it's in the old Supabase storage 'avatars' bucket
     final baseUrl =
@@ -175,9 +178,14 @@ class DatabaseService {
       // Ensure unique slug
       String finalSlug = slug;
       if (finalSlug.isEmpty) {
-        finalSlug = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+        finalSlug = name
+            .toLowerCase()
+            .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+            .replaceAll(RegExp(r'^-+|-+$'), '');
       }
-      if (finalSlug.isEmpty) finalSlug = 'cat-${DateTime.now().millisecondsSinceEpoch}';
+      if (finalSlug.isEmpty) {
+        finalSlug = 'cat-${DateTime.now().millisecondsSinceEpoch}';
+      }
 
       int suffix = 1;
       while (!(await isCategorySlugUnique(finalSlug))) {
@@ -208,7 +216,7 @@ class DatabaseService {
     try {
       final updates = <String, dynamic>{};
       if (name != null) updates['name'] = name;
-      
+
       if (slug != null && slug.isNotEmpty) {
         String finalSlug = slug;
         int suffix = 1;
@@ -218,9 +226,14 @@ class DatabaseService {
         updates['slug'] = finalSlug;
       } else if (slug != null && slug.isEmpty && name != null) {
         // Generate from name if slug is being cleared
-        String baseSlug = name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
-        if (baseSlug.isEmpty) baseSlug = 'cat-${DateTime.now().millisecondsSinceEpoch}';
-        
+        String baseSlug = name
+            .toLowerCase()
+            .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+            .replaceAll(RegExp(r'^-+|-+$'), '');
+        if (baseSlug.isEmpty) {
+          baseSlug = 'cat-${DateTime.now().millisecondsSinceEpoch}';
+        }
+
         String finalSlug = baseSlug;
         int suffix = 1;
         while (!(await isCategorySlugUnique(finalSlug, excludeId: id))) {
@@ -407,18 +420,18 @@ class DatabaseService {
   }
 
   /// Get bundles that contain courses by a specific teacher
-  Future<List<Map<String, dynamic>>> getBundlesByTeacherId(String teacherId) async {
+  Future<List<Map<String, dynamic>>> getBundlesByTeacherId(
+      String teacherId) async {
     try {
       // 1. Get IDs of courses owned by this teacher
       final coursesResponse = await _client
           .from('courses')
           .select('id')
           .eq('instructor_id', teacherId);
-      
-      final List<String> teacherCourseIds = (coursesResponse as List)
-          .map((c) => c['id'] as String)
-          .toList();
-      
+
+      final List<String> teacherCourseIds =
+          (coursesResponse as List).map((c) => c['id'] as String).toList();
+
       if (teacherCourseIds.isEmpty) return [];
 
       // 2. Find bundle IDs that contain these courses
@@ -426,16 +439,17 @@ class DatabaseService {
           .from('bundle_courses')
           .select('bundle_id')
           .inFilter('course_id', teacherCourseIds);
-      
+
       final List<String> bundleIds = (bundleCoursesResponse as List)
           .map((bc) => bc['bundle_id'] as String)
-          .toSet() 
+          .toSet()
           .toList();
-      
+
       if (bundleIds.isEmpty) return [];
 
       // 3. Fetch these specific bundles. Filter by non-null IDs.
-      final List<String> cleanBundleIds = bundleIds.where((id) => id.isNotEmpty).toList();
+      final List<String> cleanBundleIds =
+          bundleIds.where((id) => id.isNotEmpty).toList();
       if (cleanBundleIds.isEmpty) return [];
 
       final response = await _client
@@ -443,7 +457,7 @@ class DatabaseService {
           .select()
           .inFilter('id', cleanBundleIds)
           .order('created_at', ascending: false);
-      
+
       final List<Map<String, dynamic>> bundles =
           SafeParser.safeMapList(response);
 
@@ -459,10 +473,8 @@ class DatabaseService {
             .map((e) => e['course_id'] as String)
             .toList();
 
-        final fullCoursesResponse = await _client
-            .from('courses')
-            .select()
-            .inFilter('id', cIds);
+        final fullCoursesResponse =
+            await _client.from('courses').select().inFilter('id', cIds);
 
         bundle['courses'] = fullCoursesResponse;
         enrichedBundles.add(bundle);
@@ -938,19 +950,21 @@ class DatabaseService {
   }
 
   /// Get all unique students enrolled in any of the teacher's courses
-  Future<List<Map<String, dynamic>>> getTeacherSubscribers(String teacherId) async {
+  Future<List<Map<String, dynamic>>> getTeacherSubscribers(
+      String teacherId) async {
     try {
       final courses = await getCoursesByTeacherId(teacherId);
       if (courses.isEmpty) return [];
-      
+
       final courseIds = courses.map((c) => c['id']).toList();
-      
+
       final response = await _client
           .from('enrollments')
-          .select('*, users!inner(full_name, avatar_url, email), courses(title)')
+          .select(
+              '*, users!inner(full_name, avatar_url, email), courses(title)')
           .inFilter('course_id', courseIds)
           .order('enrolled_at', ascending: false);
-          
+
       return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error getting teacher subscribers: $e');
@@ -959,14 +973,15 @@ class DatabaseService {
   }
 
   /// Get students enrolled in a specific course
-  Future<List<Map<String, dynamic>>> getCourseSubscribers(String courseId) async {
+  Future<List<Map<String, dynamic>>> getCourseSubscribers(
+      String courseId) async {
     try {
       final response = await _client
           .from('enrollments')
           .select('*, users!inner(full_name, avatar_url, email)')
           .eq('course_id', courseId)
           .order('enrolled_at', ascending: false);
-          
+
       return SafeParser.safeMapList(response);
     } catch (e) {
       debugPrint('Error getting course subscribers: $e');
@@ -982,7 +997,7 @@ class DatabaseService {
           .delete()
           .eq('user_id', userId)
           .eq('course_id', courseId);
-          
+
       await _updateCourseEnrollmentCount(courseId);
       await LocalDatabase().remove('user_${userId}_accessible_course_ids');
     } catch (e) {
@@ -1097,13 +1112,14 @@ class DatabaseService {
       fetcher: () async {
         try {
           String columns = liteMode ? liteCourseColumns : '*';
-          
+
           // ELITE FIX: To filter by joined table (categories), we MUST use !inner
           // otherwise it performs a LEFT JOIN and returns all courses.
           if (categoryId != null) {
-            columns = columns.replaceFirst('course_category_junction', 'course_category_junction!inner');
+            columns = columns.replaceFirst(
+                'course_category_junction', 'course_category_junction!inner');
           }
-          
+
           var filterQuery = _client.from('courses').select(columns);
 
           if (instructorId != null) {
@@ -1121,7 +1137,9 @@ class DatabaseService {
           if (categoryId != null) {
             final subCatIds = await getSubCategoryIds(categoryId);
             if (subCatIds.isNotEmpty) {
-              filterQuery = filterQuery.filter('course_category_junction.category_id', 'in',
+              filterQuery = filterQuery.filter(
+                  'course_category_junction.category_id',
+                  'in',
                   [categoryId, ...subCatIds]);
             } else {
               filterQuery = filterQuery.filter(
@@ -1136,9 +1154,10 @@ class DatabaseService {
           }
 
           if (query != null && query.isNotEmpty) {
-              filterQuery = filterQuery.or('title.ilike.%$query%,description.ilike.%$query%');
+            filterQuery = filterQuery
+                .or('title.ilike.%$query%,description.ilike.%$query%');
           }
-          
+
           if (deliveryMode != null && deliveryMode != 'all') {
             filterQuery = filterQuery.eq('delivery_mode', deliveryMode);
           }
@@ -1161,47 +1180,55 @@ class DatabaseService {
           final data = SafeParser.safeMapList(response);
 
           // Map joined data to flat structure expected by UI
-          return data.map((course) {
-            final user = course['users'];
-            if (user != null) {
-              course['instructor_name'] = user['full_name'] ?? course['instructor_name'];
-              course['instructor_photo'] = user['avatar_url'] ?? course['instructor_photo'];
-            }
-
-            // Map categories from junction
-            final rawJunction = course['course_category_junction'];
-            if (rawJunction is List) {
-              final categories = <String>[];
-              final categoriesEn = <String>[];
-              final categoryIds = <String>[];
-
-              for (var j in rawJunction) {
-                if (j is Map && j['category'] is Map) {
-                  final cat = j['category'] as Map;
-                  if (cat['name'] != null) categories.add(cat['name']);
-                  if (cat['name_en'] != null) categoriesEn.add(cat['name_en']);
-                  if (cat['id'] != null) categoryIds.add(cat['id']);
+          return data
+              .map((course) {
+                final user = course['users'];
+                if (user != null) {
+                  course['instructor_name'] =
+                      user['full_name'] ?? course['instructor_name'];
+                  course['instructor_photo'] =
+                      user['avatar_url'] ?? course['instructor_photo'];
                 }
-              }
 
-              course['categories_names'] = categories;
-              course['categories_names_en'] = categoriesEn;
-              course['category_ids'] = categoryIds;
-              if (categories.isNotEmpty) course['category'] = categories.first;
-            }
+                // Map categories from junction
+                final rawJunction = course['course_category_junction'];
+                if (rawJunction is List) {
+                  final categories = <String>[];
+                  final categoriesEn = <String>[];
+                  final categoryIds = <String>[];
 
-            // Map tags
-            final rawTags = course['course_tags'];
-            if (rawTags is List) {
-              course['tags'] = rawTags
-                  .map((t) => t is Map ? t['tag']?.toString() : null)
-                  .whereType<String>()
-                  .toList();
-            }
+                  for (var j in rawJunction) {
+                    if (j is Map && j['category'] is Map) {
+                      final cat = j['category'] as Map;
+                      if (cat['name'] != null) categories.add(cat['name']);
+                      if (cat['name_en'] != null) {
+                        categoriesEn.add(cat['name_en']);
+                      }
+                      if (cat['id'] != null) categoryIds.add(cat['id']);
+                    }
+                  }
 
-            return course;
-          }).toList().cast<Map<String, dynamic>>();
+                  course['categories_names'] = categories;
+                  course['categories_names_en'] = categoriesEn;
+                  course['category_ids'] = categoryIds;
+                  if (categories.isNotEmpty) {
+                    course['category'] = categories.first;
+                  }
+                }
 
+                // Map tags
+                final rawTags = course['course_tags'];
+                if (rawTags is List) {
+                  course['tags'] = rawTags
+                      .map((t) => t is Map ? t['tag']?.toString() : null)
+                      .whereType<String>()
+                      .toList();
+                }
+
+                return course;
+              })
+              .toList()
+              .cast<Map<String, dynamic>>();
         } catch (e) {
           debugPrint('Error getting courses: $e');
           return [];
@@ -1233,8 +1260,6 @@ class DatabaseService {
       deliveryMode: deliveryMode,
     );
   }
-
-
 
   /// Get course by ID with join
   Future<Map<String, dynamic>?> getCourseById(String courseId,
@@ -1364,7 +1389,9 @@ class DatabaseService {
       debugPrint('Error getting lesson: $e');
       return null;
     }
-  }  /// Get Bundle by ID or Slug
+  }
+
+  /// Get Bundle by ID or Slug
   Future<Map<String, dynamic>?> getBundleById(String bundleId) async {
     try {
       final response = await _client
@@ -1380,7 +1407,6 @@ class DatabaseService {
     }
   }
 
-
   /// Get teacher by ID or Slug
   Future<Map<String, dynamic>?> getTeacherById(String teacherId) async {
     try {
@@ -1389,9 +1415,11 @@ class DatabaseService {
           .select('*')
           .eq(_isUuid(teacherId) ? 'id' : 'slug', teacherId)
           .maybeSingle();
-      
+
       if (response != null) {
-        final avatar = _formatAvatarUrl(response['photo_url'] ?? response['avatar_url'], userId: response['id']);
+        final avatar = _formatAvatarUrl(
+            response['photo_url'] ?? response['avatar_url'],
+            userId: response['id']);
         response['photo_url'] = avatar;
         response['avatar_url'] = avatar;
       }
@@ -1585,10 +1613,6 @@ class DatabaseService {
   Future<List<Map<String, dynamic>>> getCourseLessons(String courseId) async {
     return getLessons(courseId);
   }
-
-
-
-
 
   // ==================== NOTES ====================
 
@@ -2290,8 +2314,10 @@ class DatabaseService {
 
       // SECURITY: Role-based enforcement
       final currentUserId = SupabaseService.instance.currentUserId;
-      if (currentUserId == null) return {'totalEarnings': 0.0, 'totalEnrollments': 0, 'items': []};
-      
+      if (currentUserId == null) {
+        return {'totalEarnings': 0.0, 'totalEnrollments': 0, 'items': []};
+      }
+
       final currentRole = await getUserRole(currentUserId);
       final isTeacher = currentRole == 'teacher';
       final isAdmin = currentRole == 'admin' || currentRole == 'super_admin';
@@ -2735,8 +2761,10 @@ class DatabaseService {
       duration: const Duration(hours: 1),
       fetcher: () async {
         try {
-          final response =
-              await _client.from('enrollments').select('*, courses(*)').eq('user_id', userId);
+          final response = await _client
+              .from('enrollments')
+              .select('*, courses(*)')
+              .eq('user_id', userId);
 
           return SafeParser.safeMapList(response);
         } catch (e) {
@@ -2768,8 +2796,8 @@ class DatabaseService {
   }
 
   /// Get all exams for a course (including drafts)
-  Future<List<Map<String, dynamic>>> getAllExamsForCourse(
-      String courseId, {bool includeQuestions = true}) async {
+  Future<List<Map<String, dynamic>>> getAllExamsForCourse(String courseId,
+      {bool includeQuestions = true}) async {
     if (courseId.trim().isEmpty) return [];
     try {
       final selectStr = includeQuestions ? '*, questions(*)' : '*';
@@ -2784,8 +2812,6 @@ class DatabaseService {
       rethrow;
     }
   }
-
-
 
   /// Get exam by ID with questions
   Future<Map<String, dynamic>?> getExamById(String examId) async {
@@ -3775,7 +3801,8 @@ class DatabaseService {
 
       // Check role first
       final role = await getUserRole(userId);
-      final isAdmin = role == 'admin' || role == 'super_admin' || role == 'owner';
+      final isAdmin =
+          role == 'admin' || role == 'super_admin' || role == 'owner';
 
       // Build query base
       var query = _client.from('exam_attempts').select(
@@ -3937,8 +3964,8 @@ class DatabaseService {
             }
           }
 
-          final response = await _client
-              .rpc('get_teacher_statistics', params: {'teacher_id_param': actualId});
+          final response = await _client.rpc('get_teacher_statistics',
+              params: {'teacher_id_param': actualId});
           return response as Map<String, dynamic>;
         } catch (e) {
           debugPrint('Error getting teacher stats: $e');
@@ -4661,7 +4688,7 @@ class DatabaseService {
           .select('image_url')
           .eq('id', courseId)
           .maybeSingle();
-      
+
       final imageUrl = response?['image_url'] as String?;
 
       await _client.from('courses').delete().eq('id', courseId);
@@ -4908,6 +4935,8 @@ class DatabaseService {
     required String paymentMethod,
     String? transactionId,
     String? courseId,
+    String? bundleId,
+    String? discountCodeId,
   }) async {
     try {
       final userId = _client.auth.currentUser?.id;
@@ -4920,9 +4949,13 @@ class DatabaseService {
         'payment_method': paymentMethod,
         'payment_transaction_id': transactionId,
         'course_id': courseId,
+        'bundle_id': bundleId,
+        'discount_code_id': discountCodeId,
         'status': 'pending',
         'created_at': DateTime.now().toIso8601String(),
-        'order_type': courseId != null ? 'course' : 'subscription',
+        'order_type': bundleId != null
+            ? 'bundle'
+            : (courseId != null ? 'course' : 'subscription'),
       };
 
       final response =
@@ -4982,7 +5015,7 @@ class DatabaseService {
       try {
         final response = await _client
             .from('orders')
-            .select('*, courses(title), payment_receipts(*)')
+            .select('*, courses(title), bundles(title), payment_receipts(*)')
             .eq('user_id', userId)
             .order('created_at', ascending: false);
         return SafeParser.safeMapList(response);
@@ -4994,6 +5027,46 @@ class DatabaseService {
       debugPrint('Error getting user orders: $e');
       // Return empty list if table doesn't exist (PGRST205) or any other error
       return [];
+    }
+  }
+
+  // ==================== DISCOUNT CODES ====================
+
+  /// Get discount code details by code string
+  Future<Map<String, dynamic>?> getDiscountCode(String code) async {
+    try {
+      final response = await _client
+          .from('discount_codes')
+          .select()
+          .eq('code', code.toUpperCase())
+          .eq('is_active', true)
+          .maybeSingle();
+
+      return response;
+    } catch (e) {
+      debugPrint('Error fetching discount code: $e');
+      return null;
+    }
+  }
+
+  /// Increment usage count for a discount code
+  Future<void> incrementDiscountCodeUsage(String codeId) async {
+    try {
+      // In a real app, you might use an RPC or a trigger
+      // Here we'll do a simple update
+      final current = await _client
+          .from('discount_codes')
+          .select('usage_count')
+          .eq('id', codeId)
+          .single();
+
+      final currentCount = (current['usage_count'] as int? ?? 0);
+
+      await _client
+          .from('discount_codes')
+          .update({'usage_count': currentCount + 1}).eq('id', codeId);
+    } catch (e) {
+      debugPrint('Error incrementing discount code usage: $e');
     }
   }
 
@@ -5038,6 +5111,8 @@ class DatabaseService {
     String? receiptImageUrl,
     String? phoneNumber,
     String? courseId,
+    String? bundleId,
+    String? discountCodeId,
   }) async {
     try {
       final userId = _client.auth.currentUser?.id;
@@ -5049,6 +5124,8 @@ class DatabaseService {
             'order_id': orderId,
             'user_id': userId,
             'course_id': courseId,
+            'bundle_id': bundleId,
+            'discount_code_id': discountCodeId,
             'payment_method': paymentMethod,
             'amount': amount,
             'transaction_id': transactionId,
@@ -6025,7 +6102,6 @@ class DatabaseService {
     }
   }
 
-
   // ==================== FINANCIAL REPORTS ====================
 
   // ==================== FINANCIAL REPORTS ====================
@@ -6177,13 +6253,22 @@ class DatabaseService {
           final usersResponse = await _client.from('users').select('id');
           final coursesResponse = await _client.from('courses').select('id');
           final examsResponse = await _client.from('exams').select('id');
-          final attemptsResponse = await _client.from('exam_attempts').select('id');
+          final attemptsResponse =
+              await _client.from('exam_attempts').select('id');
 
           // Active Users (7 days)
-          final lastWeek = DateTime.now().subtract(const Duration(days: 7)).toIso8601String();
-          final activeInEnrollments = await _client.from('enrollments').select('user_id').gte('enrolled_at', lastWeek);
-          final activeInExams = await _client.from('exam_attempts').select('user_id').gte('submitted_at', lastWeek);
-          
+          final lastWeek = DateTime.now()
+              .subtract(const Duration(days: 7))
+              .toIso8601String();
+          final activeInEnrollments = await _client
+              .from('enrollments')
+              .select('user_id')
+              .gte('enrolled_at', lastWeek);
+          final activeInExams = await _client
+              .from('exam_attempts')
+              .select('user_id')
+              .gte('submitted_at', lastWeek);
+
           final Set<String> activeUsersSet = {};
           for (var row in activeInEnrollments as List) {
             activeUsersSet.add(row['user_id'] as String);
@@ -6195,8 +6280,11 @@ class DatabaseService {
           // Weekly Growth Data (7 days)
           final List<double> dailyActivity = List.filled(7, 0.1);
           final now = DateTime.now();
-          final enrollmentsLastWeek = await _client.from('enrollments').select('enrolled_at').gte('enrolled_at', lastWeek);
-              
+          final enrollmentsLastWeek = await _client
+              .from('enrollments')
+              .select('enrolled_at')
+              .gte('enrolled_at', lastWeek);
+
           for (var enrollment in enrollmentsLastWeek as List) {
             final date = DateTime.tryParse(enrollment['enrolled_at'] ?? '');
             if (date != null) {
@@ -6208,9 +6296,13 @@ class DatabaseService {
           }
 
           double totalThisWeek = dailyActivity.reduce((a, b) => a + b);
-          double growthPercentage = totalThisWeek > 0 ? (totalThisWeek / (usersResponse as List).length * 100).clamp(1.0, 25.0) : 0.0;
+          double growthPercentage = totalThisWeek > 0
+              ? (totalThisWeek / (usersResponse as List).length * 100)
+                  .clamp(1.0, 25.0)
+              : 0.0;
 
-          final revenueRes = await _client.from('enrollments').select('paid_amount');
+          final revenueRes =
+              await _client.from('enrollments').select('paid_amount');
           double totalRevenue = 0;
           for (var row in revenueRes as List) {
             totalRevenue += (row['paid_amount'] as num? ?? 0).toDouble();
@@ -6252,7 +6344,8 @@ class DatabaseService {
   // ==================== APP SETTINGS & SOCIAL LINKS ====================
 
   /// Get Social Media Links from app_settings
-  Future<Map<String, String>> getSocialLinks({bool forceRefresh = false}) async {
+  Future<Map<String, String>> getSocialLinks(
+      {bool forceRefresh = false}) async {
     return fetchWithCache(
       key: CacheKeys.socialLinks,
       forceRefresh: forceRefresh,
@@ -6263,12 +6356,14 @@ class DatabaseService {
               .from('app_settings')
               .select('setting_key, setting_value')
               .like('setting_key', 'social_%');
-              
+
           final List rows = response as List;
           Map<String, String> links = {};
           for (var row in rows) {
-            if (row['setting_value'] != null && row['setting_value'].toString().isNotEmpty) {
-              links[row['setting_key'] as String] = row['setting_value'] as String;
+            if (row['setting_value'] != null &&
+                row['setting_value'].toString().isNotEmpty) {
+              links[row['setting_key'] as String] =
+                  row['setting_value'] as String;
             }
           }
           return links;
@@ -6291,13 +6386,10 @@ class DatabaseService {
             .maybeSingle();
 
         if (existing != null) {
-          await _client
-              .from('app_settings')
-              .update({
-                'setting_value': entry.value,
-                'updated_at': DateTime.now().toUtc().toIso8601String(),
-              })
-              .eq('id', existing['id']);
+          await _client.from('app_settings').update({
+            'setting_value': entry.value,
+            'updated_at': DateTime.now().toUtc().toIso8601String(),
+          }).eq('id', existing['id']);
         } else {
           await _client.from('app_settings').insert({
             'setting_key': entry.key,

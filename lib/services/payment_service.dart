@@ -22,6 +22,8 @@ class PaymentService {
     String? transactionId,
     String? receiptImagePath,
     String? courseId,
+    String? bundleId,
+    String? discountCodeId,
   }) async {
     try {
       final dbService = DatabaseService();
@@ -32,6 +34,8 @@ class PaymentService {
         paymentMethod: _getMethodKey(method),
         transactionId: transactionId,
         courseId: courseId,
+        bundleId: bundleId,
+        discountCodeId: discountCodeId,
       );
 
       final orderId = order['id'] as String;
@@ -54,6 +58,8 @@ class PaymentService {
         receiptImageUrl: receiptUrl,
         phoneNumber: phoneNumber,
         courseId: courseId,
+        bundleId: bundleId,
+        discountCodeId: discountCodeId,
       );
 
       debugPrint('Payment receipt created: $receiptId');

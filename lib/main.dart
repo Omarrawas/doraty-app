@@ -12,7 +12,6 @@ import 'screens/tips/all_tips_screen.dart';
 import 'screens/categories/subjects_screen.dart';
 import 'widgets/dynamic_gradient_background.dart';
 import 'core/providers/navigation_provider.dart';
-import 'core/providers/cart_provider.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/theme_provider.dart';
 import 'core/services/supabase_service.dart';
@@ -47,7 +46,6 @@ void main() {
           ChangeNotifierProvider(create: (_) => AuthService()),
           ChangeNotifierProvider(create: (_) => SyncService()),
           ChangeNotifierProvider(create: (_) => NavigationProvider()),
-          ChangeNotifierProvider(create: (_) => CartProvider()),
         ],
         child: MyApp(),
       ),

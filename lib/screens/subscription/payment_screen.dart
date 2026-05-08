@@ -10,15 +10,20 @@ import '../payment/qr_scanner_screen.dart';
 import 'package:provider/provider.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
+import '../../models/bundle.dart';
+import '../../models/discount_code.dart';
+
 
 class PaymentScreen extends StatefulWidget {
   final Course? course;
+  final Bundle? bundle;
   final double amount;
   final String title;
 
   const PaymentScreen({
     super.key,
     this.course,
+    this.bundle,
     required this.amount,
     required this.title,
   });
@@ -31,6 +36,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
   service.PaymentMethod? _selectedMethod;
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _transactionIdController = TextEditingController();
+  final TextEditingController _discountController = TextEditingController();
+  
+  DiscountCode? _appliedDiscount;
+  bool _isValidatingDiscount = false;
+  double _discountAmount = 0;
   
   bool _isProcessing = false;
   bool _isLoadingAccounts = true;
@@ -69,6 +79,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   void dispose() {
     _phoneController.dispose();
     _transactionIdController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
 
@@ -113,12 +124,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
     try {
       final paymentService = service.PaymentService();
       final result = await paymentService.processPaymentWithReceipt(
-        amount: widget.amount,
+        amount: widget.amount - _discountAmount,
         method: _selectedMethod!,
         phoneNumber: _phoneController.text.trim(),
         transactionId: _transactionIdController.text.trim(),
         receiptImagePath: null, // لا توجد صورة
         courseId: widget.course?.id,
+        bundleId: widget.bundle?.id,
+        discountCodeId: _appliedDiscount?.id,
       );
 
       if (mounted) {
@@ -146,6 +159,63 @@ class _PaymentScreenState extends State<PaymentScreen> {
       if (mounted) {
         setState(() {
           _isProcessing = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _applyDiscount() async {
+    final code = _discountController.text.trim();
+    if (code.isEmpty) return;
+
+    setState(() {
+      _isValidatingDiscount = true;
+    });
+
+    try {
+      final dbService = DatabaseService();
+      final response = await dbService.getDiscountCode(code);
+      
+      if (response != null) {
+        final discount = DiscountCode.fromJson(response);
+        if (discount.isValid) {
+          // Check if specific to course/bundle
+          if (discount.courseId != null && discount.courseId != widget.course?.id) {
+             throw Exception('هذا الكود غير صالح لهذا الكورس');
+          }
+          if (discount.bundleId != null && discount.bundleId != widget.bundle?.id) {
+             throw Exception('هذا الكود غير صالح لهذه الباقة');
+          }
+
+          setState(() {
+            _appliedDiscount = discount;
+            _discountAmount = discount.calculateDiscount(widget.amount);
+          });
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('تم تطبيق الخصم بنجاح'), backgroundColor: Colors.green),
+            );
+          }
+        } else {
+          throw Exception('هذا الكود منتهي الصلاحية أو تم استخدامه بالكامل');
+        }
+      } else {
+        throw Exception('كود الخصم غير صحيح');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+        );
+      }
+      setState(() {
+        _appliedDiscount = null;
+        _discountAmount = 0;
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isValidatingDiscount = false;
         });
       }
     }
@@ -205,6 +275,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             _buildPlanSummary(),
+                            SizedBox(height: 24),
+                            _buildDiscountSection(),
                             SizedBox(height: 24),
                             _buildScanQrCard(),
                             SizedBox(height: 24),
@@ -373,6 +445,152 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   ),
                 ],
               ),
+              if (_discountAmount > 0) ...[
+                SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'الخصم:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '- ${_discountAmount.toStringAsFixed(0)} ل.س',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 8),
+                Divider(color: AppColors.getTextColor(context), height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'المجموع النهائي:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryPurple,
+                      ),
+                    ),
+                    Text(
+                      '${(widget.amount - _discountAmount).toStringAsFixed(0)} ل.س',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryPurple,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDiscountSection() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+        child: Container(
+          padding: EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.getMutedTextColor(context),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'هل لديك كود خصم؟',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.getTextColor(context),
+                ),
+              ),
+              SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _discountController,
+                      textAlign: TextAlign.right,
+                      style: TextStyle(color: AppColors.getTextColor(context)),
+                      decoration: InputDecoration(
+                        hintText: 'أدخل الكود هنا',
+                        hintStyle: TextStyle(color: AppColors.getTextColor(context).withOpacity(0.5)),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.05),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _isValidatingDiscount ? null : _applyDiscount,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    ),
+                    child: _isValidatingDiscount
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : Text('تطبيق'),
+                  ),
+                ],
+              ),
+              if (_appliedDiscount != null) ...[
+                SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green, size: 16),
+                    SizedBox(width: 8),
+                    Text(
+                      'تم تطبيق الكود: ${_appliedDiscount!.code}',
+                      style: TextStyle(color: Colors.green, fontSize: 12),
+                    ),
+                    Spacer(),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          _appliedDiscount = null;
+                          _discountAmount = 0;
+                          _discountController.clear();
+                        });
+                      },
+                      child: Text('إلغاء', style: TextStyle(color: Colors.red, fontSize: 12)),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
         ),

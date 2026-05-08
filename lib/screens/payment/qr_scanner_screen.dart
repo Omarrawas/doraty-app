@@ -4,6 +4,8 @@ import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/error_utils.dart';
 import '../../core/services/database_service.dart';
+import 'package:image_picker/image_picker.dart';
+
 
 class QrScannerScreen extends StatefulWidget {
   const QrScannerScreen({super.key});
@@ -17,6 +19,9 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
   bool _isProcessing = false;
   final MobileScannerController cameraController = MobileScannerController();
   late AnimationController _scanLineController;
+  final ImagePicker _picker = ImagePicker();
+  final TextEditingController _manualCodeController = TextEditingController();
+
 
   @override
   void initState() {
@@ -31,6 +36,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
   void dispose() {
     _scanLineController.dispose();
     cameraController.dispose();
+    _manualCodeController.dispose();
     super.dispose();
   }
 
@@ -46,6 +52,112 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
         await _processCode(code);
       }
     }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+
+      setState(() => _isProcessing = true);
+      cameraController.stop();
+
+      final BarcodeCapture? capture = await cameraController.analyzeImage(image.path);
+      
+      if (capture != null && capture.barcodes.isNotEmpty) {
+        final String? code = capture.barcodes.first.rawValue;
+        if (code != null) {
+          await _processCode(code);
+        } else {
+          _handleNoQrFound();
+        }
+      } else {
+        _handleNoQrFound();
+      }
+    } catch (e) {
+      _handleNoQrFound();
+    }
+  }
+
+  void _handleNoQrFound() {
+    setState(() => _isProcessing = false);
+    cameraController.start();
+    _showGlassResultDialog(
+      title: 'خطأ',
+      message: 'لم يتم العثور على كود QR في هذه الصورة',
+      isSuccess: false,
+    );
+  }
+
+  void _showManualCodeDialog() {
+    cameraController.stop();
+    _manualCodeController.clear();
+    
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: AppColors.getSurfaceColor(context).withOpacity(0.8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withOpacity(0.1)),
+          ),
+          title: const Text(
+            'إدخال الكود يدوياً',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _manualCodeController,
+                autofocus: true,
+                style: const TextStyle(fontFamily: 'Cairo'),
+                decoration: InputDecoration(
+                  hintText: 'أدخل أو ألصق كود التفعيل هنا',
+                  hintStyle: TextStyle(color: AppColors.getMutedTextColor(context), fontSize: 14),
+                  filled: true,
+                  fillColor: Colors.black.withOpacity(0.2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                cameraController.start();
+              },
+              child: Text('إلغاء', style: TextStyle(color: AppColors.getMutedTextColor(context), fontFamily: 'Cairo')),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final code = _manualCodeController.text.trim();
+                if (code.isNotEmpty) {
+                  Navigator.pop(ctx);
+                  setState(() => _isProcessing = true);
+                  await _processCode(code);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryPurple,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('تفعيل', style: TextStyle(fontWeight: FontWeight.bold, fontFamily: 'Cairo')),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _processCode(String code) async {
@@ -190,11 +302,25 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
               children: [
                 _buildGlassButton(
                   icon: Icons.flash_on_rounded,
+                  tooltip: 'فلاش',
                   onTap: () => cameraController.toggleTorch(),
                 ),
-                const SizedBox(width: 30),
+                const SizedBox(width: 15),
+                _buildGlassButton(
+                  icon: Icons.photo_library_rounded,
+                  tooltip: 'من الاستوديو',
+                  onTap: _pickImageFromGallery,
+                ),
+                const SizedBox(width: 15),
+                _buildGlassButton(
+                  icon: Icons.edit_note_rounded,
+                  tooltip: 'إدخال يدوي',
+                  onTap: _showManualCodeDialog,
+                ),
+                const SizedBox(width: 15),
                 _buildGlassButton(
                   icon: Icons.flip_camera_ios_rounded,
+                  tooltip: 'تبديل الكاميرا',
                   onTap: () => cameraController.switchCamera(),
                 ),
               ],
@@ -205,21 +331,24 @@ class _QrScannerScreenState extends State<QrScannerScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildGlassButton({required IconData icon, required VoidCallback onTap}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white24),
+  Widget _buildGlassButton({required IconData icon, required VoidCallback onTap, String? tooltip}) {
+    return Tooltip(
+      message: tooltip ?? '',
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white24),
+              ),
+              child: Icon(icon, color: Colors.white, size: 28),
             ),
-            child: Icon(icon, color: Colors.white, size: 28),
           ),
         ),
       ),

@@ -234,10 +234,6 @@ class _VideoPreviewWidgetState extends State<VideoPreviewWidget>
     );
   }
 
-  void _exitFullScreen() {
-    Navigator.of(context).pop();
-  }
-
   String get _thumbnailUrl =>
       (widget.thumbnailUrl != null && widget.thumbnailUrl!.isNotEmpty)
           ? widget.thumbnailUrl!

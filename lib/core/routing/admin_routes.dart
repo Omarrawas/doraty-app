@@ -42,6 +42,7 @@ import '../../screens/teacher/manage_questions_screen.dart';
 import '../../screens/admin/admin_social_links_screen.dart';
 import '../../screens/teacher/course_subscribers_screen.dart';
 import '../../screens/teacher/students_results_screen.dart';
+import '../../screens/admin/discount_codes_management_screen.dart';
 
 List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
   return [
@@ -362,6 +363,10 @@ List<RouteBase> getAdminRoutes(GlobalKey<NavigatorState> parentKey) {
             return ManageQuestionsScreen(
                 examId: examId, examTitle: examTitle);
           },
+        ),
+        GoRoute(
+          path: 'discount-codes',
+          builder: (context, state) => const DiscountCodesManagementScreen(),
         ),
       ],
     ),
