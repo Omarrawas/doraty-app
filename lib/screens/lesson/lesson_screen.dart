@@ -546,9 +546,12 @@ class _LessonScreenState extends State<LessonScreen>
     // Create the overlayed version. 
     // We handle fullscreen manually via OrientationBuilder and SystemChrome in _handleToggleFullScreen,
     // so we avoid YoutubePlayerBuilder which would override our custom UI in landscape mode.
-    final Widget overlayedPlayer = _buildVideoWithOverlay(
-      player: rawPlayer,
-      onToggleFullScreen: () => _handleToggleFullScreen(),
+    final Widget overlayedPlayer = KeyedSubtree(
+      key: _youtubePlayerKey,
+      child: _buildVideoWithOverlay(
+        player: rawPlayer,
+        onToggleFullScreen: () => _handleToggleFullScreen(),
+      ),
     );
 
     return _buildLessonContent(context, overlayedPlayer);

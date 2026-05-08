@@ -46,6 +46,7 @@ class _LessonViewScreenState extends State<LessonViewScreen>
   ChewieController? _chewieController;
   bool _isLocalVideo = false;
   bool _isExternalPlayer = false;
+  final GlobalKey _youtubePlayerKey = GlobalKey();
 
   final DatabaseService _databaseService = DatabaseService();
   final TextEditingController _noteController = TextEditingController();
@@ -554,23 +555,26 @@ class _LessonViewScreenState extends State<LessonViewScreen>
       return SizedBox.shrink();
     }
 
-    return Focus(
-      autofocus: false,
-      descendantsAreFocusable: true,
-      child: YoutubePlayer(
-        controller: _youtubeController!,
-        showVideoProgressIndicator: true,
-        progressIndicatorColor: AppColors.primaryPurple,
-        progressColors: ProgressBarColors(
-          playedColor: AppColors.primaryPurple,
-          handleColor: AppColors.primaryPurple,
+    return KeyedSubtree(
+      key: _youtubePlayerKey,
+      child: Focus(
+        autofocus: false,
+        descendantsAreFocusable: true,
+        child: YoutubePlayer(
+          controller: _youtubeController!,
+          showVideoProgressIndicator: true,
+          progressIndicatorColor: AppColors.primaryPurple,
+          progressColors: ProgressBarColors(
+            playedColor: AppColors.primaryPurple,
+            handleColor: AppColors.primaryPurple,
+          ),
+          onReady: () {
+            debugPrint('YouTube Player is ready');
+          },
+          onEnded: (data) {
+            debugPrint('YouTube video ended');
+          },
         ),
-        onReady: () {
-          debugPrint('YouTube Player is ready');
-        },
-        onEnded: (data) {
-          debugPrint('YouTube video ended');
-        },
       ),
     );
   }
