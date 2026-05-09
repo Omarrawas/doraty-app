@@ -627,11 +627,15 @@ class _LessonScreenState extends State<LessonScreen>
     // Force player wake-up after orientation change to prevent stalling.
     // Orientation changes can suspend the underlying YouTube webview on some devices.
     if (_isYoutube && _youtubePlayerController != null) {
+      final savedPosition = _youtubePlayerController!.value.position;
       Future.delayed(const Duration(milliseconds: 1000), () {
         if (mounted && wasPlaying) {
           // Sync state: The webview often pauses the video internally on rotation.
           // By calling pause() then play(), we ensure the Flutter controller and JS sync up.
           _youtubePlayerController!.pause();
+          if (savedPosition > Duration.zero) {
+            _youtubePlayerController!.seekTo(savedPosition);
+          }
           Future.delayed(const Duration(milliseconds: 100), () {
             if (mounted) _youtubePlayerController!.play();
           });

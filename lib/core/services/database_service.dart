@@ -4942,21 +4942,22 @@ class DatabaseService {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not logged in');
 
-      final orderData = {
+      final orderData = <String, dynamic>{
         'user_id': userId,
         'order_number': 'ORD-${DateTime.now().millisecondsSinceEpoch}',
         'total_amount': amount,
         'payment_method': paymentMethod,
-        'payment_transaction_id': transactionId,
-        'course_id': courseId,
-        'bundle_id': bundleId,
-        'discount_code_id': discountCodeId,
         'status': 'pending',
         'created_at': DateTime.now().toIso8601String(),
         'order_type': bundleId != null
             ? 'bundle'
             : (courseId != null ? 'course' : 'subscription'),
       };
+
+      if (transactionId != null) orderData['payment_transaction_id'] = transactionId;
+      if (courseId != null) orderData['course_id'] = courseId;
+      if (bundleId != null) orderData['bundle_id'] = bundleId;
+      if (discountCodeId != null) orderData['discount_code_id'] = discountCodeId;
 
       final response =
           await _client.from('orders').insert(orderData).select().single();
@@ -5118,21 +5119,24 @@ class DatabaseService {
       final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not logged in');
 
+      final receiptData = <String, dynamic>{
+        'order_id': orderId,
+        'user_id': userId,
+        'payment_method': paymentMethod,
+        'amount': amount,
+        'status': 'pending',
+      };
+
+      if (courseId != null) receiptData['course_id'] = courseId;
+      if (bundleId != null) receiptData['bundle_id'] = bundleId;
+      if (discountCodeId != null) receiptData['discount_code_id'] = discountCodeId;
+      if (transactionId != null) receiptData['transaction_id'] = transactionId;
+      if (receiptImageUrl != null) receiptData['receipt_image_url'] = receiptImageUrl;
+      if (phoneNumber != null) receiptData['phone_number'] = phoneNumber;
+
       final response = await _client
           .from('payment_receipts')
-          .insert({
-            'order_id': orderId,
-            'user_id': userId,
-            'course_id': courseId,
-            'bundle_id': bundleId,
-            'discount_code_id': discountCodeId,
-            'payment_method': paymentMethod,
-            'amount': amount,
-            'transaction_id': transactionId,
-            'receipt_image_url': receiptImageUrl,
-            'phone_number': phoneNumber,
-            'status': 'pending',
-          })
+          .insert(receiptData)
           .select()
           .single();
 

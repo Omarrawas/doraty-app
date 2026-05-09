@@ -547,6 +547,13 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           'onTap': () => context.push('/admin/bundles'),
         },
         {
+          'icon': Icons.local_offer_rounded,
+          'title': 'أكواد الخصم',
+          'subtitle': 'إدارة الكوبونات والخصومات',
+          'color': Colors.amber,
+          'onTap': () => context.push('/admin/discount-codes'),
+        },
+        {
           'icon': Icons.lightbulb_rounded,
           'title': _t('tips'),
           'subtitle': _t('admin_tips_desc'),
