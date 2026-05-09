@@ -69,6 +69,7 @@ class _DiscountCodesManagementScreenState extends State<DiscountCodesManagementS
     final percentController = TextEditingController();
     final limitController = TextEditingController();
     DateTime? selectedDate;
+    bool isSaving = false;
 
     showDialog(
       context: context,
@@ -119,24 +120,47 @@ class _DiscountCodesManagementScreenState extends State<DiscountCodesManagementS
           actions: [
             TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('إلغاء')),
             ElevatedButton(
-              onPressed: () async {
+              onPressed: isSaving ? null : () async {
                 if (codeController.text.isEmpty || percentController.text.isEmpty) return;
                 
+                setDialogState(() => isSaving = true);
                 try {
-                  await _dbService.client.from('discount_codes').insert({
+                  final data = <String, dynamic>{
                     'code': codeController.text.trim().toUpperCase(),
                     'discount_percent': int.parse(percentController.text),
-                    'usage_limit': limitController.text.isEmpty ? null : int.parse(limitController.text),
-                    'valid_until': selectedDate?.toIso8601String(),
                     'is_active': true,
-                  });
+                  };
+                  
+                  if (limitController.text.isNotEmpty) {
+                    data['usage_limit'] = int.parse(limitController.text);
+                  }
+                  if (selectedDate != null) {
+                    data['valid_until'] = selectedDate!.toIso8601String();
+                  }
+
+                  await _dbService.client.from('discount_codes').insert(data);
+                  
                   if (ctx.mounted) Navigator.pop(ctx);
                   _loadCodes();
                 } catch (e) {
                   debugPrint('Error creating code: $e');
+                  if (ctx.mounted) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(
+                        content: Text('حدث خطأ: ${e.toString()}'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                } finally {
+                  if (ctx.mounted) {
+                    setDialogState(() => isSaving = false);
+                  }
                 }
               },
-              child: const Text('إضافة'),
+              child: isSaving 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                  : const Text('إضافة'),
             ),
           ],
         ),
