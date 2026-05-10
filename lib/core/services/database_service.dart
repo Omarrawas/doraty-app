@@ -6354,7 +6354,7 @@ class DatabaseService {
   /// Get Social Media Links from app_settings
   Future<Map<String, String>> getSocialLinks(
       {bool forceRefresh = false}) async {
-    return fetchWithCache(
+    final result = await fetchWithCache(
       key: CacheKeys.socialLinks,
       forceRefresh: forceRefresh,
       duration: const Duration(hours: 12),
@@ -6381,6 +6381,11 @@ class DatabaseService {
         }
       },
     );
+    
+    if (result is Map) {
+      return result.map((key, value) => MapEntry(key.toString(), value.toString()));
+    }
+    return {};
   }
 
   /// Save Social Media Links to app_settings

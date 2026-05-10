@@ -7,13 +7,18 @@ import '../core/env/multi_env.dart';
 
 class YoutubeUploadService {
   // Use envied (always available at compile time) instead of dotenv
-  GoogleSignIn get _googleSignIn => GoogleSignIn(
+  GoogleSignIn get _googleSignIn {
+    if (kIsWeb && Env.googleWebClientId.isEmpty) {
+       debugPrint('⚠️ [YouTube] Google Web Client ID is missing in Env!');
+    }
+    return GoogleSignIn(
         scopes: [
           yt.YouTubeApi.youtubeUploadScope,
           yt.YouTubeApi.youtubeReadonlyScope,
         ],
         clientId: kIsWeb ? (Env.googleWebClientId.isNotEmpty ? Env.googleWebClientId : null) : null,
       );
+  }
 
   Future<bool> signIn() async {
     try {
