@@ -454,7 +454,12 @@ class _PaymentReceiptDetailScreenState extends State<PaymentReceiptDetailScreen>
               SizedBox(height: 20),
               _buildInfoRow('المبلغ', '${receipt['amount']} ل.س',
                   valueColor: Colors.greenAccent),
+              if (receipt['paid_amount'] != null)
+                _buildInfoRow('المبلغ المدفوع (مصرّح به)', '${receipt['paid_amount']} ل.س',
+                    valueColor: Colors.tealAccent),
               _buildInfoRow('طريقة الدفع', _getPaymentMethodName(receipt['payment_method'])),
+              if (receipt['sender_name'] != null)
+                _buildInfoRow('اسم المرسل', receipt['sender_name']),
               if (receipt['phone_number'] != null)
                 _buildInfoRow('رقم الهاتف', receipt['phone_number']),
               if (receipt['transaction_id'] != null)

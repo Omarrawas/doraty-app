@@ -417,6 +417,7 @@ class _HomeDrawerState extends State<HomeDrawer> {
                               ),
                             ),
                     ),
+                    const SizedBox(height: 100),
                   ],
                 ),
               ),
@@ -563,35 +564,97 @@ class _HomeDrawerState extends State<HomeDrawer> {
   void _showSupportDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(_t(context, 'support_dialog_title')),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(_t(context, 'support_dialog_desc')),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.email, color: AppColors.primaryPurple),
-              title: Text(_t(context, 'email_us')),
-              onTap: () {
-                // Email logic
-              },
+      builder: (context) => FutureBuilder<Map<String, String>>(
+        future: DatabaseService().getSocialLinks(),
+        builder: (context, snapshot) {
+          final links = snapshot.data ?? {};
+          return AlertDialog(
+            backgroundColor: AppColors.getSurfaceColor(context),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(_t(context, 'support_dialog_title'), style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(_t(context, 'support_dialog_desc'), style: const TextStyle(fontFamily: 'Cairo')),
+                const SizedBox(height: 24),
+                _buildDialogOption(
+                  context,
+                  icon: Icons.email_outlined,
+                  color: AppColors.primaryPurple,
+                  title: _t(context, 'email_us'),
+                  onTap: () async {
+                    final email = links['social_email'] ?? 'support@doraty.com';
+                    final Uri emailLaunchUri = Uri(
+                      scheme: 'mailto',
+                      path: email,
+                      query: 'subject=Support Request',
+                    );
+                    if (await canLaunchUrl(emailLaunchUri)) {
+                      await launchUrl(emailLaunchUri);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildDialogOption(
+                  context,
+                  icon: FontAwesomeIcons.whatsapp,
+                  color: Colors.green,
+                  title: _t(context, 'whatsapp_us'),
+                  onTap: () async {
+                    String whatsapp = links['social_whatsapp'] ?? '+963931865704';
+                    if (whatsapp.contains('wa.me/')) {
+                      whatsapp = whatsapp.split('wa.me/').last;
+                    }
+                    // Remove any non-numeric characters except +
+                    whatsapp = whatsapp.replaceAll(RegExp(r'[^\d+]'), '');
+                    final whatsappUrl = Uri.parse("https://wa.me/$whatsapp");
+                    if (await canLaunchUrl(whatsappUrl)) {
+                      await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                ),
+              ],
             ),
-            ListTile(
-              leading: const FaIcon(FontAwesomeIcons.whatsapp, color: Colors.green),
-              title: Text(_t(context, 'whatsapp_us')),
-              onTap: () {
-                // WhatsApp logic
-              },
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(_t(context, 'close')),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(_t(context, 'close'), style: const TextStyle(fontFamily: 'Cairo')),
+              ),
+            ],
+          );
+        }
+      ),
+    );
+  }
+
+  Widget _buildDialogOption(BuildContext context, {required IconData icon, required Color color, required String title, required VoidCallback onTap}) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withOpacity(0.2)),
           ),
-        ],
+          child: Row(
+            children: [
+              FaIcon(icon, color: color, size: 20),
+              const SizedBox(width: 15),
+              Text(title, style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Cairo'
+              )),
+              const Spacer(),
+              Icon(Icons.chevron_right, size: 18, color: color.withOpacity(0.5)),
+            ],
+          ),
+        ),
       ),
     );
   }

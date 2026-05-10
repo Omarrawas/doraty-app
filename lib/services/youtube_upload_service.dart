@@ -12,7 +12,7 @@ class YoutubeUploadService {
           yt.YouTubeApi.youtubeUploadScope,
           yt.YouTubeApi.youtubeReadonlyScope,
         ],
-        clientId: Env.googleWebClientId.isNotEmpty ? Env.googleWebClientId : null,
+        clientId: kIsWeb ? (Env.googleWebClientId.isNotEmpty ? Env.googleWebClientId : null) : null,
       );
 
   Future<bool> signIn() async {

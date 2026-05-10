@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:ui';
 import '../../core/theme/app_colors.dart';
 import '../../core/services/database_service.dart';
@@ -37,6 +38,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _transactionIdController = TextEditingController();
   final TextEditingController _discountController = TextEditingController();
+  final TextEditingController _senderNameController = TextEditingController();
+  final TextEditingController _paidAmountController = TextEditingController();
   
   DiscountCode? _appliedDiscount;
   bool _isValidatingDiscount = false;
@@ -55,6 +58,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
   @override
   void initState() {
     super.initState();
+    _paidAmountController.text = widget.amount.toStringAsFixed(0);
     _loadPaymentAccounts();
   }
 
@@ -80,6 +84,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
     _phoneController.dispose();
     _transactionIdController.dispose();
     _discountController.dispose();
+    _senderNameController.dispose();
+    _paidAmountController.dispose();
     super.dispose();
   }
 
@@ -88,6 +94,26 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('الرجاء اختيار طريقة الدفع'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_senderNameController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('الرجاء إدخال اسم المرسل'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_paidAmountController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('الرجاء إدخال المبلغ المدفوع'),
           backgroundColor: Colors.red,
         ),
       );
@@ -132,6 +158,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
         courseId: widget.course?.id,
         bundleId: widget.bundle?.id,
         discountCodeId: _appliedDiscount?.id,
+        senderName: _senderNameController.text.trim(),
+        paidAmount: double.tryParse(_paidAmountController.text.trim()) ?? 0,
       );
 
       if (mounted) {
@@ -187,9 +215,12 @@ class _PaymentScreenState extends State<PaymentScreen> {
              throw Exception('هذا الكود غير صالح لهذه الباقة');
           }
 
+          final discountAmount = discount.calculateDiscount(widget.amount);
           setState(() {
             _appliedDiscount = discount;
-            _discountAmount = discount.calculateDiscount(widget.amount);
+            _discountAmount = discountAmount;
+            _paidAmountController.text = (widget.amount - discountAmount).toStringAsFixed(0);
+            _isValidatingDiscount = false;
           });
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -584,6 +615,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           _appliedDiscount = null;
                           _discountAmount = 0;
                           _discountController.clear();
+                          _paidAmountController.text = widget.amount.toStringAsFixed(0);
                         });
                       },
                       child: Text('إلغاء', style: TextStyle(color: Colors.red, fontSize: 12)),
@@ -736,7 +768,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       ),
                       SizedBox(height: 12),
                       _buildInfoRow('اسم الحساب:', account.accountName),
-                      _buildInfoRow('رقم الحساب:', account.accountNumber),
+                      _buildInfoRow('رقم الحساب:', account.accountNumber, copyable: true),
                       if (account.instructions != null) ...[
                         SizedBox(height: 12),
                         Text(
@@ -793,6 +825,83 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 ),
                 SizedBox(height: 16),
               ],
+
+              // Sender Name
+              TextField(
+                controller: _senderNameController,
+                textAlign: TextAlign.right,
+                style: TextStyle(color: AppColors.getTextColor(context)),
+                decoration: InputDecoration(
+                  labelText: 'اسم المرسل *',
+                  labelStyle: TextStyle(color: AppColors.getTextColor(context)),
+                  hintText: 'الاسم الكامل لصاحب الحساب المحول منه',
+                  hintStyle: TextStyle(
+                    color: AppColors.getTextColor(context, secondary: true),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.1),
+                  prefixIcon: Icon(Icons.person, color: AppColors.getTextColor(context)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.getMutedTextColor(context),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.getMutedTextColor(context),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.getTextColor(context),
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
+
+              // Paid Amount
+              TextField(
+                controller: _paidAmountController,
+                keyboardType: TextInputType.number,
+                textAlign: TextAlign.right,
+                style: TextStyle(color: AppColors.getTextColor(context)),
+                decoration: InputDecoration(
+                  labelText: 'المبلغ المدفوع *',
+                  labelStyle: TextStyle(color: AppColors.getTextColor(context)),
+                  hintText: 'المبلغ الذي قمت بتحويله',
+                  hintStyle: TextStyle(
+                    color: AppColors.getTextColor(context, secondary: true),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white.withOpacity(0.1),
+                  prefixIcon: Icon(Icons.attach_money, color: AppColors.getTextColor(context)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.getMutedTextColor(context),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.getMutedTextColor(context),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: AppColors.getTextColor(context),
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: 16),
 
               // Transaction ID - إلزامي
               TextField(
@@ -864,7 +973,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, {bool copyable = false}) {
     return Padding(
       padding: EdgeInsets.only(bottom: 8),
       child: Row(
@@ -877,13 +986,45 @@ class _PaymentScreenState extends State<PaymentScreen> {
               color: AppColors.getTextColor(context, secondary: true),
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.getTextColor(context),
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.getTextColor(context),
+                ),
+              ),
+              if (copyable) ...[
+                SizedBox(width: 8),
+                InkWell(
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: value));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('تم النسخ: $value', style: TextStyle(fontFamily: 'Cairo')),
+                        backgroundColor: Colors.green,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Icon(
+                      Icons.copy_rounded,
+                      size: 16,
+                      color: AppColors.getTextColor(context),
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),

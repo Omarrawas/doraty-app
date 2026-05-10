@@ -480,17 +480,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Stack(
           children: [
-            ClipOval(
-              child: _selectedImageBytes != null
-                  ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover)
-                  : (_currentAvatarUrl != null && _currentAvatarUrl!.isNotEmpty)
-                      ? Image.network(
-                          _currentAvatarUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => 
-                              Icon(Icons.person, size: 50, color: AppColors.getTextColor(context)),
-                        )
-                      : Icon(Icons.person, size: 50, color: AppColors.getTextColor(context)),
+            Positioned.fill(
+              child: ClipOval(
+                child: _selectedImageBytes != null
+                    ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover, width: 100, height: 100)
+                    : (_currentAvatarUrl != null && _currentAvatarUrl!.isNotEmpty)
+                        ? Image.network(
+                            _currentAvatarUrl!,
+                            fit: BoxFit.cover,
+                            width: 100,
+                            height: 100,
+                            errorBuilder: (context, error, stackTrace) => 
+                                Icon(Icons.person, size: 50, color: AppColors.getTextColor(context)),
+                          )
+                        : Icon(Icons.person, size: 50, color: AppColors.getTextColor(context)),
+              ),
             ),
             Positioned(
               bottom: 0,

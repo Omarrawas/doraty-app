@@ -9,6 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/localization/locale_provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../core/services/database_service.dart';
 import 'dart:ui' as ui;
 
 
@@ -420,82 +422,93 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showSupportDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-            child: Container(
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.white.withOpacity(0.3),
-                    Colors.white.withOpacity(0.2),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: AppColors.getMutedTextColor(context),
-                  width: 1.5,
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _t('support_dialog_title'),
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.getTextColor(context),
-                      fontFamily: 'Cairo',
+      builder: (context) => FutureBuilder<Map<String, String>>(
+        future: DatabaseService().getSocialLinks(),
+        builder: (context, snapshot) {
+          final links = snapshot.data ?? {};
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+                child: Container(
+                  padding: EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withOpacity(0.3),
+                        Colors.white.withOpacity(0.2),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: AppColors.getMutedTextColor(context),
+                      width: 1.5,
                     ),
                   ),
-                  SizedBox(height: 12),
-                  Text(
-                    _t('support_dialog_desc'),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                        color: AppColors.getTextColor(context).withOpacity(0.70), fontFamily: 'Cairo'),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _t('support_dialog_title'),
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.getTextColor(context),
+                          fontFamily: 'Cairo',
+                        ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        _t('support_dialog_desc'),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: AppColors.getTextColor(context).withOpacity(0.70), fontFamily: 'Cairo'),
+                      ),
+                      SizedBox(height: 24),
+                      _buildSupportOption(
+                        icon: Icons.email_outlined,
+                        label: _t('email_us'),
+                        onTap: () async {
+                          final email = links['social_email'] ?? 'support@doraty.com';
+                          final Uri emailLaunchUri = Uri(
+                            scheme: 'mailto',
+                            path: email,
+                            query: 'subject=Support Request',
+                          );
+                          if (await canLaunchUrl(emailLaunchUri)) {
+                            await launchUrl(emailLaunchUri);
+                          }
+                        },
+                      ),
+                      SizedBox(height: 12),
+                      _buildSupportOption(
+                        icon: FontAwesomeIcons.whatsapp,
+                        label: _t('whatsapp_us'),
+                        onTap: () async {
+                          String whatsapp = links['social_whatsapp'] ?? '+963931865704';
+                          if (whatsapp.contains('wa.me/')) {
+                            whatsapp = whatsapp.split('wa.me/').last;
+                          }
+                          // Remove any non-numeric characters except +
+                          whatsapp = whatsapp.replaceAll(RegExp(r'[^\d+]'), '');
+                          final whatsappUrl = Uri.parse("https://wa.me/$whatsapp");
+                          if (await canLaunchUrl(whatsappUrl)) {
+                            await launchUrl(whatsappUrl,
+                                mode: LaunchMode.externalApplication);
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 24),
-                  _buildSupportOption(
-                    icon: Icons.email_outlined,
-                    label: _t('email_us'),
-                    onTap: () async {
-                      final Uri emailLaunchUri = Uri(
-                        scheme: 'mailto',
-                        path: 'support@doraty.com',
-                        query: Uri.encodeFull(
-                            'subject=Support Request from ${AuthService().userProfile?['full_name']}'),
-                      );
-                      if (await canLaunchUrl(emailLaunchUri)) {
-                        await launchUrl(emailLaunchUri);
-                      }
-                    },
-                  ),
-                  SizedBox(height: 12),
-                  _buildSupportOption(
-                    icon: Icons.chat_outlined,
-                    label: _t('whatsapp_us'),
-                    onTap: () async {
-                      final whatsappUrl = Uri.parse(
-                          "https://wa.me/+963931865704"); // Placeholder
-                      if (await canLaunchUrl(whatsappUrl)) {
-                        await launchUrl(whatsappUrl,
-                            mode: LaunchMode.externalApplication);
-                      }
-                    },
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        }
       ),
     );
   }

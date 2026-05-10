@@ -24,6 +24,8 @@ class PaymentService {
     String? courseId,
     String? bundleId,
     String? discountCodeId,
+    String? senderName,
+    double? paidAmount,
   }) async {
     try {
       final dbService = DatabaseService();
@@ -60,6 +62,8 @@ class PaymentService {
         courseId: courseId,
         bundleId: bundleId,
         discountCodeId: discountCodeId,
+        senderName: senderName,
+        paidAmount: paidAmount,
       );
 
       debugPrint('Payment receipt created: $receiptId');

@@ -5114,6 +5114,8 @@ class DatabaseService {
     String? courseId,
     String? bundleId,
     String? discountCodeId,
+    String? senderName,
+    double? paidAmount,
   }) async {
     try {
       final userId = _client.auth.currentUser?.id;
@@ -5133,6 +5135,8 @@ class DatabaseService {
       if (transactionId != null) receiptData['transaction_id'] = transactionId;
       if (receiptImageUrl != null) receiptData['receipt_image_url'] = receiptImageUrl;
       if (phoneNumber != null) receiptData['phone_number'] = phoneNumber;
+      if (senderName != null) receiptData['sender_name'] = senderName;
+      if (paidAmount != null) receiptData['paid_amount'] = paidAmount;
 
       final response = await _client
           .from('payment_receipts')
